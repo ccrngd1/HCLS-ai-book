@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 4.8 Architecture and Implementation: Treatment Response Prediction</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested nav-active" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-48-architecture-and-implementation-treatment-response-prediction">Recipe 4.8 Architecture and Implementation: Treatment Response Prediction</h1>
+<p><em>Companion to <a href="chapter04.08-treatment-response-prediction.html">Recipe 4.8: Treatment Response Prediction</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon SageMaker for the causal-modeling stack.</strong> Three model families per treatment-comparator pair: the propensity score model, the outcome model, and the CATE estimator (typically run as an ensemble of two or more methods). With a treatment catalog of ten to thirty treatment-comparator pairs in scope, the model count multiplies; SageMaker Pipelines orchestrates the per-pair retraining workflow, and the SageMaker Model Registry holds versioned artifacts with the governance metadata (cohort version, training-cohort archive, calibration-test results, fairness-test results, medical-director sign-off). Inference runs through Batch Transform for the daily cohort scoring path and through a low-latency real-time endpoint for the point-of-care path when a clinician opens a patient chart and requests on-demand scoring. SageMaker is HIPAA-eligible under BAA.</p>
+<p><strong>Amazon SageMaker Feature Store for patient features and treatment-history features.</strong> Patient-level features (demographics, problem list, medication history, lab trajectories, vitals trajectories, comorbidity profile, SDOH proxies, prior treatment exposures, prior treatment responses) reused from earlier recipes and enriched with treatment-response-specific features (time since diagnosis for the index condition, prior medication-class exposures, prior discontinuation reasons, baseline disease severity). The offline store powers cohort construction and batch scoring; the online store supports the low-latency lookups when a clinician opens a chart at the point of care.</p>
+<p><strong>Amazon DynamoDB for the treatment catalog, scoring results, decision records, and feedback events.</strong> New table <code>treatment-catalog</code> keyed on <code>treatment_id</code> and <code>version</code>. New table <code>treatment-comparison-pairs</code> keyed on <code>(treatment_id, comparator_id)</code> and <code>version</code>, holding the modeling specification and the latest model registry pointer per pair. New table <code>scoring-results</code> keyed on <code>(patient_id, scoring_run_id)</code> for the structured scoring output that feeds the clinician view. New table <code>decision-records</code> keyed on <code>(patient_id, decision_id)</code> for the clinician's recorded decision and rationale, including the predictions presented at the time of decision (frozen for audit). New table <code>prediction-outcome-pairs</code> for the matched-outcome data feeding feedback and calibration monitoring. The <code>patient-profile</code> table from prior recipes is extended with treatment-response-relevant attributes.</p>
+<p><strong>Amazon S3 for the data lake, training cohorts, evaluation outputs, and longitudinal storage.</strong> Source data feeds (claims, EHR, lab, pharmacy, vitals, PROMs) land in S3 via Kinesis Firehose for streaming and Glue for batch. Offline feature store backed by S3. Cohort construction outputs land in S3 as Parquet, partitioned by treatment-comparator pair and version, and archived alongside the trained model artifacts so that any model can be reproduced. Per-treatment-comparator calibration plots, fairness reports, and sensitivity analyses live in S3 with the model artifacts.</p>
+<p><strong>AWS Glue and Amazon Athena for cohort construction, propensity matching, and outcome evaluation.</strong> Cohort construction is SQL-shaped at scale: the target-trial-protocol filters (eligibility, washout, exposure assignment, censoring) translate directly into SQL on the data lake. Glue jobs run the cohort construction nightly or weekly per treatment-comparator pair. Athena powers the per-cohort exploration, the calibration analyses, and the post-deployment outcome surveillance. Propensity matching for sensitivity analyses runs in Glue with logistic-regression or gradient-boosted propensity models and outputs the matched-pair datasets to S3.</p>
+<p><strong>AWS Step Functions for batch orchestration.</strong> Same pattern as 4.5 through 4.7. The nightly cohort-construction-and-feature-pipeline workflow is a Step Functions state machine. The weekly retraining-and-recalibration workflow is a separate state machine that runs the per-pair retraining, executes the calibration and fairness tests, gates on the governance review, and promotes new models in the registry. The monthly post-deployment surveillance workflow runs the prediction-to-outcome matching, the calibration drift detection, and the cohort-stratified performance monitoring.</p>
+<p><strong>Amazon EventBridge for scheduling and event-driven triggers.</strong> EventBridge schedules the nightly cohort run, the weekly retraining run, and the monthly surveillance run. EventBridge rules also handle event-driven triggers: a clinician opening an index-condition chart at the point of care triggers an on-demand scoring request; an adverse-event report triggers a surveillance check against recent predictions; a treatment-catalog update (new entry, tier change, supply constraint) triggers downstream re-evaluation of affected scoring outputs.</p>
+<p><strong>Amazon Bedrock for clinician-facing comparison briefings, patient-facing summaries, and disagreement-investigation narratives.</strong> Three distinct LLM use cases:</p>
+<ol>
+<li>
+<p><strong>Clinician-facing comparison briefing.</strong> A structured-output prompt takes the per-treatment CATE estimates with confidence intervals, the cohort sizes and match quality, the OOD flags, the formulary statuses, the guideline references, and the patient summary, and returns a paragraph the clinician reads at the point of care. The validator strictly enforces no-recommendation language: the briefing describes the comparison without selecting a treatment.</p>
+</li>
+<li>
+<p><strong>Patient-facing summary.</strong> When the clinician chooses to share, a patient-facing summary translates the comparison into lay language. The patient version uses cohort-based phrasing (&quot;among patients similar to you, treatment A was associated with a larger reduction in blood sugar than treatment B, with about this much uncertainty&quot;), avoids probabilistic statements that may be misread as guarantees, and includes the explicit framing that the final decision is shared between the patient and the clinician. Reading-level matching applies the same pattern as Recipe 4.2.</p>
+</li>
+<li>
+<p><strong>Disagreement-investigation narrative.</strong> When the multiple CATE estimators disagree more than a defined threshold, an LLM-generated narrative lists the points of disagreement, the candidate explanations (model misspecification, unmeasured confounding, treatment-effect heterogeneity, data quality issues), and the recommended sensitivity-analysis follow-up for the clinical informatics team. This is internal-facing decision support for the modeling team, not patient-facing or clinician-facing.</p>
+</li>
+</ol>
+<p>Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models.</p>
+<p><strong>AWS Lambda for per-stage glue logic.</strong> The cohort-construction dispatcher, the propensity-score-invocation orchestrator, the CATE-estimator-ensemble runner, the uncertainty-quantification computer, the calibration-drift detector, the OOD-flag computer, the on-demand-scoring orchestrator, the briefing-generator, the validator, the decision-recorder, and the prediction-to-outcome matcher all run as Lambdas.</p>
+<p><strong>Amazon API Gateway and Amazon Cognito for the on-demand scoring API.</strong> The clinician-facing decision-support component is exposed as an authenticated API consumed by the EHR integration layer. API Gateway provides the endpoint, Cognito (or the institution's identity provider via SAML or OIDC) provides authentication, and per-clinician audit logs go to CloudTrail. The EHR integration is typically through a SMART on FHIR app or a CDS Hooks endpoint, both of which the API supports.</p>
+<p><strong>Amazon Kinesis Data Streams for clinical events, scoring requests, decisions, and outcome updates.</strong> Same engagement-event bus pattern as prior chapters, with new event types: <code>treatment_scoring_requested</code>, <code>treatment_scoring_completed</code>, <code>treatment_scoring_oodflag_triggered</code>, <code>treatment_decision_recorded</code>, <code>treatment_outcome_observed</code>, <code>prediction_calibration_alert</code>, <code>disagreement_alert</code>. The state-machine worker consumes these and updates the relevant DynamoDB tables.</p>
+<p><strong>AWS HealthLake (recommended for this recipe).</strong> Treatment response prediction benefits substantially from FHIR-native clinical data. The condition list, medication list, observation history, and procedure history feed directly into the phenotyping and outcome construction. HealthLake provides FHIR-native storage with built-in normalization across multiple EHR vendors, which matters here because the model's accuracy depends on consistent representation of clinical concepts across data sources.</p>
+<p><strong>Amazon QuickSight for governance and surveillance dashboards.</strong> Per-treatment-comparator calibration dashboards (predicted versus observed treatment effects, with confidence intervals, stratified by cohort). Per-cohort fairness dashboards (calibration parity, estimate parity at equipoise, adverse-event parity). Post-deployment surveillance dashboards (prediction error trends over time, OOD-flag rates by cohort, override rates by clinician). Treatment-catalog governance dashboards (per-treatment usage, per-treatment outcome trends, model-version lineage). QuickSight on Athena, with row-level security for cohort-specific access.</p>
+<p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Same PHI infrastructure pattern as prior recipes, with elevated controls for the prediction artifacts. Customer-managed keys, CloudTrail data events on the prediction tables and the scoring API, CloudWatch alarms on calibration drift, OOD-flag rate spikes, and disagreement-alert rate spikes. Treatment recommendations are sensitive enough that the audit posture is closer to clinical-record audit than typical analytics audit.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Sources
+      A1[Claims Feed]
+      A2[EHR / FHIR via HealthLake]
+      A3[Lab Results]
+      A4[Pharmacy / Adherence from 4.5]
+      A5[Vitals and PROMs]
+      A6[Patient Registries]
+      A7[Patient Self-Report]
+    end
+
+    A1 --&gt;|Streaming| B1[Kinesis Firehose\ntrx-source-events]
+    A2 --&gt;|FHIR| HL1[AWS HealthLake]
+    HL1 --&gt;|Export| B1
+    A3 --&gt;|Streaming| B1
+    A4 --&gt;|Daily| B1
+    A5 --&gt;|Streaming| B1
+    A6 --&gt;|Daily| B1
+    A7 --&gt;|Portal/app| B1
+
+    B1 --&gt; S1[S3\ntrx-data-lake]
+
+    PR1[Lambda\ncatalog-sync] --&gt; D1[DynamoDB\ntreatment-catalog]
+    D1 --&gt; C1[Glue\ncohort-construction]
+    S1 --&gt; C1
+    C1 --&gt; S2[S3\ncohorts and labels]
+    C1 --&gt; F1[SageMaker Feature Store\npatient and treatment-history features]
+
+    SF1[Step Functions\nweekly-retrain] --&gt; H1[SageMaker Pipelines\nper treatment-comparator pair]
+    F1 --&gt; H1
+    S2 --&gt; H1
+    H1 --&gt; H2[SageMaker Training\npropensity model]
+    H1 --&gt; H3[SageMaker Training\noutcome model]
+    H1 --&gt; H4[SageMaker Training\nCATE ensemble]
+    H2 --&gt; MR1[SageMaker Model Registry]
+    H3 --&gt; MR1
+    H4 --&gt; MR1
+
+    MR1 --&gt; H5[Lambda\ncalibration and fairness tests]
+    H5 --&gt; S3[S3\nmodel evaluation reports]
+    H5 --&gt; GR1[Lambda\ngovernance gate]
+    GR1 --&gt; MR1
+    GR1 --&gt; D1
+
+    AG1[API Gateway\nscoring API] --&gt; AU1[Cognito or IdP]
+    AU1 --&gt; SC1[Lambda\nscoring orchestrator]
+    SC1 --&gt; F1
+    SC1 --&gt; D1
+    SC1 --&gt; H6[SageMaker Real-Time\nCATE inference]
+    SC1 --&gt; H7[SageMaker Batch Transform\ncohort retrieval]
+    SC1 --&gt; SR1[DynamoDB\nscoring-results]
+    SR1 --&gt; BR1[Lambda\nbriefing-generator]
+    BR1 --&gt; BD1[Bedrock\ncomparison briefing]
+    BD1 --&gt; VL1[Lambda\nvalidator]
+    VL1 --&gt; SR2[DynamoDB\nbriefings]
+    SR2 --&gt; EHR1[EHR via SMART on FHIR\nor CDS Hooks]
+
+    EHR1 -.Decision recorded.-&gt; DR1[DynamoDB\ndecision-records]
+    EHR1 -.Decision event.-&gt; KS1[Kinesis\ntrx-events]
+
+    KS1 --&gt; SM1[Lambda\nstate-machine-worker]
+    SM1 --&gt; DR1
+    SM1 --&gt; PO1[DynamoDB\nprediction-outcome-pairs]
+
+    SF2[Step Functions\nmonthly-surveillance] --&gt; SU1[Lambda\nprediction-outcome-matcher]
+    SU1 --&gt; PO1
+    SU1 --&gt; S4[S3\nsurveillance outputs]
+    S4 --&gt; CD1[Lambda\ncalibration-drift-detector]
+    S4 --&gt; FA1[Lambda\nfairness-monitor]
+    CD1 --&gt; AL1[CloudWatch alarms]
+    FA1 --&gt; AL1
+
+    S4 --&gt; QS1[QuickSight\ngovernance and surveillance dashboards]
+
+    KS1 --&gt; KF1[Kinesis Firehose]
+    KF1 --&gt; S5[S3\ntrx-event-lake]
+    S5 --&gt; QS1
+
+    style F1 fill:#9ff,stroke:#333
+    style D1 fill:#9ff,stroke:#333
+    style SR1 fill:#9ff,stroke:#333
+    style SR2 fill:#9ff,stroke:#333
+    style DR1 fill:#9ff,stroke:#333
+    style PO1 fill:#9ff,stroke:#333
+    style S1 fill:#cfc,stroke:#333
+    style S2 fill:#cfc,stroke:#333
+    style S3 fill:#cfc,stroke:#333
+    style S4 fill:#cfc,stroke:#333
+    style S5 fill:#cfc,stroke:#333
+    style KS1 fill:#f9f,stroke:#333
+    style HL1 fill:#fc9,stroke:#333
+    style MR1 fill:#fc9,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon SageMaker (Training, Pipelines, Model Registry, Real-Time Inference, Batch Transform, Feature Store), Amazon DynamoDB, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon API Gateway, Amazon Cognito, Amazon QuickSight, AWS HealthLake, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: <code>sagemaker:CreateTransformJob</code> / <code>InvokeEndpoint</code> / <code>DescribeModelPackage</code> scoped to specific model and endpoint ARNs; <code>dynamodb:GetItem</code> / <code>BatchWriteItem</code> / <code>UpdateItem</code> scoped to specific tables (especially <code>scoring-results</code>, <code>decision-records</code>, <code>prediction-outcome-pairs</code>); <code>bedrock:InvokeModel</code> on specific foundation-model ARNs; <code>s3:GetObject</code> / <code>PutObject</code> scoped to cohort, model-evaluation, and surveillance buckets; <code>kinesis:PutRecord</code> on the trx-events stream; <code>healthlake:SearchWithGet</code> and related read actions scoped to the relevant data store; <code>apigateway:Invoke</code> for the scoring API. Never <code>*</code>.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker, DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, API Gateway, Cognito, QuickSight, HealthLake, KMS.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>DynamoDB: customer-managed KMS at rest (especially <code>scoring-results</code>, <code>decision-records</code>, and <code>prediction-outcome-pairs</code>; the joining of patient identifiers with predicted treatment outcomes is highly inferential PHI). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker training, Real-Time Inference, Batch Transform, and Feature Store: VPC-only, with KMS keys for model artifacts and Feature Store offline storage. HealthLake: KMS-encrypted at rest, TLS in transit. Lambda log groups KMS-encrypted. Briefing text stored in DynamoDB is PHI; treat with full clinical-record encryption posture.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas in VPC. SageMaker training, inference, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions, EventBridge, Glue, Athena, STS, HealthLake, API Gateway. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR integration typically arrives via PrivateLink, Direct Connect, or the institution's existing private network. VPC Flow Logs enabled.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the <code>treatment-catalog</code>, <code>scoring-results</code>, <code>decision-records</code>, <code>prediction-outcome-pairs</code>, and <code>briefings</code> tables. Data events on the S3 buckets containing source feeds, cohorts, model-evaluation reports, and surveillance outputs. Scoring API invocations logged at the API Gateway and Lambda layers. The audit posture for treatment-recommendation artifacts approaches clinical-record audit standards.</td>
+</tr>
+<tr>
+<td><strong>Regulatory Governance</strong></td>
+<td>Document the treatment catalog model-risk tier per treatment, the regulatory pathway (Cures Act CDS exemption versus FDA SaMD), the predetermined change control plan for model updates, the postmarket surveillance plan, the complaint-handling process, and the quality system documentation. Establish a cross-functional review committee (medical director, clinical informatics lead, pharmacy and therapeutics chair, equity lead, data science lead, regulatory and compliance lead, legal) that signs off on model promotion, reviews surveillance reports monthly, and reviews fairness reports quarterly. The Obermeyer-style failure mode is the canonical concern; for treatment recommendations specifically, biased predictions can directly cause inferior care, so the governance has to be rigorous from the beginning.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>A starter set of synthetic patients with realistic condition profiles, lab trajectories, medication histories, and outcome timelines (Synthea provides good baseline data; augment with synthesized treatment-exposure and treatment-outcome events to simulate the cohort patterns the CATE models will be trained on). A small treatment catalog covering two to four treatment-comparator pairs with well-defined outcomes (T2D second-line therapy comparisons are a good starting use case because the outcomes are measurable and well-evidenced).</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a multi-specialty health system with ~500,000 active patients, ~10-30 treatment-comparator pairs in scope, and ~5,000 on-demand scoring requests per day: SageMaker Real-Time Inference (per-pair endpoints, multi-model endpoints to amortize): roughly $1,000-3,000/month. SageMaker Batch Transform for daily cohort-level predictions: $300-800/month. SageMaker Pipelines training (weekly retrain across the catalog): $500-1,500/month. SageMaker Feature Store: $200-500/month. DynamoDB on-demand: $400-1,200/month. Lambda + Step Functions: $200-600/month. Bedrock for briefings (~5,000/day clinician-facing, plus patient-facing summaries when shared, plus internal disagreement narratives), Sonnet-class for briefings and Haiku-class for routine summaries: $3,000-9,000/month. API Gateway + Cognito: $200-500/month. S3 + Glue + Athena: $800-2,000/month. QuickSight: $50/user/month authors plus reader fees. HealthLake: $1,500-5,000/month depending on data volume. Estimated infrastructure total: $8,000-25,000/month for a regional system, before staff time, EHR integration, and the (substantial) modeling-team and clinical-informatics costs that dominate this recipe.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Hosts the per-treatment-comparator propensity, outcome, and CATE-ensemble models; runs training, batch, and real-time inference; manages model lifecycle through Pipelines and Model Registry</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Per-patient and per-treatment-history features that feed cohort construction, training, and inference; the offline store powers training and batch scoring; the online store powers point-of-care scoring</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores the treatment catalog, treatment-comparison-pair specifications, scoring results, decision records, prediction-outcome pairs, and clinician-facing briefings</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Hosts the trx-data-lake, the cohort-and-label store, the model-evaluation reports, the surveillance outputs, the briefings audit trail, and the long-horizon event lake</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Cohort construction implementing the target trial emulation per treatment-comparator pair; propensity matching for sensitivity analyses; outcome-evaluation jobs</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena</strong></td>
+<td>SQL access to the data lake; powers per-cohort exploration, calibration analyses, and post-deployment outcome surveillance queries</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the nightly cohort-construction workflow, the weekly retraining-and-recalibration workflow, and the monthly post-deployment surveillance workflow</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Schedules batch runs; routes point-of-care scoring requests, treatment-catalog updates, and adverse-event surveillance triggers</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Carries scoring requests, scoring completions, decision events, outcome events, calibration alerts, and disagreement alerts</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Lands scoring and decision events into S3 Parquet for long-horizon analysis and retraining</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Runs the catalog sync, cohort-construction dispatcher, governance gate, scoring orchestrator, briefing generator, validator, decision recorder, prediction-outcome matcher, calibration-drift detector, fairness monitor, and OOD-flag computer</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Hosts the LLM for clinician-facing comparison briefings, patient-facing summaries, and internal disagreement-investigation narratives</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Exposes the on-demand scoring API consumed by the EHR integration layer (SMART on FHIR or CDS Hooks)</td>
+</tr>
+<tr>
+<td><strong>Amazon Cognito</strong></td>
+<td>Authenticates clinician access to the scoring API; integrates with the institution's identity provider via SAML or OIDC</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake</strong></td>
+<td>FHIR-native clinical data store powering phenotyping, cohort construction, and feature engineering across multiple EHR vendors</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Governance and surveillance dashboards: per-treatment-comparator calibration, per-cohort fairness, post-deployment surveillance, treatment-catalog governance</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all PHI-containing stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, calibration-drift alarms, OOD-flag-rate alarms, fairness-threshold alarms, alarms on prediction-volume drift</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all PHI-related API calls and for every scoring API invocation</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful aws-samples and open-source patterns for this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: SageMaker Pipelines, Model Registry, and Real-Time Inference patterns that mirror per-treatment-comparator model lifecycles.</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage applicable to the per-patient and per-treatment-history feature pipelines.</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Demonstrates structured-output prompting applicable to clinician-facing comparison briefings.</li>
+<li><a href="https://github.com/py-why/EconML"><code>EconML</code></a>: Microsoft Research's heterogeneous-treatment-effect estimation library, the methodological foundation for the CATE ensemble.</li>
+<li><a href="https://github.com/py-why/dowhy"><code>DoWhy</code></a>: Causal-inference framework for structuring assumptions and running sensitivity analyses.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Construct the cohort and outcome labels per treatment-comparator pair using target trial emulation.</strong> Cohort construction is the foundation of every downstream causal estimate. The target-trial protocol is specified explicitly: who is eligible, when the index date is, what the washout window excludes, what the treatment exposure is, what the comparator is, what the outcomes are with explicit timing, and what censoring rules apply. Skip the explicit protocol and you build a cohort with implicit decisions that bias the resulting estimates in ways nobody can audit.</p>
+<pre class="code code-plain"><code>FUNCTION construct_cohort(treatment_pair, run_date):
+    // Load the target-trial protocol from the treatment catalog. The
+    // protocol is a structured spec with eligibility, washout,
+    // exposure, comparator, outcome, follow-up, and censoring
+    // definitions. The protocol is versioned; cohorts are tagged
+    // with the protocol version so any cohort can be reproduced.
+    protocol = DynamoDB.GetItem(
+        &quot;treatment-comparison-pairs&quot;,
+        key = (treatment_pair.treatment_id, treatment_pair.comparator_id)
+    ).protocol
+
+    // Step 1A: identify candidate patients. The candidate population
+    // is the patients with the index condition active at the index
+    // date, who are also eligible for both the treatment and the
+    // comparator (so the comparison is between actually-substitutable
+    // options).
+    candidates = Athena.Query(
+        protocol.candidate_query,
+        params = { :run_date = run_date }
+    )
+
+    // Step 1B: apply the washout window. Patients with relevant prior
+    // exposures (the same treatment, the comparator, or other
+    // confounding treatments) within the washout window are excluded.
+    // The washout is specified per-pair because the relevant prior
+    // exposures depend on what is being compared.
+    eligible = Athena.Query(
+        protocol.washout_query,
+        params = { :run_date = run_date,
+                   :washout_start = run_date - protocol.washout_days,
+                   :candidates = candidates }
+    )
+
+    // Step 1C: assign treatment exposure. For each eligible patient,
+    // determine which treatment arm they fall into based on what
+    // they were actually prescribed at the index date. Patients who
+    // received neither the treatment nor the comparator are excluded
+    // from this pair&#x27;s cohort (they may belong to another pair&#x27;s
+    // cohort).
+    cohort_treated = Athena.Query(
+        protocol.treated_assignment_query,
+        params = { :eligible_population = eligible }
+    )
+    cohort_comparator = Athena.Query(
+        protocol.comparator_assignment_query,
+        params = { :eligible_population = eligible }
+    )
+    cohort = union(cohort_treated, cohort_comparator)
+
+    // Step 1D: construct outcome labels. For each cohort member,
+    // compute the outcome at the protocol-specified timing. Multiple
+    // outcomes per cohort member are supported (primary, secondary,
+    // safety). Censoring rules handle patients lost to follow-up,
+    // patients who switched treatments mid-follow-up, and competing
+    // events (death, plan disenrollment).
+    cohort_with_outcomes = []
+    FOR each member in cohort:
+        outcomes = {}
+        FOR each outcome_def in protocol.outcomes:
+            outcome_value = compute_outcome(member, outcome_def, protocol)
+                // returns { value, observed, censored_at, censor_reason }
+            outcomes[outcome_def.outcome_id] = outcome_value
+
+        cohort_with_outcomes.append({
+            patient_id:        member.patient_id,
+            treatment_arm:     member.treatment_arm,
+            index_date:        member.index_date,
+            covariates:        member.covariates,
+                // patient features at index date; this is the conditioning
+                // set for the CATE estimators
+            outcomes:          outcomes,
+            protocol_version:  protocol.version
+        })
+
+    // Step 1E: persist the cohort. Cohort artifacts are partitioned
+    // by treatment-pair and protocol version, archived alongside the
+    // model artifacts for reproducibility, and never overwritten
+    // (each retraining run produces a new versioned cohort).
+    cohort_path = &quot;s3://trx-cohorts/pair=&quot; + treatment_pair.pair_id +
+                  &quot;/protocol_version=&quot; + protocol.version +
+                  &quot;/run_date=&quot; + run_date + &quot;/cohort.parquet&quot;
+    write_parquet(cohort_with_outcomes, cohort_path)
+
+    // Persist cohort metadata for traceability.
+    DynamoDB.PutItem(&quot;cohort-metadata&quot;, {
+        cohort_id:         build_cohort_id(treatment_pair, protocol.version, run_date),
+        treatment_pair:    treatment_pair.pair_id,
+        protocol_version:  protocol.version,
+        run_date:          run_date,
+        cohort_path:       cohort_path,
+        size_treated:      count_arm(cohort_with_outcomes, &quot;treated&quot;),
+        size_comparator:   count_arm(cohort_with_outcomes, &quot;comparator&quot;),
+        outcome_definitions: list_outcomes(protocol),
+        feature_set_version: protocol.feature_set_version
+    })
+
+    Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+        event_type:     &quot;cohort_constructed&quot;,
+        cohort_id:      build_cohort_id(treatment_pair, protocol.version, run_date),
+        treatment_pair: treatment_pair.pair_id,
+        size_treated:   count_arm(cohort_with_outcomes, &quot;treated&quot;),
+        size_comparator: count_arm(cohort_with_outcomes, &quot;comparator&quot;),
+        timestamp:      current UTC timestamp
+    })
+
+    RETURN cohort_with_outcomes
+</code></pre>
+<p><strong>Step 2: Train the propensity, outcome, and CATE-ensemble models per treatment-comparator pair.</strong> The propensity model estimates the probability of receiving each treatment given covariates; this anchors the doubly-robust methods. The outcome model estimates outcome given covariates and treatment; this feeds the meta-learners. The CATE ensemble runs at least two estimators from different method families (causal forest, DR-learner, BART, or equivalent) so that disagreement among them surfaces model misspecification. Skip the ensemble and you cannot tell whether your point estimate is robust or a methodological artifact.</p>
+<pre class="code code-plain"><code>FUNCTION train_pair_models(cohort_id, run_date):
+    cohort_metadata = DynamoDB.GetItem(&quot;cohort-metadata&quot;, cohort_id)
+    cohort = read_parquet(cohort_metadata.cohort_path)
+    treatment_pair = lookup_treatment_pair(cohort_metadata.treatment_pair)
+    protocol = lookup_protocol(treatment_pair, cohort_metadata.protocol_version)
+
+    // Stage A: propensity score model. Predicts P(treatment = treated |
+    // covariates X). Trained on the full cohort with treatment_arm as
+    // the binary label. Logistic regression with regularization is a
+    // reasonable baseline; gradient-boosted trees often perform better
+    // and are the practical default. Use cross-validation for
+    // hyperparameter selection; check propensity-score overlap (the
+    // distribution of propensity scores in the treated and comparator
+    // arms should overlap substantially for the cohort to support
+    // causal estimation).
+    propensity_job = SageMaker.CreateTrainingJob(
+        training_job_name = &quot;propensity-&quot; + treatment_pair.pair_id + &quot;-&quot; + run_date,
+        algorithm         = &quot;xgboost-with-isotonic-calibration&quot;,
+        training_data     = cohort_metadata.cohort_path,
+        target            = &quot;treatment_arm_treated&quot;,
+        feature_set       = protocol.feature_set_version,
+        hyperparameters   = protocol.propensity_hyperparameters
+    )
+    propensity_model_arn = SageMaker.RegisterModel(propensity_job, &quot;propensity&quot;)
+
+    // Quick check: propensity overlap. If overlap is poor (many
+    // treated patients have propensity &gt; 0.95 or many comparator
+    // patients have propensity &lt; 0.05), the cohort does not support
+    // reliable CATE estimation. Flag for governance review and
+    // suspend further training for this pair until the cohort can
+    // be re-scoped.
+    overlap_check = assess_propensity_overlap(propensity_model_arn, cohort)
+    IF overlap_check.severe:
+        DynamoDB.UpdateItem(&quot;treatment-comparison-pairs&quot;,
+            key = treatment_pair.pair_id,
+            updates = {
+                training_status: &quot;suspended_propensity_overlap&quot;,
+                last_overlap_check: overlap_check
+            })
+        Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+            event_type:     &quot;training_suspended&quot;,
+            cohort_id:      cohort_id,
+            reason:         &quot;propensity_overlap_severe&quot;,
+            timestamp:      current UTC timestamp
+        })
+        RETURN { status: &quot;suspended&quot;, reason: &quot;propensity_overlap&quot; }
+
+    // Stage B: outcome model(s). Predicts E[Y | X, T] for each
+    // outcome of interest. For the CATE ensemble that follows, we
+    // train at least two specifications: a flexible regression (XGBoost
+    // or random forest) and a simpler interpretable specification
+    // (regularized linear) so that the CATE estimators can leverage
+    // both. Trained on the full cohort with outcome as the label
+    // and treatment as a feature.
+    outcome_models = {}
+    FOR each outcome_def in protocol.outcomes:
+        outcome_job = SageMaker.CreateTrainingJob(
+            training_job_name = &quot;outcome-&quot; + treatment_pair.pair_id +
+                                 &quot;-&quot; + outcome_def.outcome_id + &quot;-&quot; + run_date,
+            algorithm         = &quot;xgboost-regression-or-classification&quot;,
+            training_data     = cohort_metadata.cohort_path,
+            target            = outcome_def.outcome_id,
+            feature_set       = protocol.feature_set_version + &quot;+treatment_arm&quot;,
+            hyperparameters   = protocol.outcome_hyperparameters[outcome_def.outcome_id]
+        )
+        outcome_models[outcome_def.outcome_id] = SageMaker.RegisterModel(outcome_job, &quot;outcome&quot;)
+
+    // Stage C: CATE estimator ensemble. At least two methods from
+    // different families. The Causal Forest provides built-in
+    // confidence intervals and handles non-linear heterogeneity;
+    // the DR-learner is doubly robust; BART (or equivalent Bayesian
+    // method) provides posterior-based uncertainty.
+    cate_estimators = []
+
+    cf_job = SageMaker.CreateTrainingJob(
+        training_job_name = &quot;cate-cf-&quot; + treatment_pair.pair_id + &quot;-&quot; + run_date,
+        algorithm         = &quot;causal-forest-econml&quot;,
+            // BYOC container; econml CausalForestDML or grf-equivalent
+        training_data     = cohort_metadata.cohort_path,
+        propensity_model  = propensity_model_arn,
+        outcome_model     = outcome_models[&quot;primary&quot;],
+        feature_set       = protocol.feature_set_version,
+        hyperparameters   = protocol.cate_hyperparameters.causal_forest
+    )
+    cate_estimators.append(SageMaker.RegisterModel(cf_job, &quot;cate_causal_forest&quot;))
+
+    dr_job = SageMaker.CreateTrainingJob(
+        training_job_name = &quot;cate-dr-&quot; + treatment_pair.pair_id + &quot;-&quot; + run_date,
+        algorithm         = &quot;dr-learner-econml&quot;,
+            // BYOC container; econml DRLearner
+        training_data     = cohort_metadata.cohort_path,
+        propensity_model  = propensity_model_arn,
+        outcome_model     = outcome_models[&quot;primary&quot;],
+        feature_set       = protocol.feature_set_version,
+        hyperparameters   = protocol.cate_hyperparameters.dr_learner
+    )
+    cate_estimators.append(SageMaker.RegisterModel(dr_job, &quot;cate_dr_learner&quot;))
+
+    bart_job = SageMaker.CreateTrainingJob(
+        training_job_name = &quot;cate-bart-&quot; + treatment_pair.pair_id + &quot;-&quot; + run_date,
+        algorithm         = &quot;bcf-bart&quot;,
+            // BYOC container; bcf or bartCause R package via wrapper
+        training_data     = cohort_metadata.cohort_path,
+        feature_set       = protocol.feature_set_version,
+        hyperparameters   = protocol.cate_hyperparameters.bart
+    )
+    cate_estimators.append(SageMaker.RegisterModel(bart_job, &quot;cate_bart&quot;))
+
+    DynamoDB.UpdateItem(&quot;treatment-comparison-pairs&quot;,
+        key = treatment_pair.pair_id,
+        updates = {
+            training_status:        &quot;trained_pending_evaluation&quot;,
+            propensity_model_arn:   propensity_model_arn,
+            outcome_model_arns:     outcome_models,
+            cate_estimator_arns:    cate_estimators,
+            cohort_id:              cohort_id,
+            run_date:               run_date
+        })
+
+    RETURN {
+        status:               &quot;trained_pending_evaluation&quot;,
+        propensity_model_arn: propensity_model_arn,
+        outcome_model_arns:   outcome_models,
+        cate_estimator_arns:  cate_estimators
+    }
+</code></pre>
+<p><strong>Step 3: Run the calibration and fairness tests, and gate model promotion through governance.</strong> A trained model is not a production model. Calibration tests check that predicted treatment effects match observed effects in held-out cohorts and in subgroups. Fairness tests check that calibration is consistent across protected subpopulations. The governance gate is a human review of the test results before the new model artifacts are promoted to production. Skip this and you ship a model with unknown calibration on the populations it will most affect.</p>
+<pre class="code code-plain"><code>FUNCTION evaluate_and_gate_pair_models(treatment_pair_id, run_date):
+    pair = DynamoDB.GetItem(&quot;treatment-comparison-pairs&quot;, treatment_pair_id)
+    cohort = read_parquet(lookup_cohort_path(pair.cohort_id))
+
+    // Stage A: held-out calibration. The cohort is split into a
+    // training set and a held-out test set (typically temporally,
+    // so the test set is more recent than the training set). Train
+    // on the training set, predict on the test set, and compare
+    // predicted treatment effects to observed effects within
+    // covariate-defined subgroups. The calibration plot per
+    // estimator and per outcome is the primary evidence.
+    calibration_results = {}
+    FOR each estimator in pair.cate_estimator_arns:
+        predicted_effects = SageMaker.BatchTransform(
+            model_arn   = estimator.arn,
+            input_path  = cohort.held_out_path,
+            output_path = &quot;s3://trx-eval/&quot; + treatment_pair_id +
+                          &quot;/calibration/&quot; + estimator.name + &quot;/&quot;
+        )
+        // Compute calibration in groups of similar predicted effect.
+        // Within each group, the average predicted effect should be
+        // close to the average observed effect.
+        cal = compute_calibration_in_groups(predicted_effects, cohort.held_out)
+        calibration_results[estimator.name] = cal
+        IF cal.calibration_slope &lt; 0.7 OR cal.calibration_slope &gt; 1.3:
+            calibration_results[estimator.name].calibration_warning = true
+
+    // Stage B: cohort-stratified fairness. Repeat the calibration
+    // within each protected cohort (defined by demographic and SDOH
+    // axes from the treatment-catalog fairness specification).
+    // Calibration parity across cohorts is the bar: the model should
+    // be similarly accurate for each cohort.
+    fairness_results = {}
+    FOR each cohort_axis in CATALOG.fairness_axes[treatment_pair_id]:
+        FOR each cohort_value in cohort_axis.values:
+            cohort_subset = filter(cohort.held_out,
+                                    cohort_features[cohort_axis.name] == cohort_value)
+            IF len(cohort_subset) &lt; MIN_FAIRNESS_SAMPLE_SIZE:
+                fairness_results[(cohort_axis.name, cohort_value)] = {
+                    status: &quot;insufficient_sample&quot;
+                }
+                CONTINUE
+            cohort_predicted = predicted_effects.filter(
+                patient_id IN cohort_subset.patient_ids)
+            cohort_calibration = compute_calibration_in_groups(
+                cohort_predicted, cohort_subset)
+            fairness_results[(cohort_axis.name, cohort_value)] = cohort_calibration
+
+    // Stage C: estimator agreement. The CATE estimators should
+    // produce similar estimates on the same held-out patients.
+    // Disagreement at the patient level is a signal of model
+    // misspecification or unmeasured confounding.
+    agreement_results = compute_estimator_agreement(
+        pair.cate_estimator_arns, cohort.held_out)
+        // returns per-patient correlation, percent-of-patients with
+        // estimator-spread above threshold, and a global agreement
+        // score per outcome
+
+    // Stage D: sensitivity analysis. How strong would unmeasured
+    // confounding need to be to overturn the conclusion? E-values
+    // (VanderWeele and Ding) and Rosenbaum bounds are the standard
+    // tools. The result is a structural-uncertainty bound that is
+    // reported alongside the model&#x27;s statistical confidence intervals.
+    sensitivity_results = run_sensitivity_analyses(
+        pair.cate_estimator_arns, cohort, protocol = lookup_protocol(pair))
+
+    // Stage E: persist the evaluation report.
+    eval_report = {
+        treatment_pair_id:    treatment_pair_id,
+        run_date:             run_date,
+        calibration_results:  calibration_results,
+        fairness_results:     fairness_results,
+        agreement_results:    agreement_results,
+        sensitivity_results:  sensitivity_results,
+        evaluation_status:    classify_overall(calibration_results, fairness_results,
+                                                 agreement_results, sensitivity_results)
+            // values: &#x27;green&#x27; (clear pass), &#x27;yellow&#x27; (warnings, governance review
+            // required), &#x27;red&#x27; (clear fail, suspend)
+    }
+    write_json(eval_report,
+               &quot;s3://trx-eval/&quot; + treatment_pair_id + &quot;/run=&quot; + run_date + &quot;/report.json&quot;)
+
+    // Stage F: governance gate. A human review committee evaluates
+    // the report. The system creates a review task; the committee&#x27;s
+    // decision is recorded; only on approval are the new model
+    // artifacts promoted to production.
+    DynamoDB.PutItem(&quot;governance-review-tasks&quot;, {
+        task_id:               new UUID,
+        treatment_pair_id:     treatment_pair_id,
+        run_date:              run_date,
+        evaluation_report_path: &quot;s3://trx-eval/&quot; + treatment_pair_id +
+                                 &quot;/run=&quot; + run_date + &quot;/report.json&quot;,
+        evaluation_status:     eval_report.evaluation_status,
+        reviewer_assignments:  CATALOG.governance_reviewers[treatment_pair_id],
+        status:                &quot;pending_review&quot;,
+        created_at:            run_date,
+        sla_review_by:         run_date + GOVERNANCE.review_sla_days
+    })
+
+    Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+        event_type:           &quot;governance_review_pending&quot;,
+        treatment_pair_id:    treatment_pair_id,
+        evaluation_status:    eval_report.evaluation_status,
+        timestamp:            current UTC timestamp
+    })
+
+    // The governance review&#x27;s decision is processed in a separate
+    // Lambda triggered by a review-decision event; on approval, the
+    // promotion logic moves the new artifacts to the production
+    // alias in the model registry and the production pointers in
+    // the treatment-comparison-pairs table. On rejection, the
+    // training-status is set to evaluation-failed and the team
+    // investigates.
+    //
+    // TODO (TechWriter): Expert review A2 (HIGH). The governance
+    // review task carries an sla_review_by field but the pseudocode
+    // does not specify the SLA-and-escalation pathway: per-tier SLAs
+    // (14 days for tier-1, 28 days for tier-2 and above), 75% and
+    // 100% notification escalation, default-deferral after first
+    // SLA expiry, default-retirement after second SLA expiry (never
+    // auto-promote), per-cohort review-latency monitoring as part
+    // of equity instrumentation. Without this, model artifacts can
+    // sit in pending_review indefinitely while drifted prior models
+    // continue to serve. Reference Recipe 4.7 Finding A3 as the
+    // sibling pattern. Add a sweep_pending_governance_tasks function
+    // and document defaults in the architecture pattern.
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter04.08-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<p><strong>Step 4: Score an index patient on demand at the point of care, retrieve the similar-patient cohort, and compute uncertainty.</strong> When the clinician opens the patient's chart and requests treatment guidance, the system identifies eligible treatment-comparator pairs from the catalog, invokes each pair's CATE ensemble, retrieves the similar-patient cohort underlying the estimate, computes uncertainty across all sources, and flags out-of-distribution cases. Skip the OOD flag and the system silently extrapolates predictions to patients who are not represented in the training data, which is exactly the case where the prediction is least reliable.</p>
+<pre class="code code-plain"><code>FUNCTION score_patient(patient_id, request_context):
+    // request_context includes the requesting clinician, the
+    // index condition, the visit context, and any clinician-supplied
+    // constraints (formulary preference, contraindication overrides).
+    patient_features = SageMaker.FeatureStore.GetRecord(
+        feature_group_name = &quot;patient-features-online&quot;,
+        record_identifier  = patient_id
+    )
+
+    // Step 4A: identify eligible treatment-comparator pairs. The
+    // treatment catalog determines which pairs are in scope for this
+    // patient given the index condition, the patient&#x27;s covariates,
+    // and any contraindications. Pairs whose model is not in the
+    // production state are excluded.
+    eligible_pairs = []
+    FOR each pair in CATALOG.list_pairs_for_condition(request_context.index_condition):
+        IF NOT pair.is_production:
+            CONTINUE
+        IF NOT meets_pair_eligibility(patient_features, pair):
+            CONTINUE
+        IF has_contraindication(patient_features, pair):
+            CONTINUE
+        eligible_pairs.append(pair)
+
+    IF len(eligible_pairs) == 0:
+        // No eligible pairs. Return a structured response that tells
+        // the clinician we have nothing to add for this patient. Do
+        // not silently produce a low-confidence estimate.
+        RETURN {
+            patient_id:        patient_id,
+            scoring_run_id:    new UUID,
+            scoring_status:    &quot;no_eligible_pairs&quot;,
+            scoring_reason:    diagnose_no_eligibility(patient_features,
+                                                       request_context.index_condition),
+            timestamp:         current UTC timestamp
+        }
+
+    // Step 4B: per-pair scoring. For each eligible pair, invoke the
+    // CATE ensemble (one inference per estimator), retrieve the
+    // similar-patient cohort, compute uncertainty, and flag OOD.
+    pair_results = []
+    FOR each pair in eligible_pairs:
+        // Run each estimator. The Real-Time endpoints return the
+        // point estimate and the estimator-specific confidence interval.
+        estimator_outputs = {}
+        FOR each estimator in pair.cate_estimator_arns:
+            estimator_response = SageMaker.InvokeEndpoint(
+                endpoint_name = estimator.endpoint,
+                input         = patient_features.serialize_for(estimator.feature_set)
+            )
+            estimator_outputs[estimator.name] = parse_json(estimator_response)
+                // { point_estimate, ci_low, ci_high, internal_metadata }
+
+        // Step 4C: ensemble uncertainty. Combine the per-estimator
+        // estimates and CIs into ensemble uncertainty: the union of
+        // the estimator CIs is the sampling-plus-model uncertainty.
+        // Disagreement among estimators (the spread of point estimates)
+        // is a structural-uncertainty signal.
+        ensemble_estimate = combine_ensemble_estimates(estimator_outputs)
+            // { point_estimate, ci_low, ci_high,
+            //   estimator_agreement_score, disagreement_flag }
+
+        // Step 4D: similar-patient cohort retrieval. The cohort
+        // underlying this estimate is the patients in the training
+        // cohort with covariates similar to the index patient. The
+        // retrieval uses the patient embedding (or hand-engineered
+        // similarity metric) defined per pair. The retrieved cohort
+        // is summarized (size, demographic match, average observed
+        // outcome by arm) rather than returned in full; full-cohort
+        // retrieval would be PHI-leaking.
+        cohort_summary = retrieve_similar_patient_summary(
+            patient_features, pair, k = SIMILAR_PATIENT_K)
+            // {
+            //   total_size, treated_size, comparator_size,
+            //   demographic_match_score, condition_match_score,
+            //   average_treated_outcome, average_comparator_outcome,
+            //   treated_outcome_distribution_summary,
+            //   comparator_outcome_distribution_summary,
+            //   training_data_recency
+            // }
+
+        // Step 4E: out-of-distribution flag. If the patient is not
+        // well-represented in the training cohort (low density of
+        // similar patients, propensity score in the tails, large
+        // extrapolation distance from the training distribution),
+        // flag the estimate as out-of-distribution. OOD-flagged
+        // estimates are presented with explicit warnings or
+        // suppressed depending on policy.
+        ood_flag = compute_ood_flag(patient_features, pair, cohort_summary)
+            // { is_ood, severity, reasons }
+            //
+            // TODO (TechWriter): Expert review A3 (HIGH). Specify
+            // the OOD severity bands as policy in the pseudocode:
+            // severity &lt; 0.50 present normally with standard
+            // uncertainty caveats; 0.50 &lt;= severity &lt; 0.85 present
+            // with explicit OOD warning text; severity &gt;= 0.85
+            // suppress the pair (mark scoring_status =
+            // &quot;suppressed_oodflag&quot;, exclude from the briefing&#x27;s
+            // numeric comparison, render an &quot;estimate suppressed&quot;
+            // line). Co-specify with the validator&#x27;s
+            // uncertainty-completeness layer in Step 5. Document
+            // suppression as the chapter&#x27;s most defensive
+            // clinical-safety primitive; per-pair overrides allowed
+            // in the catalog when clinically warranted.
+
+        // Step 4F: sensitivity-analysis bounds. The pre-computed
+        // sensitivity results from Step 3 bound how much unmeasured
+        // confounding could change the conclusion. Apply them to
+        // the index patient&#x27;s estimate to widen the reported CI
+        // appropriately.
+        adjusted_estimate = apply_sensitivity_bounds(
+            ensemble_estimate, pair.sensitivity_results)
+
+        pair_results.append({
+            treatment_pair_id:    pair.pair_id,
+            treatment_id:         pair.treatment_id,
+            comparator_id:        pair.comparator_id,
+            outcome_id:           pair.primary_outcome_id,
+            point_estimate:       adjusted_estimate.point_estimate,
+            ci_low:               adjusted_estimate.ci_low,
+            ci_high:              adjusted_estimate.ci_high,
+            estimator_agreement:  ensemble_estimate.estimator_agreement_score,
+            disagreement_flag:    ensemble_estimate.disagreement_flag,
+            cohort_summary:       cohort_summary,
+            ood_flag:             ood_flag,
+            evidence_level:       pair.evidence_level,
+            formulary_status:     pair.formulary_status,
+            guideline_references: pair.guideline_references,
+            calibration_status:   pair.production_calibration_status
+        })
+
+    // Step 4G: persist scoring result.
+    scoring_run_id = new UUID
+    scoring_result = {
+        patient_id:           patient_id,
+        scoring_run_id:       scoring_run_id,
+        request_context:      request_context,
+        index_condition:      request_context.index_condition,
+        eligible_pairs:       [pair.pair_id FOR pair in eligible_pairs],
+        pair_results:         pair_results,
+        scoring_status:       &quot;completed&quot;,
+        scoring_completed_at: current UTC timestamp
+    }
+    DynamoDB.PutItem(&quot;scoring-results&quot;, scoring_result)
+
+    Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+        event_type:        &quot;treatment_scoring_completed&quot;,
+        patient_id:        patient_id,
+        scoring_run_id:    scoring_run_id,
+        eligible_pair_count: len(eligible_pairs),
+        any_ood_flag:      any(p.ood_flag.is_ood FOR p in pair_results),
+        any_disagreement: any(p.disagreement_flag FOR p in pair_results),
+        timestamp:         current UTC timestamp
+    })
+
+    RETURN scoring_result
+</code></pre>
+<p><strong>Step 5: Generate the clinician-facing comparison briefing with strict validator enforcement.</strong> The structured scoring result is rendered into a paragraph the clinician reads at the point of care. The LLM packages the comparison; the validator enforces strict no-recommendation language, explicit uncertainty, and required caveats. Skip the validator and an LLM that has been trained on the broader internet may quietly insert recommendation language (&quot;the evidence supports prescribing X&quot;) that the clinician interprets as the system selecting a treatment.</p>
+<pre class="code code-plain"><code>FUNCTION generate_briefing(scoring_run_id):
+    scoring = DynamoDB.GetItem(&quot;scoring-results&quot;, scoring_run_id)
+
+    // Build the structured briefing context. Every fact in the
+    // briefing must come from the scoring result; the LLM does not
+    // introduce clinical claims not present in the structured data.
+    briefing_context = {
+        patient_summary:      build_clinical_summary(scoring.patient_id),
+            // de-identified for the LLM call: condition, key labs,
+            // current medications, key trajectory features
+        index_condition:      scoring.index_condition,
+        pair_results:         scoring.pair_results,
+        request_context:      scoring.request_context,
+        any_ood_flag:         any(p.ood_flag.is_ood FOR p in scoring.pair_results),
+        any_disagreement:     any(p.disagreement_flag FOR p in scoring.pair_results),
+        scoring_run_id:       scoring_run_id
+    }
+
+    briefing = Bedrock.InvokeModel(
+        model_id = COMPARISON_BRIEFING_MODEL_ID,
+        body     = build_briefing_prompt(briefing_context, BRIEFING_OUTPUT_SCHEMA)
+    )
+    briefing_parsed = parse_json(briefing.completion)
+        // { headline, comparison_paragraph, per_treatment_summary,
+        //   uncertainty_summary, caveats, suggested_clinician_review_points }
+
+    // Validator. Strict enforcement of the no-recommendation rule
+    // and the explicit-uncertainty rule. The validator is the
+    // last line of defense before the briefing reaches the
+    // clinician.
+    validation_result = validate_briefing(briefing_parsed, observed_context = briefing_context)
+        // Layers:
+        // 1. Schema and length: required fields present, no oversize
+        //    text, every required caveat present.
+        // 2. Fact grounding: every clinical fact in the briefing
+        //    must trace to a specific field in the scoring result;
+        //    the LLM cannot introduce treatment effect estimates,
+        //    cohort sizes, or outcome figures not in observed_context.
+        // 3. Recommendation language: strict pattern matching for
+        //    recommendation phrasing (&quot;should prescribe&quot;, &quot;is the
+        //    best choice&quot;, &quot;recommended treatment&quot;); any matches
+        //    cause the briefing to be regenerated with stricter
+        //    guidance, and a third strike falls back to a templated
+        //    comparison view without LLM narration.
+        // 4. Uncertainty completeness: every estimate mentioned must
+        //    be accompanied by its confidence interval and any
+        //    OOD flags or disagreement flags must be surfaced
+        //    explicitly in the briefing.
+        // 5. Required caveats: explicit acknowledgment of
+        //    observational-data limitations, the conditional-average
+        //    nature of the estimates, and the clinician&#x27;s role as
+        //    decision-maker.
+        // 
+
+    IF NOT validation_result.passed:
+        IF validation_result.failure_count &lt; MAX_REGENERATION_ATTEMPTS:
+            // Regenerate with stricter guidance.
+            briefing_context.validator_feedback = validation_result.feedback
+            briefing = Bedrock.InvokeModel(
+                model_id = COMPARISON_BRIEFING_MODEL_ID,
+                body     = build_briefing_prompt(briefing_context,
+                                                  BRIEFING_OUTPUT_SCHEMA,
+                                                  strict_mode = true)
+            )
+            briefing_parsed = parse_json(briefing.completion)
+            validation_result = validate_briefing(briefing_parsed,
+                                                    observed_context = briefing_context)
+
+        IF NOT validation_result.passed:
+            // Fall back to a templated briefing that lists the
+            // structured comparison without LLM narration. The
+            // templated briefing is deterministic and always
+            // passes validation; it is less readable but never
+            // crosses into recommendation territory.
+            briefing_parsed = render_templated_briefing(briefing_context)
+            briefing_parsed.fallback_reason = validation_result.failure_summary
+
+            Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+                event_type:        &quot;briefing_validator_fallback&quot;,
+                scoring_run_id:    scoring_run_id,
+                reason:            validation_result.failure_summary,
+                timestamp:         current UTC timestamp
+            })
+
+    DynamoDB.PutItem(&quot;briefings&quot;, {
+        briefing_id:       new UUID,
+        scoring_run_id:    scoring_run_id,
+        patient_id:        scoring.patient_id,
+        briefing_text:     briefing_parsed,
+        briefing_context:  briefing_context,
+        validator_status:  validation_result.passed,
+        generated_at:      current UTC timestamp,
+        ttl:               compute_ttl(scoring.request_context)
+            // Briefings have a TTL: a briefing generated for a Tuesday
+            // visit should not be presented unchanged at a Friday
+            // visit. The clinician interface re-generates if the
+            // briefing is stale.
+    })
+
+    RETURN briefing_parsed
+</code></pre>
+<p><strong>Step 6: Capture the clinician's decision and the patient's subsequent outcome, and feed the matched pair back into surveillance and retraining.</strong> The decision record links the prediction at the time of decision to the actual treatment chosen and (later) the actual outcome. The matched prediction-outcome pair is the feedback that drives calibration drift detection, cohort-stratified performance monitoring, adverse-event surveillance, and retraining triggers. Skip this and you have a prediction system with no feedback loop, which is the single most common reason production ML systems quietly degrade over time.</p>
+<pre class="code code-plain"><code>FUNCTION record_decision(scoring_run_id, decision_payload):
+    // decision_payload includes:
+    //   - clinician_id (from the authenticated session)
+    //   - chosen_treatment_id (or &#x27;none&#x27; if no treatment selected)
+    //   - clinician_rationale (free-text or structured)
+    //   - patient_consent_recorded (boolean)
+    //   - shared_decision_indicators (whether the patient summary
+    //     was shared with the patient; whether the patient&#x27;s
+    //     stated preference influenced the decision)
+    scoring = DynamoDB.GetItem(&quot;scoring-results&quot;, scoring_run_id)
+    briefing = lookup_latest_briefing(scoring_run_id)
+
+    // TODO (TechWriter): Expert review S1 (HIGH). Add patient-
+    // identity-boundary checks immediately after the scoring
+    // lookup: validate the calling clinician has a treatment
+    // relationship to scoring.patient_id, validate that
+    // decision_payload.chosen_treatment_id is in the scoring run&#x27;s
+    // eligible_pairs (the clinician cannot record a decision for
+    // a treatment the model did not score), and validate
+    // decision_payload.scoring_run_id matches scoring_run_id when
+    // both are present. Emit decision_authorization_violation,
+    // decision_treatment_mismatch, and decision_scoring_run_mismatch
+    // metrics on failures and reject the write. The artifact being
+    // mutated is a clinical-decision audit record; misrouted
+    // decisions contaminate the audit trail and break the Cures Act
+    // CDS exemption argument. Reference 4.4 through 4.7 chapter
+    // pattern; the regulated-decision audit-trail posture earns the
+    // HIGH severity here.
+
+    decision = {
+        decision_id:           new UUID,
+        scoring_run_id:        scoring_run_id,
+        patient_id:            scoring.patient_id,
+        clinician_id:          decision_payload.clinician_id,
+        chosen_treatment_id:   decision_payload.chosen_treatment_id,
+        clinician_rationale:   decision_payload.clinician_rationale,
+        patient_consent:       decision_payload.patient_consent_recorded,
+        shared_decision:       decision_payload.shared_decision_indicators,
+        // Frozen-at-decision-time view of the predictions: this is
+        // what the clinician saw when deciding. Critical for audit
+        // and for after-the-fact analysis of predictions versus
+        // decisions.
+        predictions_at_decision: scoring.pair_results,
+        briefing_id_at_decision: briefing.briefing_id,
+        decision_recorded_at:    current UTC timestamp
+    }
+
+    // Determine whether the decision agrees with the model&#x27;s
+    // best-effect estimate (for monitoring, not for judgment).
+    decision.agrees_with_best_effect_estimate = compute_agreement(
+        decision.chosen_treatment_id, scoring.pair_results)
+
+    DynamoDB.PutItem(&quot;decision-records&quot;, decision)
+
+    Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+        event_type:                  &quot;treatment_decision_recorded&quot;,
+        patient_id:                  scoring.patient_id,
+        scoring_run_id:              scoring_run_id,
+        decision_id:                 decision.decision_id,
+        chosen_treatment_id:         decision.chosen_treatment_id,
+        agrees_with_best_effect:     decision.agrees_with_best_effect_estimate,
+        timestamp:                   current UTC timestamp
+    })
+
+FUNCTION match_outcome(decision_id, run_date):
+    // Outcome matching runs in batch on a cadence aligned with each
+    // pair&#x27;s primary outcome timing (e.g., 90-day matching for the
+    // 90-day A1c outcome). For each decision recorded N days ago,
+    // pull the patient&#x27;s actual outcome at that timing, match it
+    // against the prediction at decision time, and persist the
+    // prediction-outcome pair.
+    decision = DynamoDB.GetItem(&quot;decision-records&quot;, decision_id)
+    pair = lookup_pair_for_treatment(decision.chosen_treatment_id)
+    // TODO (TechWriter): Expert review A11 (MEDIUM). Specify the
+    // mapping. chosen_treatment_id can correspond to multiple pairs
+    // in a single scoring run (GLP-1 was scored against SGLT2,
+    // sulfonylurea, and basal insulin in three separate pairs).
+    // The methodologically-correct choice is to iterate over all
+    // pairs for the chosen treatment and persist multiple
+    // prediction-outcome rows per decision; the calibration analysis
+    // accounts for the per-patient repeated-measures structure.
+    // TODO (TechWriter): Expert review A9 (MEDIUM). Iterate over
+    // all outcomes defined for the pair (primary + secondary +
+    // safety), not just pair.primary_outcome. Without this,
+    // surveillance only catches drift on a single outcome and
+    // misses cardiovascular, weight, and adverse-event signals
+    // that the model trains on but the surveillance pipeline
+    // ignores.
+
+    actual_outcome = compute_actual_outcome(
+        patient_id = decision.patient_id,
+        outcome_def = pair.primary_outcome,
+        index_date = decision.decision_recorded_at,
+        as_of_date = run_date)
+        // returns { value, observed, censored, censor_reason }
+
+    IF NOT actual_outcome.observed:
+        // Censored (lost to follow-up, switched treatments, plan
+        // disenrolled). Record the censoring and skip prediction
+        // matching; censored cases inform a separate analysis.
+        DynamoDB.PutItem(&quot;prediction-outcome-pairs&quot;, {
+            pair_id:           new UUID,
+            decision_id:       decision_id,
+            patient_id:        decision.patient_id,
+            scoring_run_id:    decision.scoring_run_id,
+            outcome_status:    &quot;censored&quot;,
+            censor_reason:     actual_outcome.censor_reason,
+            recorded_at:       run_date
+        })
+        RETURN
+
+    // Find the prediction at decision time that corresponds to the
+    // chosen treatment.
+    chosen_prediction = find_prediction_for_treatment(
+        decision.predictions_at_decision, decision.chosen_treatment_id)
+
+    // TODO (TechWriter): Expert review A1 (HIGH). The fields below
+    // conflate two distinct quantities. chosen_prediction.point_estimate
+    // is the per-pair CATE estimate
+    // E[Y(treatment) - Y(comparator) | X], a treatment-effect
+    // *difference*. actual_outcome.value is the patient&#x27;s
+    // single-arm observed outcome Y(treatment_chosen). These are
+    // not directly comparable; Marcus did not receive the comparator
+    // and his counterfactual is unobserved. Persisting them under
+    // names that suggest comparability (predicted_outcome vs
+    // actual_outcome) feeds run_calibration_drift_detection a
+    // miscalibrated slope. Two fixes acceptable: (Option A) rename
+    // the field to predicted_treatment_effect, persist the
+    // single-arm observed_outcome separately, and document the
+    // CATE-vs-outcome distinction; replace the naive ratio-of-means
+    // slope with IPTW-weighted aggregate-CATE re-estimation in
+    // run_calibration_drift_detection. (Option B) implement the
+    // IPTW-weighted aggregation as a first-class component. Either
+    // way, surveillance must preserve the methodological discipline
+    // the Technology section establishes. Coordinates with the
+    // Python companion&#x27;s Finding 3 fix.
+    // TODO (TechWriter): Expert review S1 (HIGH). Add the same
+    // identity-boundary checks here as in record_decision: validate
+    // the decision_id has not already been matched (no duplicate
+    // prediction-outcome pair), validate the run_date is consistent
+    // with the protocol&#x27;s primary-outcome timing window, and
+    // validate the decision-record version has not been superseded
+    // by a replay or reprocessing event.
+    DynamoDB.PutItem(&quot;prediction-outcome-pairs&quot;, {
+        pair_id:               new UUID,
+        decision_id:           decision_id,
+        patient_id:            decision.patient_id,
+        scoring_run_id:        decision.scoring_run_id,
+        chosen_treatment_id:   decision.chosen_treatment_id,
+        chosen_pair_id:        pair.pair_id,
+        predicted_outcome:     chosen_prediction.point_estimate,
+        predicted_ci:          [chosen_prediction.ci_low, chosen_prediction.ci_high],
+        actual_outcome:        actual_outcome.value,
+        outcome_status:        &quot;observed&quot;,
+        ood_flag_at_decision:  chosen_prediction.ood_flag,
+        cohort_features:       lookup_cohort_features(decision.patient_id),
+        recorded_at:           run_date
+    })
+
+    Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+        event_type:        &quot;treatment_outcome_observed&quot;,
+        patient_id:        decision.patient_id,
+        decision_id:       decision_id,
+        chosen_pair_id:    pair.pair_id,
+        predicted:         chosen_prediction.point_estimate,
+        actual:            actual_outcome.value,
+        timestamp:         current UTC timestamp
+    })
+
+FUNCTION run_calibration_drift_detection(run_date):
+    // Aggregate the prediction-outcome pairs accumulated since the
+    // last surveillance run. For each treatment-comparator pair,
+    // compute the calibration on observed outcomes. Compare to the
+    // calibration computed at model promotion. Significant drift
+    // triggers an alert that a human reviews.
+    FOR each pair in CATALOG.list_production_pairs():
+        recent_pairs = DynamoDB.Query(
+            &quot;prediction-outcome-pairs&quot;,
+            filter = &quot;chosen_pair_id = :p AND outcome_status = :o AND recorded_at &gt;= :since&quot;,
+            params = { :p = pair.pair_id,
+                       :o = &quot;observed&quot;,
+                       :since = run_date - SURVEILLANCE_WINDOW_DAYS }
+        )
+        IF len(recent_pairs) &lt; MIN_DRIFT_DETECTION_SAMPLE:
+            CONTINUE
+
+        current_calibration = compute_calibration_in_groups(recent_pairs)
+        baseline_calibration = pair.production_calibration_status
+
+        drift_signal = compare_calibrations(current_calibration, baseline_calibration)
+            // { calibration_slope_delta, calibration_intercept_delta,
+            //   per_cohort_drift, drift_severity }
+
+        IF drift_signal.drift_severity &gt;= DRIFT_ALERT_THRESHOLD:
+            DynamoDB.PutItem(&quot;surveillance-alerts&quot;, {
+                alert_id:           new UUID,
+                alert_type:         &quot;calibration_drift&quot;,
+                treatment_pair_id:  pair.pair_id,
+                drift_signal:       drift_signal,
+                triggered_at:       run_date,
+                review_status:      &quot;pending&quot;
+            })
+
+            Kinesis.PutRecord(stream = &quot;trx-events&quot;, record = {
+                event_type:        &quot;prediction_calibration_alert&quot;,
+                treatment_pair_id: pair.pair_id,
+                drift_severity:    drift_signal.drift_severity,
+                timestamp:         current UTC timestamp
+            })
+
+        // Cohort-stratified fairness drift. The per-cohort
+        // calibration drift is the equity-relevant signal; even if
+        // overall calibration is stable, cohort-specific drift may
+        // be widening disparities.
+        //
+        // TODO (TechWriter): Expert review A4 (HIGH). Specify
+        // COHORT_DRIFT_ALERT_THRESHOLD and DRIFT_ALERT_THRESHOLD
+        // (and MIN_DRIFT_DETECTION_SAMPLE) as policy in the
+        // pseudocode rather than referencing them undefined.
+        // Default thresholds: DRIFT_ALERT_THRESHOLD = 0.15,
+        // COHORT_DRIFT_ALERT_THRESHOLD = 0.10 (tighter than overall
+        // because disparate impact can hide in overall stability),
+        // MIN_DRIFT_DETECTION_SAMPLE = 100 per cohort and 500
+        // overall. Document per-axis-per-pair overrides set by the
+        // cross-functional review committee, and frame chronic
+        // suppression-via-insufficient-sample as itself a fairness
+        // signal (a cohort whose enrollment is structurally low
+        // across pairs is one the system is systematically
+        // under-serving). Reference the Obermeyer 2019 framing
+        // already in the recipe.
+        FOR cohort_axis, cohort_drift in drift_signal.per_cohort_drift:
+            IF cohort_drift.severity &gt;= COHORT_DRIFT_ALERT_THRESHOLD:
+                DynamoDB.PutItem(&quot;surveillance-alerts&quot;, {
+                    alert_id:            new UUID,
+                    alert_type:          &quot;cohort_calibration_drift&quot;,
+                    treatment_pair_id:   pair.pair_id,
+                    cohort_axis:         cohort_axis,
+                    drift_signal:        cohort_drift,
+                    triggered_at:        run_date,
+                    review_status:       &quot;pending&quot;
+                })
+</code></pre>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample scoring result:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-007842&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scoring_run_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;score-2026-04-22-pat-007842-7c3a&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;request_context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;clinician_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clinician-0142&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;index_condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;type_2_diabetes_inadequately_controlled_on_metformin&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;visit_context&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;established_patient_followup&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;formulary_preference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tier_1_or_tier_2_only&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;eligible_pairs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;t2d-glp1-vs-sglt2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;t2d-glp1-vs-sulfonylurea&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;t2d-sglt2-vs-sulfonylurea&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;t2d-glp1-vs-basal-insulin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;t2d-sglt2-vs-basal-insulin&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;pair_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;treatment_pair_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;t2d-glp1-vs-sglt2&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;treatment_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;glp1_receptor_agonist_class&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;comparator_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sglt2_inhibitor_class&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;outcome_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_change_at_90_days&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;point_estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.62</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.94</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.31</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;estimator_agreement&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.83</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;disagreement_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cohort_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;total_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1284</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;treated_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">612</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;comparator_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">672</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;demographic_match_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.79</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;condition_match_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.84</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;average_treated_outcome_a1c_change&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.41</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;average_comparator_outcome_a1c_change&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.79</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;training_data_recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2023-01-01_to_2025-12-31&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;ood_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;is_ood&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;reasons&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RCT_supported_with_observational_extension&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;formulary_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tier_2_with_prior_auth&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;guideline_references&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ada_standards_of_care_2026_section_9.4&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;kdigo_2024_diabetes_guidelines&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;calibration_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;production_calibrated_2026Q1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;interpretation_note&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GLP-1 estimated to produce 0.62 percentage points greater A1c reduction than SGLT2 at 90 days, in patients with this profile. CI: 0.31 to 0.94 pp. Estimator agreement strong; not OOD.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;treatment_pair_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;t2d-glp1-vs-sulfonylurea&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;treatment_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;glp1_receptor_agonist_class&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;comparator_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sulfonylurea_class&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;outcome_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_change_at_90_days&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;point_estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.34</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.71</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.03</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;estimator_agreement&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.71</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;disagreement_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cohort_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;total_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">891</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;treated_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;comparator_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">479</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;demographic_match_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;condition_match_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.82</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;average_treated_outcome_a1c_change&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.41</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;average_comparator_outcome_a1c_change&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.07</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;training_data_recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2023-01-01_to_2025-12-31&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;ood_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;is_ood&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.22</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;reasons&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RCT_supported_with_observational_extension&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;formulary_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tier_2_with_prior_auth&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;guideline_references&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ada_standards_of_care_2026_section_9.4&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;calibration_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;production_calibrated_2026Q1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;interpretation_note&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A1c-reduction estimate for GLP-1 versus sulfonylurea is 0.34 pp greater for GLP-1, but the CI crosses zero (0.71 pp better to 0.03 pp worse). The drug-class comparison on A1c alone may not be discriminating; secondary outcomes (weight, hypoglycemia) likely matter more for this patient.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;scoring_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;completed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scoring_completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T14:32:18Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample clinician-facing comparison briefing:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;briefing_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;brief-2026-04-22-pat-007842-2f1a&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scoring_run_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;score-2026-04-22-pat-007842-7c3a&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-007842&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;headline&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Comparison of GLP-1 versus SGLT2 versus sulfonylurea for second-line therapy. Estimates are model-derived from observational data and intended to inform, not replace, clinical judgment.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;comparison_paragraph&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;For a patient with this profile (eGFR 64 declining, BMI 34, calcium score 240, albuminuria), the model estimates greater 90-day A1c reduction on GLP-1 than on SGLT2 by 0.62 percentage points (95 percent CI 0.31 to 0.94). The model estimates similar 90-day A1c reduction on GLP-1 versus sulfonylurea, with a wide confidence interval that crosses zero (point estimate 0.34 pp better on GLP-1; 95 percent CI 0.71 pp better to 0.03 pp worse). Cardiovascular and renal outcomes are not in the primary 90-day estimate; secondary outcomes from the cohort suggest weight reduction is substantially greater on GLP-1 and SGLT2 than on sulfonylurea. The cohort underlying the GLP-1 versus SGLT2 estimate has 1,284 patients with strong condition match; estimator agreement is strong; the patient is in-distribution.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;per_treatment_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;glp1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Estimated 90-day A1c reduction 1.41 pp, weight reduction 8 to 11 percent in 90 days. GI intolerance leading to discontinuation occurred in 14 percent of cohort patients in the first 90 days. Tier 2 formulary status with prior authorization required.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sglt2&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Estimated 90-day A1c reduction 0.79 pp, weight reduction 2 to 4 percent in 90 days. Genitourinary infections occurred in 6 percent of cohort patients. Tier 1 formulary status. Cardiovascular and renal benefits established by RCT in patients with this risk profile.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sulfonylurea&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Estimated 90-day A1c reduction 1.07 pp. Hypoglycemia events occurred in 9 percent of cohort patients in the first 90 days; weight gain averaged 1.8 kg over 90 days. Tier 1 formulary status.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;uncertainty_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Estimates are derived from observational data with target trial emulation. Confidence intervals reflect statistical uncertainty and inter-estimator agreement. Sensitivity analyses indicate the GLP-1 versus SGLT2 conclusion is robust to moderate unmeasured confounding (E-value 1.84). The GLP-1 versus sulfonylurea A1c estimate is sensitive to stronger unmeasured confounding (E-value 1.21).&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;caveats&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Estimates are conditional-average effects within the matched cohort, not individual guarantees.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Cardiovascular and renal benefits are evidenced by RCTs and are not fully captured in the 90-day A1c outcome.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Patient preferences and barriers (cost, injectable acceptance, supply availability) are not in the model and should drive shared decision-making.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Formulary status and prior-authorization requirements may affect actual access and adherence.&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;suggested_clinician_review_points&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Weight management goal: weight is a strong secondary consideration in this patient&#39;s profile.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Cardiovascular and renal indication: GLP-1 and SGLT2 both have indication-supported benefit; the choice between them is not driven by 90-day A1c alone.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Patient willingness to use injectable: not in the model; ask the patient.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Cost and coverage: formulary status indicated above; current copay should be confirmed.&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;validator_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;passed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;generated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T14:32:34Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample prediction-outcome pair (90 days post-decision):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;pair_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;po-2026-07-21-pat-007842-glp1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;decision_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dec-2026-04-22-pat-007842-glp1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-007842&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scoring_run_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;score-2026-04-22-pat-007842-7c3a&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;chosen_treatment_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;glp1_receptor_agonist_class&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;chosen_pair_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;t2d-glp1-vs-sglt2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;predicted_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.41</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;predicted_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">-1.78</span><span class="p">,</span><span class="w"> </span><span class="mf">-1.04</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;actual_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.62</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;observed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ood_flag_at_decision&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;is_ood&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;cohort_features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sdoh_cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate_food_security&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_band&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;55-64&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;race_ethnicity_self_report&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;non_hispanic_white&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;recorded_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-07-21&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Naive observational baseline</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Calibration slope (predicted vs observed treatment effect, primary outcome)</td>
+<td>0.55-0.75</td>
+<td>0.85-1.05</td>
+</tr>
+<tr>
+<td>Per-cohort calibration parity (worst-cohort slope vs best-cohort slope)</td>
+<td>0.5-0.7</td>
+<td>0.85-1.0</td>
+</tr>
+<tr>
+<td>Estimator-agreement rate (percent of patients with inter-estimator spread within band)</td>
+<td>n/a</td>
+<td>70-85%</td>
+</tr>
+<tr>
+<td>OOD-flag rate (percent of scoring requests flagged out-of-distribution)</td>
+<td>n/a</td>
+<td>8-18%</td>
+</tr>
+<tr>
+<td>Sensitivity-analysis E-value at the median CATE estimate</td>
+<td>not computed</td>
+<td>1.4-2.5</td>
+</tr>
+<tr>
+<td>End-to-end on-demand scoring latency (95th percentile)</td>
+<td>n/a</td>
+<td>1.5-3.5 seconds</td>
+</tr>
+<tr>
+<td>Briefing validator pass rate (first-attempt)</td>
+<td>n/a</td>
+<td>88-96%</td>
+</tr>
+<tr>
+<td>Briefing fallback-to-templated rate</td>
+<td>n/a</td>
+<td>1-4%</td>
+</tr>
+<tr>
+<td>Calibration drift detection latency (months from drift onset to alert)</td>
+<td>n/a</td>
+<td>1-3 months</td>
+</tr>
+<tr>
+<td>Cohort-stratified fairness alert rate (per quarter, per pair)</td>
+<td>n/a</td>
+<td>0-2 per pair per quarter</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Patients outside the support of the training data.</strong> The OOD flag catches the obvious cases (very high or very low propensity score, large extrapolation distance). The harder cases are patients who are technically in-distribution on each individual feature but in an unusual combination of features. The flag has false negatives, and the briefing's required uncertainty caveats are partial protection at best. Patients with rare combinations of comorbidities, atypical lab profiles, or recent significant changes in clinical state should be approached with extra clinical skepticism even when the OOD flag is negative.</li>
+<li><strong>Treatments with rapid evolution in clinical use.</strong> GLP-1 receptor agonists are the canonical example: prescribing patterns have shifted dramatically over the last several years (cardiovascular indication, then weight management, then post-supply-constraint reallocation). The training cohort from any given period is not representative of the present prescribing distribution, and CATE estimates are anchored to outdated patterns. Frequent retraining helps; explicit period-specific cohort slicing helps; the underlying problem (treatment-environment shift faster than data accumulates) does not fully go away.</li>
+<li><strong>Outcomes that take a long time to materialize.</strong> Cardiovascular and renal benefits read out in years, not months. The 90-day A1c outcome is fast feedback but does not capture the outcomes that drive the major clinical guideline recommendations. Multi-horizon models help; surrogate-outcome-to-true-outcome calibration helps. Be honest in the briefing about which outcomes are predicted and which are not.</li>
+<li><strong>Treatments with strong heterogeneity that the covariates do not capture.</strong> Antidepressant response is the classic example: the response rate to any given SSRI in major depressive disorder is around 30 to 40 percent, and the patient features available in EHR data do not predict response well. The CATE estimates have wide confidence intervals because the underlying treatment-effect heterogeneity is poorly explained by observable features. Be honest: the model in this case may not discriminate meaningfully between options. The briefing should communicate that.</li>
+<li><strong>Regulatory and formulary friction at the point of care.</strong> A model that recommends a treatment the patient cannot access (prior authorization denied, supply constrained, copay prohibitive) is not useful. The catalog's formulary status and supply constraints reduce the gap, but real-world access is more dynamic than catalog updates capture. The decision-support layer should integrate access checks that fail loudly rather than the model recommending a treatment the patient will leave the pharmacy without.</li>
+<li><strong>Off-label use cases.</strong> Many real-world treatment decisions are partially off-label or in patient populations underrepresented in trials (older adults, pregnant patients, patients with multimorbidity). The training cohorts may include some off-label use, but the methodological assumptions of CATE estimation are weaker in the off-label setting. The model should suppress or heavily caveat predictions for off-label use; the catalog can flag treatment-condition pairs as on-label or off-label.</li>
+<li><strong>Temporal confounding from concurrent care changes.</strong> A patient who started a GLP-1 also started seeing a dietitian and joined a walking group; the observed outcome reflects the bundle, not the drug alone. CATE estimators control for measured covariates, but not for concurrent unmeasured interventions. Sensitivity analyses bound the impact; perfect identification of drug-only effect from observational data is a fiction.</li>
+<li><strong>Cohort fairness in the response model.</strong> If historical prescribing concentrated GLP-1 in certain demographic groups (because of access, insurance, clinician preferences, or patient preferences), the cohort underlying the model is demographically skewed, and the CATE estimates may not generalize cleanly to demographic groups underrepresented in the cohort. Cohort-stratified calibration and explicit fairness instrumentation are how you avoid the Obermeyer-style failure mode at scale.</li>
+<li><strong>Clinician override patterns concentrated in specific cohorts.</strong> If clinicians override the model's predictions at substantially different rates for patients in different demographic groups, the override pattern itself is a fairness signal. The override-rate dashboard surfaces this; the policy response is harder.</li>
+<li><strong>Adverse-event surveillance at low base rates.</strong> Severe adverse events from any individual drug are rare; detecting unexpected adverse-event rate increases requires either a large patient population or a long surveillance window or both. Single-institution surveillance is underpowered for many adverse-event signals; consortium and network-based surveillance (Sentinel, OHDSI) is the methodologically appropriate response.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Treatment-catalog curation as an ongoing program.</strong> Like the program registry in 4.7, the treatment catalog is a living artifact. New drugs, new indications, formulary changes, evolving guideline recommendations, supply constraints, post-marketing safety signals; all of these land as catalog updates. Plan for at least 0.5 to 1.0 FTE of pharmacy and therapeutics, clinical informatics, and health economics time on catalog maintenance ongoing, plus a structured change-management process with parallel evaluation against the prior catalog version when significant changes ship.</p>
+<p><strong>Causal-inference rigor at production scale.</strong> The methodology described in The Technology section is not a checklist; it is a discipline that requires a dedicated methodologist or a methodologist-trained data scientist in the loop. Plan for the staffing: at minimum a senior data scientist with formal causal-inference training, a clinical informaticist who understands the outcome definitions and target trials, and a biostatistician who can evaluate the sensitivity analyses. The choice of cohort, the outcome definitions, the sensitivity analyses, the calibration tests, and the fairness tests are not template work. They are design work that has to be done well at every catalog entry. The pattern that fails is the data science team shipping CATE estimators on hand-engineered cohorts without methodological review; the resulting estimates look authoritative and are systematically biased.</p>
+<p><strong>Regulatory pathway determination and documentation.</strong> The model risk tier per treatment-comparator pair determines whether the pair is in scope for FDA SaMD regulation, the 21st Century Cures Act CDS exemption, or another regulatory framework. The decision is fact-specific: the form of the recommendation (suggestive paragraph versus ranked list versus single recommendation), the underlying evidence (RCT-backed versus observational), and the clinician's ability to review the basis (which the briefing's structured evidence is intended to support) all matter. Plan for regulatory legal review at scoping, a predetermined change control plan if SaMD applies, postmarket surveillance documentation, and a complaint-handling process. Retrofitting regulatory compliance is dramatically more expensive than building it in.</p>
+<p><strong>EHR integration and clinician workflow design.</strong> The recipe assumes a SMART on FHIR app or CDS Hooks endpoint as the integration point. The clinician workflow design (when does the briefing surface, how does the clinician dismiss it, how does the chosen-treatment field get back to the system, how does the rationale get captured) is a substantial UX project. Many clinical decision support systems fail at this layer rather than at the modeling layer; the recommendation is technically correct, presented at the wrong moment, in a way that interrupts the clinician's flow, and gets dismissed without consideration. Plan for a dedicated clinical-informatics-led UX effort, with iterative deployment to a small clinician cohort, clinician feedback loops, and willingness to redesign the surface before broad rollout.</p>
+<p><strong>Patient consent and shared decision-making.</strong> Treatment decisions in healthcare are shared decisions between clinician and patient. The briefing supports the clinician; a patient-facing version supports the patient. Whether and how the patient-facing version is shared, whether the patient's preferences are captured back into the decision record, and whether the patient consents to having their data used for ongoing model improvement are all design decisions that have legal, ethical, and operational implications. Integrate with the institution's existing shared decision-making programs; do not invent a parallel patient-engagement layer.</p>
+<p><strong>Cross-recipe orchestration with Recipes 4.5, 4.6, 4.7, 4.9, and 4.10.</strong> A patient who gets a treatment-response prediction at the visit may also be a candidate for medication-adherence intervention (4.5), care-gap closure (4.6), care-management enrollment (4.7), personalized care plan generation (4.9), or dynamic treatment regime recommendation (4.10). The integration points need to be explicit: the chosen treatment from 4.8 feeds the care plan in 4.9; the predicted adherence from 4.5 feeds the 4.8 prediction's caveat about adherence assumptions; the care-management enrollment in 4.7 may include monitoring for the chosen treatment's outcomes. Document the cross-recipe data flow; design for the integration rather than bolting it on.</p>
+<p><strong>Model retirement and sunset.</strong> Some models will, over time, lose calibration faster than retraining can recover, become structurally biased in ways that fairness instrumentation cannot fully correct, or be superseded by a regulatory-cleared alternative. The catalog needs a sunset path: a treatment-comparator pair can be retired from production with explicit rationale, and the retirement triggers downstream cleanup (suppress the briefings, archive the decision records with the retired-model annotation, communicate to the clinical-informatics team). The pattern that fails is models that quietly degrade in production because nobody is responsible for retiring them; the result is clinicians who learn to ignore the briefing, which is the worst of both worlds (the system is taking up screen real estate without changing decisions).</p>
+<p><strong>Adverse-event surveillance at network scale.</strong> Single-institution surveillance is underpowered for low-base-rate adverse events. The methodologically appropriate response is consortium-based surveillance (Sentinel, OHDSI) where treatment-response surveillance signals are pooled across multiple institutions with privacy-preserving methods. Building the consortium integration is a large external partnership that takes time; the recipe assumes single-institution operation, but the production version benefits substantially from consortium membership.</p>
+<p><strong>Privacy in scoring results and decision records.</strong> The <code>scoring-results</code> table joins (patient_id, predicted treatment outcomes, similar-patient cohort summaries) and is highly inferential. The <code>decision-records</code> table joins (patient_id, chosen treatment, predictions at decision time, clinician rationale) and is closer to clinical-record audit content than typical analytics audit. Apply tighter controls than for engagement data: narrower IAM read scopes, optional separate-table partitioning by sensitivity tier, additional CloudTrail data event capture, and a documented minimum-necessary access policy. Briefings stored in DynamoDB are PHI and treatment-recommendation-relevant; treat them with the same encryption, IAM, and audit posture as clinical notes.</p>
+<p><strong>Idempotency and retry semantics.</strong> Same pattern as 4.4 through 4.7. Each stage's outputs are addressed by deterministic keys (cohort run, scoring run id, decision id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.</p>
+<p><strong>Cost-aware model serving.</strong> Real-time CATE inference per pair times ten to thirty pairs at thousands of scoring requests per day adds up. SageMaker multi-model endpoints amortize across pairs; SageMaker Asynchronous Inference handles bursty workloads; SageMaker Serverless Inference is appropriate for low-volume pairs. The architecture above assumes a single endpoint per pair for clarity; production deployments should rationalize the serving topology against actual usage patterns and cost.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Multi-outcome treatment scoring.</strong> The pseudocode focuses on a primary outcome per pair. A more sophisticated version produces per-(patient, treatment) estimates across a vector of outcomes (A1c, weight, hypoglycemia, cardiovascular events, total cost) with a cross-outcome trade-off framework. The clinician-facing view becomes a multi-dimensional comparison rather than a single-number ranking. Implementing this responsibly requires explicit weight elicitation (often patient-specific) and a UX that does not collapse the trade-offs to a single recommendation.</p>
+<p><strong>Subgroup-conditional CATE.</strong> Standard CATE estimators estimate effects conditional on the full covariate vector. In some clinical applications, the meaningful question is the effect within a clinically defined subgroup (patients with eGFR less than 45, patients with prior MI, patients above age 75). Subgroup-conditional CATE is a special case but worth implementing as a first-class feature: the catalog includes subgroup definitions, and the briefing presents subgroup-specific estimates when the patient falls in a defined subgroup. Be mindful of multiple-testing inflation when many subgroups are evaluated.</p>
+<p><strong>Federated learning across institutions.</strong> Single-institution training cohorts are often underpowered for low-prevalence treatment-condition pairs. Federated learning across multiple institutions (with privacy-preserving methods like homomorphic encryption or differential privacy) produces pooled models without sharing patient-level data. OHDSI's OMOP-CDM and PCORnet's data networks provide harmonized data substrates that make federated CATE estimation tractable. Plan for federation as a multi-institution partnership, not a single-vendor project.</p>
+<p><strong>Adaptive trial integration.</strong> Some treatment decisions can be informed by ongoing adaptive clinical trials (platform trials, basket trials, master protocols). When a patient is eligible for an active trial and the trial design supports adaptive randomization with response-prediction inputs, the recipe's CATE output can be one input to the trial's adaptive randomization algorithm. This integration sits squarely in research-clinical boundary territory and requires IRB-approved protocols.</p>
+<p><strong>Patient-reported outcome integration.</strong> Standard CATE estimation uses clinically observed outcomes (lab values, encounter codes). Patient-reported outcomes (PROMs, symptom scales, quality-of-life measures) are increasingly captured in EHRs and patient portals. Adding PROMs as additional outcomes per pair captures the patient experience that clinical metrics miss. Be mindful of PROM completion bias; the patients who complete PROMs are not a random sample of the cohort.</p>
+<p><strong>Pharmacogenomic integration.</strong> Some treatments have well-evidenced pharmacogenomic predictors of response (CYP2C19 for clopidogrel, HLA for carbamazepine, CYP2D6 for some antidepressants). When pharmacogenomic data is available for the index patient, it becomes a high-leverage covariate. The catalog can flag treatment-pair pairs with pharmacogenomic relevance and the prediction pipeline can prioritize PGx-derived features. PGx data has its own privacy and consent considerations beyond standard EHR data.</p>
+<p><strong>Cost-effectiveness extensions.</strong> A model that predicts only clinical effects misses the cost-effectiveness dimension that drives many real-world treatment decisions. An extended pipeline computes per-patient cost-of-treatment (drug cost, monitoring cost, downstream cost based on predicted outcomes) alongside clinical effect, and the briefing surfaces a cost-versus-benefit comparison. Cost-effectiveness analysis is methodologically distinct (incremental cost-effectiveness ratios, willingness-to-pay thresholds) and benefits from health economics expertise on the team.</p>
+<p><strong>Sequencing and trial-and-error optimization.</strong> Some treatment decisions are inherently sequential: try drug A; if response is inadequate, try drug B; if not, try drug C. The single-shot CATE framework does not capture the sequencing optimization. Recipe 4.10 (Dynamic Treatment Regime Recommendation) extends the framework to sequential decisions with reinforcement-learning-style estimation. Recipe 4.8 is the building block for 4.10; teams targeting sequential optimization should design the catalog and the data infrastructure with the 4.10 extension in mind from the start.</p>
+<p><strong>Real-world evidence pipeline integration.</strong> The catalog and the evaluation infrastructure described here are the substrate for real-world evidence generation. Per-treatment-comparator cohort effects, with the methodological rigor of target trial emulation, are the kind of evidence that supports regulatory submissions, label expansions, and post-marketing safety analyses. A research collaboration with a regulatory or RWE partner extends the value of the system substantially beyond decision support.</p>
+<p><strong>Negative-control and falsification analyses.</strong> A robust CATE pipeline includes negative-control outcomes (outcomes that should not be affected by the treatment; if the estimator finds an effect on a negative-control outcome, the estimator is misspecified or there is unmeasured confounding) and falsification tests (effects on treatment-naive periods, effects on outcomes that occurred before treatment). These are research-grade discipline but increasingly expected in production-grade real-world evidence pipelines.</p>
+<p><strong>Time-varying treatment effects.</strong> The single-snapshot CATE assumes a treatment effect at a single point in time. For chronic conditions, the treatment effect varies with disease stage, comorbidity progression, and treatment duration. Time-varying CATE estimation (g-methods, marginal structural models) handles this more rigorously than the static framework. Crosses methodologically into Recipe 4.10 territory.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html">Amazon SageMaker Pipelines</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html">Amazon SageMaker Model Registry</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html">Amazon SageMaker Real-Time Inference</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html">Amazon SageMaker Multi-Model Endpoints</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html">Amazon SageMaker Batch Transform</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html">Amazon Cognito Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Reference notebooks for SageMaker Pipelines, Model Registry, Real-Time Inference, and Batch Transform applicable to per-pair model lifecycles</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage applicable to the per-patient and per-treatment-history feature pipelines</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Hands-on labs covering structured-output prompting that informs clinician-facing comparison briefings and patient-facing summaries</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter AI/ML and Healthcare): browse for healthcare ML and decision-support reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;causal inference,&quot; &quot;uplift modeling,&quot; and &quot;SageMaker Pipelines&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/industries/">AWS for Industries Blog</a> (Healthcare and Life Sciences): search &quot;clinical decision support,&quot; &quot;real-world evidence,&quot; and &quot;value-based care&quot; for end-to-end customer architectures</li>
+</ul>
+<p><strong>External References (Methodology and Causal Inference):</strong></p>
+<ul>
+<li><a href="https://github.com/py-why/EconML"><code>EconML</code></a>: Microsoft Research's library for heterogeneous treatment effect estimation; the methodological foundation for the CATE ensemble in this recipe</li>
+<li><a href="https://github.com/py-why/dowhy"><code>DoWhy</code></a>: Causal-inference framework for structuring assumptions and running sensitivity analyses</li>
+<li><a href="https://github.com/uber/causalml"><code>causalml</code></a>: Uber's causal inference library, complementary to EconML, with strong meta-learner implementations</li>
+<li><a href="https://github.com/grf-labs/grf"><code>grf</code></a>: The R generalized random forests package implementing causal forests; the canonical implementation of the Athey-Wager method</li>
+<li><a href="https://github.com/jaredsmurray/bcf"><code>bcf</code></a>: Bayesian Causal Forests, the BART-based CATE estimator</li>
+<li><a href="https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/">Hernán and Robins, <em>Causal Inference: What If</em></a>: the standard textbook for causal inference in epidemiology and observational research; the target trial emulation framework is the methodological backbone of this recipe</li>
+<li><a href="https://www.acpjournals.org/doi/10.7326/M16-2607">VanderWeele and Ding, <em>Sensitivity Analysis in Observational Research: Introducing the E-value</em></a>: the E-value sensitivity-analysis approach used in Step 3</li>
+<li><a href="https://arxiv.org/abs/2104.04763">Yadlowsky et al., <em>Calibration of CATE estimators</em></a>: contemporary work on calibration of treatment-effect predictions</li>
+<li><a href="https://www.science.org/doi/10.1126/science.aax2342">Obermeyer et al. 2019, <em>Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations</em></a>: the canonical cautionary tale for fairness failures in healthcare AI; required reading</li>
+</ul>
+<p><strong>External References (Regulatory and Clinical):</strong></p>
+<ul>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd">FDA Software as a Medical Device (SaMD) framework</a></li>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software">FDA Clinical Decision Support Software guidance</a></li>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles">Good Machine Learning Practice for Medical Device Development (FDA, Health Canada, MHRA)</a></li>
+<li><a href="https://www.ohdsi.org/">OHDSI (Observational Health Data Sciences and Informatics)</a>: community methods, the OMOP common data model, and consortium-scale real-world evidence generation</li>
+<li><a href="https://pcornet.org/">PCORnet</a>: the National Patient-Centered Clinical Research Network for distributed observational research and treatment-effect estimation</li>
+<li><a href="https://www.sentinelinitiative.org/">Sentinel Initiative</a>: FDA's national electronic system for monitoring the safety of medical products in the post-marketing setting</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Two to three well-evidenced treatment-comparator pairs in a single condition (e.g., T2D second-line therapy) + target-trial-emulated cohorts + propensity model + DR-learner CATE + calibration tests + manual governance review + offline scoring (no point-of-care integration) + single-cohort fairness check</td>
+<td>16-24 weeks</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full pipeline: ten to thirty treatment-comparator pairs across multiple conditions + target trial emulation infrastructure + per-pair propensity, outcome, and CATE-ensemble models + automated calibration and fairness tests + governance gate + on-demand scoring API with EHR integration via SMART on FHIR or CDS Hooks + LLM-generated briefings with strict validator + decision capture + prediction-outcome matching + calibration drift detection + cohort-stratified surveillance + adverse-event surveillance + regulatory documentation + cross-recipe orchestration</td>
+<td>18-30 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add multi-outcome scoring, federated learning across institutions, pharmacogenomic integration, cost-effectiveness extensions, real-world evidence pipeline integration, time-varying treatment effects, sequencing optimization (4.10 lead-in), patient-reported outcome integration, adaptive trial integration</td>
+<td>12-24 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter04.08-treatment-response-prediction.html">Main Recipe 4.8</a> · <a href="chapter04.08-python-example.html">Python Example</a> · <a href="chapter04-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 14.9: Chemotherapy Scheduling</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-149-chemotherapy-scheduling">Recipe 14.9: Chemotherapy Scheduling</h1>
+<p><strong>Complexity:</strong> Complex · <strong>Phase:</strong> Production · <strong>Estimated Cost:</strong> ~$1,500-6,000/month depending on infusion center size and scheduling volume</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>It's 7:15 AM at a 30-chair infusion center. The schedule says 42 patients today. Three of them have regimens that take 6+ hours. Eight need pre-medications that require a nurse to monitor for the first 30 minutes. Two are on clinical trial protocols with rigid timing windows. The pharmacy needs 45 minutes of lead time to mix each bag, and some drugs expire within 4 hours of preparation. One nurse called in sick. Chair 12 is down for maintenance.</p>
+<p>The scheduler is staring at a whiteboard (or more likely, an Excel spreadsheet that someone printed out) trying to Tetris this together. If she gets it wrong, patients wait hours in the lobby while chairs sit empty. Or worse, a drug gets mixed too early, expires before the patient is seated, and pharmacy has to remix it at a cost of hundreds or thousands of dollars per wasted dose.</p>
+<p>This is not a scheduling problem in the way that booking a haircut is a scheduling problem. Chemotherapy scheduling is a multi-resource, multi-constraint, time-dependent optimization problem with real clinical consequences. Get it wrong and patients miss treatment windows, nurses burn out from uneven workloads, pharmacy wastes expensive biologics, and the center loses revenue from underutilized chairs.</p>
+<p>The numbers are striking. A typical infusion chair costs a health system $500,000 to $1 million per year when you factor in space, equipment, staffing, and overhead. Running at 60% utilization instead of 80% means you're effectively burning $200,000 per chair per year. A 30-chair center leaving 20% on the table is wasting $6 million annually. And that's before you count the patient experience cost of 2-hour waits, the pharmacy waste from poor timing coordination, and the nursing overtime from schedules that pile everyone into the same 3-hour window.</p>
+<p>Most infusion centers today schedule with a combination of template-based rules (&quot;Regimen X gets a 4-hour slot&quot;) and manual adjustment by experienced schedulers who carry institutional knowledge in their heads. When that scheduler goes on vacation, things fall apart. The rules don't account for the interactions between patients: the fact that scheduling three 6-hour patients in adjacent chairs means you need three nurses simultaneously for the first hour, which might exceed your staffing ratio.</p>
+<p>This is a problem that optimization was born to solve. Let's dig into how.</p>
+<hr />
+<h2 id="the-technology-constraint-based-scheduling-and-resource-optimization">The Technology: Constraint-Based Scheduling and Resource Optimization</h2>
+<h3 id="what-makes-chemotherapy-scheduling-hard">What Makes Chemotherapy Scheduling Hard</h3>
+<p>Before we get into solvers and algorithms, let's understand why this problem resists simple solutions. It's not just &quot;assign patients to time slots.&quot; It's a coupled resource allocation problem with temporal dependencies.</p>
+<p><strong>Multiple coupled resources.</strong> Every infusion appointment simultaneously consumes: a chair (for the duration), a nurse (partially, with ratio constraints), pharmacy prep capacity (before the appointment), and sometimes specialized equipment (pumps, monitoring devices). You can't optimize chairs independently of nursing. A schedule that perfectly fills chairs but requires 12 nurses in hour 1 and 2 nurses in hour 5 is useless if you only have 8 nurses.</p>
+<p><strong>Variable durations.</strong> Unlike a dentist appointment that's reliably 45 minutes, chemotherapy infusions range from 30 minutes to 8+ hours depending on the regimen. A patient on FOLFOX (a common colorectal cancer protocol) might need 46 hours of total infusion time spread across multiple days. A Herceptin infusion might be 30 minutes. The schedule has to accommodate this variance, and the variance isn't random; it's determined by the treatment protocol.</p>
+<p><strong>Temporal dependencies within a visit.</strong> A single patient visit often has multiple phases: pre-medication (30 minutes), wait for reaction assessment (15 minutes), main infusion (variable), post-infusion observation (15-30 minutes). These phases have ordering constraints and minimum/maximum gaps between them. The nurse is needed for transitions but not necessarily for the entire infusion.</p>
+<p><strong>Pharmacy coupling.</strong> The pharmacy can only prepare so many bags per hour. Each bag has a beyond-use date (BUD) once mixed. If the patient's appointment is delayed, the bag might expire. If the bag is mixed too early, same problem. The schedule must coordinate patient arrival times with pharmacy prep capacity and drug stability windows.</p>
+<p><strong>Acuity-based nursing ratios.</strong> Regulatory and safety requirements dictate nurse-to-patient ratios. But these aren't uniform: a patient receiving their first dose of a new regimen needs closer monitoring (maybe 1:2 ratio) than a patient on their 10th cycle of a well-tolerated drug (maybe 1:5 ratio). The schedule must ensure that at no point during the day does the required nursing attention exceed available nursing capacity.</p>
+<p><strong>Patient preferences and constraints.</strong> Patients undergoing chemotherapy are already dealing with enough. Many have strong preferences: morning appointments (before fatigue sets in), specific days (coordinating with caregivers), specific nurses (continuity of care). Some have hard constraints: lab work must be done 24 hours before infusion, or the treatment protocol specifies exact intervals between cycles (every 21 days, not 20, not 22).</p>
+<p><strong>Stochastic disruptions.</strong> Patients arrive late. Reactions happen that extend observation time. A nurse gets pulled for an emergency. Lab results come back abnormal and the oncologist holds the treatment. The schedule needs slack, but too much slack means underutilization.</p>
+<h3 id="the-mathematical-formulation">The Mathematical Formulation</h3>
+<p>At its core, this is a Resource-Constrained Project Scheduling Problem (RCPSP) variant. Each patient visit is a &quot;project&quot; with multiple &quot;activities&quot; (phases), and the infusion center's resources (chairs, nurses, pharmacy slots) are the constrained resources.</p>
+<p><strong>Decision variables:</strong></p>
+<ul>
+<li>Start time for each patient's appointment</li>
+<li>Chair assignment for each patient</li>
+<li>Nurse assignment for each patient (or at least, nursing capacity allocation per time period)</li>
+<li>Pharmacy prep start time for each patient's drugs</li>
+</ul>
+<p><strong>Objective function (what we're optimizing):</strong></p>
+<p>This is where it gets interesting, because there are multiple competing objectives:</p>
+<ul>
+<li>Maximize chair utilization (fill rate)</li>
+<li>Minimize patient wait time (time between arrival and chair assignment)</li>
+<li>Level nursing workload across the day (avoid peaks and valleys)</li>
+<li>Minimize pharmacy waste (drugs mixed but not administered before expiration)</li>
+<li>Respect patient preferences (preferred time, preferred nurse)</li>
+<li>Minimize overtime (finish all patients before shift end)</li>
+</ul>
+<p>In practice, you combine these into a weighted objective or use a hierarchical approach: first ensure feasibility (all hard constraints met), then optimize the primary objective (utilization), then improve secondary objectives (wait time, workload leveling) without degrading the primary.</p>
+<p><strong>Hard constraints:</strong></p>
+<ul>
+<li>Each patient gets exactly one chair for their entire infusion duration</li>
+<li>No two patients occupy the same chair at the same time (with turnover buffer)</li>
+<li>Nursing ratios never exceeded at any point in time</li>
+<li>Pharmacy prep completes before patient's scheduled start time</li>
+<li>Drug stability window not exceeded (prep-to-administration time &lt; BUD)</li>
+<li>Treatment protocol timing respected (minimum/maximum days between cycles)</li>
+<li>Center operating hours respected (no infusion starts that would extend past closing)</li>
+</ul>
+<p><strong>Soft constraints (violated with penalty):</strong></p>
+<ul>
+<li>Patient preferred time window</li>
+<li>Patient preferred nurse</li>
+<li>Even distribution of first-dose patients across the day (higher monitoring needs)</li>
+<li>Minimum gap between patients in same chair (turnover/cleaning time)</li>
+<li>Avoid scheduling complex regimens at end of day (risk of overtime)</li>
+</ul>
+<h3 id="solver-selection-for-infusion-scheduling">Solver Selection for Infusion Scheduling</h3>
+<p>The choice of solver depends on your problem size and how quickly you need answers.</p>
+<p><strong>Constraint Programming (CP).</strong> CP solvers (like Google OR-Tools CP-SAT, IBM CP Optimizer) excel at scheduling problems with complex constraints. They're particularly good when the constraints are heterogeneous (mixing time windows, resource capacities, precedence relations) and when feasibility is as important as optimality. For a 30-50 chair center scheduling 40-80 patients per day, CP can find good solutions in seconds to minutes. This is often the best starting point for infusion scheduling.</p>
+<p><strong>Mixed-Integer Programming (MIP).</strong> MIP solvers (Gurobi, CPLEX, HiGHS) work well when the objective function and constraints can be expressed as linear or piecewise-linear functions. The nursing workload leveling objective is naturally linear. MIP gives you optimality guarantees (or provable bounds on how far from optimal you are). For the batch overnight scheduling problem, MIP is excellent. Solve times for a typical day's schedule: 10 seconds to 5 minutes.</p>
+<p><strong>Heuristic/Metaheuristic approaches.</strong> For very large centers or when you need real-time rescheduling (a patient just cancelled, who takes their slot?), constructive heuristics followed by local search can produce good schedules in milliseconds. You sacrifice optimality guarantees but gain speed. Common approaches: priority-based dispatching rules (schedule highest-acuity patients first, then fill gaps), followed by swap-based improvement (try moving patients between slots and keep improvements).</p>
+<p><strong>Hybrid approaches.</strong> The most practical production systems use a combination: MIP or CP for the overnight batch schedule (tomorrow's plan), heuristics for real-time adjustments during the day (handling disruptions), and simulation for what-if analysis (what happens if we add 5 more patients to Thursday?).</p>
+<h3 id="real-time-vs-batch-optimization">Real-Time vs. Batch Optimization</h3>
+<p>Like the ambulance dispatch problem (Recipe 14.8), chemotherapy scheduling operates on multiple timescales:</p>
+<p><strong>Strategic (monthly/quarterly).</strong> How many chairs do we need? What are our template hours? Should we add a Saturday session? This is capacity planning, solved with simulation and long-horizon optimization.</p>
+<p><strong>Tactical (weekly).</strong> Build next week's schedule. Assign specific patients to specific days and approximate time windows. This is the main batch optimization problem. You have full information about who needs treatment, what their regimens are, and what resources are available. Solve time budget: minutes. This is where MIP/CP shines.</p>
+<p><strong>Operational (day-of).</strong> The schedule is set, but reality intervenes. A patient is 30 minutes late. Lab results are delayed. A chair breaks. You need to reoptimize the remaining schedule without disrupting patients already in chairs. Solve time budget: seconds. This is where heuristics and incremental solvers earn their keep.</p>
+<p><strong>Reactive (real-time).</strong> A patient has an adverse reaction and needs extended observation. A walk-in urgent case needs immediate treatment. The system must suggest the least-disruptive adjustment. This is constraint propagation: given the disruption, what's the minimum set of changes needed to maintain feasibility?</p>
+<h3 id="the-pharmacy-coordination-problem">The Pharmacy Coordination Problem</h3>
+<p>This deserves its own section because it's the piece that most scheduling systems get wrong or ignore entirely.</p>
+<p>Chemotherapy drugs are not sitting on a shelf waiting to be grabbed. Many are mixed (reconstituted, diluted, compounded) in the pharmacy specifically for each patient, based on their body surface area, lab values, and protocol. This mixing takes time (15-60 minutes depending on complexity), requires specialized staff, and produces a product with a limited shelf life.</p>
+<p>The coordination challenge: pharmacy needs to start mixing early enough that the bag is ready when the patient is in the chair, but not so early that the drug expires before administration. For drugs with a 4-hour BUD, this creates a tight coupling between the schedule and pharmacy workflow. If the patient's appointment shifts by an hour, pharmacy needs to know immediately so they can adjust their prep sequence.</p>
+<p>Some drugs have even tighter windows. Certain biologics must be administered within 1-2 hours of preparation. Others (like some checkpoint inhibitors) are stable for 24+ hours and can be prepped the day before. The scheduling system needs to know these stability profiles and factor them into the timing constraints.</p>
+<p>The pharmacy also has its own capacity constraints: number of hoods (sterile preparation areas), number of pharmacists/technicians, and verification bottlenecks. A schedule that requires 15 bags to be ready at 8:00 AM might be infeasible from a pharmacy perspective even if the chairs and nurses are available.</p>
+<h3 id="workload-leveling">Workload Leveling</h3>
+<p>One of the most impactful optimizations, and one that's invisible to patients, is workload leveling. Without optimization, infusion schedules tend to develop peaks: everyone wants the 8 AM slot, so the first two hours are chaos and the last two hours are empty. Nurses are overwhelmed at 9 AM and idle at 3 PM.</p>
+<p>Workload leveling means distributing the nursing demand evenly across the day. This isn't just about counting patients; it's about counting nursing attention units. A first-dose patient in their first 30 minutes requires 3x the nursing attention of a stable patient in hour 4 of their infusion. The leveling algorithm needs to account for the time-varying nursing demand profile of each patient's visit, not just their presence in a chair.</p>
+<p>The mathematical formulation: divide the day into time periods (e.g., 15-minute intervals). For each period, sum the nursing demand from all patients scheduled to be in that phase of their visit during that period. Minimize the maximum demand across all periods (minimax), or minimize the variance of demand across periods. Both formulations push toward a flat workload curve.</p>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>The vendor-agnostic architecture for a chemotherapy scheduling optimization system has these logical components:</p>
+<pre class="code code-plain"><code>[Treatment Orders] → [Scheduling Engine] → [Optimized Schedule] → [Execution Layer]
+       ↑                      ↑                                          ↓
+[Patient Preferences]   [Resource Model]                         [Real-Time Adjustments]
+                              ↑                                          ↓
+                     [Capacity Data]                              [Pharmacy Coordination]
+</code></pre>
+<p><strong>Data ingestion layer.</strong> Pulls treatment orders from the oncology EHR (what regimen, what cycle, what timing constraints), patient preferences from a scheduling portal or intake process, and resource availability from staffing and facilities systems.</p>
+<p><strong>Resource model.</strong> A representation of the infusion center's capacity: chairs (with attributes like isolation capability, proximity to nursing station), nurses (with certifications, shift schedules, patient assignments), pharmacy (hood capacity, staffing, prep time estimates), and equipment (pumps, monitoring devices).</p>
+<p><strong>Scheduling engine.</strong> The optimization core. Takes demand (patients needing treatment) and supply (available resources) and produces an assignment of patients to time slots, chairs, and nursing capacity. Runs in batch mode for forward scheduling and incremental mode for day-of adjustments.</p>
+<p><strong>Execution layer.</strong> The operational interface that staff interact with. Shows the day's schedule, highlights conflicts, enables manual overrides, and feeds disruptions back to the scheduling engine for reoptimization.</p>
+<p><strong>Pharmacy coordination interface.</strong> Translates the patient schedule into a pharmacy prep sequence, accounting for drug stability windows and prep capacity. Alerts pharmacy when schedule changes affect their workflow.</p>
+<p><strong>Feedback loop.</strong> Captures actual vs. planned durations, actual arrival times, actual nursing demand. This data feeds back into the model to improve duration estimates and demand forecasts over time.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and ingredients, see the <a href="chapter14.09-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="code-pseudocode-walkthrough">Code: Pseudocode Walkthrough</h2>
+<h3 id="step-1-ingest-treatment-orders">Step 1: Ingest Treatment Orders</h3>
+<p>Every scheduling cycle starts with knowing who needs treatment. Treatment orders flow from the oncology EHR, each specifying the patient, regimen, cycle number, and timing constraints.</p>
+<p>If you skip this step, you're scheduling from stale data. Patients who've been added, cancelled, or had their regimen changed won't be reflected in the schedule.</p>
+<pre class="code code-plain"><code>FUNCTION ingest_treatment_orders(date_range):
+    // Pull pending orders from the EHR integration layer
+    orders = query_ehr_orders(
+        status = &quot;pending_scheduling&quot;,
+        treatment_date_range = date_range
+    )
+    
+    FOR EACH order IN orders:
+        // Enrich with protocol details
+        protocol = lookup_protocol(order.regimen_code)
+        
+        // Build scheduling request
+        request = {
+            patient_id: order.patient_id,
+            regimen: order.regimen_code,
+            cycle_number: order.cycle_number,
+            phases: protocol.phases,  // pre-med, infusion, observation
+            nursing_acuity: determine_acuity(order, protocol),
+            drug_stability_hours: protocol.beyond_use_date_hours,
+            pharmacy_prep_minutes: protocol.prep_time_minutes,
+            hard_constraints: {
+                earliest_start: order.earliest_date,
+                latest_start: order.latest_date,
+                required_certifications: protocol.nurse_certifications
+            },
+            soft_constraints: {
+                preferred_time: order.patient_preferred_time,
+                preferred_nurse: order.patient_preferred_nurse,
+                preferred_chair: order.patient_preferred_chair
+            }
+        }
+        
+        store_scheduling_request(request)
+    
+    RETURN count(orders)
+</code></pre>
+<h3 id="step-2-predict-infusion-durations">Step 2: Predict Infusion Durations</h3>
+<p>Protocol-defined durations are starting points, but actual durations vary by patient. A patient who tolerates their regimen well might finish 20 minutes early. A patient prone to reactions might need an extra hour of observation. The ML model predicts actual duration based on historical patterns.</p>
+<p>Without this step, you're scheduling based on protocol maximums (wasting capacity) or protocol averages (causing overruns).</p>
+<pre class="code code-plain"><code>FUNCTION predict_durations(scheduling_requests):
+    // Build feature vectors for duration prediction
+    FOR EACH request IN scheduling_requests:
+        features = {
+            regimen_code: request.regimen,
+            cycle_number: request.cycle_number,
+            patient_age: lookup_patient_age(request.patient_id),
+            patient_bsa: lookup_patient_bsa(request.patient_id),
+            historical_durations: get_past_durations(
+                request.patient_id, 
+                request.regimen, 
+                last_n = 5
+            ),
+            day_of_week: target_date.day_of_week,
+            time_of_day_bucket: request.preferred_time_bucket
+        }
+        
+        // Call ML model for duration prediction
+        prediction = invoke_duration_model(features)
+        
+        request.predicted_duration_minutes = prediction.point_estimate
+        request.duration_confidence_interval = prediction.ci_90
+        
+        // Use upper bound of CI for scheduling buffer
+        request.scheduled_duration = prediction.point_estimate + 
+            (prediction.ci_90.upper - prediction.point_estimate) * 0.5
+    
+    RETURN scheduling_requests
+</code></pre>
+<h3 id="step-3-build-resource-model">Step 3: Build Resource Model</h3>
+<p>The optimizer needs to know what's available. This step assembles the current state of all resources for the target scheduling period.</p>
+<p>Skip this and you'll schedule patients into chairs that are broken, assign nurses who aren't working that day, or exceed pharmacy capacity.</p>
+<pre class="code code-plain"><code>FUNCTION build_resource_model(target_date):
+    // Chairs: which are available, what are their attributes
+    chairs = query_facility_system(
+        date = target_date,
+        resource_type = &quot;infusion_chair&quot;
+    )
+    
+    // Nurses: who&#x27;s working, what shifts, what certifications
+    nurses = query_staffing_system(
+        date = target_date,
+        role = &quot;infusion_nurse&quot;
+    )
+    
+    // Pharmacy: prep capacity by hour
+    pharmacy_capacity = query_pharmacy_system(
+        date = target_date,
+        metric = &quot;prep_slots_per_hour&quot;
+    )
+    
+    // Build the constraint model
+    resource_model = {
+        chairs: [
+            {id, available_from, available_until, attributes}
+            FOR EACH chair IN chairs WHERE chair.status = &quot;active&quot;
+        ],
+        nursing_capacity: [
+            {time_period, available_nurses, total_attention_units}
+            FOR EACH period IN divide_day_into_periods(15_minutes)
+            // attention_units = sum of (1/ratio) for each nurse in period
+        ],
+        pharmacy_slots: [
+            {hour, max_preps, current_preps}
+            FOR EACH hour IN pharmacy_capacity
+        ],
+        turnover_buffer_minutes: 15,  // cleaning between patients
+        max_nursing_ratio: 5,  // max patients per nurse (general)
+        first_dose_ratio: 2   // max patients per nurse (first dose)
+    }
+    
+    RETURN resource_model
+</code></pre>
+<h3 id="step-4-run-the-optimizer">Step 4: Run the Optimizer</h3>
+<p>This is the core. Given the demand (scheduling requests with predicted durations) and supply (resource model), find the best feasible schedule.</p>
+<pre class="code code-plain"><code>FUNCTION optimize_schedule(requests, resource_model, config):
+    // Initialize the constraint programming model
+    model = create_cp_model()
+    
+    // Decision variables: start time for each patient
+    FOR EACH request IN requests:
+        request.start_var = model.new_integer_variable(
+            min = resource_model.day_start_minutes,
+            max = resource_model.day_end_minutes - request.scheduled_duration,
+            name = &quot;start_&quot; + request.patient_id
+        )
+        
+        request.chair_var = model.new_integer_variable(
+            min = 0,
+            max = count(resource_model.chairs) - 1,
+            name = &quot;chair_&quot; + request.patient_id
+        )
+    
+    // Constraint: no chair overlap
+    FOR EACH pair (req_a, req_b) IN all_pairs(requests):
+        model.add_no_overlap_constraint(
+            start_a = req_a.start_var,
+            duration_a = req_a.scheduled_duration + turnover_buffer,
+            chair_a = req_a.chair_var,
+            start_b = req_b.start_var,
+            duration_b = req_b.scheduled_duration + turnover_buffer,
+            chair_b = req_b.chair_var
+        )
+    
+    // Constraint: nursing capacity per period
+    FOR EACH period IN time_periods:
+        nursing_demand = SUM(
+            request.nursing_attention_for_period(period)
+            FOR EACH request IN requests
+            WHERE request overlaps period
+        )
+        model.add_constraint(
+            nursing_demand &lt;= resource_model.nursing_capacity[period]
+        )
+    
+    // Constraint: pharmacy prep capacity
+    FOR EACH request IN requests:
+        prep_start = request.start_var - request.pharmacy_prep_minutes
+        prep_hour = prep_start / 60
+        model.add_constraint(
+            pharmacy_load[prep_hour] &lt;= resource_model.pharmacy_slots[prep_hour].max_preps
+        )
+    
+    // Constraint: drug stability
+    FOR EACH request IN requests:
+        // Note: In the batch schedule, this constraint ensures pharmacy prep
+        // is scheduled close enough to the patient&#x27;s start time that the drug
+        // won&#x27;t expire even with expected variance. The tighter real-time check
+        // (in Step 6) verifies actual prep completion against actual expected
+        // administration time when delays occur.
+        model.add_constraint(
+            request.start_var - prep_completion_time(request) 
+            &lt;= request.drug_stability_hours * 60
+        )
+    // TODO (TechWriter): Expert review A3 (MEDIUM). prep_completion_time() is
+    // undefined. Reformulate: batch constraint should use start_var minus
+    // (prep_start + pharmacy_prep_minutes) &lt;= stability_hours * 60 - buffer.
+    // Real drug stability risk is reactive (patient delayed after prep), handled in Step 6.
+    
+    // Objective: weighted combination
+    objective = (
+        config.weight_utilization * maximize_utilization(requests, resource_model)
+        + config.weight_wait_time * minimize_total_wait(requests)
+        + config.weight_leveling * minimize_workload_variance(requests, time_periods)
+        + config.weight_preferences * maximize_preference_satisfaction(requests)
+    )
+    
+    model.maximize(objective)
+    
+    // Solve with time limit
+    solver = create_solver(time_limit_seconds = config.solve_time_limit)
+    solution = solver.solve(model)
+    
+    IF solution.status == &quot;OPTIMAL&quot; OR solution.status == &quot;FEASIBLE&quot;:
+        schedule = extract_schedule(solution, requests, resource_model)
+        schedule.optimality_gap = solution.gap_percentage
+        RETURN schedule
+    ELSE:
+        // Infeasible: relax soft constraints and retry
+        RETURN solve_with_relaxation(model, requests, resource_model)
+</code></pre>
+<h3 id="step-5-validate-and-publish">Step 5: Validate and Publish</h3>
+<p>The optimizer's output needs validation before it goes live. Clinical rules that are hard to encode as mathematical constraints get checked here.</p>
+<pre class="code code-plain"><code>FUNCTION validate_and_publish(schedule, target_date):
+    // Clinical validation rules
+    violations = []
+    
+    FOR EACH assignment IN schedule.assignments:
+        // Check: no patient scheduled during their known
+        // adverse reaction window from prior cycles
+        IF has_known_reaction_pattern(assignment.patient_id, assignment.start_time):
+            violations.append(&quot;Reaction risk: &quot; + assignment.patient_id)
+        
+        // Check: first-dose patients not clustered
+        // (need more monitoring, spread them out)
+        first_dose_in_hour = count(
+            a FOR a IN schedule.assignments
+            WHERE a.is_first_dose AND same_hour(a.start_time, assignment.start_time)
+        )
+        IF first_dose_in_hour &gt; config.max_first_dose_per_hour:
+            violations.append(&quot;First-dose clustering in hour &quot; + hour)
+        
+        // Check: end time within operating hours
+        IF assignment.end_time &gt; resource_model.day_end:
+            violations.append(&quot;Overtime risk: &quot; + assignment.patient_id)
+    
+    IF violations AND severity(violations) == &quot;hard&quot;:
+        // Re-run optimizer with additional constraints
+        RETURN reoptimize_with_violations(schedule, violations)
+    
+    // Publish to schedule store
+    store_schedule(schedule, target_date)
+    
+    // Notify pharmacy of prep sequence
+    pharmacy_sequence = build_pharmacy_prep_order(schedule)
+    notify_pharmacy(pharmacy_sequence)
+    
+    // Notify patients of confirmed times
+    FOR EACH assignment IN schedule.assignments:
+        send_patient_notification(
+            assignment.patient_id,
+            assignment.confirmed_arrival_time,
+            assignment.estimated_duration
+        )
+        // Note: notifications must respect patient communication preferences.
+        // Use the patient portal as the default secure channel. For SMS/email,
+        // require explicit consent and minimize PHI: &quot;Your appointment is
+        // confirmed for 10:30 AM&quot; rather than including regimen details.
+    
+    RETURN {schedule_id, violations_count: count(violations)}
+</code></pre>
+<h3 id="step-6-handle-real-time-adjustments">Step 6: Handle Real-Time Adjustments</h3>
+<p>The day-of reality never matches the plan perfectly. This function handles disruptions with minimal schedule impact.</p>
+<p>Schedule modification events should be authenticated and authorized. Define roles: front-desk staff can trigger arrival/delay/cancellation events; clinical staff can trigger duration extensions and treatment holds; system administrators can trigger resource unavailability. All modification events must include the authenticated user ID, and the real-time adjuster should validate authorization before executing changes.</p>
+<pre class="code code-plain"><code>FUNCTION handle_disruption(disruption_event, current_schedule):
+    // Classify the disruption
+    SWITCH disruption_event.type:
+        CASE &quot;patient_late&quot;:
+            delay_minutes = disruption_event.estimated_delay
+            affected = find_assignment(current_schedule, disruption_event.patient_id)
+            
+            // Can we absorb the delay in existing buffer?
+            IF delay_minutes &lt;= affected.buffer_minutes:
+                // Just shift this patient, no cascade
+                affected.start_time += delay_minutes
+                update_pharmacy_timing(affected)
+            ELSE:
+                // Need to reoptimize remaining schedule
+                remaining = get_unstarted_assignments(current_schedule)
+                reoptimized = quick_reoptimize(
+                    remaining, 
+                    resource_model_current_state(),
+                    time_limit_seconds = 5  // must be fast
+                )
+                apply_changes(current_schedule, reoptimized)
+        
+        CASE &quot;patient_cancelled&quot;:
+            freed_slot = remove_assignment(current_schedule, disruption_event.patient_id)
+            
+            // Check waitlist for patients who could fill the gap
+            waitlist_candidates = query_waitlist(
+                date = today,
+                min_duration = freed_slot.duration - 30,
+                max_duration = freed_slot.duration + 30
+            )
+            
+            IF waitlist_candidates:
+                offer_slot_to_waitlist(freed_slot, waitlist_candidates)
+            
+            cancel_pharmacy_prep(disruption_event.patient_id)
+        
+        CASE &quot;extended_duration&quot;:
+            // Patient needs more time than scheduled
+            extra_minutes = disruption_event.additional_minutes
+            affected = find_assignment(current_schedule, disruption_event.patient_id)
+            
+            // Check if extension conflicts with next patient in same chair
+            next_in_chair = get_next_assignment(current_schedule, affected.chair_id)
+            
+            IF next_in_chair AND conflicts(affected, extra_minutes, next_in_chair):
+                // Move next patient to different chair or later time
+                alternatives = find_alternative_slots(next_in_chair, current_schedule)
+                apply_best_alternative(next_in_chair, alternatives)
+        
+        CASE &quot;resource_unavailable&quot;:
+            // Chair broke, nurse called out
+            affected_assignments = find_affected(current_schedule, disruption_event.resource)
+            reoptimized = quick_reoptimize(
+                affected_assignments,
+                resource_model_minus(disruption_event.resource),
+                time_limit_seconds = 10
+            )
+            apply_changes(current_schedule, reoptimized)
+    
+    // Log the disruption and response for future learning
+    log_disruption(disruption_event, changes_made)
+    
+    RETURN current_schedule
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and OR-Tools, check out the <a href="chapter14.09-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h2 id="expected-results">Expected Results</h2>
+<h3 id="sample-output-optimized-daily-schedule">Sample Output: Optimized Daily Schedule</h3>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;schedule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SCH-2026-06-02-INF-CENTER-A&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;target_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-06-02&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;optimization_metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;solver&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CP-SAT&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;solve_time_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">12.4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;optimality_gap&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2.1%&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;objective_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.847</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;constraints_satisfied&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">342</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;soft_constraints_relaxed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;total_patients&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">44</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total_chair_hours&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">186.5</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;utilization_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.82</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;average_wait_minutes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;nursing_workload_variance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;pharmacy_waste_predicted&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;preference_satisfaction_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.78</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;overtime_risk_patients&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;assignments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-9928&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;regimen&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FOLFOX-6&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cycle&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;chair_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;C-07&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;start_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;08:00&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;predicted_end_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;14:15&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;phases&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pre_medication&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;duration_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nursing_ratio&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1:3&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;oxaliplatin_infusion&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;duration_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">120</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nursing_ratio&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1:4&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5fu_bolus&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;duration_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nursing_ratio&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1:2&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5fu_continuous&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;duration_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">180</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nursing_ratio&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1:5&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;observation&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;duration_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nursing_ratio&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1:5&quot;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;pharmacy_prep_start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;07:15&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;drug_stability_deadline&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12:15&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assigned_nurse_pool&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;RN-12&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;RN-05&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;preference_met&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nurse&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;chair&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3 id="performance-benchmarks">Performance Benchmarks</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Batch solve time (30 chairs, 45 patients)</td>
+<td>8-15 seconds</td>
+<td>CP-SAT solver</td>
+</tr>
+<tr>
+<td>Batch solve time (50 chairs, 80 patients)</td>
+<td>30-90 seconds</td>
+<td>May need time limit</td>
+</tr>
+<tr>
+<td>Real-time adjustment</td>
+<td>&lt; 3 seconds</td>
+<td>Heuristic with local search</td>
+</tr>
+<tr>
+<td>Chair utilization improvement</td>
+<td>+12-18%</td>
+<td>vs. manual template scheduling</td>
+</tr>
+<tr>
+<td>Patient wait time reduction</td>
+<td>-35-50%</td>
+<td>vs. first-come-first-served</td>
+</tr>
+<tr>
+<td>Nursing workload variance reduction</td>
+<td>-40-60%</td>
+<td>vs. unoptimized schedule</td>
+</tr>
+<tr>
+<td>Pharmacy waste reduction</td>
+<td>-25-40%</td>
+<td>from better timing coordination</td>
+</tr>
+<tr>
+<td>Schedule feasibility rate</td>
+<td>97%+</td>
+<td>percentage of days with no hard constraint violations</td>
+</tr>
+</tbody>
+</table>
+<h3 id="where-it-struggles">Where It Struggles</h3>
+<ul>
+<li><strong>Highly uncertain durations.</strong> New regimens without historical data produce wide confidence intervals. The scheduler must use conservative estimates, reducing utilization.</li>
+<li><strong>Last-minute oncologist holds.</strong> When a physician decides at 7:45 AM to hold a patient's treatment pending new lab results, the cascade is hard to absorb gracefully.</li>
+<li><strong>Patient no-shows without notice.</strong> Unlike cancellations (which free a slot for the waitlist), no-shows waste the pharmacy prep and leave a chair empty.</li>
+<li><strong>Multi-day regimens.</strong> Protocols that span 2-3 consecutive days create complex inter-day dependencies that single-day optimizers handle poorly.</li>
+<li><strong>Political constraints.</strong> &quot;Dr. Smith's patients always get morning slots&quot; is a real constraint that's hard to encode without making the problem infeasible.</li>
+</ul>
+<hr />
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>Here's what I've learned about chemotherapy scheduling optimization that the textbooks don't tell you:</p>
+<p><strong>The hardest part isn't the math. It's the data.</strong> You can build a beautiful constraint model, but if your infusion duration estimates are off by 30%, your schedule falls apart by 10 AM. Invest heavily in duration prediction. The difference between &quot;protocol says 4 hours&quot; and &quot;this patient on this regimen on cycle 6 typically takes 3 hours 20 minutes&quot; is the difference between 65% and 82% utilization.</p>
+<p><strong>Pharmacy coordination is the secret weapon.</strong> Most scheduling systems treat pharmacy as an external dependency. The centers that get the best results model pharmacy as a first-class resource in the optimization. When the scheduler knows that pharmacy can only prep 8 bags per hour, it naturally spreads start times and eliminates the 8 AM rush.</p>
+<p><strong>Staff trust takes longer than the technical build.</strong> Nurses and schedulers have been doing this manually for years. They're good at it. They have intuitions that are hard to encode (&quot;Mrs. Johnson always needs extra time on Tuesdays because her caregiver drops her off late&quot;). If the system overrides their judgment without explanation, they'll route around it. Build in transparency: show why the optimizer made each decision. Allow overrides. Track when overrides improve outcomes (they often do, early on).</p>
+<p><strong>Start with the batch problem, not real-time.</strong> The overnight schedule generation is where 80% of the value lives. Real-time rescheduling is sexy but complex. Get the batch optimizer working well first. Many centers see dramatic improvement just from better initial schedules, even without real-time adjustment.</p>
+<p><strong>The objective function is political.</strong> Maximizing utilization might mean scheduling patients at inconvenient times. Maximizing patient preference might mean lower utilization. Leveling nursing workload might mean some patients wait longer. These tradeoffs are not technical decisions. They're organizational values. Get leadership to explicitly weight the objectives before you build.</p>
+<p><strong>Simulation is your best friend for validation.</strong> Before deploying an optimizer, run it against 6 months of historical schedules. Compare its output to what actually happened. Where does it do better? Where does it do worse? This builds confidence and reveals blind spots in your constraint model.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 14.4 (Nurse Staffing Optimization):</strong> The staffing schedule feeds directly into the resource model for infusion scheduling. Optimize staffing first, then schedule patients against that staffing.</li>
+<li><strong>Recipe 14.5 (Operating Room Block Scheduling):</strong> Similar resource-constrained scheduling problem with different constraints. Shares solver technology and architecture patterns.</li>
+<li><strong>Recipe 14.7 (OR Case Sequencing):</strong> The day-of sequencing problem parallels the real-time adjustment layer in infusion scheduling.</li>
+<li><strong>Recipe 12.5 (Hospital Census Forecasting):</strong> Demand forecasting feeds the strategic capacity planning layer.</li>
+<li><strong>Recipe 7.1 (Appointment No-Show Prediction):</strong> No-show models enable overbooking strategies in the scheduling optimizer.</li>
+</ul>
+<hr />
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 5.2: Provider NPI Matching ⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-52-provider-npi-matching-">Recipe 5.2: Provider NPI Matching ⭐</h1>
+<p><strong>Complexity:</strong> Simple · <strong>Phase:</strong> MVP · <strong>Estimated Cost:</strong> ~$0.0001-0.001 per provider record matched (depends on whether you query the live registry API or batch-match against the downloadable NPPES file, plus review-queue volume)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>Open the provider directory of any health plan in the country and look up a primary care doctor in your area. Click the first three results. There is a meaningful chance that one of them retired two years ago, one of them moved offices six months back to a new building, and one of them never practiced at the listed address in the first place. Call the number listed for any of them and you will sometimes get a fax line, a hospital switchboard that has not employed that doctor in five years, or a number that has been disconnected.</p>
+<p>Now imagine you are a member of that plan, you have a chronic condition that just flared, and you need a same-week appointment. You spend forty minutes calling listed providers. Half of them are wrong. The ones you do reach are not taking new patients, or they are an hour away because the listed location is stale, or the office tells you the doctor moved to a competing practice last spring. You give up and go to the emergency department. The plan pays for an ED visit that should have been a primary-care visit. You delay care that could have been resolved in twenty minutes. Multiply this by every member of every plan in the country and you start to understand why provider-directory accuracy is a federally regulated activity with named penalties. The No Surprises Act and the regulations under it require accurate provider directories with specified verification cadences and member-facing remediation.</p>
+<p>Behind every directory entry is a question that sounds boring and turns out to be hard: <em>which row in our internal provider database corresponds to which entry in the National Provider Identifier registry?</em> The NPI is the closest thing American healthcare has to a stable, authoritative identifier for individual practitioners and the organizations they bill from.  Every claim filed in the country uses one or more NPIs. Every credentialing file references an NPI. Every payer's network is a list of NPIs. The registry itself (NPPES, the National Plan and Provider Enumeration System) publishes a downloadable extract once a month and exposes a public API for individual lookups. The data is real, the data is free, and the data is updated.</p>
+<p>So you would think provider-NPI matching would be a solved problem. You take your internal provider record, you look up the NPI, you write down the answer, and you move on. And for the easy cases, that is exactly what happens. Then you hit the ones that are not easy. Two providers with the same name in the same state. A provider who has both a Type 1 (individual) NPI and is also affiliated with three Type 2 (organizational) NPIs that bill for them. A provider who legally changed their name two years ago and your system still has the old name and the registry has both with a deactivation flag on one. A provider whose office address changed six months ago and your system has the new address but the registry has the old one because the provider has not updated their NPPES entry (which is on the provider, not on you). A provider whose specialty taxonomy in your system is &quot;Family Medicine&quot; and in the registry is &quot;Family Medicine, Adolescent Medicine, Sports Medicine&quot; because the registry stores all taxonomies the provider self-attests, not just the primary one.</p>
+<p>Now layer on the operational realities. Your credentialing team has a stack of three hundred new providers being onboarded for an open enrollment that starts in eight weeks. Your network adequacy team has to certify the directory for a state filing and the certification requires NPIs verified against the registry within the last ninety days. Your claims team has a backlog of denied claims because the billing NPI on the claim does not match the credentialed NPI on file, and the difference is a renewal that the provider did not flag to your operations team. Your data analytics team is trying to compute network composition by specialty and the taxonomies in your system do not align with the registry taxonomies, so the report is wrong by some amount that nobody can quantify. Each of these workflows is asking the same underlying question: which internal provider record corresponds to which NPI registry entry, and is the answer still right today?</p>
+<p>This is the recipe. It is the second recipe in Chapter 5 because it shares almost all of its infrastructure with Recipe 5.1 (the same blocking, the same comparators, the same review queue, the same audit trail). It is in the Simple tier because the NPI is a real anchor: the registry is authoritative, well-structured, queryable, and free, and most providers have one and only one Type 1 NPI. The work is not in the matching algorithm; the work is in handling the dozen reliable edge cases that come up at scale and in keeping the matches fresh as both sides change.</p>
+<p>Let's get into how you build it.</p>
+<hr />
+<h2 id="the-technology-matching-against-an-authoritative-registry">The Technology: Matching Against an Authoritative Registry</h2>
+<h3 id="why-this-is-different-from-patient-matching">Why This Is Different From Patient Matching</h3>
+<p>Patient matching (recipe 5.1) is hard because there is no authoritative registry. You have a database of patient records and you are trying to figure out which ones go together based on noisy demographic data alone. Provider matching has a structurally easier problem: there is an authoritative registry, the NPPES, and the question is &quot;which entry in the registry corresponds to this internal record.&quot; The registry is, for most providers, the truth. Your job is to find the truth and connect it to your record, then keep that connection up to date as both sides drift.</p>
+<p>This changes the architecture in important ways. You are not doing pairwise comparison across your own database. You are doing one-sided lookup against an external authoritative source. Your blocking and comparator infrastructure is similar (same string-similarity functions, same probabilistic combiner, same review queue), but the data flow is different and the failure modes are different. Most of the headaches in provider matching come from edge cases in the registry itself, from drift between your record and the registry record, and from the operational rhythm of keeping the matches fresh on a regulated cadence.</p>
+<h3 id="what-the-npi-actually-is">What the NPI Actually Is</h3>
+<p>A National Provider Identifier is a ten-digit numeric identifier assigned by the NPPES to a healthcare provider. There are two types: Type 1 NPIs are issued to individual practitioners (a doctor, a nurse practitioner, a physical therapist), and Type 2 NPIs are issued to organizations that provide healthcare (a clinic, a hospital, a group practice, a billing entity). A given individual provider has exactly one Type 1 NPI for life. They do not get a new one when they change practices, change names, or move to a different state. The Type 1 NPI is stable.  A given organization has one Type 2 NPI per business entity, with new NPIs issued when subparts (specific clinic locations or service lines) are enumerated separately for billing reasons. The same individual provider can be associated with several Type 2 NPIs at the same time: their solo practice's Type 2, the hospital they are credentialed at, the academic medical center group they bill under for some of their work, and so on.</p>
+<p>The NPPES record for a given NPI carries a defined set of fields. For a Type 1 NPI: legal first name, middle name, last name, name suffix, credential string (MD, DO, NP, PA, RN), other names (previous names with the type of name change documented), gender, primary practice address (the location where the provider primarily practices, intended to be where members can find them), mailing address (often a billing or back-office address, not the practice address), phone, fax, license numbers and states, taxonomy codes (specialty designations from the NUCC Health Care Provider Taxonomy code set, with one designated as primary), the enumeration date, the last update date, and a deactivation status with reason code if the NPI has been deactivated. For a Type 2 NPI: legal business name, doing-business-as name, authorized official name and credentials, organization type, the same address fields as Type 1, and the same taxonomy and license fields.</p>
+<p>Critically, NPPES is <strong>self-attested</strong>. Providers update their own records. The NPPES does not actively verify that the practice address is current, that the phone number rings the right office, that the listed taxonomies are still being practiced, or that the provider is still alive. The registry has a &quot;deactivation&quot; flag for NPIs whose holders have notified the NPPES of retirement or death, but the lag between when a provider stops practicing and when the registry reflects it can be substantial. The address fields in particular are widely known to be stale; CMS and other regulators have repeatedly flagged this as a directory-accuracy concern.</p>
+<p>This matters for your matching system because it shapes what fields you can rely on. The NPI itself, once known, is a strong anchor (it does not change). The legal name on the record is generally accurate, with two known patterns of staleness (legal name changes that have not been propagated, and name spellings that differ from your internal source). License numbers and license states are accurate when present (the provider had to provide them to get the NPI). The primary practice address is a soft signal. The taxonomy codes are a soft signal. Deactivation flags are accurate when present and silent when not (so the absence of a deactivation flag does not mean the provider is actively practicing).</p>
+<h3 id="the-two-sources-of-nppes-data">The Two Sources of NPPES Data</h3>
+<p>NPPES exposes its data two ways. Pick the right one for the workload.</p>
+<p><strong>The NPPES Downloadable File.</strong> A monthly bulk export of every NPI in the country, published as a CSV file with hundreds of millions of rows across all NPIs ever issued (including deactivated ones).  This is the right substrate for batch matching workflows: monthly refresh of your internal provider directory against the registry, network-adequacy reporting, claims-NPI validation against credentialed-NPI files, and any analytics that needs a complete picture of the provider population. The file is free to download, no API key, no rate limit. The data is the same data the API serves but with the convenience of being able to scan, join, and compute on the whole thing in your own infrastructure.</p>
+<p><strong>The NPI Registry API.</strong> A REST endpoint that returns NPI records for individual lookups, with parameters for searching by NPI number, name, location, taxonomy, and a few other fields.  Lower latency for individual lookups, useful for real-time workflows like onboarding a new provider where you need an answer in seconds, and useful for spot-checking specific providers between batch refreshes. Less suitable for bulk operations because of rate limits and the cost in time of round-tripping a million records through individual API calls.</p>
+<p>Most production matching pipelines use both. The downloadable file is the primary substrate for batch refresh, network-adequacy analytics, and the search index for candidate generation. The API is the path for real-time individual lookups during onboarding and for spot-checking ambiguous matches.</p>
+<h3 id="the-match-problem">The Match Problem</h3>
+<p>Your internal provider table has a row for &quot;Sarah J Patel, MD, Family Medicine, 1421 Elm Street, Anytown, ST 12345, license MD-87543, primary care.&quot; The registry has thousands of rows for &quot;Sarah Patel&quot; across the country. Your job is to find the row in the registry that corresponds to this person, attach the NPI to your internal record, and recompute the match periodically as the registry updates and as your internal data updates.</p>
+<p>If you are lucky, the row in your internal record already has the NPI (because the provider supplied it during onboarding, or because you imported it from a credentialing file that already had it). In that case the match is trivial: look up the NPI in the registry and confirm the registry record is consistent with your internal record. This happens for most newly-onboarded providers in well-run organizations and for providers whose data lineage is recent.</p>
+<p>If you are not lucky, the internal record has no NPI (because the provider was onboarded years ago before NPI capture was required, or because the data came from a source that does not include NPI, or because the NPI was supposed to be captured but the field was left blank). Now you have to find it. The fields you have to match on, in roughly decreasing order of information value:</p>
+<ul>
+<li><strong>License number plus state.</strong> A medical license is state-issued and the combination of license number and license state is unique within that state. Providers self-attest their licenses on the NPPES, so the registry has them. If your internal record has a license number and state, it is almost always sufficient as a single-field match. The NPI Registry API supports license-based search.</li>
+<li><strong>Legal name plus state.</strong> First name and last name plus the state where the provider primarily practices is sufficient to narrow most lookups to a small set. If the name is unusual (low population frequency), a state lookup is often a single-row result.</li>
+<li><strong>Legal name plus taxonomy.</strong> First and last name plus a primary specialty taxonomy code narrows further. Useful when the name is more common.</li>
+<li><strong>Practice address.</strong> The street address of the primary practice location, particularly the ZIP code. Usable as a candidate-generation key, less reliable as a discriminator because addresses drift.</li>
+<li><strong>Phone number.</strong> Unreliable in NPPES (the listed phone is often a fax or a back-office number, not the practice phone). Worth comparing as a tiebreaker but not as a primary key.</li>
+<li><strong>Other names.</strong> The NPPES &quot;other names&quot; field carries previous legal names with a typed reason. If your internal record has the previous name and the registry has the current name, the other-names field is the linkage.</li>
+</ul>
+<p>You do not match on all of these at once. You design a small number of blocking passes that pull plausible candidates and a per-pair scoring step that decides which candidate is the right one.</p>
+<h3 id="where-provider-matching-differs-from-patient-matching">Where Provider Matching Differs From Patient Matching</h3>
+<p>The string-similarity and probabilistic-linkage techniques from recipe 5.1 carry over directly. Jaro-Winkler on first names. Damerau-Levenshtein on last names. Phonetic encoders for blocking. Fellegi-Sunter for combining field scores. The same library tooling (Splink, dedupe, recordlinkage) works. The same review-queue patterns work. Several details are different enough to call out:</p>
+<p><strong>Provider data quality is generally better than patient data quality.</strong> Providers are professionally registered. They have credentials they care about. They have license numbers they have to keep current. They do not get registered by harried front-desk staff in five-minute windows. The data has fewer missing fields, fewer typos, and more stable identifiers. Many provider matches that are hard in the patient context are easy in the provider context.</p>
+<p><strong>The taxonomy code is a powerful field.</strong> The NUCC taxonomy code set is a hierarchical classification of provider specialties. It is more granular than the free-text specialty fields most internal systems carry. Mapping your internal &quot;Family Medicine&quot; to the corresponding NUCC code (207Q00000X) and the registry's primary taxonomy lets you compare at the structured level. Mismatches are still common (your internal record says &quot;Pediatrics&quot; and the registry primary is &quot;Pediatric Cardiology&quot; because the provider self-attested both and listed the subspecialty primary), but they are richer signals than free-text comparison would be.</p>
+<p><strong>The &quot;one and only one Type 1 NPI&quot; rule simplifies merge logic.</strong> Each individual provider has exactly one Type 1 NPI in the registry. There is no equivalent of &quot;duplicate Type 1 NPIs for the same person.&quot; If you find two candidate Type 1 NPI matches for the same internal record, at most one of them is correct, and the others are either different people or you are looking at deactivated-and-re-issued situations (which the registry generally prevents but which can show up in legacy data). Your matching system can use this rule as a hard constraint: a single internal record gets at most one Type 1 NPI.</p>
+<p><strong>Type 2 NPIs are many-to-many with people.</strong> A provider who works at a solo practice, two hospital systems, and a billing service might be associated with four different Type 2 NPIs. None of those Type 2s &quot;is&quot; the provider; they are the billing entities the provider works under. Your internal record might be tracking the provider's individual identity (Type 1) or one of their billing relationships (Type 2). The matching system needs to know which it is asking about. Some operational workflows (credentialing) care about Type 1. Some (claims, network adequacy) care about both.</p>
+<p><strong>Deactivation status matters.</strong> A deactivated NPI in the registry means the provider has retired, died, or otherwise notified NPPES that they are no longer practicing. Your matching system should fetch and consider the deactivation flag at every match: matching to a deactivated NPI is almost always wrong (the provider in your record cannot be a deactivated provider unless your record itself is also deactivated), and matching to a deactivated NPI without surfacing the deactivation status to operations is a directory-accuracy failure waiting to happen.</p>
+<p><strong>The match needs to be refreshed on a cadence.</strong> Patient matching is mostly &quot;match once, hold forever, unmerge if wrong.&quot; Provider matching is &quot;match once, then re-verify regularly because the registry data drifts.&quot; Network adequacy regulations typically require the verification to happen on a defined cadence (every ninety days is common). The architecture has to schedule, execute, and audit those re-verifications, and surface drifts (address change, taxonomy change, deactivation) to operations promptly.</p>
+<p><strong>The volume is much lower than patient matching.</strong> A health plan covering a million members might have a provider network of a hundred thousand NPIs. A health system might credential a few thousand individual providers. The cardinality is two to three orders of magnitude smaller than patient deduplication. This makes some operational choices easier (you can afford to query the API for everyone monthly if you want) and some harder (the per-match cost of error is higher because each match represents many member-facing or claim-affecting decisions).</p>
+<h3 id="the-three-bucket-output-familiar-from-51">The Three-Bucket Output, Familiar From 5.1</h3>
+<p>A provider matching system has the same three-bucket output as a patient matcher: auto-match (high confidence, attach the NPI to the internal record automatically), human review (medium confidence, queue for credentialing or operations review), and auto-non-match (low confidence, no action). The thresholds are set by operations leadership, typically on the conservative side because the cost of a wrong NPI on a credentialed-provider record propagates into claims processing, network adequacy reporting, and member-facing directories. Because the volumes are lower than patient matching, the review queue is much smaller, and the team that staffs it is typically the credentialing or provider-data-management team rather than a dedicated HIM function.</p>
+<h3 id="where-the-field-has-moved">Where the Field Has Moved</h3>
+<p>A few practical updates worth knowing:</p>
+<ul>
+<li><strong>Provider directory accuracy regulations have tightened.</strong> The No Surprises Act and CMS sub-regulatory guidance impose specific verification cadences, member-facing remediation pathways, and penalties for chronic inaccuracy. Multiple state-level rules layer on top. The matching system is now subject to specific compliance requirements, not just operational ones.</li>
+<li><strong>Provider Data Service vendors have proliferated.</strong> Companies like LexisNexis Provider Data Solutions, Symplr, Kyruus, Verisys, BetterDoctor (now Quest Analytics), and others sell provider data services that wrap the NPPES with additional verification (license-board scraping, sanction-list cross-referencing, periodic outreach to the provider for confirmation).  They are reasonable build-vs-buy candidates for organizations that do not want to operate the matching pipeline. The architecture in this recipe applies whether you build or integrate; if you integrate, the matching service replaces the registry-direct path but the review queue, audit trail, and operations workflow remain.</li>
+<li><strong>NPPES is increasingly being supplemented by other sources.</strong> State medical board websites for license verification. The OIG List of Excluded Individuals/Entities (LEIE) for sanction status. The Death Master File (where access is permitted) for deceased-provider detection. The matching pipeline is becoming a multi-source verification pipeline, not a single-source-lookup pipeline.</li>
+<li><strong>Endpoints / FHIR Practitioner resources are increasingly shared.</strong> Some health information exchanges and trust-framework participants now publish FHIR Practitioner resources that include the NPI alongside the structured demographic and credentialing data.  Where these exist, they are an additional substrate for matching.</li>
+</ul>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>The pipeline has six logical stages: ingest the internal provider records and the registry data, normalize both sides, generate candidate matches through blocking, score the candidates, route by threshold to auto-attach or review, and persist the resolved NPI assignments with a re-verification schedule.</p>
+<pre class="code code-plain"><code>┌────────────── INGEST AND NORMALIZE ───────────────┐
+│                                                    │
+│  [Internal Provider Records]   [NPPES Registry]    │
+│  (credentialing system,         (monthly download   │
+│   HR system, network             plus on-demand     │
+│   management system)             API for individual │
+│                                  lookups)           │
+│           │                              │          │
+│           ▼                              ▼          │
+│  [Field-level normalization (both sides)]          │
+│   - Names: case-fold, trim, strip diacritics       │
+│   - Credentials: parse credential strings           │
+│     (MD, DO, NP, PA-C, etc.)                       │
+│   - License numbers: strip formatting               │
+│   - Addresses: USPS-standardize                     │
+│   - Phones: strip formatting to E.164              │
+│   - Taxonomy codes: map free-text specialty         │
+│     to NUCC codes where possible                    │
+│           │                              │          │
+│           ▼                              ▼          │
+│  [Phonetic encoding (double metaphone) for         │
+│   first and last name; use as blocking keys]       │
+│           │                              │          │
+│           ▼                              ▼          │
+│  [Persist normalized records with provenance]      │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── BLOCKING / CANDIDATE GENERATION ─────┐
+│                                                    │
+│  [Internal record needing NPI]                     │
+│           │                                        │
+│           ▼                                        │
+│  [Multiple blocking passes against registry:       │
+│   pass 1: license_number + license_state           │
+│           (highest information; often single hit)  │
+│   pass 2: last_name_metaphone + first_initial      │
+│           + state                                  │
+│   pass 3: last_name_metaphone + taxonomy_primary   │
+│           + state                                  │
+│   pass 4: address_zip + last_name_initial          │
+│   pass 5: phone_last_4 + last_name_initial         │
+│           (low yield, useful for tiebreakers)      │
+│   ...add passes only if recall measurement         │
+│   shows they are needed]                           │
+│           │                                        │
+│           ▼                                        │
+│  [Candidate set = union across passes;             │
+│   typically 1-50 candidates per internal record]   │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── SCORE CANDIDATE PAIRS ──────────────┐
+│                                                    │
+│  [Candidate (internal_record, registry_record)]    │
+│           │                                        │
+│           ▼                                        │
+│  [Per-field comparison:                            │
+│   - first_name: Jaro-Winkler                       │
+│   - last_name: Damerau-Levenshtein + metaphone     │
+│   - credential: parsed-credential overlap          │
+│     (MD vs MD, DO vs DO, NP vs NP)                 │
+│   - license_number + state: exact                  │
+│   - taxonomy: NUCC code match (primary/any)        │
+│   - practice_address: token + USPS standardized    │
+│   - phone: weak signal, tiebreaker only            │
+│   - other_names: registry &quot;previous name&quot; match]   │
+│           │                                        │
+│           ▼                                        │
+│  [Probabilistic combiner (Fellegi-Sunter):         │
+│   - Per-field m and u from EM on internal-vs-      │
+│     registry labeled set (or use sensible          │
+│     default priors initially)                      │
+│   - Sum log-likelihood ratios                      │
+│   - Output: composite match score]                 │
+│           │                                        │
+│           ▼                                        │
+│  [Hard filters:                                    │
+│   - registry record deactivation status            │
+│     (deactivated NPIs auto-fail the match)         │
+│   - Type 1 vs Type 2 type-mismatch fail            │
+│   - State-license-mismatch hard fail when          │
+│     internal record has explicit license state]    │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── ROUTE BY THRESHOLD ─────────────────┐
+│                                                    │
+│  [Per-candidate composite score]                   │
+│           │                                        │
+│           ▼                                        │
+│  [Pick highest-scoring candidate as proposed       │
+│   match, second-highest as runner-up]              │
+│           │                                        │
+│           ▼                                        │
+│  [Top score &gt;= HIGH_THRESHOLD AND                  │
+│   margin(top, runner-up) &gt;= MIN_MARGIN ?]          │
+│      ├── Yes → AUTO-ATTACH path                    │
+│      └── No                                        │
+│            │                                       │
+│            ▼                                       │
+│      [Top score &lt;= LOW_THRESHOLD?]                 │
+│          ├── Yes → AUTO-NON-MATCH (no action)     │
+│          └── No → REVIEW QUEUE                    │
+│                     │                              │
+│                     ▼                              │
+│             [Credentialing / provider-data         │
+│              specialist review:                    │
+│              attach / not-this-NPI / unknown]      │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── PERSIST AND SCHEDULE RE-VERIFY ─────┐
+│                                                    │
+│  [Match decision (auto or human)]                  │
+│           │                                        │
+│           ▼                                        │
+│  [Write to provider-NPI assignment table:          │
+│   - internal_provider_id                           │
+│   - matched_npi (Type 1 and any Type 2 list)       │
+│   - match_score, match_method, decided_by,         │
+│     decided_at                                     │
+│   - source registry version (NPPES file date)      │
+│   - drift fields snapshot (address, taxonomy,      │
+│     deactivation status at time of match)]         │
+│           │                                        │
+│           ▼                                        │
+│  [Schedule re-verification per regulatory          │
+│   cadence (typically 90 days);                     │
+│   refresh from latest NPPES on each cycle]         │
+│           │                                        │
+│           ▼                                        │
+│  [Drift detection: compare current registry        │
+│   record to drift snapshot; surface changes        │
+│   (address, taxonomy, deactivation) to ops]        │
+│           │                                        │
+│           ▼                                        │
+│  [Emit assignment-and-drift events to              │
+│   downstream consumers (credentialing,             │
+│   directory, claims processing, network            │
+│   adequacy reporting)]                             │
+│                                                    │
+└────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>Ingest is dual-source.</strong> Two ingest paths run in parallel: the internal provider data (from credentialing, HR, network management, or however the institution maintains its provider records) and the NPPES extract (from the monthly downloadable file plus on-demand API calls for newly-onboarded providers between batch refreshes). Both sides are normalized to the same canonical field schema before any matching happens. The internal data is usually messier (free-text specialty fields, inconsistent credential strings, sometimes-stale addresses); the registry data is cleaner but has its own quirks (mailing address vs practice address, multiple taxonomies with one designated primary, the periodic deactivation events).</p>
+<p><strong>Blocking is more efficient than in patient matching because the cardinality is lower and the anchor fields are stronger.</strong> Pass one (license number plus state) often returns a single candidate, and that single candidate is almost always the right answer. Pass two (name plus state) handles records without a license-number field. The remaining passes are tighter than the patient-matching equivalents because the registry is smaller (a few million NPIs total versus the population of an entire health system). For a typical internal directory of a few thousand to a hundred thousand providers, the candidate-pair count comes out in the tens of thousands to low millions, all of which is fast.</p>
+<p><strong>Scoring uses the same probabilistic-linkage core as recipe 5.1, with additional hard filters specific to the registry.</strong> A registry record marked deactivated is filtered out of the candidate pool unless your internal record is also marked inactive. A Type 2 NPI candidate is filtered out when the internal record is for an individual provider, and vice versa. State-license mismatch is a hard fail when both sides have explicit license states. These filters do not need to go through the probabilistic combiner; they are categorical exclusions that make the downstream comparator work easier and reduce false positives in low-information cases (a name match in the wrong state, for example, gets excluded before it ever scores).</p>
+<p><strong>Threshold routing adds a margin requirement.</strong> Unlike patient matching, where the typical question is &quot;are these two records the same person,&quot; provider matching often has a &quot;best candidate vs runner-up&quot; structure where multiple plausible candidates exist (multiple Sarah Patels in the state, for example). The router should require not just a high absolute score on the top candidate but a meaningful margin between the top candidate and the runner-up. A top score of 9.5 with a runner-up of 9.3 is suspicious; that pair should go to review even though the top candidate cleared the absolute threshold. A top score of 9.5 with a runner-up of 2.1 is unambiguous.</p>
+<p><strong>Persistence captures both the match and a drift snapshot.</strong> The match record stores the matched NPI, the score, the decision metadata, and a snapshot of the registry fields most likely to drift (practice address, taxonomy, deactivation status, license expiration). At each re-verification, the snapshot lets the system detect drift cheaply: compare current registry values to the snapshot, surface differences. Drift events feed the credentialing team's queue and the directory accuracy compliance reporting.</p>
+<p><strong>Re-verification cadence is a first-class scheduling concern.</strong> Network adequacy regulations require periodic verification (commonly every ninety days). The architecture schedules re-verification per regulatory cadence, executes it on the schedule, and surfaces failures (NPI deactivated, address changed, taxonomy changed) to operations. The schedule is per-NPI, not per-batch, so additions to the network start their re-verification timer from their match date rather than from the next batch cycle.</p>
+<p><strong>Cohort-stratified accuracy monitoring is required here too.</strong> Provider-matching errors are not uniformly distributed across cohorts. Providers with names from naming conventions outside the dominant culture, providers with newly-issued NPIs (less drift history, less data to cross-reference), and providers in certain rural states (where multiple providers share addresses or where address standardization is harder) all match at different rates than the dominant cohort. The monitoring patterns from recipe 5.1 carry over directly: per-cohort match rate, per-cohort review-queue depth, per-cohort post-match drift rate, with alert thresholds and a documented remediation pathway when disparities cross threshold.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter05.02-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>Provider-NPI matching is the easiest entity-resolution problem in healthcare and it is still surprisingly under-implemented. The reason it is easy: there is an authoritative public registry, the registry is queryable, the data is generally clean, and the cardinality is two to three orders of magnitude smaller than patient matching. The reason it is under-implemented: most organizations have grown their provider directory organically through credentialing files that were spreadsheets, then a credentialing tool, then the credentialing tool got replaced and the data did not get fully migrated, then the network was acquired and merged, and the resulting provider table has every shape of bad data you can imagine. The infrastructure exists in the credentialing tool. The infrastructure exists in the network management system. Nobody has stitched them together with the registry as the connective tissue. The matcher is the connective tissue.</p>
+<p>The trap most specific to this domain is treating it as a credentialing-team problem rather than as a directory-and-claims problem. Credentialing teams care about NPI verification because their compliance posture requires it; they think of the matcher as a credentialing-quality control. Network management teams care about NPI verification because their directory accuracy requires it; they think of the matcher as a directory-quality control. Claims teams care because their claim NPI validation requires it. Network adequacy teams care because their compliance reports require it. Each of these constituencies builds (or buys) their own version of the matcher, with their own thresholds, their own review queues, their own update cadence, and their own audit trail. The matcher gets duplicated three or four times across the organization, and the matches drift relative to each other, and the directory says one thing while the claims-validation system says another and the credentialing system says a third. The pattern that works is to centralize the matcher as a shared service with a single source of truth (the assignment table), and have all the downstream consumers consume from that single source. That is an organizational design decision more than a technical one, and it is the most consequential decision in the project.</p>
+<p>A second trap, related: under-investing in the drift-detection pipeline. The match-once-and-forget pattern is the default. NPPES drifts. The provider's address changes. The provider acquires an additional taxonomy. The provider's NPI gets deactivated. Without drift detection, your directory says the provider is at the old address six months after they moved, your claims system rejects valid claims because the credentialed NPI is now deactivated, and your network adequacy report says the network has providers it does not actually have. Drift detection is not a sophisticated piece of engineering; it is a snapshot comparison and an event emit. But it is the difference between a matcher that keeps the directory accurate and a matcher that produces a static snapshot that decays. Build the drift pipeline at the same time as the initial matcher; do not defer it.</p>
+<p>The third trap, specific to organizations with multiple lines of business: configuring the re-verification cadence as a global constant rather than per-segment. Medicare Advantage has stricter requirements than commercial. Medicaid has state-by-state variation. Behavioral-health networks have different rules than medical networks.  A global ninety-day cadence might be fine for the largest segment and inadequate for the most-regulated one. Architect for per-segment cadences from the start. The complexity of segment-specific configuration is small; the complexity of retrofitting it after a Medicare Advantage audit is large.</p>
+<p>The thing that surprises people coming from generic data-integration backgrounds is the centrality of the deactivation flag. In most data-integration problems, the source data is treated as authoritative and stable. NPPES is authoritative but not stable: NPIs get deactivated when providers retire, die, or notify NPPES of a change in status. A matched NPI that becomes deactivated is a critical event for the directory (the provider is no longer in network) and for claims (claims billed under a deactivated NPI may be rejected) and for credentialing (the provider's status needs review). The deactivation flag is the most important field in the drift-detection pipeline, full stop. Do not bury it. Surface it. Alarm on it. Make it the highest-priority drift event.</p>
+<p>The thing about the equity dimension: provider-matching disparities are real, smaller in scale than patient-matching disparities (because the data quality is higher and the registry is authoritative), but real nonetheless. Providers with names from naming conventions outside the dominant culture, providers in rural areas where address standardization is harder, providers with newly-issued NPIs (less data to cross-reference), all match at slightly worse rates. Cohort-stratified accuracy monitoring catches this; per-cohort comparator tuning addresses it. The directory consequences of these disparities are concrete: a provider with a slightly-worse-matching name is more likely to have a stale or wrong directory entry, which means members trying to find that provider have a worse experience, which means the provider's patient population is more likely to be inadequately served. Equity in matching is equity in access.</p>
+<p>The thing I would do differently the second time: invest more in the front-door capture of NPI at every point a provider enters the data ecosystem. Credentialing applications. HR onboarding for employed providers. Network agreements for contracted providers. Vendor agreements for billing services. Every form that asks for a provider should ask for the NPI. Every system that creates a provider record should require the NPI as a non-null field. The matcher exists because the front-door capture is incomplete; making the front-door capture more complete reduces the load on the matcher and improves the quality of every downstream system. Run the front-door capture project in parallel with the matcher build, not after.</p>
+<p>Last point, because it is specific to the regulatory context: provider directory accuracy is now a compliance issue, not just a customer-experience issue. The No Surprises Act, CMS sub-regulatory guidance, and state-level provider-directory rules impose specific verification cadences, specific member-facing remediation pathways, and specific penalties for chronic inaccuracy.  The matcher is not an optional operational improvement. It is the substrate that makes compliance possible. Build it as compliance infrastructure, with the audit trail, retention discipline, and access control that comes with that designation. The cost of building it well is small relative to the cost of explaining to regulators why the directory was wrong for six months in a row.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 5.1 (Internal Duplicate Patient Detection):</strong> Sibling Simple-tier recipe; the string-similarity, probabilistic-linkage, blocking, review-queue, and audit infrastructure are shared. The provider-matching pipeline is essentially recipe 5.1's framework reapplied to a different data source with additional drift-detection and re-verification logic.</li>
+<li><strong>Recipe 5.3 (Address Standardization and Household Linkage):</strong> The USPS-standardization layer used for provider practice addresses is the same layer used for patient addresses and household linkage. Build it once, use it across recipes.</li>
+<li><strong>Recipe 5.4 (Insurance Eligibility Matching):</strong> Provider-NPI verification is part of insurance eligibility (the eligibility response often references the in-network provider's NPI); the verification pipelines are complementary.</li>
+<li><strong>Recipe 5.5 (Cross-Facility Patient Matching for HIE):</strong> Provider-NPI assignments are part of the HIE participant data; the matching infrastructure carries forward.</li>
+<li><strong>Recipe 5.6 (Claims-to-Clinical Data Linkage):</strong> Claims carry billing NPI, rendering NPI, attending NPI, and other provider identifiers; linking those to internal provider records uses the matcher built here.</li>
+<li><strong>Recipe 4.3 (Provider Directory Search Optimization):</strong> A clean provider-NPI assignment table with current addresses and taxonomies is the foundation for provider-directory search optimization.</li>
+<li><strong>Recipe 7.x (Predictive Analytics):</strong> Provider-attributed quality measures and risk-adjusted outcomes depend on accurate provider-attribution, which depends on accurate NPI matching.</li>
+<li><strong>Recipe 13.x (Knowledge Graphs):</strong> A clean provider identity is an anchor in any provider-centric or patient-provider knowledge graph; the matcher's output feeds the entity-resolution layer underneath the graph.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>entity-resolution</code> · <code>record-linkage</code> · <code>provider-matching</code> · <code>npi</code> · <code>nppes</code> · <code>credentialing</code> · <code>provider-directory</code> · <code>network-adequacy</code> · <code>fellegi-sunter</code> · <code>probabilistic-linkage</code> · <code>blocking</code> · <code>string-similarity</code> · <code>drift-detection</code> · <code>re-verification</code> · <code>splink</code> · <code>simple</code> · <code>mvp</code> · <code>hipaa</code> · <code>no-surprises-act</code></p>
+<hr />
+<p><em>← <a href="chapter05.01-internal-duplicate-patient-detection.html">Recipe 5.1: Internal Duplicate Patient Detection</a> · Chapter 5 · <a href="chapter05.03-address-standardization-household-linkage.html">Next: Recipe 5.3 - Address Standardization and Household Linkage →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

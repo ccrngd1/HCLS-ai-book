@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 9.9: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-99-python-implementation-example">Recipe 9.9: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 9.9. Real surgical video analysis involves multi-day GPU training runs, transformer architectures processing thousands of frames, and months of expert annotation. This example demonstrates the <em>shape</em> of the pipeline using synthetic data and simulated model outputs. It shows how you'd orchestrate the AWS pieces (S3, MediaConvert, SageMaker, DynamoDB, OpenSearch) with boto3. Think of it as a map of the territory, not the territory itself. A starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and a few numerical libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>requests<span class="w"> </span>requests-aws4auth
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code> (video and frame storage)</li>
+<li><code>mediaconvert:CreateJob</code>, <code>mediaconvert:GetJob</code> (frame extraction)</li>
+<li><code>sagemaker:CreateTransformJob</code>, <code>sagemaker:DescribeTransformJob</code> (model inference)</li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code> (procedure index)</li>
+<li><code>es:ESHttpPost</code>, <code>es:ESHttpGet</code> (OpenSearch indexing and search)</li>
+<li><code>states:StartExecution</code> (pipeline orchestration)</li>
+</ul>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>These go at the top of your module. They define the frame sampling parameters, model configuration, phase definitions, and AWS resource names. In production, most of these would come from environment variables or SSM Parameter Store.</p>
+<div class="code"><pre><span></span><span class="c1"># Frame sampling configuration.</span>
+<span class="c1"># 1 fps is standard for phase recognition. Phase transitions happen over seconds,</span>
+<span class="c1"># not milliseconds, so higher rates just burn GPU time without improving accuracy.</span>
+<span class="c1"># For instrument detection, you&#39;d bump this to 5 fps.</span>
+<span class="n">SAMPLE_RATE_FPS</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Model input resolution.</span>
+<span class="c1"># Most surgical video models expect 224x224 or 384x384.</span>
+<span class="c1"># Higher resolution captures more detail but costs more GPU memory per frame.</span>
+<span class="n">MODEL_INPUT_SIZE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">)</span>
+
+<span class="c1"># Feature extraction output dimension.</span>
+<span class="c1"># ResNet-50 backbone produces 2048-dimensional feature vectors.</span>
+<span class="c1"># These get fed into the temporal model.</span>
+<span class="n">FEATURE_DIM</span> <span class="o">=</span> <span class="mi">2048</span>
+
+<span class="c1"># Batch size for GPU inference.</span>
+<span class="c1"># How many frames to process in one forward pass.</span>
+<span class="c1"># Depends on GPU memory; 32 is safe for most g5 instances.</span>
+<span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">32</span>
+
+<span class="c1"># Phase definitions for laparoscopic cholecystectomy.</span>
+<span class="c1"># These are the surgical phases the temporal model predicts.</span>
+<span class="c1"># Other procedure types would have different phase sets.</span>
+<span class="n">CHOLECYSTECTOMY_PHASES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;port_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;initial_dissection&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;calot_triangle_dissection&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;clipping_and_cutting&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;gallbladder_separation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;extraction_and_inspection&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># Instrument classes the model can detect.</span>
+<span class="c1"># Multi-label: multiple instruments can be present simultaneously.</span>
+<span class="n">INSTRUMENT_CLASSES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;grasper&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hook_cautery&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;scissors&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;clip_applier&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;irrigator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;specimen_bag&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># Event types the model flags.</span>
+<span class="n">EVENT_TYPES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;bleeding_minor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bleeding_major&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;clip_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;specimen_extraction&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;conversion_to_open&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># Post-processing parameters.</span>
+<span class="c1"># Minimum phase duration in seconds. No surgical phase lasts less than 30 seconds.</span>
+<span class="n">MIN_PHASE_DURATION_SEC</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="c1"># Median filter window for phase smoothing (in frames at SAMPLE_RATE_FPS).</span>
+<span class="n">PHASE_SMOOTH_WINDOW</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="c1"># Gap fill for instrument detection: brief disappearances shorter than this</span>
+<span class="c1"># are likely occlusion, not actual instrument removal.</span>
+<span class="n">INSTRUMENT_GAP_FILL_SEC</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="c1"># Confidence thresholds.</span>
+<span class="c1"># Below these, predictions are marked low-confidence in the output.</span>
+<span class="n">PHASE_CONFIDENCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>
+<span class="n">EVENT_CONFIDENCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.50</span>
+
+<span class="c1"># AWS resource names. In production, pull these from environment variables.</span>
+<span class="n">RAW_VIDEO_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;surgical-video-raw&quot;</span>
+<span class="n">FRAMES_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;surgical-frames&quot;</span>
+<span class="n">FEATURES_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;surgical-features&quot;</span>
+<span class="n">PROCEDURE_INDEX_TABLE</span> <span class="o">=</span> <span class="s2">&quot;procedure-index&quot;</span>
+<span class="n">PROCEDURE_REGISTRY_TABLE</span> <span class="o">=</span> <span class="s2">&quot;procedure-registry&quot;</span>
+<span class="n">OPENSEARCH_DOMAIN</span> <span class="o">=</span> <span class="s2">&quot;https://vpc-surgical-search-xxxxx.us-east-1.es.amazonaws.com&quot;</span>
+<span class="n">SAGEMAKER_FEATURE_MODEL</span> <span class="o">=</span> <span class="s2">&quot;surgical-feature-extractor&quot;</span>
+<span class="n">SAGEMAKER_TEMPORAL_MODEL</span> <span class="o">=</span> <span class="s2">&quot;surgical-temporal-model&quot;</span>
+<span class="n">MEDIACONVERT_ROLE_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:iam::123456789012:role/MediaConvertRole&quot;</span>
+<span class="n">MEDIACONVERT_QUEUE_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:mediaconvert:us-east-1:123456789012:queues/Default&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-video-ingestion-and-metadata-registration">Step 1: Video Ingestion and Metadata Registration</h2>
+<p><em>Maps to pseudocode Step 1: <code>ingest_video(video_file, metadata)</code>. When a surgical video arrives from the OR recording system, this function uploads it to encrypted S3 storage, registers it in the procedure tracking table, and returns the procedure ID that links everything together downstream.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. In production, use JSON-formatted output for</span>
+<span class="c1"># CloudWatch Logs Insights queries.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Retry configuration. Surgical video processing involves long-running jobs</span>
+<span class="c1"># and large file transfers. Adaptive retry handles throttling gracefully.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">mediaconvert_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;mediaconvert&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">stepfunctions_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;stepfunctions&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ingest_video</span><span class="p">(</span><span class="n">video_s3_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Register a surgical video that has landed in S3 and trigger the analysis pipeline.</span>
+
+<span class="sd">    In practice, the video is uploaded by the OR recording system (or a transfer</span>
+<span class="sd">    agent) before this function runs. This function handles the metadata registration</span>
+<span class="sd">    and pipeline trigger, not the upload itself.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        video_s3_key: S3 key where the video already exists in RAW_VIDEO_BUCKET.</span>
+<span class="sd">                      Example: &quot;uploads/2026-05-15/OR3-case-morning.mp4&quot;</span>
+<span class="sd">        metadata: Dict with procedure_type, surgeon_id, procedure_date,</span>
+<span class="sd">                  duration_seconds.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        procedure_id: Unique identifier linking all downstream artifacts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">procedure_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;proc-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">12</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Register in the procedure tracking table.</span>
+    <span class="c1"># Status progresses: ingested -&gt; extracting_frames -&gt; analyzing -&gt; complete (or failed).</span>
+    <span class="n">registry_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">PROCEDURE_REGISTRY_TABLE</span><span class="p">)</span>
+    <span class="n">registry_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ingested&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;procedure_type&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_type&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;surgeon_id&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;surgeon_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;procedure_date&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_date&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;video_duration_seconds&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;duration_seconds&quot;</span><span class="p">])),</span>
+        <span class="s2">&quot;video_s3_key&quot;</span><span class="p">:</span> <span class="n">video_s3_key</span><span class="p">,</span>
+        <span class="s2">&quot;ingested_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+    <span class="p">})</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Registered procedure </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">, </span><span class="si">%d</span><span class="s2"> seconds&quot;</span><span class="p">,</span>
+        <span class="n">procedure_id</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_type&quot;</span><span class="p">],</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;duration_seconds&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">procedure_id</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-frame-extraction-with-mediaconvert">Step 2: Frame Extraction with MediaConvert</h2>
+<p><em>Maps to pseudocode Step 2: <code>extract_frames(procedure_id, video_key, sample_rate_fps)</code>. This step uses AWS Elemental MediaConvert to extract frames at the target sample rate. MediaConvert handles the variety of video formats and codecs that different OR recording systems produce, so you don't have to run FFmpeg on EC2.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_frame_extraction_job</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">video_s3_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Submit a MediaConvert job to extract frames from the surgical video.</span>
+
+<span class="sd">    MediaConvert transcodes the video and outputs individual JPEG frames</span>
+<span class="sd">    at the configured sample rate. This handles format normalization</span>
+<span class="sd">    (different OR systems use different codecs) and frame rate conversion</span>
+<span class="sd">    in a single managed operation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        procedure_id: Links this job to the procedure record.</span>
+<span class="sd">        video_s3_key: S3 key of the raw video in RAW_VIDEO_BUCKET.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        job_id: MediaConvert job ID for status polling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">FRAMES_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">/frames/&quot;</span>
+
+    <span class="c1"># MediaConvert job settings for frame extraction.</span>
+    <span class="c1"># The key trick: set the output frame rate to our sample rate (1 fps)</span>
+    <span class="c1"># and output as individual JPEG files. MediaConvert handles the decimation.</span>
+    <span class="n">job_settings</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;Inputs&quot;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s2">&quot;FileInput&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">RAW_VIDEO_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">video_s3_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;VideoSelector&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;AudioSelector&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;DefaultSelection&quot;</span><span class="p">:</span> <span class="s2">&quot;DEFAULT&quot;</span><span class="p">},</span>
+        <span class="p">}],</span>
+        <span class="s2">&quot;OutputGroups&quot;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;FrameExtraction&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;OutputGroupSettings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;FILE_GROUP_SETTINGS&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;FileGroupSettings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;Destination&quot;</span><span class="p">:</span> <span class="n">output_prefix</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;Outputs&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;VideoDescription&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;Width&quot;</span><span class="p">:</span> <span class="n">MODEL_INPUT_SIZE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="s2">&quot;Height&quot;</span><span class="p">:</span> <span class="n">MODEL_INPUT_SIZE</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="s2">&quot;CodecSettings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;Codec&quot;</span><span class="p">:</span> <span class="s2">&quot;FRAME_CAPTURE&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;FrameCaptureSettings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;FramerateNumerator&quot;</span><span class="p">:</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">,</span>
+                            <span class="s2">&quot;FramerateDenominator&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;Quality&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+                        <span class="p">},</span>
+                    <span class="p">},</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;ContainerSettings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;Container&quot;</span><span class="p">:</span> <span class="s2">&quot;RAW&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">}],</span>
+        <span class="p">}],</span>
+    <span class="p">}</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">mediaconvert_client</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span>
+        <span class="n">Role</span><span class="o">=</span><span class="n">MEDIACONVERT_ROLE_ARN</span><span class="p">,</span>
+        <span class="n">Queue</span><span class="o">=</span><span class="n">MEDIACONVERT_QUEUE_ARN</span><span class="p">,</span>
+        <span class="n">Settings</span><span class="o">=</span><span class="n">job_settings</span><span class="p">,</span>
+        <span class="c1"># MediaConvert uses a flat dict for tags (unlike SageMaker which uses Key/Value list)</span>
+        <span class="n">Tags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">job_id</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Job&quot;</span><span class="p">][</span><span class="s2">&quot;Id&quot;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Created MediaConvert job </span><span class="si">%s</span><span class="s2"> for procedure </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">procedure_id</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">job_id</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_valid_frames</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    After frame extraction, filter out non-informative frames.</span>
+<span class="sd">    Call this AFTER the MediaConvert job completes (poll with get_job or use EventBridge).</span>
+
+<span class="sd">    Black frames (camera disconnected), completely white frames (lens fogging),</span>
+<span class="sd">    and uniform-color frames (light source off) are useless for analysis.</span>
+<span class="sd">    We detect these by checking pixel statistics.</span>
+
+<span class="sd">    In this simplified version, we simulate the filtering logic since we don&#39;t</span>
+<span class="sd">    have actual frame pixel data. In production, you&#39;d load each JPEG from S3,</span>
+<span class="sd">    compute mean/std of pixel values, and discard frames that fail the checks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        procedure_id: Identifies which frames to filter.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of valid frame S3 keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># List all extracted frames for this procedure.</span>
+    <span class="n">paginator</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_paginator</span><span class="p">(</span><span class="s2">&quot;list_objects_v2&quot;</span><span class="p">)</span>
+    <span class="n">frame_keys</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">paginator</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">FRAMES_BUCKET</span><span class="p">,</span>
+        <span class="n">Prefix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">/frames/&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">page</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Contents&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Key&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.jpg&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Key&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.jpeg&quot;</span><span class="p">):</span>
+                <span class="n">frame_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Key&quot;</span><span class="p">])</span>
+
+    <span class="n">frame_keys</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># ensure temporal order</span>
+
+    <span class="c1"># In production, you&#39;d download each frame (or a sample) and check:</span>
+    <span class="c1">#   mean_pixel &lt; 10  -&gt; black frame, skip</span>
+    <span class="c1">#   std_pixel &lt; 5    -&gt; uniform frame (fog/cap), skip</span>
+    <span class="c1"># For this example, we assume all frames pass (real filtering would</span>
+    <span class="c1"># typically remove 2-5% of frames from a typical procedure).</span>
+    <span class="n">valid_frames</span> <span class="o">=</span> <span class="n">frame_keys</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Procedure </span><span class="si">%s</span><span class="s2">: </span><span class="si">%d</span><span class="s2"> total frames, </span><span class="si">%d</span><span class="s2"> valid after filtering&quot;</span><span class="p">,</span>
+        <span class="n">procedure_id</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">frame_keys</span><span class="p">),</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">valid_frames</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Write the manifest so downstream steps know which frames to process.</span>
+    <span class="n">manifest</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span> <span class="s2">&quot;valid_frames&quot;</span><span class="p">:</span> <span class="n">valid_frames</span><span class="p">}</span>
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">FRAMES_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">/manifest.json&quot;</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">manifest</span><span class="p">),</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">valid_frames</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-feature-extraction-via-sagemaker-batch-transform">Step 3: Feature Extraction via SageMaker Batch Transform</h2>
+<p><em>Maps to pseudocode Step 3: <code>extract_features(procedure_id, frame_manifest)</code>. Each valid frame passes through a CNN backbone (ResNet-50 fine-tuned on surgical video) to produce a compact feature vector. SageMaker Batch Transform handles this at scale without you managing GPU instances directly.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">launch_feature_extraction</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">valid_frames</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Launch a SageMaker Batch Transform job to extract features from all frames.</span>
+
+<span class="sd">    The feature extraction model is a ResNet-50 backbone (pretrained on ImageNet,</span>
+<span class="sd">    fine-tuned on surgical video) with the final classification layer removed.</span>
+<span class="sd">    It takes a 224x224 image and outputs a 2048-dimensional feature vector.</span>
+
+<span class="sd">    Batch Transform processes all frames in parallel across the instance(s),</span>
+<span class="sd">    writing feature vectors back to S3.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        procedure_id: Links this job to the procedure.</span>
+<span class="sd">        valid_frames: List of S3 keys for frames to process.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        transform_job_name: For polling job status.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sagemaker_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+    <span class="n">transform_job_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;feat-</span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># The input is the frames prefix in S3.</span>
+    <span class="c1"># Batch Transform will process every object under this prefix.</span>
+    <span class="n">input_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">FRAMES_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">/frames/&quot;</span>
+    <span class="n">output_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">FEATURES_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">/&quot;</span>
+
+    <span class="n">sagemaker_client</span><span class="o">.</span><span class="n">create_transform_job</span><span class="p">(</span>
+        <span class="n">TransformJobName</span><span class="o">=</span><span class="n">transform_job_name</span><span class="p">,</span>
+        <span class="n">ModelName</span><span class="o">=</span><span class="n">SAGEMAKER_FEATURE_MODEL</span><span class="p">,</span>
+        <span class="n">TransformInput</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;DataSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;S3DataSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;S3DataType&quot;</span><span class="p">:</span> <span class="s2">&quot;S3Prefix&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;S3Uri&quot;</span><span class="p">:</span> <span class="n">input_prefix</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;ContentType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/x-image&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SplitType&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>  <span class="c1"># each file is one input</span>
+        <span class="p">},</span>
+        <span class="n">TransformOutput</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;S3OutputPath&quot;</span><span class="p">:</span> <span class="n">output_prefix</span><span class="p">,</span>
+            <span class="s2">&quot;AssembleWith&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">TransformResources</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;InstanceType&quot;</span><span class="p">:</span> <span class="s2">&quot;ml.g5.xlarge&quot;</span><span class="p">,</span>  <span class="c1"># GPU instance for CNN inference</span>
+            <span class="s2">&quot;InstanceCount&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">MaxPayloadInMB</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>  <span class="c1"># each frame is well under 6 MB</span>
+        <span class="n">BatchStrategy</span><span class="o">=</span><span class="s2">&quot;SingleRecord&quot;</span><span class="p">,</span>
+        <span class="n">Tags</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;Key&quot;</span><span class="p">:</span> <span class="s2">&quot;procedure_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">}],</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Launched feature extraction job </span><span class="si">%s</span><span class="s2"> for </span><span class="si">%d</span><span class="s2"> frames&quot;</span><span class="p">,</span>
+        <span class="n">transform_job_name</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">valid_frames</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">transform_job_name</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">wait_for_transform_job</span><span class="p">(</span><span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Poll a SageMaker Batch Transform job until it completes or fails.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        job_name: The transform job name.</span>
+<span class="sd">        poll_interval: Seconds between status checks.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Final job status: &quot;Completed&quot; or &quot;Failed&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sagemaker_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">sagemaker_client</span><span class="o">.</span><span class="n">describe_transform_job</span><span class="p">(</span>
+            <span class="n">TransformJobName</span><span class="o">=</span><span class="n">job_name</span>
+        <span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;TransformJobStatus&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;Completed&quot;</span><span class="p">,</span> <span class="s2">&quot;Failed&quot;</span><span class="p">,</span> <span class="s2">&quot;Stopped&quot;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Transform job </span><span class="si">%s</span><span class="s2"> finished with status: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">status</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Transform job </span><span class="si">%s</span><span class="s2"> status: </span><span class="si">%s</span><span class="s2">, waiting...&quot;</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">poll_interval</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-temporal-modeling-and-multi-task-prediction">Step 4: Temporal Modeling and Multi-Task Prediction</h2>
+<p><em>Maps to pseudocode Step 4: <code>temporal_prediction(procedure_id, features)</code>. This is where the system reasons across time. The sequence of frame features passes through a temporal model (transformer or TCN) that considers the full procedure context to predict phase, instruments, and events at each time point.</em></p>
+<p>In production, this would be another SageMaker endpoint or batch transform job running the temporal model. For this example, we simulate the temporal model's output to demonstrate the downstream pipeline.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_temporal_prediction</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_frames</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run temporal model inference on the feature sequence.</span>
+
+<span class="sd">    In production, this loads the feature vectors from S3, sends them to a</span>
+<span class="sd">    SageMaker endpoint running the temporal model (transformer or TCN), and</span>
+<span class="sd">    gets back per-frame predictions for phase, instruments, and events.</span>
+
+<span class="sd">    For this example, we generate synthetic predictions that look like a</span>
+<span class="sd">    realistic cholecystectomy. The structure of the output is what matters</span>
+<span class="sd">    for understanding the downstream pipeline.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        procedure_id: Identifies which features to load.</span>
+<span class="sd">        num_frames: Number of frames in the sequence (at SAMPLE_RATE_FPS).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with phase_predictions, instrument_predictions, event_predictions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># In production, you&#39;d load features and call the temporal model:</span>
+    <span class="c1">#</span>
+    <span class="c1">#   features = np.load(f&quot;s3://{FEATURES_BUCKET}/{procedure_id}/features.npy&quot;)</span>
+    <span class="c1">#   endpoint_response = sagemaker_runtime.invoke_endpoint(</span>
+    <span class="c1">#       EndpointName=SAGEMAKER_TEMPORAL_MODEL,</span>
+    <span class="c1">#       Body=features.tobytes(),</span>
+    <span class="c1">#       ContentType=&quot;application/x-npy&quot;,</span>
+    <span class="c1">#   )</span>
+    <span class="c1">#   predictions = parse_response(endpoint_response)</span>
+    <span class="c1">#</span>
+    <span class="c1"># Instead, we generate synthetic predictions for a ~47-minute cholecystectomy.</span>
+
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># reproducible synthetic data</span>
+
+    <span class="c1"># Simulate phase predictions.</span>
+    <span class="c1"># A typical cholecystectomy has phases of varying duration.</span>
+    <span class="c1"># We assign frames to phases proportionally.</span>
+    <span class="n">phase_proportions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.065</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.26</span><span class="p">,</span> <span class="mf">0.065</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">]</span>
+    <span class="n">phase_boundaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">num_frames</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">phase_proportions</span><span class="p">])</span>
+    <span class="n">phase_boundaries</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_frames</span>  <span class="c1"># ensure we cover all frames</span>
+
+    <span class="n">phase_predictions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">phase_confidences</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_frames</span><span class="p">)</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">phase_idx</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">phase_boundaries</span><span class="p">):</span>
+        <span class="n">phase_predictions</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="o">=</span> <span class="n">phase_idx</span>
+        <span class="c1"># High confidence in the middle of phases, lower at boundaries.</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+            <span class="n">dist_from_boundary</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">f</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">-</span> <span class="n">f</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># Confidence ramps up from 0.7 at boundaries to 0.95 in the middle.</span>
+            <span class="n">phase_confidences</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.70</span> <span class="o">+</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="p">(</span><span class="n">dist_from_boundary</span> <span class="o">/</span> <span class="mi">30</span><span class="p">))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">end</span>
+
+    <span class="c1"># Add some noise at phase boundaries (realistic: models struggle at transitions).</span>
+    <span class="k">for</span> <span class="n">boundary</span> <span class="ow">in</span> <span class="n">phase_boundaries</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">noise_range</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">num_frames</span> <span class="o">-</span> <span class="n">boundary</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="n">noise_range</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">boundary</span> <span class="o">+</span> <span class="n">offset</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="n">num_frames</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">:</span>
+                    <span class="c1"># Flip to adjacent phase with low confidence.</span>
+                    <span class="n">phase_predictions</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">phase_predictions</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">phase_confidences</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.45</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.2</span>
+
+    <span class="c1"># Simulate instrument predictions (multi-label, per frame).</span>
+    <span class="c1"># Grasper is almost always present. Others appear in specific phases.</span>
+    <span class="n">instrument_predictions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_frames</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">INSTRUMENT_CLASSES</span><span class="p">)))</span>
+    <span class="c1"># Grasper: present ~90% of the time.</span>
+    <span class="n">instrument_predictions</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">num_frames</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.90</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="c1"># Hook cautery: present during dissection phases (phases 1, 2, 4).</span>
+    <span class="k">for</span> <span class="n">phase_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">phase_predictions</span> <span class="o">==</span> <span class="n">phase_idx</span>
+        <span class="n">instrument_predictions</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">0.75</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="c1"># Clip applier: present during clipping phase (phase 3).</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">phase_predictions</span> <span class="o">==</span> <span class="mi">3</span>
+    <span class="n">instrument_predictions</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">0.85</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="c1"># Scissors: brief appearances during clipping.</span>
+    <span class="n">instrument_predictions</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">0.4</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">instrument_confidences</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
+        <span class="n">instrument_predictions</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.7</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">num_frames</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">INSTRUMENT_CLASSES</span><span class="p">)))</span> <span class="o">*</span> <span class="mf">0.25</span><span class="p">),</span>
+        <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Simulate event detections (sparse, specific moments).</span>
+    <span class="n">event_predictions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Minor bleeding during Calot&#39;s triangle dissection.</span>
+    <span class="n">calot_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">phase_boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">calot_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">phase_boundaries</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">bleeding_frame</span> <span class="o">=</span> <span class="n">calot_start</span> <span class="o">+</span> <span class="nb">int</span><span class="p">((</span><span class="n">calot_end</span> <span class="o">-</span> <span class="n">calot_start</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">event_predictions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;bleeding_minor&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;frame&quot;</span><span class="p">:</span> <span class="n">bleeding_frame</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.72</span><span class="p">,</span>
+    <span class="p">})</span>
+    <span class="c1"># Clip placements during clipping phase.</span>
+    <span class="n">clip_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">phase_boundaries</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">clip_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">phase_boundaries</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">clip_frame_1</span> <span class="o">=</span> <span class="n">clip_start</span> <span class="o">+</span> <span class="nb">int</span><span class="p">((</span><span class="n">clip_end</span> <span class="o">-</span> <span class="n">clip_start</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.3</span><span class="p">)</span>
+    <span class="n">clip_frame_2</span> <span class="o">=</span> <span class="n">clip_start</span> <span class="o">+</span> <span class="nb">int</span><span class="p">((</span><span class="n">clip_end</span> <span class="o">-</span> <span class="n">clip_start</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.6</span><span class="p">)</span>
+    <span class="n">event_predictions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;clip_placement&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;frame&quot;</span><span class="p">:</span> <span class="n">clip_frame_1</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.96</span><span class="p">,</span>
+    <span class="p">})</span>
+    <span class="n">event_predictions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;clip_placement&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;frame&quot;</span><span class="p">:</span> <span class="n">clip_frame_2</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.94</span><span class="p">,</span>
+    <span class="p">})</span>
+    <span class="c1"># Specimen extraction near the end.</span>
+    <span class="n">extract_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">phase_boundaries</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="n">event_predictions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;specimen_extraction&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;frame&quot;</span><span class="p">:</span> <span class="n">extract_start</span> <span class="o">+</span> <span class="mi">60</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.88</span><span class="p">,</span>
+    <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;phase_predictions&quot;</span><span class="p">:</span> <span class="n">phase_predictions</span><span class="p">,</span>
+        <span class="s2">&quot;phase_confidences&quot;</span><span class="p">:</span> <span class="n">phase_confidences</span><span class="p">,</span>
+        <span class="s2">&quot;instrument_predictions&quot;</span><span class="p">:</span> <span class="n">instrument_predictions</span><span class="p">,</span>
+        <span class="s2">&quot;instrument_confidences&quot;</span><span class="p">:</span> <span class="n">instrument_confidences</span><span class="p">,</span>
+        <span class="s2">&quot;event_predictions&quot;</span><span class="p">:</span> <span class="n">event_predictions</span><span class="p">,</span>
+        <span class="s2">&quot;num_frames&quot;</span><span class="p">:</span> <span class="n">num_frames</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-temporal-post-processing">Step 5: Temporal Post-Processing</h2>
+<p><em>Maps to pseudocode Step 5: <code>post_process(raw_predictions, sample_rate_fps)</code>. Raw per-frame predictions are noisy at phase boundaries. This step applies median filtering, minimum duration constraints, and instrument gap-filling to produce a clean, usable timeline.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">median_filter_1d</span><span class="p">(</span><span class="n">signal</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">window</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a 1D median filter to smooth phase predictions.</span>
+
+<span class="sd">    Median filtering is ideal for phase smoothing because it removes</span>
+<span class="sd">    isolated outlier frames (single-frame phase flickers) without</span>
+<span class="sd">    blurring the actual transitions. A mean filter would create</span>
+<span class="sd">    impossible fractional phase values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        signal: 1D array of integer phase labels.</span>
+<span class="sd">        window: Filter window size (must be odd for symmetric filtering).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Smoothed signal with same shape.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">window</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">window</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># ensure odd window</span>
+
+    <span class="n">padded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">window</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;edge&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)):</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">padded</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">window</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">enforce_min_phase_duration</span><span class="p">(</span><span class="n">phases</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_frames</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Merge short phase segments into their longer neighbors.</span>
+
+<span class="sd">    No surgical phase lasts less than 30 seconds. If the model predicts</span>
+<span class="sd">    a 5-second phase segment, it&#39;s almost certainly a misclassification.</span>
+<span class="sd">    We merge it into whichever adjacent phase is longer.</span>
+
+<span class="sd">    NOTE: Single pass. For very noisy predictions, you might need to iterate until stable.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        phases: 1D array of phase labels (already median-filtered).</span>
+<span class="sd">        min_frames: Minimum segment length in frames.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Phases with short segments merged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">phases</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Identify contiguous segments.</span>
+    <span class="n">changes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mi">0</span><span class="p">],</span> <span class="n">changes</span><span class="p">,</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)]])</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">seg_start</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">seg_end</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">seg_length</span> <span class="o">=</span> <span class="n">seg_end</span> <span class="o">-</span> <span class="n">seg_start</span>
+
+        <span class="k">if</span> <span class="n">seg_length</span> <span class="o">&lt;</span> <span class="n">min_frames</span><span class="p">:</span>
+            <span class="c1"># This segment is too short. Merge into the longer neighbor.</span>
+            <span class="n">left_length</span> <span class="o">=</span> <span class="n">seg_start</span> <span class="o">-</span> <span class="n">boundaries</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">right_length</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)]</span> <span class="o">-</span> <span class="n">seg_end</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+
+            <span class="k">if</span> <span class="n">left_length</span> <span class="o">&gt;=</span> <span class="n">right_length</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Merge into left neighbor.</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">seg_start</span><span class="p">:</span><span class="n">seg_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">seg_start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># Merge into right neighbor.</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">seg_start</span><span class="p">:</span><span class="n">seg_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">seg_end</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">post_process_predictions</span><span class="p">(</span><span class="n">raw_predictions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Clean up raw model predictions into a usable procedure timeline.</span>
+
+<span class="sd">    Applies:</span>
+<span class="sd">    1. Median filtering to remove single-frame phase flickers.</span>
+<span class="sd">    2. Minimum duration enforcement to eliminate impossibly short phases.</span>
+<span class="sd">    3. Instrument gap-filling to handle brief occlusions.</span>
+<span class="sd">    4. Timeline construction with start/end timestamps.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        raw_predictions: Output from run_temporal_prediction().</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with phase_timeline, instrument_log, and events.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_frames</span> <span class="o">=</span> <span class="n">raw_predictions</span><span class="p">[</span><span class="s2">&quot;num_frames&quot;</span><span class="p">]</span>
+    <span class="n">phases</span> <span class="o">=</span> <span class="n">raw_predictions</span><span class="p">[</span><span class="s2">&quot;phase_predictions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">phase_confs</span> <span class="o">=</span> <span class="n">raw_predictions</span><span class="p">[</span><span class="s2">&quot;phase_confidences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Step 5a: Median filter to remove phase flickers.</span>
+    <span class="n">phases</span> <span class="o">=</span> <span class="n">median_filter_1d</span><span class="p">(</span><span class="n">phases</span><span class="p">,</span> <span class="n">PHASE_SMOOTH_WINDOW</span><span class="p">)</span>
+
+    <span class="c1"># Step 5b: Enforce minimum phase duration.</span>
+    <span class="n">min_frames</span> <span class="o">=</span> <span class="n">MIN_PHASE_DURATION_SEC</span> <span class="o">*</span> <span class="n">SAMPLE_RATE_FPS</span>
+    <span class="n">phases</span> <span class="o">=</span> <span class="n">enforce_min_phase_duration</span><span class="p">(</span><span class="n">phases</span><span class="p">,</span> <span class="n">min_frames</span><span class="p">)</span>
+
+    <span class="c1"># Step 5c: Build phase timeline from contiguous segments.</span>
+    <span class="n">phase_timeline</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">changes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">phases</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mi">0</span><span class="p">],</span> <span class="n">changes</span><span class="p">,</span> <span class="p">[</span><span class="n">num_frames</span><span class="p">]])</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">seg_start</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">seg_end</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">phase_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">phases</span><span class="p">[</span><span class="n">seg_start</span><span class="p">])</span>
+
+        <span class="c1"># Average confidence across the segment.</span>
+        <span class="n">seg_confidence</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">phase_confs</span><span class="p">[</span><span class="n">seg_start</span><span class="p">:</span><span class="n">seg_end</span><span class="p">]))</span>
+
+        <span class="n">phase_timeline</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;phase_name&quot;</span><span class="p">:</span> <span class="n">CHOLECYSTECTOMY_PHASES</span><span class="p">[</span><span class="n">phase_idx</span><span class="p">],</span>
+            <span class="s2">&quot;start_time&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">seg_start</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">),</span>
+            <span class="s2">&quot;end_time&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">seg_end</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">),</span>
+            <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">seg_end</span> <span class="o">-</span> <span class="n">seg_start</span><span class="p">)</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">),</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">seg_confidence</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="p">})</span>
+
+    <span class="c1"># Step 5d: Build instrument usage log.</span>
+    <span class="c1"># For each instrument, find contiguous presence intervals.</span>
+    <span class="n">instrument_log</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">inst_preds</span> <span class="o">=</span> <span class="n">raw_predictions</span><span class="p">[</span><span class="s2">&quot;instrument_predictions&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">inst_idx</span><span class="p">,</span> <span class="n">inst_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">INSTRUMENT_CLASSES</span><span class="p">):</span>
+        <span class="n">presence</span> <span class="o">=</span> <span class="n">inst_preds</span><span class="p">[:,</span> <span class="n">inst_idx</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span>
+
+        <span class="c1"># Gap-fill: brief absences are likely occlusion.</span>
+        <span class="n">gap_fill_frames</span> <span class="o">=</span> <span class="n">INSTRUMENT_GAP_FILL_SEC</span> <span class="o">*</span> <span class="n">SAMPLE_RATE_FPS</span>
+        <span class="n">filled</span> <span class="o">=</span> <span class="n">presence</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Find gaps (False runs) shorter than threshold and fill them.</span>
+        <span class="n">in_gap</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">gap_start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filled</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">filled</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">in_gap</span><span class="p">:</span>
+                <span class="n">in_gap</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">gap_start</span> <span class="o">=</span> <span class="n">f</span>
+            <span class="k">elif</span> <span class="n">filled</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="ow">and</span> <span class="n">in_gap</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="o">-</span> <span class="n">gap_start</span> <span class="o">&lt;</span> <span class="n">gap_fill_frames</span><span class="p">:</span>
+                    <span class="n">filled</span><span class="p">[</span><span class="n">gap_start</span><span class="p">:</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">in_gap</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Extract intervals where instrument is present.</span>
+        <span class="n">changes_inst</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">filled</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">inst_boundaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mi">0</span><span class="p">],</span> <span class="n">changes_inst</span><span class="p">,</span> <span class="p">[</span><span class="n">num_frames</span><span class="p">]])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inst_boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">seg_start</span> <span class="o">=</span> <span class="n">inst_boundaries</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">seg_end</span> <span class="o">=</span> <span class="n">inst_boundaries</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">filled</span><span class="p">[</span><span class="n">seg_start</span><span class="p">]:</span>
+                <span class="n">instrument_log</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;instrument&quot;</span><span class="p">:</span> <span class="n">inst_name</span><span class="p">,</span>
+                    <span class="s2">&quot;start_time&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">seg_start</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">),</span>
+                    <span class="s2">&quot;end_time&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">seg_end</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">),</span>
+                    <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">seg_end</span> <span class="o">-</span> <span class="n">seg_start</span><span class="p">)</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">),</span>
+                <span class="p">})</span>
+
+    <span class="c1"># Step 5e: Convert event frame indices to timestamps.</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">raw_predictions</span><span class="p">[</span><span class="s2">&quot;event_predictions&quot;</span><span class="p">]:</span>
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;frame&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span>
+        <span class="c1"># Find which phase this event falls in.</span>
+        <span class="n">phase_context</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+        <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="n">phase_timeline</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;start_time&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">timestamp</span> <span class="o">&lt;</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;end_time&quot;</span><span class="p">]:</span>
+                <span class="n">phase_context</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;phase_name&quot;</span><span class="p">]</span>
+                <span class="k">break</span>
+
+        <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;event_type&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">timestamp</span><span class="p">),</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;phase_context&quot;</span><span class="p">:</span> <span class="n">phase_context</span><span class="p">,</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;phase_timeline&quot;</span><span class="p">:</span> <span class="n">phase_timeline</span><span class="p">,</span>
+        <span class="s2">&quot;instrument_log&quot;</span><span class="p">:</span> <span class="n">instrument_log</span><span class="p">,</span>
+        <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="n">events</span><span class="p">,</span>
+        <span class="s2">&quot;total_duration&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">num_frames</span> <span class="o">/</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-store-results-in-dynamodb-and-opensearch">Step 6: Store Results in DynamoDB and OpenSearch</h2>
+<p><em>Maps to pseudocode Step 6: <code>store_results(procedure_id, analysis_results)</code>. The structured analysis goes to two places: DynamoDB for fast procedure-level lookups, and OpenSearch for cross-procedure search queries.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">requests_aws4auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">AWS4Auth</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">store_results_dynamodb</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">analysis</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write the full procedure analysis to DynamoDB.</span>
+
+<span class="sd">    This supports the primary access pattern: &quot;give me everything about</span>
+<span class="sd">    procedure X.&quot; The phase timeline, instrument log, and events all live</span>
+<span class="sd">    in a single item for fast retrieval.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        procedure_id: Partition key for the record.</span>
+<span class="sd">        metadata: Procedure metadata (type, surgeon, date).</span>
+<span class="sd">        analysis: Output from post_process_predictions().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">PROCEDURE_INDEX_TABLE</span><span class="p">)</span>
+
+    <span class="c1"># DynamoDB doesn&#39;t accept Python floats. Convert all numeric values to Decimal.</span>
+    <span class="c1"># This is a common gotcha that will crash your Lambda at 2am if you forget.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decimalize</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">decimalize</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">decimalize</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="n">record</span> <span class="o">=</span> <span class="n">decimalize</span><span class="p">({</span>
+        <span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;analyzed&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;analyzed_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;procedure_type&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_type&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;surgeon_id&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;surgeon_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;procedure_date&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_date&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;total_duration&quot;</span><span class="p">:</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;total_duration&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;phase_timeline&quot;</span><span class="p">:</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;phase_timeline&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;instrument_log&quot;</span><span class="p">:</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;instrument_log&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;events&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;cholec-phase-v2.3&quot;</span><span class="p">,</span>
+    <span class="p">})</span>
+
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stored analysis for procedure </span><span class="si">%s</span><span class="s2"> in DynamoDB&quot;</span><span class="p">,</span> <span class="n">procedure_id</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">index_results_opensearch</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">analysis</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Index the procedure analysis in OpenSearch for cross-procedure search.</span>
+
+<span class="sd">    This supports queries like &quot;find all procedures where bleeding occurred</span>
+<span class="sd">    during Calot&#39;s triangle dissection&quot; or &quot;show me cases where the clipping</span>
+<span class="sd">    phase took longer than 5 minutes.&quot;</span>
+
+<span class="sd">    We index phases and events as separate documents so they&#39;re independently</span>
+<span class="sd">    searchable with their own timestamps and attributes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        procedure_id: Links documents back to the procedure.</span>
+<span class="sd">        metadata: Procedure metadata for filtering.</span>
+<span class="sd">        analysis: Output from post_process_predictions().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># In production, use requests-aws4auth for SigV4 signing to the</span>
+    <span class="c1"># VPC-internal OpenSearch domain. This example shows the structure.</span>
+    <span class="c1">#</span>
+    <span class="c1"># credentials = boto3.Session().get_credentials()</span>
+    <span class="c1"># auth = AWS4Auth(</span>
+    <span class="c1">#     credentials.access_key,</span>
+    <span class="c1">#     credentials.secret_key,</span>
+    <span class="c1">#     &quot;us-east-1&quot;,</span>
+    <span class="c1">#     &quot;es&quot;,</span>
+    <span class="c1">#     session_token=credentials.token,</span>
+    <span class="c1"># )</span>
+    <span class="c1"># headers = {&quot;Content-Type&quot;: &quot;application/json&quot;}</span>
+
+    <span class="c1"># Index each phase as a searchable document.</span>
+    <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;phase_timeline&quot;</span><span class="p">]:</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span>
+            <span class="s2">&quot;procedure_type&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_type&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;surgeon_id&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;surgeon_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;procedure_date&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_date&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;phase_name&quot;</span><span class="p">:</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;phase_name&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;start_time&quot;</span><span class="p">:</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;start_time&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;end_time&quot;</span><span class="p">:</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;end_time&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;duration&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="c1"># In production:</span>
+        <span class="c1"># requests.post(</span>
+        <span class="c1">#     f&quot;{OPENSEARCH_DOMAIN}/procedure-phases/_doc&quot;,</span>
+        <span class="c1">#     json=doc, auth=auth, headers=headers,</span>
+        <span class="c1"># )</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Indexed phase: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%.0f</span><span class="s2">s)&quot;</span><span class="p">,</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;phase_name&quot;</span><span class="p">],</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;duration&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Index each event as a searchable document.</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;events&quot;</span><span class="p">]:</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span>
+            <span class="s2">&quot;procedure_type&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_type&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;surgeon_id&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;surgeon_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;procedure_date&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;procedure_date&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;event_type&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;phase_context&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;phase_context&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="c1"># In production:</span>
+        <span class="c1"># requests.post(</span>
+        <span class="c1">#     f&quot;{OPENSEARCH_DOMAIN}/procedure-events/_doc&quot;,</span>
+        <span class="c1">#     json=doc, auth=auth, headers=headers,</span>
+        <span class="c1"># )</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Indexed event: </span><span class="si">%s</span><span class="s2"> at </span><span class="si">%.0f</span><span class="s2">s&quot;</span><span class="p">,</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;event_type&quot;</span><span class="p">],</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Indexed </span><span class="si">%d</span><span class="s2"> phases and </span><span class="si">%d</span><span class="s2"> events for procedure </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;phase_timeline&quot;</span><span class="p">]),</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;events&quot;</span><span class="p">]),</span>
+        <span class="n">procedure_id</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single function. In production, each step would be a separate Lambda function orchestrated by Step Functions, with error handling and retries at each stage. This version runs sequentially to show the complete flow.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analyze_surgical_video</span><span class="p">(</span><span class="n">video_s3_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full surgical video analysis pipeline for one procedure.</span>
+
+<span class="sd">    In a Step Functions deployment, each step would be a separate state</span>
+<span class="sd">    with its own error handling, retries, and timeout. This function</span>
+<span class="sd">    shows the logical flow as a single callable.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        video_s3_key: S3 key of the raw surgical video.</span>
+<span class="sd">        metadata: Dict with procedure_type, surgeon_id, procedure_date,</span>
+<span class="sd">                  duration_seconds.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The complete analysis result.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SURGICAL VIDEO ANALYSIS PIPELINE&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Register the procedure.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 1] Ingesting video and registering procedure...&quot;</span><span class="p">)</span>
+    <span class="n">procedure_id</span> <span class="o">=</span> <span class="n">ingest_video</span><span class="p">(</span><span class="n">video_s3_key</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Procedure ID: </span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Type: </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;procedure_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Duration: </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;duration_seconds&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">s (</span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;duration_seconds&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">60</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> min)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Extract frames.</span>
+    <span class="c1"># In production, this triggers MediaConvert and waits for completion.</span>
+    <span class="c1"># Here we simulate the frame count based on video duration and sample rate.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 2] Extracting frames...&quot;</span><span class="p">)</span>
+    <span class="n">num_frames</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;duration_seconds&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">SAMPLE_RATE_FPS</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Sample rate: </span><span class="si">{</span><span class="n">SAMPLE_RATE_FPS</span><span class="si">}</span><span class="s2"> fps&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Expected frames: </span><span class="si">{</span><span class="n">num_frames</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Simulate ~3% frame rejection from filtering.</span>
+    <span class="n">num_valid_frames</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_frames</span> <span class="o">*</span> <span class="mf">0.97</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Valid frames after filtering: </span><span class="si">{</span><span class="n">num_valid_frames</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Feature extraction.</span>
+    <span class="c1"># In production, this is a SageMaker Batch Transform job.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 3] Extracting features (SageMaker Batch Transform)...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Model: </span><span class="si">{</span><span class="n">SAGEMAKER_FEATURE_MODEL</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Feature dimension: </span><span class="si">{</span><span class="n">FEATURE_DIM</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Estimated time: ~</span><span class="si">{</span><span class="n">num_valid_frames</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.05</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s on ml.g5.xlarge&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Temporal prediction.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 4] Running temporal model...&quot;</span><span class="p">)</span>
+    <span class="n">raw_predictions</span> <span class="o">=</span> <span class="n">run_temporal_prediction</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">,</span> <span class="n">num_valid_frames</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Predicted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">CHOLECYSTECTOMY_PHASES</span><span class="p">)</span><span class="si">}</span><span class="s2"> phase types&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Detected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">raw_predictions</span><span class="p">[</span><span class="s1">&#39;event_predictions&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> events&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Post-processing.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 5] Post-processing predictions...&quot;</span><span class="p">)</span>
+    <span class="n">analysis</span> <span class="o">=</span> <span class="n">post_process_predictions</span><span class="p">(</span><span class="n">raw_predictions</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Phase timeline: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">analysis</span><span class="p">[</span><span class="s1">&#39;phase_timeline&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> segments&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Instrument intervals: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">analysis</span><span class="p">[</span><span class="s1">&#39;instrument_log&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Events: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">analysis</span><span class="p">[</span><span class="s1">&#39;events&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Print the phase timeline.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Phase Timeline:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;phase_timeline&quot;</span><span class="p">]:</span>
+        <span class="n">minutes</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;duration&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">60</span>
+        <span class="n">conf_marker</span> <span class="o">=</span> <span class="s2">&quot;✓&quot;</span> <span class="k">if</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">PHASE_CONFIDENCE_THRESHOLD</span> <span class="k">else</span> <span class="s2">&quot;?&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">conf_marker</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">phase</span><span class="p">[</span><span class="s1">&#39;phase_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">phase</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s - </span><span class="si">{</span><span class="n">phase</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">minutes</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> min, conf=</span><span class="si">{</span><span class="n">phase</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Events Detected:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">analysis</span><span class="p">[</span><span class="s2">&quot;events&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [</span><span class="si">{</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;event_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">] at </span><span class="si">{</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;(conf=</span><span class="si">{</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, during </span><span class="si">{</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;phase_context&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Store results.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 6] Storing results...&quot;</span><span class="p">)</span>
+    <span class="n">store_results_dynamodb</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">analysis</span><span class="p">)</span>
+    <span class="n">index_results_opensearch</span><span class="p">(</span><span class="n">procedure_id</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">analysis</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Written to DynamoDB table: </span><span class="si">{</span><span class="n">PROCEDURE_INDEX_TABLE</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Indexed in OpenSearch: </span><span class="si">{</span><span class="n">OPENSEARCH_DOMAIN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PIPELINE COMPLETE: </span><span class="si">{</span><span class="n">procedure_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;procedure_id&quot;</span><span class="p">:</span> <span class="n">procedure_id</span><span class="p">,</span>
+        <span class="s2">&quot;analysis&quot;</span><span class="p">:</span> <span class="n">analysis</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="c1"># Example: run the pipeline against a simulated surgical video.</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">analyze_surgical_video</span><span class="p">(</span>
+        <span class="n">video_s3_key</span><span class="o">=</span><span class="s2">&quot;uploads/2026-05-15/OR3-cholecystectomy-morning.mp4&quot;</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;procedure_type&quot;</span><span class="p">:</span> <span class="s2">&quot;laparoscopic_cholecystectomy&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;surgeon_id&quot;</span><span class="p">:</span> <span class="s2">&quot;surgeon-dr-chen&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;procedure_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-05-15&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;duration_seconds&quot;</span><span class="p">:</span> <span class="mi">2847</span><span class="p">,</span>  <span class="c1"># ~47 minutes</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Pretty-print the analysis result.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;analysis&quot;</span><span class="p">],</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example demonstrates the pipeline structure and data flow. It generates synthetic predictions to show what the output looks like. But there's a significant distance between this sketch and a system processing real surgical video at a hospital. Here's where that gap lives:</p>
+<p><strong>The ML models don't exist in this example.</strong> The feature extraction backbone and temporal model are the core of the system, and training them requires: (1) hundreds of annotated surgical videos, (2) weeks of GPU training time, (3) surgical domain expertise for annotation and validation. The Cholec80 dataset is a starting point for cholecystectomy, but you'll need local fine-tuning for your institution's cameras, surgeons, and patient population.</p>
+<p><strong>Error handling and retries.</strong> Every external call (MediaConvert, SageMaker, DynamoDB, OpenSearch) can fail. A production pipeline wraps each step in try/except with specific handling for throttling, timeouts, and transient failures. Step Functions provides built-in retry with exponential backoff at the state machine level, which is why this pipeline belongs in Step Functions rather than a single Lambda.</p>
+<p><strong>Video format handling.</strong> OR recording systems output video in a variety of formats and codecs. Some use MPEG-4, some use proprietary formats, some record at non-standard frame rates. MediaConvert handles most of this, but you'll encounter edge cases that require custom preprocessing. Test with actual video from your OR systems early.</p>
+<p><strong>Storage cost management.</strong> A single procedure generates 50-100 GB of raw video. At scale (20 procedures/day), that's 1-2 TB per day. S3 Intelligent-Tiering or lifecycle policies that move older video to Glacier are essential. The extracted frames and features are much smaller (~500 MB per procedure) but still add up.</p>
+<p><strong>IAM least-privilege.</strong> The IAM roles in this example are described generically. In production, each component (the ingestion Lambda, the MediaConvert role, the SageMaker execution role, the post-processing Lambda) gets its own role with exactly the permissions it needs. The SageMaker role needs S3 read on the frames bucket and S3 write on the features bucket, nothing else.</p>
+<p><strong>VPC configuration.</strong> Surgical video is PHI. The entire pipeline runs in a VPC with private subnets. SageMaker training and inference instances, OpenSearch domain, and Lambda functions all live in the VPC. VPC endpoints for S3, DynamoDB, and CloudWatch Logs keep traffic off the public internet.</p>
+<p><strong>Encryption.</strong> All S3 buckets use SSE-KMS with customer-managed keys. DynamoDB tables use encryption at rest. OpenSearch uses both encryption at rest and node-to-node encryption. SageMaker instances use encrypted volumes. KMS key policies restrict access to the specific roles that need each key.</p>
+<p><strong>Monitoring and alerting.</strong> A production pipeline has CloudWatch metrics for: processing latency per procedure, GPU utilization during inference, frame extraction success rate, model confidence distributions, and queue depth (how many procedures are waiting). Alarms fire when the backlog grows or when confidence scores drop (indicating model degradation or a new camera system producing unfamiliar images).</p>
+<p><strong>Model versioning and drift detection.</strong> Surgical video models degrade over time as cameras change, surgical techniques evolve, and the patient population shifts. Track model version with every prediction. Monitor confidence score distributions over time. When average confidence drops below a threshold, it's time to retrain with recent data.</p>
+<p><strong>De-identification.</strong> Even for quality improvement use cases, surgical video may need de-identification before analysis. Patient faces (visible during intubation or positioning), name labels on drapes, and monitor displays showing patient information all need to be detected and redacted. This is a separate preprocessing step not covered in this example.</p>
+<p><strong>Surgeon consent and governance.</strong> This is not a technical gap but it will block your deployment faster than any engineering challenge. Surgeons must consent to having their procedures analyzed. The governance framework (who sees the results, how they're used, whether they're tied to performance reviews) must be established before the first video is processed. Build the governance model before you build the pipeline.</p>
+<p>The recipe in 9.9 covers the full architectural context, the honest take on where this technology stands today, and the variations you might consider. This Python example shows one way the AWS orchestration pieces fit together.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter09.09-surgical-video-analysis.html">Recipe 9.9</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

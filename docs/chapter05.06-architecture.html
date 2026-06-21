@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 5.6 Architecture and Implementation: Claims-to-Clinical Data Linkage</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested nav-active" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-56-architecture-and-implementation-claims-to-clinical-data-linkage">Recipe 5.6 Architecture and Implementation: Claims-to-Clinical Data Linkage</h1>
+<p><em>Companion to <a href="chapter05.06-claims-to-clinical-data-linkage.html">Recipe 5.6: Claims-to-Clinical Data Linkage</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon S3 for the claims-clinical data lake.</strong> Three zones: raw (every inbound claim file, every EHR extract, every payer feed, byte-for-byte as received, partitioned by source and date for audit and replay), curated (parsed and normalized claims and clinical records with the patient-level link annotated), and derived (encounter-clustered claims, encounter-linked records, care-event-attributed records, cohort-stratified link-quality reports). S3 is HIPAA-eligible under BAA with SSE-KMS encryption. The raw payloads are retained for the regulatory retention floor; the derived outputs are the substrate for the analytics layer.</p>
+<p><strong>AWS Glue and Apache Spark for the linkage pipeline.</strong> The linkage workload is bulk-batch with structured records (claims and clinical events on the order of hundreds of thousands to tens of millions per institution per year), and it benefits from columnar processing, partition pruning, and the join-optimization that Spark provides. Glue jobs are the right substrate because the work is periodic (typically overnight, with intra-day refreshes for the latest claims) and the cost model (per-DPU-hour) maps cleanly to the workload pattern. Each pipeline stage runs as its own Glue job: parse-and-normalize-claims, parse-and-normalize-clinical, link-patient, cluster-claims, link-encounter, attribute-care-events, persist-and-emit.</p>
+<p><strong>Amazon Athena and AWS Glue Data Catalog for analytics access.</strong> The Glue Data Catalog tracks the schema across raw, curated, and derived zones. Athena queries the catalog over the curated and derived S3 zones for ad-hoc analytics, quality measurement, risk adjustment computation, and cohort definition. QuickSight on Athena provides the operational and quality dashboards.</p>
+<p><strong>Amazon DynamoDB for the linkage system-of-record and the invalidation index.</strong> Two tables: a linkage table keyed on <code>(encounter_cluster_id)</code> with attributes for the linked clinical encounter, the link confidence, the constituent claim list, the line-item attribution, and the link history; and an invalidation index keyed on <code>(source_record_id)</code> for fast lookup of which linkages depend on a given claim or encounter when an invalidation event arrives. DynamoDB's low-latency reads support the operational query patterns (longitudinal-record assembly, care management, real-time cost lookups for an encounter); the analytics queries hit S3 via Athena.</p>
+<p><strong>Amazon SQS for the linkage and invalidation queues.</strong> Three queues: a main linkage queue (claims and encounters arriving for a fresh link evaluation), an invalidation queue (events that supersede prior linkages), and a review queue (cases where the matcher's confidence falls in the review band and a human reviewer needs to confirm). Separating the queues lets the operational pipeline absorb bursts (a payer feed delivery dropping fifty thousand claims at once) without delaying the higher-priority invalidation flow.</p>
+<p><strong>AWS Lambda for the per-event processing and the API surface.</strong> The Glue jobs do the bulk work; Lambdas handle the event-driven slices. Per-claim-arrival linking (when a claim arrives outside the bulk window and needs immediate evaluation), per-invalidation-event re-linking, and the read API for downstream consumers all run as Lambdas. Each is in VPC with VPC endpoints for downstream services.</p>
+<p><strong>AWS Step Functions for orchestration.</strong> Three workflows: a daily linkage workflow (claims-and-clinical normalization, patient link, claim clustering, encounter link, care-event attribution, persistence, event emission), an invalidation workflow (subscribe to invalidation events and selectively re-link), and a vocabulary-refresh workflow (annual ICD-10 / CPT updates trigger a re-evaluation of the affected historical linkages). The state machine handles retries, error routing to DLQs, and parallel execution where the dependency graph allows.</p>
+<p><strong>Amazon EventBridge for the cross-recipe events.</strong> When a linkage is resolved (<code>claims_clinical_link_resolved</code>), when a linkage is invalidated (<code>claims_clinical_link_invalidated</code>), when an external encounter is detected (<code>external_encounter_observed</code>), an event flows out to downstream consumers: the longitudinal-record-assembler, the quality-measurement engine, the risk-adjustment HCC processor, the care-management workflow, the local patient matcher (5.1, when a cross-organizational claim surfaces a previously-unknown internal duplicate signal), and the cross-facility matcher (5.5) where applicable. EventBridge rules route events to the right consumer, with DLQs for failed deliveries.</p>
+<p><strong>Amazon HealthLake for the FHIR-native clinical view.</strong> Where the institution has an OMOP CDM substrate, the linkage outputs feed OMOP. Where the institution has a FHIR-native data lake, HealthLake stores the clinical encounters, observations, and procedures as FHIR resources, and the linkage output joins claims to the FHIR Encounter resource.  The linkage architecture treats the FHIR-native and OMOP-native representations as alternative downstream targets; the link itself is upstream.</p>
+<p><strong>Amazon SageMaker for the matcher training and offline calibration.</strong> The Fellegi-Sunter weights, the per-feature thresholds, and the encounter-class-specific date tolerances are calibrated against the institution's gold set. The calibration runs as a SageMaker training job over the historical linkage records, produces a candidate configuration set, and emits the metrics the institutional review committee uses to decide on promotion. SageMaker Processing jobs run the cohort-stratified accuracy reports.</p>
+<p><strong>AWS Lake Formation for column-level and row-level access control.</strong> Different audiences need different views of the linkage outputs. Quality-measurement teams need the encounter-linked aggregate; risk-adjustment teams need the diagnosis-concordance detail; outcomes-research teams need the de-identified longitudinal record. Lake Formation grants enforce the row-and-column distinctions; Athena query paths use the same grants. Same chapter pattern as 5.2, 5.3, 5.4, 5.5.</p>
+<p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Customer-managed keys for the S3 buckets, the DynamoDB tables, the Lambda log groups, and the Glue temp storage. CloudTrail data events on the linkage table and the audit-log buckets. CloudWatch alarms on link rate (sudden drops are usually a data-source outage), on cohort-stratified disparities, on invalidation backlog depth, on review-queue depth and aging. Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.</p>
+<p><strong>Amazon QuickSight for operational and quality dashboards.</strong> Per-encounter-class link rate, per-payer link rate, per-cohort link rate, link confidence distribution, review-queue depth and aging, time-to-link distribution (how long after the clinical event does a link get established), external-encounter rate and breakdown by inferred location, vocabulary-map coverage (what fraction of claim CPT codes mapped to internal procedure codes).</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Claims_Sources
+      C1[Outbound 837I / 837P&lt;br/&gt;institutional billing]
+      C2[Inbound 835 remits&lt;br/&gt;and payer claim feeds]
+      C3[FHIR ExplanationOfBenefit&lt;br/&gt;Patient Access APIs]
+      C4[Pharmacy NCPDP&lt;br/&gt;feed]
+    end
+
+    subgraph Clinical_Sources
+      E1[EHR encounter&lt;br/&gt;extracts]
+      E2[FHIR resources&lt;br/&gt;Observation, Procedure,&lt;br/&gt;MedicationRequest]
+      E3[Discharge summaries&lt;br/&gt;and DocumentReferences]
+    end
+
+    C1 --&gt; S1A[(S3 raw-claims&lt;br/&gt;partitioned by source/date)]
+    C2 --&gt; S1A
+    C3 --&gt; S1A
+    C4 --&gt; S1A
+
+    E1 --&gt; S1B[(S3 raw-clinical&lt;br/&gt;partitioned by source/date)]
+    E2 --&gt; S1B
+    E3 --&gt; S1B
+
+    S1A --&gt; SF1[Step Functions&lt;br/&gt;daily linkage workflow]
+    S1B --&gt; SF1
+
+    SF1 --&gt; G1[Glue Job&lt;br/&gt;normalize-claims]
+    SF1 --&gt; G2[Glue Job&lt;br/&gt;normalize-clinical]
+    G1 --&gt; S2[(S3 curated)]
+    G2 --&gt; S2
+
+    S2 --&gt; G3[Glue Job&lt;br/&gt;link-patient]
+    G3 --&gt; X1[(DynamoDB&lt;br/&gt;MRN-MemberID&lt;br/&gt;cross-reference&lt;br/&gt;5.1 + 5.5)]
+    G3 --&gt; S2
+
+    S2 --&gt; G4[Glue Job&lt;br/&gt;cluster-claims]
+    G4 --&gt; S2
+
+    S2 --&gt; G5[Glue Job&lt;br/&gt;link-encounter]
+    G5 --&gt; S2
+    G5 --&gt; Q1[SQS&lt;br/&gt;encounter-link-review]
+
+    S2 --&gt; G6[Glue Job&lt;br/&gt;attribute-care-events]
+    G6 --&gt; V1[(Vocabulary maps&lt;br/&gt;CPT-internal,&lt;br/&gt;NDC-RxNorm,&lt;br/&gt;RevCode-CostCenter)]
+    G6 --&gt; S3X[(S3 derived&lt;br/&gt;encounter-linked records)]
+
+    S3X --&gt; D1[(DynamoDB&lt;br/&gt;linkage system-of-record)]
+    S3X --&gt; EB1[EventBridge&lt;br/&gt;linkage events]
+    S3X --&gt; H1[(Amazon HealthLake&lt;br/&gt;FHIR-native view)]
+    S3X --&gt; O1[(OMOP CDM target&lt;br/&gt;where used)]
+
+    Q1 --&gt; RV1[Review tooling&lt;br/&gt;HIM and analytics staff]
+    RV1 --&gt; D1
+    RV1 --&gt; SM1[SageMaker&lt;br/&gt;calibration training]
+    SM1 --&gt; CFG1[(Versioned matcher&lt;br/&gt;configuration)]
+    CFG1 --&gt; G3
+    CFG1 --&gt; G5
+
+    EB1 --&gt;|FanOut| C5[Longitudinal Record Assembler]
+    EB1 --&gt;|FanOut| C6[Quality Measurement Engine]
+    EB1 --&gt;|FanOut| C7[HCC Risk Adjustment Processor]
+    EB1 --&gt;|FanOut| C8[Care Management Workflow]
+    EB1 --&gt;|FanOut| C9[Local Patient Matcher 5.1]
+    EB1 --&gt;|FanOut| C10[Cross-Facility Matcher 5.5]
+
+    subgraph Invalidation
+      L1[Lambda&lt;br/&gt;invalidate-on-event]
+      EB1 --&gt;|claim adjustments,&lt;br/&gt;EHR amendments,&lt;br/&gt;identity merges,&lt;br/&gt;vocab updates| L1
+      L1 --&gt; Q2[SQS&lt;br/&gt;invalidation-queue]
+      Q2 --&gt; G7[Glue Job&lt;br/&gt;selective-relink]
+      G7 --&gt; S3X
+    end
+
+    S2 --&gt; GC1[Glue Catalog]
+    S3X --&gt; GC1
+    GC1 --&gt; AT1[Athena]
+    AT1 --&gt; QS1[QuickSight&lt;br/&gt;quality dashboards]
+    AT1 --&gt; LF1[Lake Formation&lt;br/&gt;column/row access]
+
+    D1 --&gt; S4[(S3 audit archive&lt;br/&gt;Object Lock Compliance)]
+
+    style D1 fill:#9ff,stroke:#333
+    style X1 fill:#9ff,stroke:#333
+    style S1A fill:#cfc,stroke:#333
+    style S1B fill:#cfc,stroke:#333
+    style S2 fill:#cfc,stroke:#333
+    style S3X fill:#cfc,stroke:#333
+    style S4 fill:#cfc,stroke:#333
+    style EB1 fill:#f9f,stroke:#333
+    style H1 fill:#fc9,stroke:#333
+    style O1 fill:#fc9,stroke:#333
+    style V1 fill:#ffc,stroke:#333
+    style CFG1 fill:#ffc,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon S3, Amazon DynamoDB, AWS Glue, Apache Spark on Glue, Amazon Athena, AWS Lake Formation, AWS Step Functions, Amazon EventBridge, AWS Lambda, Amazon SQS, Amazon SageMaker, Amazon HealthLake (where used for FHIR-native clinical view), Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>External Inputs</strong></td>
+<td>Claims feeds: outbound institutional and professional 837s as the institution generates them, inbound 835 remits, payer claim feeds (commonly delivered as flat files or FHIR ExplanationOfBenefit resources), pharmacy NCPDP feeds where the institution has access. Clinical inputs: EHR encounter extracts, FHIR resources or OMOP-CDM-loaded clinical data, discharge summaries and other clinical documents. Cross-reference data: the institution's MRN-to-member-ID cross-reference (output of recipe 5.1's MPI plus payer eligibility-matching from 5.4), the NPI-to-internal-provider mapping (output of recipe 5.2). Vocabulary maps: CPT/HCPCS-to-internal-procedure-code, NDC-to-RxNorm, revenue-code-to-cost-center, ICD-10 hierarchy.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Glue-job least-privilege: scoped <code>s3:GetObject</code> and <code>s3:PutObject</code> on specific bucket prefixes, <code>glue:Get*</code> on the data catalog, <code>dynamodb:GetItem</code> / <code>PutItem</code> / <code>UpdateItem</code> / <code>Query</code> on the linkage and cross-reference tables, <code>kms:Decrypt</code> on relevant CMKs. Lambdas have similarly scoped permissions; the linkage write Lambda has append-only permissions on the linkage history (no delete) enforced through IAM condition keys plus DynamoDB resource-based policy. SageMaker training jobs have read access to the curated and derived S3 zones and write access to a model-artifacts bucket. Never use <code>*</code> actions or <code>*</code> resources in production.</td>
+</tr>
+<tr>
+<td><strong>BAA and Trust Framework</strong></td>
+<td>AWS BAA signed. Payer data feeds are governed by trading-partner agreements that specify retention, redistribution, and audit obligations. Where the claims data covers patients seen at non-affiliated providers, the institution's right to use the data is constrained by the payer agreement (typically permitted for treatment, payment, operations, and quality activities; sometimes restricted for research). For research uses, additional IRB and data-use agreements apply.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with bucket-level keys. DynamoDB: customer-managed KMS at rest. Glue temp storage: KMS encrypted. Lambda log groups: KMS-encrypted. SageMaker: KMS-encrypted volumes and outputs. EventBridge and SQS: server-side encryption. TLS 1.2 or higher for all in-transit traffic. The audit-log archive bucket has Object Lock in Compliance mode.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Glue jobs in VPC connections. Lambdas in VPC. SageMaker training in VPC. VPC endpoints for S3, DynamoDB, KMS, Secrets Manager, CloudWatch Logs, EventBridge, SQS, Step Functions, Glue, Athena, STS, SageMaker. NAT Gateway for partner-facing HTTPS egress with an outbound proxy and an allow-list of payer endpoints; PrivateLink where the partner offers it.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the linkage table, the audit S3 buckets, and the cross-reference table. Glue job runs and SageMaker training runs logged. CloudTrail logs encrypted with KMS and retained per the regulatory floor.</td>
+</tr>
+<tr>
+<td><strong>Vocabulary and Code Maps</strong></td>
+<td>A versioned vocabulary store with mappings for CPT to internal procedure codes, NDC to RxNorm, revenue codes to internal cost centers, and ICD-10 hierarchy traversal. The vocabulary maps refresh on the annual coding-update cycle (ICD-10-CM in October, CPT in January, RxNorm continuously) and on payer-specific updates. Each linkage record references the vocabulary version active at link time.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Use synthetic claims and clinical data that exercises the full range of linkage outcomes including the encounter-class variations. Synthea generates synthetic patient populations with both clinical encounters and corresponding claims; the CMS Synthetic Public Use Files (SynPUFs) are realistic claims-only datasets useful for the claims side.  Never use real PHI in development environments.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At an institution processing one million encounters per year and three to five million claims per year: Glue compute (the bulk linkage pipeline) typically $2,000-6,000 per month; S3 storage including raw, curated, derived, and audit archive typically $500-2,000 per month at three to five years of retention; DynamoDB for the linkage table and cross-reference typically $300-1,500 per month; SageMaker calibration jobs typically $200-800 per month; Athena, QuickSight, EventBridge, Lambda, SQS, Step Functions, KMS in aggregate typically $300-1,000 per month. Total AWS infrastructure typically $3,500-12,000 per month, dominated by Glue compute and S3 storage.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Hosts raw claims and clinical extracts, curated normalized records, derived encounter-linked output, audit archive with Object Lock</td>
+</tr>
+<tr>
+<td><strong>AWS Glue and Apache Spark</strong></td>
+<td>Bulk linkage pipeline: parse-and-normalize, link-patient, cluster-claims, link-encounter, attribute-care-events</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Linkage system-of-record table (encounter cluster to clinical encounter), cross-reference invalidation index, MRN-to-member-ID cross-reference</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena and AWS Glue Data Catalog</strong></td>
+<td>SQL access to the data lake for analytics, quality measurement, risk adjustment, cohort definition</td>
+</tr>
+<tr>
+<td><strong>AWS Lake Formation</strong></td>
+<td>Column-level and row-level access controls for the differentiated audiences (quality, risk adjustment, outcomes research, longitudinal record)</td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Buffers linkage, invalidation, and review workloads on separate queues</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Per-event processing: per-claim-arrival immediate linking, per-invalidation-event re-linking, read API for downstream consumers</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates daily linkage, invalidation, and vocabulary-refresh workflows</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Fans out linkage events to longitudinal-record-assembler, quality-measurement engine, HCC risk adjustment processor, care management, local matcher (5.1), cross-facility matcher (5.5)</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Matcher calibration over historical linkage records, cohort-stratified accuracy reports, candidate-configuration evaluation</td>
+</tr>
+<tr>
+<td><strong>Amazon HealthLake</strong></td>
+<td>FHIR-native clinical view target for institutions standardized on FHIR resources</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Operational and quality dashboards (per-encounter-class link rate, per-payer link rate, cohort disparities, review-queue depth, time-to-link distribution, external-encounter rate, vocabulary coverage)</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all linkage data stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics and alarms (link-rate drops, cohort disparities, invalidation backlog, review-queue aging)</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all API calls on the linkage table, the cross-reference table, and the audit S3 buckets</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful libraries and patterns for this recipe:</p>
+<ul>
+<li><a href="https://athena.ohdsi.org/">OHDSI / Athena</a>: the OMOP CDM vocabulary store, with mappings between ICD-10, SNOMED, RxNorm, LOINC, and the OMOP standard concepts.</li>
+<li><a href="https://pcornet.org/data-driven-common-model/">PCORnet Common Data Model</a>: an alternative target schema for claims-clinical linkage in PCORI-funded research networks.</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient population generator with both clinical encounters and corresponding claims output, useful for development and testing.</li>
+<li><a href="https://github.com/hapifhir/hapi-fhir">HAPI FHIR</a>: FHIR reference implementation including the Claim and ExplanationOfBenefit resources used in payer-side claims representations.</li>
+<li><a href="https://spark.apache.org/docs/latest/api/python/index.html"><code>pyspark</code> and <code>pandas</code></a>: the dominant analytics substrates for the Glue-based linkage pipeline.</li>
+<li>The <a href="https://www.hl7.org/fhir/explanationofbenefit.html">HL7 FHIR ExplanationOfBenefit resource</a> is the FHIR-native representation of post-adjudication claims data and the substrate for the CMS Patient Access API claims feeds.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest and normalize the claims and clinical streams.</strong> The two streams arrive on different cadences in different formats. Claims arrive as X12 837/835 transactions for outbound flows, and as payer-specific flat files or FHIR ExplanationOfBenefit resources for inbound flows. Clinical data arrives as EHR extracts (Epic Clarity / Caboodle, Cerner / Oracle Health, or the equivalent) or as FHIR resources from a FHIR-native data lake. Both streams have to land in the raw zone byte-for-byte for audit replay, then get parsed into a normalized representation that the rest of the pipeline can join on. Skip the strict raw-zone preservation and you cannot reconstruct the original payload when a claim is later disputed or when an audit reaches back to a transaction from three years ago.</p>
+<pre class="code code-plain"><code>FUNCTION normalize_claims_and_clinical(input_partition_keys):
+    // Each partition processed by a Glue job; partition keys
+    // identify which raw files to consume.
+
+    // Step 1A: parse claims-side records.
+    raw_claims_files = S3.list_objects(
+        bucket=&quot;raw-claims&quot;,
+        prefix=input_partition_keys.claims_prefix)
+
+    parsed_claims = []
+    FOR each file in raw_claims_files:
+        IF file.format == &quot;x12_837i&quot;:
+            claims = parse_837_institutional(file.payload)
+        ELIF file.format == &quot;x12_837p&quot;:
+            claims = parse_837_professional(file.payload)
+        ELIF file.format == &quot;x12_835&quot;:
+            claims = parse_835_remittance(file.payload)
+        ELIF file.format == &quot;fhir_explanation_of_benefit&quot;:
+            claims = parse_fhir_eob(file.payload)
+        ELIF file.format == &quot;ncpdp_pharmacy&quot;:
+            claims = parse_ncpdp(file.payload)
+        ELIF file.format == &quot;payer_flat_file&quot;:
+            claims = parse_payer_specific(file.payload, file.payer_id)
+
+        FOR each claim in claims:
+            // Build the normalized claim record. Keep the
+            // original byte offset for traceability.
+            parsed_claims.append({
+                claim_id: extract_claim_id(claim),
+                source_file_key: file.s3_key,
+                source_file_offset: claim.byte_offset,
+                payer_id: claim.payer_id,
+                claim_type: claim.claim_type,
+                    // facility_inpatient, facility_outpatient,
+                    // facility_er, professional, pharmacy
+                billing_provider_npi: claim.billing_provider_npi,
+                rendering_provider_npi: claim.rendering_provider_npi
+                    OR claim.billing_provider_npi,
+                member_id: claim.member_id,
+                member_demographics: claim.member_demographics,
+                service_from_date: claim.service_from_date,
+                service_through_date: claim.service_through_date,
+                primary_diagnosis_icd10: claim.primary_diagnosis,
+                secondary_diagnoses_icd10: claim.secondary_diagnoses,
+                procedures_cpt_hcpcs: claim.procedures,
+                revenue_codes: claim.revenue_codes,
+                drg_code: claim.drg_code IF claim.claim_type == &quot;facility_inpatient&quot;,
+                place_of_service: claim.place_of_service,
+                claim_status: claim.claim_status,
+                    // submitted, paid, denied, adjusted, void
+                adjustment_indicator: claim.adjustment_indicator,
+                original_claim_id: claim.original_claim_id
+                    IF claim.adjustment_indicator,
+                charge_amount: claim.charge_amount,
+                paid_amount: claim.paid_amount IF claim.claim_status == &quot;paid&quot;,
+                line_items: claim.line_items,
+                received_at: file.received_timestamp,
+                vocabulary_versions_at_parse: current_vocabulary_versions()
+            })
+
+    write_to_s3_curated_zone(parsed_claims,
+        prefix=&quot;curated-claims/&quot; + input_partition_keys.partition_path)
+
+    // Step 1B: parse clinical-side records.
+    raw_clinical_files = S3.list_objects(
+        bucket=&quot;raw-clinical&quot;,
+        prefix=input_partition_keys.clinical_prefix)
+
+    parsed_clinical = []
+    FOR each file in raw_clinical_files:
+        IF file.format == &quot;epic_clarity_extract&quot;:
+            encounters = parse_epic_clarity(file.payload)
+        ELIF file.format == &quot;cerner_extract&quot;:
+            encounters = parse_cerner(file.payload)
+        ELIF file.format == &quot;fhir_bundle&quot;:
+            encounters = parse_fhir_bundle_for_encounters(file.payload)
+
+        FOR each encounter in encounters:
+            // Resolve the diagnosis lifecycle into a per-
+            // encounter diagnosis set: admitting, working,
+            // discharge, plus any condition-list entries
+            // that were active during the encounter.
+            encounter_diagnoses = resolve_diagnosis_lifecycle(
+                encounter,
+                source_format=file.format)
+
+            parsed_clinical.append({
+                encounter_id: extract_encounter_id(encounter),
+                source_file_key: file.s3_key,
+                source_record_id: encounter.source_record_id,
+                local_patient_id: encounter.mrn,
+                encounter_class: encounter.class,
+                    // inpatient, outpatient, emergency,
+                    // observation, telehealth, ancillary
+                location_id: encounter.location_id,
+                attending_provider_npi: encounter.attending_npi,
+                    // Resolved through recipe 5.2&#x27;s NPI matcher.
+                consulting_provider_npis: encounter.consulting_npis,
+                admission_timestamp: encounter.admission_ts,
+                discharge_timestamp: encounter.discharge_ts,
+                encounter_diagnoses: encounter_diagnoses,
+                procedures_internal: encounter.procedures,
+                medications_administered: encounter.medications,
+                observations: encounter.observations,
+                discharge_disposition: encounter.discharge_disposition,
+                source_extract_timestamp: file.extract_timestamp
+            })
+
+    write_to_s3_curated_zone(parsed_clinical,
+        prefix=&quot;curated-clinical/&quot; + input_partition_keys.partition_path)
+
+    RETURN {
+        claims_count: len(parsed_claims),
+        clinical_count: len(parsed_clinical),
+        partition_keys: input_partition_keys
+    }
+</code></pre>
+<p><strong>Step 2: Resolve patient identity across the streams.</strong> Before any encounter-level linking can happen, the matcher has to know which clinical patient corresponds to which claims-side member. Within a single institution where a maintained MRN-to-member-ID cross-reference exists (built and maintained by the eligibility-matching pipeline from recipe 5.4 and the local MPI from recipe 5.1), this is largely deterministic. For external claims feeds covering populations where the cross-reference is incomplete, the patient link uses the same probabilistic-record-linkage scorer as 5.1 and 5.5 over the demographic fields the claims feed exposes. Skip the patient link or treat it as trivial and you produce encounter linkages that join the right encounters but the wrong patients, which silently corrupts every analytics output downstream.</p>
+<pre class="code code-plain"><code>FUNCTION link_patient(claim_record, cross_reference_table, mpi):
+    // Step 2A: deterministic match via cross-reference.
+    // The MRN-to-member-ID cross-reference is a DynamoDB
+    // table populated by recipe 5.4&#x27;s eligibility matcher
+    // and maintained by recipe 5.1&#x27;s MPI updates.
+    cross_ref_match = cross_reference_table.lookup_by(
+        member_id=claim_record.member_id,
+        payer_id=claim_record.payer_id,
+        as_of=claim_record.service_from_date)
+
+    IF cross_ref_match IS NOT NULL
+       AND cross_ref_match.confidence &gt;= CROSS_REF_HIGH_CONFIDENCE:
+        // The cross-reference itself has a confidence; trust
+        // levels above the high threshold are deterministic
+        // for our purposes.
+        RETURN {
+            resolved_local_patient_id: cross_ref_match.local_patient_id,
+            link_method: &quot;cross_reference_deterministic&quot;,
+            link_confidence: cross_ref_match.confidence,
+            cross_ref_version: cross_ref_match.version
+        }
+
+    // Step 2B: probabilistic match via demographics.
+    // The cross-reference is missing or low-confidence;
+    // fall back to demographic matching against the local
+    // MPI.
+    candidate_patients = mpi.find_candidates_by_blocking(
+        last_name_phonetic: double_metaphone(
+                                claim_record.member_demographics.last_name),
+        year_of_birth: year(claim_record.member_demographics.dob),
+        zip3: zip3(claim_record.member_demographics.address))
+
+    scored_candidates = []
+    FOR each candidate in candidate_patients:
+        score = compute_patient_match_score({
+            // Use the same scorer as recipe 5.1, with the
+            // additional consideration that some demographic
+            // fields may be partially redacted on inbound
+            // payer feeds (commonly SSN, sometimes street
+            // address detail).
+            first_name: nickname_aware_first_name_score(
+                            claim_record.member_demographics.first_name,
+                            candidate.first_name),
+            last_name: cross_org_last_name_score(
+                            claim_record.member_demographics.last_name,
+                            candidate.last_name,
+                            candidate.prior_last_names),
+            dob: dob_match_grade(claim_record.member_demographics.dob,
+                                    candidate.dob),
+            sex: sex_match(claim_record.member_demographics.sex,
+                            candidate.administrative_sex),
+            address: address_similarity(
+                            claim_record.member_demographics.address,
+                            candidate.standardized_address,
+                            candidate.prior_addresses),
+            phone: phone_match(claim_record.member_demographics.phone,
+                                candidate.phone_history)
+        })
+        scored_candidates.append({candidate, score})
+
+    IF len(scored_candidates) == 0
+       OR max(scored_candidates).score.composite &lt; AUTO_REJECT:
+        RETURN {
+            resolved_local_patient_id: NULL,
+            link_method: &quot;no_match&quot;,
+            link_confidence: 0.0,
+            unmatched_reason: &quot;no_candidates_or_below_threshold&quot;
+        }
+
+    best = max(scored_candidates, key=lambda c: c.score.composite)
+
+    IF best.score.composite &gt;= PATIENT_LINK_HIGH:
+        // Optionally update the cross-reference table with
+        // this newly-confirmed link so future claims for the
+        // same member skip the probabilistic path.
+        cross_reference_table.upsert(
+            payer_id=claim_record.payer_id,
+            member_id=claim_record.member_id,
+            local_patient_id=best.candidate.local_patient_id,
+            confidence=best.score.composite,
+            evidence_source=&quot;probabilistic_demographic_match&quot;,
+            valid_from=claim_record.service_from_date)
+
+        RETURN {
+            resolved_local_patient_id: best.candidate.local_patient_id,
+            link_method: &quot;probabilistic_high_confidence&quot;,
+            link_confidence: best.score.composite,
+            score_breakdown: best.score.per_feature
+        }
+
+    ELIF best.score.composite &gt;= PATIENT_LINK_MED:
+        // Med-confidence patient links are accepted but
+        // tagged for downstream awareness; encounter-level
+        // matching for med-confidence patient links applies
+        // tighter encounter-link thresholds to compound less
+        // risk.
+        RETURN {
+            resolved_local_patient_id: best.candidate.local_patient_id,
+            link_method: &quot;probabilistic_med_confidence&quot;,
+            link_confidence: best.score.composite,
+            score_breakdown: best.score.per_feature,
+            patient_link_caveat: &quot;med_confidence_patient_link&quot;
+        }
+
+    ELSE:
+        // Falls in the patient-link review band. Route to
+        // the review queue; do not attempt encounter-level
+        // linking until the patient link is resolved.
+        SQS.SendMessage(&quot;patient-link-review-queue&quot;, {
+            claim_id: claim_record.claim_id,
+            best_candidate: best,
+            scored_candidates: scored_candidates,
+            demographics: claim_record.member_demographics
+        })
+        RETURN {
+            resolved_local_patient_id: NULL,
+            link_method: &quot;deferred_patient_review&quot;,
+            link_confidence: best.score.composite,
+            queued_for_review: TRUE
+        }
+</code></pre>
+<p><strong>Step 3: Cluster the patient-resolved claims into encounter clusters.</strong> Multiple claims describe a single underlying encounter, and grouping them is the first structural job after the patient link. The cluster-key is patient plus encounter-class plus a service-date range; the date tolerance is encounter-class-specific. The clustering also needs to detect resubmissions and adjustments so the cluster's authoritative version of each claim is the latest valid one. Skip the clustering and you treat thirteen claims for one inpatient stay as thirteen separate encounters, which over-counts admissions, double-counts readmissions, and corrupts every cost-and-quality calculation that depends on encounter-level rollups.</p>
+<pre class="code code-plain"><code>FUNCTION cluster_claims_by_encounter(patient_resolved_claims):
+    // Group by patient first, then process each patient&#x27;s
+    // claims independently. Spark partitions naturally on
+    // local_patient_id; this is a within-partition groupBy.
+
+    clusters = []
+
+    BY local_patient_id:
+        patient_claims = sort_by(claims, key=service_from_date)
+
+        // Step 3A: detect resubmission/adjustment chains.
+        // Claims with the same original_claim_id reference
+        // (set by adjustment_indicator) are versions of the
+        // same underlying claim. Within a chain, the latest
+        // submission is the authoritative version; the
+        // earlier ones are kept for history.
+        chains = group_by_original_claim_id(patient_claims)
+        canonical_claims = [latest_in_chain(chain) FOR chain in chains]
+
+        // Step 3B: cluster by encounter-class window.
+        FOR each claim in canonical_claims:
+            // The encounter-class window determines how
+            // permissive the date overlap can be when
+            // grouping claims together.
+            window = encounter_class_window(claim.claim_type)
+                // Inpatient facility: span (service_from -
+                //   buffer_days, service_through + buffer_days)
+                //   where buffer_days is typically 1-2.
+                // Outpatient/clinic: same calendar day with
+                //   small slop for next-morning batch posting.
+                // ER: span (service_from, service_through +
+                //   buffer_days) with smaller buffer than
+                //   inpatient.
+                // Pharmacy: matches against the encounter
+                //   it&#x27;s tied to (e.g. an inpatient stay
+                //   for in-stay administration claims) using
+                //   the date of service.
+
+            existing_cluster = find_cluster_for(
+                clusters,
+                local_patient_id=claim.resolved_local_patient_id,
+                encounter_class=normalize_encounter_class(claim.claim_type),
+                date_overlap_with=window)
+
+            IF existing_cluster IS NOT NULL:
+                existing_cluster.add_claim(claim,
+                    role=infer_role(claim, existing_cluster))
+                    // Roles: primary_facility, primary_professional,
+                    // related_professional, ancillary, pharmacy,
+                    // resubmission, adjustment.
+            ELSE:
+                new_cluster = {
+                    encounter_cluster_id: generate_cluster_id(
+                        local_patient_id=claim.resolved_local_patient_id,
+                        encounter_class=normalize_encounter_class(claim.claim_type),
+                        anchor_date=claim.service_from_date),
+                    local_patient_id: claim.resolved_local_patient_id,
+                    encounter_class: normalize_encounter_class(claim.claim_type),
+                    cluster_anchor_date: claim.service_from_date,
+                    cluster_window_start: claim.service_from_date,
+                    cluster_window_end: claim.service_through_date,
+                    constituent_claims: [claim],
+                    primary_facility_npi: claim.billing_provider_npi
+                        IF claim.claim_type == &quot;facility_inpatient&quot;,
+                    primary_diagnoses: claim.primary_diagnosis_icd10,
+                    secondary_diagnoses: claim.secondary_diagnoses_icd10,
+                    drg_code: claim.drg_code,
+                    earliest_service_date: claim.service_from_date,
+                    latest_service_date: claim.service_through_date,
+                    cluster_status: &quot;active&quot;
+                }
+                clusters.append(new_cluster)
+
+        // Step 3C: post-cluster reconciliation.
+        // After all claims are clustered, walk each cluster
+        // and reconcile its window: extend the window to
+        // cover all constituent claims, aggregate diagnoses
+        // across the cluster, identify the cluster&#x27;s primary
+        // billing entity, compute the cluster total charge
+        // and paid amount.
+        FOR each cluster in clusters_for_patient(local_patient_id):
+            cluster.cluster_window_start = min(
+                c.service_from_date FOR c in cluster.constituent_claims)
+            cluster.cluster_window_end = max(
+                c.service_through_date FOR c in cluster.constituent_claims)
+            cluster.aggregate_diagnoses = union_with_hierarchy(
+                c.primary_diagnosis_icd10
+                    FOR c in cluster.constituent_claims)
+            cluster.cluster_charge_total = sum(
+                c.charge_amount FOR c in cluster.constituent_claims)
+            cluster.cluster_paid_total = sum(
+                c.paid_amount OR 0 FOR c in cluster.constituent_claims)
+
+    RETURN clusters
+</code></pre>
+<p><strong>Step 4: Match each encounter cluster to a clinical encounter.</strong> The cluster has a patient, an encounter class, a date window, a set of diagnoses, and a billing provider. The clinical encounter has the same patient, an encounter class, an admission/discharge timestamp, an attending provider, and a diagnosis set. The match scores each (cluster, encounter) candidate pair and applies confidence thresholds. Skip the encounter-level link and you have claim clusters and clinical encounters but no joined unit of analysis, which means every analytics question that needs both administrative and clinical detail at the encounter grain has to be re-derived from raw data.</p>
+<pre class="code code-plain"><code>FUNCTION link_encounter(cluster, clinical_encounters_for_patient,
+                          matcher_config):
+    // The clinical encounters for the patient are pre-fetched
+    // (DynamoDB query or curated-zone read) and cached for
+    // the duration of the cluster&#x27;s match.
+
+    // Step 4A: filter to candidate encounters by date and class.
+    candidates = []
+    FOR each encounter in clinical_encounters_for_patient:
+        IF encounter.encounter_class != cluster.encounter_class:
+            CONTINUE
+            // Class mismatch is a hard filter; an inpatient
+            // cluster does not match an outpatient encounter.
+
+        // Date alignment within the encounter-class tolerance.
+        date_tolerance = matcher_config.date_tolerance_for_class(
+                              cluster.encounter_class)
+        IF NOT dates_overlap_within(
+                  cluster.cluster_window_start,
+                  cluster.cluster_window_end,
+                  encounter.admission_timestamp,
+                  encounter.discharge_timestamp,
+                  tolerance=date_tolerance):
+            CONTINUE
+
+        candidates.append(encounter)
+
+    IF len(candidates) == 0:
+        // No candidate clinical encounter. Tag as
+        // external_encounter; the claim cluster describes
+        // care that happened elsewhere.
+        RETURN {
+            cluster_id: cluster.encounter_cluster_id,
+            link_status: &quot;EXTERNAL_ENCOUNTER&quot;,
+            inferred_external_npi: cluster.primary_facility_npi,
+            inferred_external_class: cluster.encounter_class,
+            external_diagnoses: cluster.aggregate_diagnoses,
+            link_confidence: NULL
+        }
+
+    // Step 4B: score each candidate.
+    scored = []
+    FOR each encounter in candidates:
+        score = compute_encounter_link_score({
+            // Date alignment: how tightly does the cluster
+            // window match the encounter timestamps.
+            date_alignment: date_alignment_score(
+                                cluster.cluster_window_start,
+                                cluster.cluster_window_end,
+                                encounter.admission_timestamp,
+                                encounter.discharge_timestamp),
+            // Provider alignment: does the cluster&#x27;s
+            // rendering NPI appear on the encounter (as
+            // attending or consulting).
+            provider_alignment: provider_alignment_score(
+                                    cluster.constituent_claims,
+                                    encounter.attending_provider_npi,
+                                    encounter.consulting_provider_npis),
+            // Encounter class compatibility (inpatient
+            // facility cluster vs inpatient EHR encounter is
+            // a perfect match; ER cluster vs observation
+            // encounter is a partial match because of class
+            // ambiguity).
+            class_compatibility: class_compatibility_score(
+                                       cluster.encounter_class,
+                                       encounter.encounter_class),
+            // Diagnosis concordance: ICD-10 overlap with
+            // hierarchy-aware comparison. Partial overlap is
+            // expected; the score gives credit for parents
+            // and for related codes within the same
+            // chapter.
+            diagnosis_concordance: diagnosis_concordance_score(
+                                       cluster.aggregate_diagnoses,
+                                       encounter.encounter_diagnoses),
+            // Procedure concordance for inpatient and
+            // procedural encounters: do the cluster&#x27;s CPT
+            // codes correspond to the encounter&#x27;s procedure
+            // events.
+            procedure_concordance: procedure_concordance_score(
+                                       cluster.constituent_claims,
+                                       encounter.procedures_internal,
+                                       vocabulary_map),
+            // DRG concordance for inpatient: does the
+            // cluster&#x27;s DRG match the EHR&#x27;s DRG, where both
+            // are present.
+            drg_concordance: drg_concordance_score(
+                                  cluster.drg_code,
+                                  encounter.drg_code)
+                IF cluster.drg_code IS NOT NULL
+                AND encounter.drg_code IS NOT NULL
+        })
+        scored.append({encounter, score})
+
+    best = max(scored, key=lambda c: c.score.composite)
+    // TODO (TechWriter): Expert review A3 (MEDIUM). Greedy
+    // per-cluster best-score assignment is the simpler
+    // pattern; for patients with multiple candidate clusters
+    // and multiple candidate encounters in the same window,
+    // production should run a joint-evaluation pass
+    // (linear-sum-assignment over the per-pair score matrix,
+    // e.g. Hungarian algorithm) that maximizes the global
+    // score across the assignment rather than picking each
+    // cluster&#x27;s local best independently. The Honest Take
+    // names this as the would-do-differently-the-second-time
+    // observation; add a labeled Step 4D or a Variations
+    // entry that details the joint pattern so the pseudocode
+    // matches the operational guidance.
+
+    // Step 4C: apply confidence thresholds. Tighter than
+    // patient-level thresholds because encounter linkage
+    // errors compound: a wrong encounter link routes the
+    // wrong claims to the wrong analytic bucket.
+    IF best.score.composite &gt;= ENCOUNTER_LINK_HIGH:
+        RETURN {
+            cluster_id: cluster.encounter_cluster_id,
+            link_status: &quot;LINKED_HIGH_CONFIDENCE&quot;,
+            linked_clinical_encounter_id: best.encounter.encounter_id,
+            link_confidence: best.score.composite,
+            score_breakdown: best.score.per_feature,
+            link_method: &quot;probabilistic_high_confidence&quot;
+        }
+    ELIF best.score.composite &gt;= ENCOUNTER_LINK_MED:
+        RETURN {
+            cluster_id: cluster.encounter_cluster_id,
+            link_status: &quot;LINKED_MED_CONFIDENCE&quot;,
+            linked_clinical_encounter_id: best.encounter.encounter_id,
+            link_confidence: best.score.composite,
+            score_breakdown: best.score.per_feature,
+            link_method: &quot;probabilistic_med_confidence&quot;,
+            usage_caveat: &quot;use_with_confidence_filter_in_quality_measurement&quot;
+        }
+    ELIF best.score.composite &lt;= ENCOUNTER_LINK_REJECT:
+        // Best candidate is below the rejection threshold;
+        // the cluster does not match any clinical encounter
+        // confidently. Most likely cause: encounter is
+        // external, or the clinical extract is incomplete.
+        RETURN {
+            cluster_id: cluster.encounter_cluster_id,
+            link_status: &quot;NO_LINK&quot;,
+            best_candidate_id: best.encounter.encounter_id,
+            best_candidate_score: best.score.composite,
+            interpretation: &quot;below_link_threshold&quot;
+        }
+    ELSE:
+        // Review band; defer to human review and persist a
+        // tentative link with status REVIEW_PENDING so
+        // downstream consumers know not to consume it yet.
+        SQS.SendMessage(&quot;encounter-link-review-queue&quot;, {
+            cluster_id: cluster.encounter_cluster_id,
+            scored_candidates: scored,
+            cluster_summary: cluster.summary()
+        })
+        RETURN {
+            cluster_id: cluster.encounter_cluster_id,
+            link_status: &quot;REVIEW_PENDING&quot;,
+            best_candidate_id: best.encounter.encounter_id,
+            best_candidate_score: best.score.composite,
+            queued_for_review: TRUE
+        }
+</code></pre>
+<p><strong>Step 5: Attribute claim line items to clinical events within the linked encounter.</strong> Once the cluster is linked to a clinical encounter, the line items on the constituent claims need to be attributed to specific clinical events (orders, procedures, medication administrations) inside that encounter. The CPT/HCPCS codes on the claims map to internal procedure codes via the vocabulary map; the NDCs on pharmacy claims map to RxNorm codes that correspond to the medication administrations; the date-and-time on the claim line aligns with the clinical event's timestamp where the EHR captures it. Skip the line-item attribution and the linkage answers &quot;did this encounter happen&quot; but does not answer &quot;what happened during it&quot; at the level of cost-and-quality analytics that the institution typically needs.</p>
+<pre class="code code-plain"><code>FUNCTION attribute_care_events(linked_cluster, clinical_encounter,
+                                  vocabulary_map):
+    // Only run for linked clusters; external_encounter and
+    // no_link clusters are out of scope.
+    IF linked_cluster.link_status NOT IN
+       [&quot;LINKED_HIGH_CONFIDENCE&quot;, &quot;LINKED_MED_CONFIDENCE&quot;]:
+        RETURN {cluster_id: linked_cluster.cluster_id,
+                line_item_attribution: NONE}
+
+    line_item_attributions = []
+    unattributed_line_items = []
+
+    FOR each claim in linked_cluster.constituent_claims:
+        FOR each line_item in claim.line_items:
+            // Step 5A: code-system map.
+            internal_code_candidates = vocabulary_map.lookup(
+                source_system=&quot;cpt_hcpcs&quot;,
+                source_code=line_item.cpt_hcpcs,
+                target_system=&quot;internal_procedure_code&quot;)
+                // The vocabulary map may return one code (clean
+                // mapping), several codes (one-to-many; the
+                // claim-side CPT covers a billable procedure
+                // that maps to several internal procedure-record
+                // entries), or none (no mapping; tag for review).
+
+            IF len(internal_code_candidates) == 0:
+                unattributed_line_items.append({
+                    line_item: line_item,
+                    reason: &quot;no_vocabulary_mapping&quot;,
+                    source_code: line_item.cpt_hcpcs
+                })
+                CONTINUE
+
+            // Step 5B: find clinical events on the encounter
+            // that match the line-item&#x27;s date and code.
+            event_candidates = []
+            FOR each clinical_event in clinical_encounter.procedures_internal
+                                       OR clinical_encounter.medications_administered:
+                IF clinical_event.code IN internal_code_candidates:
+                    IF date_within_tolerance(line_item.service_date,
+                                                clinical_event.event_timestamp,
+                                                tolerance_hours=
+                                                    LINE_ITEM_DATE_TOLERANCE_HOURS):
+                        event_candidates.append(clinical_event)
+
+            IF len(event_candidates) == 0:
+                unattributed_line_items.append({
+                    line_item: line_item,
+                    reason: &quot;no_matching_clinical_event&quot;,
+                    source_code: line_item.cpt_hcpcs,
+                    mapped_internal_codes: internal_code_candidates
+                })
+                CONTINUE
+
+            // Step 5C: pick the best clinical event candidate.
+            best_event = pick_best_clinical_event_candidate(
+                event_candidates,
+                line_item,
+                tiebreaker_rules=[&quot;closest_in_time&quot;,
+                                    &quot;exact_code_over_partial&quot;,
+                                    &quot;ordered_by_attending_over_consulting&quot;])
+
+            line_item_attributions.append({
+                claim_id: claim.claim_id,
+                line_item_id: line_item.line_item_id,
+                source_code: line_item.cpt_hcpcs,
+                attributed_clinical_event_id: best_event.event_id,
+                attribution_confidence: compute_attribution_confidence(
+                                            line_item,
+                                            best_event,
+                                            event_candidates),
+                attribution_method: &quot;vocabulary_map_plus_temporal&quot;
+            })
+
+    // Pharmacy claims attribute to medication administrations
+    // by NDC -&gt; RxNorm mapping; the same pattern applies with
+    // a different vocabulary map.
+    // Revenue codes attribute to internal cost-centers; this
+    // is a coarser-grained attribution used for cost
+    // rollups rather than line-item-level analytics.
+
+    RETURN {
+        cluster_id: linked_cluster.cluster_id,
+        encounter_id: clinical_encounter.encounter_id,
+        line_item_attributions: line_item_attributions,
+        unattributed_line_items: unattributed_line_items,
+        attribution_coverage: len(line_item_attributions)
+                              / (len(line_item_attributions) +
+                                  len(unattributed_line_items)),
+        vocabulary_versions: vocabulary_map.versions_used()
+    }
+</code></pre>
+<p><strong>Step 6: Persist, audit, and react to invalidation events.</strong> Write the linkage to DynamoDB as the system of record, archive the curated linkage record to S3, and emit the cross-recipe event so downstream consumers can refresh. On invalidation events, re-evaluate selectively rather than recomputing the entire pipeline. Skip the invalidation pipeline and the linkage table is correct on day one and silently wrong by month three.</p>
+<pre class="code code-plain"><code>FUNCTION persist_and_emit(linkage_decision, attribution_decision):
+    // Step 6A: write the linkage record. The linkage table
+    // is keyed on (encounter_cluster_id, version) with the
+    // current version sortable at the top via a current_flag
+    // GSI; prior versions are retained as separate items for
+    // forensic reconstruction. The next_version_for function
+    // reads the current version and returns version + 1; the
+    // write is conditional on no-other-write-since-read to
+    // prevent racing writers.
+    // TODO (TechWriter): Expert review A11 (LOW). Make the
+    // (encounter_cluster_id, version) compound-key shape
+    // explicit in the persistence schema specification above
+    // so the Python companion&#x27;s hardcoded version=1 plus
+    // attribute_not_exists(encounter_cluster_id) condition
+    // (which precludes re-link after invalidation) can be
+    // promoted to a working production pattern.
+    linkage_record = {
+        encounter_cluster_id: linkage_decision.cluster_id,
+        local_patient_id: linkage_decision.local_patient_id,
+        link_status: linkage_decision.link_status,
+        linked_clinical_encounter_id:
+            linkage_decision.linked_clinical_encounter_id,
+        link_confidence: linkage_decision.link_confidence,
+        score_breakdown: linkage_decision.score_breakdown,
+        link_method: linkage_decision.link_method,
+        constituent_claim_ids: linkage_decision.constituent_claim_ids,
+        line_item_attributions:
+            attribution_decision.line_item_attributions,
+        attribution_coverage: attribution_decision.attribution_coverage,
+        unattributed_line_items:
+            attribution_decision.unattributed_line_items,
+        matcher_config_version: matcher_config.version,
+        vocabulary_versions: attribution_decision.vocabulary_versions,
+        resolved_at: current UTC timestamp,
+        version: next_version_for(linkage_decision.cluster_id)
+    }
+
+    // Use a TransactWriteItems plus an outbox row drained by
+    // a separate Lambda or DynamoDB Streams consumer so that
+    // partial failures do not leave the linkage table out of
+    // sync with the event stream. &lt;!-- Same chapter pattern
+    // as 5.5 expert review A1 --&gt;
+    DynamoDB.TransactWriteItems([
+        PutItem(&quot;claims-clinical-linkage&quot;, linkage_record),
+        PutItem(&quot;linkage-outbox&quot;, {
+            outbox_id: generate_uuid(),
+            event_type:
+                IF linkage_decision.link_status IN
+                   [&quot;LINKED_HIGH_CONFIDENCE&quot;, &quot;LINKED_MED_CONFIDENCE&quot;]
+                THEN &quot;claims_clinical_link_resolved&quot;
+                ELIF linkage_decision.link_status == &quot;EXTERNAL_ENCOUNTER&quot;
+                THEN &quot;external_encounter_observed&quot;
+                ELSE &quot;claims_clinical_link_unresolved&quot;,
+            payload: linkage_record,
+            emitted_at: NULL
+        })
+    ])
+
+    // Step 6B: archive the curated linkage record to S3.
+    // The S3 archive is the long-term substrate for
+    // analytics; DynamoDB is the operational read path.
+    // TODO (TechWriter): Expert review A2 (MEDIUM). Move the
+    // S3 archive write into the outbox-drainer flow alongside
+    // the EventBridge emit so DynamoDB and S3 stay consistent
+    // on partial failure. The drainer (triggered by DynamoDB
+    // Streams on linkage-outbox) writes to S3 first, then
+    // emits to EventBridge, then marks the outbox row
+    // COMPLETED; both side effects must succeed before the
+    // row is marked COMPLETED. Idempotent at outbox_id.
+    // CloudWatch alarms fire on outbox-row age exceeding the
+    // SLA. Reference Recipe 5.5 expert review A1.
+    write_to_s3(linkage_record,
+                bucket=&quot;match-derived&quot;,
+                key=&quot;encounter-linkages/&quot; +
+                    partition_path_for(linkage_record))
+
+    // Step 6C: drain the outbox to EventBridge. A separate
+    // Lambda or DynamoDB Streams consumer reads the outbox
+    // and emits the EventBridge event, marking emitted_at
+    // on success. This pattern keeps the audit log and the
+    // event stream consistent.
+    // (Implementation detail; not shown inline.)
+
+    RETURN linkage_record
+
+FUNCTION invalidate_on_event(event):
+    // Identify which prior linkages are affected.
+    IF event.source == &quot;claim_adjustment&quot; OR
+       event.source == &quot;claim_resubmission&quot; OR
+       event.source == &quot;claim_denial&quot;:
+        // A claim within an existing cluster has changed.
+        // Find the cluster, re-cluster within the patient
+        // (other claims may belong differently now), re-link
+        // the affected cluster.
+        affected_clusters = find_clusters_containing_claim(
+            event.claim_id)
+        FOR each cluster in affected_clusters:
+            re_evaluate_cluster_linkage(cluster.cluster_id)
+
+    ELIF event.source == &quot;ehr_encounter_amendment&quot;:
+        // An EHR encounter changed: diagnoses, attending,
+        // timestamps. Find the linked cluster (if any) and
+        // re-link.
+        affected_linkage = find_linkage_by_encounter_id(
+            event.encounter_id)
+        IF affected_linkage IS NOT NULL:
+            re_evaluate_cluster_linkage(
+                affected_linkage.cluster_id)
+
+    ELIF event.source == &quot;patient_identity_merge&quot;:
+        // Recipe 5.1 merged two patient records. Both
+        // populations of clusters and encounters need
+        // re-linking under the surviving identity.
+        affected_clusters = find_clusters_for_patient(
+            event.merged_from_patient_id)
+        affected_clusters.extend(
+            find_clusters_for_patient(event.merged_into_patient_id))
+        FOR each cluster in deduplicate(affected_clusters):
+            // Update cluster&#x27;s local_patient_id to the
+            // surviving identity, then re-evaluate the
+            // encounter linkage using that identity&#x27;s
+            // encounter set.
+            cluster.local_patient_id =
+                event.merged_into_patient_id
+            re_evaluate_cluster_linkage(cluster.cluster_id)
+
+    ELIF event.source == &quot;vocabulary_map_update&quot;:
+        // Annual ICD-10 / CPT / RxNorm refresh. The vocabulary
+        // map version changes; linkages whose attribution
+        // coverage falls below the institutional threshold
+        // under the new mapping need re-attribution.
+        affected_linkages = find_linkages_using_old_vocab_version(
+            event.old_version)
+        FOR each linkage in affected_linkages:
+            re_evaluate_cluster_attribution(linkage.cluster_id,
+                vocabulary_map=event.new_version)
+
+    ELIF event.source == &quot;cross_facility_match_invalidated&quot;:
+        // Recipe 5.5 emitted an invalidation. If this
+        // affected our cross-organizational patient link
+        // for any cluster, re-evaluate.
+        affected_clusters = find_clusters_with_external_patient_id(
+            event.affected_patient_local_id)
+        FOR each cluster in affected_clusters:
+            re_evaluate_cluster_patient_link(cluster.cluster_id)
+
+    // Emit the aggregate invalidation event so downstream
+    // consumers can refresh their derived views.
+    EventBridge.PutEvents([{
+        source: &quot;claims-clinical-linkage&quot;,
+        detail_type: &quot;claims_clinical_link_invalidated&quot;,
+        detail: {
+            invalidation_source: event.source,
+            invalidation_event_id: event.event_id,
+            affected_cluster_ids: list_of_affected_clusters,
+            invalidated_at: current UTC timestamp
+        }
+    }])
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter05.06-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample high-confidence linkage (inpatient stay):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;encounter_cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ec-2026-03-14-pt00874-inpatient-001&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;local_patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;local-patient-internal-00874&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LINKED_HIGH_CONFIDENCE&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;linked_clinical_encounter_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ehr-enc-2026-03-14-12-44-32-pt00874&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;probabilistic_high_confidence&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;score_breakdown&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;date_alignment&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.98</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;provider_alignment&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.00</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;class_compatibility&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.00</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;diagnosis_concordance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;procedure_concordance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;drg_concordance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.00</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;encounter_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;inpatient&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cluster_window_start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-14&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cluster_window_end&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-19&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ehr_admission_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-14T12:44:32Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ehr_discharge_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-18T14:11:08Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;constituent_claim_ids&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;fac-claim-2026-03-2841073&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;fac-claim-2026-03-2841074&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;fac-claim-2026-04-2904115&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-03-882441-attending&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-03-882442-cardiology&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-03-882443-anesthesia&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-03-882444-radiology&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-03-882445-pathology&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-03-882446-hospitalist&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-04-905712-resubmit-cardiology&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;primary_diagnoses_claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;I50.21&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;primary_diagnoses_ehr&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;I50.23&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;I50.21&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;drg_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;291&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cluster_charge_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">84720.00</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cluster_paid_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">18342.55</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;attribution_coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;matcher_config_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;linker-v2.4.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;vocabulary_versions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;icd10cm&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026.10.01&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cpt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026.01.01&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;rxnorm&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026.04.07&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;internal_procedure_map&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;imap-v9&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;resolved_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T03:14:08Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample external encounter:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;encounter_cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ec-2026-02-08-pt00874-outpatient-007&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;local_patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;local-patient-internal-00874&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EXTERNAL_ENCOUNTER&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;encounter_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outpatient&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cluster_window_start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cluster_window_end&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inferred_external_npi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1659473821&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inferred_external_facility_name_from_npi_resolver&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OUTSIDE CARDIOLOGY GROUP PLLC&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;external_diagnoses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;I10&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;I50.20&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;external_procedures_cpt&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;93000&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;93306&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;constituent_claim_ids&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-02-712441-outside-cardiology&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prof-claim-2026-02-712442-outside-imaging&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;interpretation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient_received_cardiology_followup_at_outside_practice&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample medium-confidence linkage with caveat:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;encounter_cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ec-2026-04-02-pt01927-er-014&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;local_patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;local-patient-internal-01927&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LINKED_MED_CONFIDENCE&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;linked_clinical_encounter_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ehr-enc-2026-04-02-08-22-15-pt01927&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;probabilistic_med_confidence&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;usage_caveat&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;use_with_confidence_filter_in_quality_measurement&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;score_breakdown&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;date_alignment&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;provider_alignment&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.50</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;class_compatibility&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.80</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;diagnosis_concordance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.65</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;procedure_concordance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.70</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;interpretation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claim_class_was_observation_ehr_was_er_with_subsequent_admission_decision&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample review-pending linkage:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;encounter_cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ec-2026-04-15-pt03441-outpatient-022&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;local_patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;local-patient-internal-03441&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;link_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;REVIEW_PENDING&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;best_candidate_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ehr-enc-2026-04-15-09-30-12-pt03441&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;best_candidate_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.62</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;queued_for_review&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;review_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;two_outpatient_encounters_within_window_diagnosis_overlap_with_both_provider_match_with_neither&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Status quo (no linkage)</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time to answer &quot;what was the readmission rate for our heart-failure cohort&quot;</td>
+<td>2-4 weeks (manual chart review and claims pull)</td>
+<td>hours (Athena query against derived zone)</td>
+</tr>
+<tr>
+<td>Encounter coverage in claims-to-clinical view</td>
+<td>&lt;40% (ad-hoc joins on date and patient)</td>
+<td>75-90% with conservative thresholds</td>
+</tr>
+<tr>
+<td>Per-cohort linkage rate disparity (best vs worst cohort)</td>
+<td>0.20-0.40 (if measured at all)</td>
+<td>&lt;0.07 with monitoring and per-cohort tuning</td>
+</tr>
+<tr>
+<td>External-encounter visibility into outside care</td>
+<td>&lt;10% (often invisible until patient self-reports)</td>
+<td>50-70% (external encounters surfaced through claims feed)</td>
+</tr>
+<tr>
+<td>Vocabulary-map coverage (CPT to internal procedure code)</td>
+<td>60-80% (ad-hoc)</td>
+<td>85-95% with maintained map</td>
+</tr>
+<tr>
+<td>Time-to-link median (claim arrival to linkage decision)</td>
+<td>n/a</td>
+<td>hours-to-1-day for arriving claims</td>
+</tr>
+<tr>
+<td>Time-to-link p99</td>
+<td>n/a</td>
+<td>&lt;7 days (covers payer-feed late arrivals)</td>
+</tr>
+<tr>
+<td>Linkage error rate (sampled audit, false-merge or false-split combined)</td>
+<td>n/a (typically not measured)</td>
+<td>&lt;2% with conservative thresholds</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>The encounter-class boundary cases.</strong> Observation stays that turn into inpatient admissions (or vice versa). ER visits that lead to inpatient admissions on the same day. Outpatient surgical procedures that turn into observation overnight stays. The encounter class is ambiguous on both sides, and the matcher has to handle the ambiguity without forcing a hard class boundary that misses real linkages. The mitigation is class-compatibility scoring (rather than hard class equality) plus a higher confidence threshold for cross-class candidates plus explicit handling of known transition patterns in the configuration.</li>
+<li><strong>Multiple closely-related encounters in the same window.</strong> A patient who has an outpatient visit on Monday, an outpatient procedure on Wednesday, and an ER visit on Friday produces three encounter clusters that may all link to the right encounters, or may scramble in ways that route the procedure cluster to the visit encounter and the visit cluster to the procedure encounter. The mitigation is the joint-evaluation pattern (consider all candidate-cluster-to-candidate-encounter pairs for the patient in the window simultaneously rather than greedily) and tighter date-tolerance for clusters with many candidate encounters.</li>
+<li><strong>Late-arriving claims.</strong> A claim that arrives sixty days after the encounter may need to be added to a cluster whose initial linkage was made fifty-nine days ago. The invalidation pipeline catches this if the cluster window covers the new claim, but claims that fall outside any existing cluster's window create new clusters, which then have to re-evaluate against encounters from two months ago. The mitigation is the sliding window (typically 90-180 days) and the patience to let the pipeline catch up.</li>
+<li><strong>Resubmissions that change the cluster's primary diagnosis.</strong> A claim's primary diagnosis can change between original submission and resubmission (the CDI specialist's query produced a more specific code; an audit produced a different DRG). The cluster's aggregate diagnoses change, which can change the encounter linkage. The mitigation is to track diagnosis-version history at the cluster level and to re-link only if the change is material to the score.</li>
+<li><strong>Pharmacy-claim-to-medication-administration alignment.</strong> The NDC on the pharmacy claim and the RxNorm on the medication administration in the EHR map to the same drug in most cases, but the brand-vs-generic, the formulation, the strength, and the package size can all differ in ways that the vocabulary map handles imperfectly. The mitigation is hierarchy-aware vocabulary mapping (RxNorm has clinical-drug, branded-drug, ingredient, and clinical-drug-component levels with relationships between them) and a tolerance for less-specific matches when the more-specific match is missing.</li>
+<li><strong>Diagnosis-related-group changes between EHR and claim.</strong> The DRG that the EHR computes at discharge (often the working DRG used for length-of-stay management) can differ from the DRG on the final claim (after coding review and CDI). When both DRGs are present, concordance is a strong signal; when they disagree, the matcher should treat the disagreement as informational rather than dispositive (the encounters can still link even if the DRG drifted).</li>
+<li><strong>Adjudication evolution after linkage.</strong> A claim that was linked at one paid amount may have its paid amount adjusted weeks later (post-payment audit, recoupment, secondary-payer adjustment). The linkage is still correct (the cluster still links to the encounter), but the dollar figures on derived analytics outputs that were computed at the time of the original linkage are now stale. The mitigation is the invalidation event for adjustment-indicator changes and a clear policy on whether derived outputs are computed at link time, at query time, or at a periodic refresh.</li>
+<li><strong>Cohort-specific linkage disparities.</strong> Patients with care concentrated at the institution link well; patients whose care is spread across many providers (and whose claim feeds therefore include many external encounters) have a lower fraction of their claims linked to local encounters. Patients with stable demographics link well; patients with mid-period name changes (recipe 5.7) or address changes (recipe 5.3) link worse. Cohort-stratified link-rate monitoring catches the disparities; per-cohort threshold tuning, expanded prior-name handling, and cross-organizational identifier resolution (recipe 5.5) are the operational responses.</li>
+<li><strong>Vocabulary-map gaps.</strong> A CPT code with no entry in the institution's internal-procedure-code map produces an unattributed line item; over time, gaps accumulate as new CPT codes are introduced. The mitigation is the line-item review queue (HIM staff review unattributed line items and either add the missing map entry or flag the line for manual handling) and the periodic vocabulary-coverage report (which CPT codes are under-mapped this quarter).</li>
+<li><strong>Self-funded employer plan idiosyncrasies.</strong> Self-funded employers contract with payers for administrative services but retain underwriting risk; their claim feeds may have benefit and coverage metadata that the standard payer feed does not. Different employers' plans within the same payer's claims feed may have different data conventions, different field-completeness levels, and different timing. The mitigation is per-source profiling (each claim source gets a profile of typical field completeness, typical timing, typical adjustment-indicator patterns) and per-source thresholds where the differences are large enough to matter.</li>
+<li><strong>Provider-roster drift.</strong> A claim with an NPI that maps to a provider in the institution's directory at one time but not at another (provider departures, credentialing changes) produces a provider-alignment score that varies with the as-of date. The mitigation is to use the provider roster as-of the encounter date rather than as-of the link-evaluation date, and to track provider-roster changes in the recipe 5.2 NPI matcher.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Trading-partner agreements and data-use governance.</strong> Each payer-feed contract has its own data-use clauses: what the institution may use the data for, how long the data may be retained, who else may see it, what the redistribution rights are, what the audit obligations are. These are negotiated by legal and compliance, not engineered around. Treat the trading-partner agreements as architectural input: if a payer's data is contractually limited to operations and quality use cases, the linkage outputs derived from that payer's data have to be tagged with that constraint and the access controls have to enforce it. Skip this and the institution is at risk of using the data outside its contractual envelope.</p>
+<p><strong>Vocabulary-map sourcing and maintenance.</strong> The vocabulary maps (CPT to internal procedure code, NDC to RxNorm, revenue code to internal cost center, ICD-10 hierarchy) are not free, are not static, and are not usually built well from scratch. Most institutions either license a commercial vocabulary product (3M, Optum, IMO) or invest in maintaining their own internal map with a clinical-informatics team. The map version drives the line-item attribution; map errors propagate into every analytics output downstream. Plan the vocabulary maintenance as an ongoing program with versioning, change governance, and regression-testing against gold-set linkages.</p>
+<p><strong>OMOP CDM or alternative target schema.</strong> If the institution's analytics environment is OMOP-based (as is increasingly common for outcomes research), the linkage outputs feed an OMOP load process that maps the linked encounters to the OMOP person, visit_occurrence, condition_occurrence, procedure_occurrence, drug_exposure, and observation tables. The OMOP load is its own pipeline: vocabulary alignment, terminology mapping, source-to-CDM translation, and OHDSI data-quality validation. Plan the OMOP load alongside the linkage; the two are tightly coupled.</p>
+<p><strong>Coding lifecycle and CDI integration.</strong> The institution's coding department produces the final coded claims, often after a CDI (clinical documentation improvement) review cycle that may take days to weeks after discharge. The linkage runs against the claims that have made it through coding; encounters whose claims are still in coding limbo are linked later. Coordinate the linkage cadence with the coding cycle so that the linkage gets the post-CDI version of the claims rather than the initial pre-CDI submission.</p>
+<p><strong>Threshold calibration and approval governance.</strong> The encounter-link thresholds, the patient-link thresholds, the date-tolerance values, and the per-feature weights are calibrated against an institutional gold set. Re-calibration runs periodically and on detection of cohort-stratified disparity above the institutional threshold. Re-calibration produces a candidate threshold set; institutional review (analytics governance committee, compliance, clinical informatics, equity-monitoring committee) reviews the confusion matrix and the cohort-disparity impact before promoting the candidate to production. Each linkage record references the configuration version active at decision time. Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.</p>
+<p><strong>Review tooling for the linkage queues.</strong> Three distinct review queues each need their own tooling. The patient-link review queue surfaces the candidate-patient details with the demographic comparison; the encounter-link review queue surfaces the candidate-encounter details with the date, provider, diagnosis, and procedure comparison; the line-item review queue surfaces unattributed line items with their CPT/HCPCS codes and the available vocabulary mappings. Each tool emits the reviewer's decision back into the matcher's training signal. Build the tools with the same care as the analytics pipeline; the matcher's accuracy depends on it.</p>
+<p><strong>External-encounter handling.</strong> External encounters are not just exception rows; they are a primary data product (the institution's view of its patients' outside care). The longitudinal-record-assembler consumes external encounters and integrates them with the cross-facility match output from recipe 5.5; care management workflows surface external encounters that are clinically significant (a recent ER visit at another facility, a specialist consult the patient did not mention). Build the external-encounter pipeline as a first-class deliverable, not an afterthought.</p>
+<p><strong>Patient-access reports.</strong> Under HIPAA and the 21st Century Cures Act, patients have a right to see who has accessed their health data. The linkage table holds claims data the institution received from payers; the patient's right to know what data the institution holds about them includes that data. Build the patient-access-report generator from the linkage table and the audit log so the institution can respond to patient requests. The same pattern as recipe 5.5 applies.</p>
+<p><strong>Idempotency and retry semantics.</strong> The pipeline must handle duplicate-event delivery, partner-side retries, and Glue job re-runs without producing duplicate linkage records or scrambled audit logs. Use the (encounter_cluster_id, version) tuple as the idempotency key for linkage writes; use claim_id and encounter_id as natural keys for the upstream stages. Configure DLQs on every Lambda path and Glue job; Step Functions Catch states route terminal failures to the DLQ so stuck workflows are visible. Same chapter pattern as 5.3, 5.4, 5.5.</p>
+<p><strong>Cohort-stratified accuracy monitoring discipline.</strong> The CloudWatch metrics with cohort-bucket dimensions, the QuickSight dashboard, the institutional review cadence, and the disparity-alarm thresholds are architecture-level commitments, not bolt-ons. Specify the operational thresholds, the per-axis aggregation, the disparity-metric definitions, and the institutional response protocol. Cohort-stratified link-rate disparity &gt; 0.05 = MEDIUM alarm; cohort-stratified linkage-error-rate disparity &gt; 0.02 = HIGH (analytics integrity). Same chapter pattern as 5.1, 5.2, 5.3, 5.4, 5.5.</p>
+<p><strong>Initial backfill and onboarding.</strong> Standing up the linkage pipeline involves a substantial one-time backfill: every historical claim and every historical encounter in the analysis window gets linked. This is a Glue job that runs at scale, with attention to: cohort-stratified accuracy monitoring during the backfill (the backfill is a one-time opportunity to surface cohort issues at scale); suppression of routine event emission during the backfill (downstream consumers refresh from a single backfill_complete marker rather than millions of individual events); governance approval at each stage. Plan onboarding as a project with its own timeline.</p>
+<p><strong>Compliance and operational ownership.</strong> Claims-to-clinical linkage sits at the intersection of revenue cycle, clinical informatics, analytics, compliance, and IT. Establish clear operational ownership: who tunes the thresholds, who reviews the cohort-disparity reports, who handles the payer-feed quality issues, who owns the vocabulary-map updates, who responds to invalidation backlogs. The pipeline works only when the operational ownership is clear and funded.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>OMOP CDM-native linkage.</strong> Build the linkage directly against an OMOP CDM instance rather than against EHR-native and claims-native source schemas. The OMOP person, visit_occurrence, condition_occurrence, procedure_occurrence, and drug_exposure tables are the join targets, and the linkage produces visit_occurrence_id-to-claim_id mappings as the output. The linkage logic is the same; the schema target is different. This is the right pattern for institutions whose analytics environment is OMOP-first; the linkage outputs are immediately consumable by the OHDSI analytic toolkit.</p>
+<p><strong>FHIR-native linkage with HealthLake.</strong> For institutions standardized on FHIR resources, the clinical side of the linkage runs against FHIR Encounter, Observation, Procedure, MedicationAdministration, and Condition resources stored in Amazon HealthLake. The claims side runs against FHIR ExplanationOfBenefit and Claim resources. The linkage emits a FHIR-native cross-reference (a Provenance resource or an extension on the Encounter resource) that downstream FHIR-aware applications consume.</p>
+<p><strong>Tokenization-based privacy-preserving linkage.</strong> For research datasets that combine claims data from a payer with clinical data from a provider where direct demographic exchange is not available, use a tokenization service (Datavant, HealthVerity, or an institutional equivalent) to produce deterministic patient tokens from demographic data using a salted hash. The token is generated identically on both sides; the linkage runs against tokens rather than raw demographics.  Ties to recipe 5.8 for the privacy-preserving record linkage techniques.</p>
+<p><strong>Patient-mediated claims-to-clinical linkage.</strong> Patients can authorize a third-party app to receive their claims data through the CMS Blue Button 2.0 API or a payer-specific Patient Access API, and they can authorize the same app to receive their clinical data through an EHR FHIR endpoint. The linkage runs in the app, on the patient's device, with the patient's authorization. The architecture extension is a patient-facing app that calls both APIs and applies the same linkage logic on a per-patient basis. This is the architectural pattern that personal-health-record products and some care-coordination apps use; it is increasingly relevant as the patient-access ecosystem matures.</p>
+<p><strong>Real-time linkage for operational use cases.</strong> The default pattern is batch linkage. For specific operational use cases (the ER physician needs to know in real time what claims the patient has for outside care, the discharge-planning team needs to see the patient's prior outpatient procedures from outside providers), the linkage can run on demand against a recent claims window. The architecture extension is a Lambda that runs the linkage logic for a single patient on a small window, with the result cached in DynamoDB for the duration of the operational session.</p>
+<p><strong>Pharmacy-claims-focused linkage for adherence analytics.</strong> Pharmacy claims have their own patterns: NCPDP feeds, NDC-coded line items, fill dates, days-supply, refill counts. A specialized linkage pipeline focuses on linking pharmacy claims to medication-administration events in the EHR (for in-stay administration) and to medication-list entries (for outpatient adherence analysis). The output is a per-medication adherence trajectory: fills over time, days-supply coverage, persistence, gaps. Used in care management for high-risk medication classes (anticoagulants, antiretrovirals, antipsychotics).</p>
+<p><strong>HCC risk-adjustment-focused linkage.</strong> A specialized variant of the encounter-link that focuses on linking face-to-face encounters in the EHR to claims that flow into the CMS encounter-data submission for HCC risk adjustment. The link confirms that the diagnoses on the claim correspond to encounters where the conditions were actively addressed, which is the regulatory standard for HCC qualification.</p>
+<p><strong>Quality-measure-focused linkage for ACO and value-based care reporting.</strong> A specialized variant that links claims to clinical data specifically for quality-measure denominators and numerators. The HEDIS and CMS quality measures depend on the linkage to assemble denominator membership (claims-side attribution) and numerator events (clinical-side test results, procedures, immunizations). The output is a per-measure-per-patient indicator with full provenance back to the source claims and clinical events.</p>
+<p><strong>Cross-organizational claims-to-clinical linkage via HIE.</strong> When the patient's clinical data lives at multiple organizations (recipe 5.5's cross-facility scenario), the claims feed for the patient covers all of them, but the institution running the linkage has clinical data for only its own encounters. The HIE provides the cross-organizational clinical view; the linkage extends to use the HIE-mediated clinical data as additional candidate encounters. The output is a more complete linkage where the institution can attribute claims to encounters it did not directly run, with the clinical detail surfaced through the HIE rather than through a direct extract.</p>
+<p><strong>Streaming claims-and-clinical linkage with Kinesis.</strong> For institutions with a streaming analytics pipeline, the batch Glue jobs are augmented (or replaced) with Kinesis Data Streams and Kinesis Data Analytics for near-real-time linkage. Each claim or encounter arrival fires a streaming event; the linkage logic runs in a Flink or Kinesis Data Analytics application; the output flows to DynamoDB and EventBridge. The streaming pattern is particularly valuable for outbound institution claims (which arrive within minutes of submission) and for the operational use cases that need fresher linkages than nightly batch can provide.</p>
+<p><strong>Active-learning-driven configuration tuning.</strong> As the encounter-link review queue resolves cases, the labels feed a periodic re-training of the matcher's thresholds and the per-feature weights. Active learning concentrates the review effort on the cases that most improve the downstream accuracy and the cohort fairness; over time, the review queue depth decreases as the matcher absorbs the labeled cases. Same chapter pattern as recipe 5.5.</p>
+<p><strong>External-encounter clinical-summary inference.</strong> Instead of treating an external encounter as an opaque set of claim line items, infer a clinical summary (likely chief complaint, likely procedures, likely diagnoses) from the claim's diagnosis-and-procedure codes mapped through the vocabulary store. The output is a clinician-readable summary that the longitudinal-record-assembler can present as &quot;the patient was likely seen for X at outside provider Y on date Z.&quot; The inference is approximate and should be flagged as such; the value is in surfacing care that would otherwise be invisible.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html">Amazon S3 User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-libraries.html">Apache Spark on AWS Glue</a></li>
+<li><a href="https://docs.aws.amazon.com/athena/latest/ug/what-is.html">Amazon Athena User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lake-formation/latest/dg/what-is-lake-formation.html">AWS Lake Formation Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html">Amazon SQS Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">Amazon HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/aws-glue-samples"><code>aws-samples/aws-glue-samples</code></a>: Glue ETL patterns applicable to the bulk linkage pipeline</li>
+<li><a href="https://github.com/aws-samples/serverless-patterns"><code>aws-samples/serverless-patterns</code></a>: API Gateway + Lambda + DynamoDB patterns for the operational read paths</li>
+<li><a href="https://github.com/aws-samples/amazon-healthlake-samples"><code>aws-samples/amazon-healthlake-samples</code></a>: HealthLake patterns including FHIR resource ingestion and querying</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences): browse for healthcare data lake and interoperability reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: search &quot;claims,&quot; &quot;clinical data,&quot; &quot;OMOP,&quot; &quot;HealthLake,&quot; &quot;real-world evidence&quot; for relevant deep-dives</li>
+</ul>
+<p><strong>External References (Standards):</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/fhir/claim.html">HL7 FHIR Claim Resource</a>: the FHIR resource for claims data</li>
+<li><a href="https://www.hl7.org/fhir/explanationofbenefit.html">HL7 FHIR ExplanationOfBenefit Resource</a>: the FHIR resource for post-adjudication claims, used by Patient Access APIs</li>
+<li><a href="https://www.hl7.org/fhir/encounter.html">HL7 FHIR Encounter Resource</a>: the FHIR resource for clinical encounters</li>
+<li><a href="https://x12.org/products/transaction-sets">X12 837 Health Care Claim</a>: the institutional and professional claim transaction sets</li>
+<li><a href="https://x12.org/products/transaction-sets">X12 835 Health Care Claim Payment Advice</a>: the remittance advice transaction set</li>
+<li><a href="https://standards.ncpdp.org/">NCPDP Standards</a>: the pharmacy claim transaction standards</li>
+</ul>
+<p><strong>External References (Common Data Models):</strong></p>
+<ul>
+<li><a href="https://ohdsi.github.io/CommonDataModel/">OHDSI OMOP Common Data Model</a>: the dominant research-substrate CDM</li>
+<li><a href="https://athena.ohdsi.org/">OHDSI Athena Vocabulary</a>: the vocabulary store with mappings between source vocabularies and OMOP standard concepts</li>
+<li><a href="https://pcornet.org/data-driven-common-model/">PCORnet Common Data Model</a>: the PCORnet CDM used in PCORI-funded research networks</li>
+<li><a href="https://www.sentinelinitiative.org/methods-data-tools/sentinel-common-data-model">Sentinel Common Data Model</a>: the FDA Sentinel system's data model for post-marketing surveillance</li>
+</ul>
+<p><strong>External References (Regulatory):</strong></p>
+<ul>
+<li><a href="https://www.healthit.gov/topic/information-blocking">21st Century Cures Act Information Blocking Rule</a>: the regulatory framework that increasingly applies to claims data alongside clinical data</li>
+<li><a href="https://www.cms.gov/Regulations-and-Guidance/Guidance/Interoperability/index">CMS Interoperability and Patient Access Final Rule</a>: the rule mandating Patient Access APIs and Provider Directory APIs</li>
+<li><a href="https://bluebutton.cms.gov/">CMS Blue Button 2.0</a>: the patient-facing claims data API for Medicare beneficiaries</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/index.html">HIPAA Privacy Rule</a>: the foundational regulatory framework for healthcare data sharing</li>
+<li><a href="https://www.fda.gov/science-research/science-and-research-special-topics/real-world-evidence">FDA Real-World Evidence Program</a>: the FDA framework for using real-world data including claims-clinical-linked data in regulatory submissions</li>
+</ul>
+<p><strong>External References (Methodology and Open Source):</strong></p>
+<ul>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient population generator with both clinical and claims output</li>
+<li><a href="https://github.com/hapifhir/hapi-fhir">HAPI FHIR</a>: Java reference implementation of FHIR</li>
+<li><a href="https://www.cms.gov/Research-Statistics-Data-and-Systems/Downloadable-Public-Use-Files/SynPUFs/DE_Syn_PUF">CMS DE-SynPUF</a>: synthetic Medicare claims data for development and testing</li>
+<li><a href="https://github.com/OHDSI/Atlas">OHDSI ATLAS</a>: the OHDSI cohort definition and analysis tool that consumes OMOP-formatted claims-and-clinical data</li>
+</ul>
+<p><strong>External References (Industry):</strong></p>
+<ul>
+<li><a href="https://pcornet.org/">PCORnet Distributed Research Network</a>: a national research network that depends on standardized claims-and-clinical data</li>
+<li><a href="https://www.sentinelinitiative.org/">Sentinel System</a>: the FDA's post-marketing safety surveillance system</li>
+<li><a href="https://datavant.com/">Datavant</a>: a commercial vendor providing tokenization-based claims-clinical linkage for research datasets</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>S3 raw zone + Glue normalize-and-link pipeline + DynamoDB linkage table + simple patient-link via existing cross-reference + encounter-link with conservative thresholds + manual review queue + Athena access for analytics</td>
+<td>4-6 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full pipeline with claim clustering, encounter linking, care-event attribution + invalidation pipeline + integration with patient matcher (5.1), eligibility matcher (5.4), NPI matcher (5.2), cross-facility matcher (5.5) + cohort-stratified accuracy monitoring + vocabulary-map governance + threshold-calibration governance + complete CloudTrail and audit-retention posture + patient-access reports + three-queue review tooling</td>
+<td>9-15 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add OMOP CDM integration, FHIR-native linkage with HealthLake, tokenization-based privacy-preserving linkage, real-time operational linkage, pharmacy-focused adherence analytics, HCC risk-adjustment specialization, quality-measure specialization, cross-organizational HIE-mediated linkage, streaming Kinesis-based pipeline, active-learning configuration tuning, external-encounter clinical-summary inference</td>
+<td>6-15 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter05.06-claims-to-clinical-data-linkage.html">Main Recipe 5.6</a> · <a href="chapter05.06-python-example.html">Python Example</a> · <a href="chapter05-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

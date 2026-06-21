@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 1.8 Architecture and Implementation: Explanation of Benefits Processing 🔶</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested nav-active" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-18-architecture-and-implementation-explanation-of-benefits-processing-">Recipe 1.8 Architecture and Implementation: Explanation of Benefits Processing 🔶</h1>
+<p><em>Companion to <a href="chapter01.08-eob-processing.html">Recipe 1.8: Explanation of Benefits Processing 🔶</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Textract for async table and forms extraction.</strong> Textract's <code>StartDocumentAnalysis</code> API is the right tool for EOBs for the same reasons it was right for intake forms in Recipe 1.2: multi-page PDF support, combined FORMS plus TABLES extraction in a single job, and SNS-based async completion notification. The TABLES feature returns cells with <code>RowIndex</code> and <code>ColumnIndex</code> attributes, letting you reconstruct grids without depending on visual line detection. This handles borderless tables and densely-packed EOB layouts well. Run FORMS and TABLES in one job: Textract bills per page, not per feature type, so there's no cost reason to separate them.</p>
+<p><strong>Amazon Bedrock for LLM schema mapping.</strong> The Bedrock Converse API is the extraction intelligence layer: it receives the raw column headers from Textract and maps them to canonical EOB field names. The model doesn't do OCR (Textract did that), doesn't validate financials (rule-based code does that), and doesn't need clinical NLP capability. It needs to understand healthcare financial terminology and return structured JSON. That's a structured extraction task, not complex reasoning. It fits squarely in the mid-tier model range.</p>
+<p><strong>Amazon Nova Pro or Claude Haiku 4.5 for the schema mapping call.</strong> Both are the right tier for this task. Nova Pro runs at $0.80 per million input tokens, Haiku 4.5 at $1.00 per million. An EOB table header extraction call sends maybe 200-500 tokens (the column headers, a few sample rows, the schema description) and receives back a small JSON mapping. Cost per call: less than $0.001. That's the right price point for a call you're making on every non-profiled EOB. Claude Sonnet or Opus would work, but you're not buying anything with the extra capability for this task. Match the model to the complexity of the job.</p>
+<p><strong>Two Lambda functions for the async pattern.</strong> Same architecture as Recipe 1.2: one Lambda submits the Textract job on the S3 upload event, a second Lambda fires on the SNS completion notification and runs the schema mapping, financial validation, and DynamoDB write. The schema mapping Bedrock call happens inside the processing Lambda. For known high-volume payers, the processing Lambda skips the Bedrock call entirely and applies the static profile.</p>
+<p><strong>Amazon DynamoDB for EOB records.</strong> Write-once at extraction time, then lookup by claim number, member ID, or document key. The flexible schema handles variable structure well: not every EOB has the same number of line items, and the set of canonical fields populated varies by payer. Both the schema mapping result (including which path was used: static profile vs. Bedrock) and the financial validation output get stored alongside the record.</p>
+<p><strong>Amazon SQS for the review queue.</strong> Same as the original recipe. Decouples the routing decision from the review workflow. Flagged EOBs go to SQS with enough context (document key, claim number, specific validation errors or schema mapping failures) that reviewers know what to look for.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    A[📠 Fax / Portal / COB Feed] --&gt;|EOB PDF| B[S3 Bucket\neobs-inbox/]
+    B --&gt;|S3 Event| C[Lambda\neob-start]
+    C --&gt;|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
+    C --&gt;|Store job context| G
+    D --&gt;|Job Complete| E[SNS Topic\ntextract-jobs]
+    E --&gt;|Notification| F[Lambda\neob-process]
+    F --&gt;|GetDocumentAnalysis\npaginated| D
+    F --&gt;|Known payer?| F
+    F --&gt;|Static profile\nhigh-volume payers| F
+    F --&gt;|Bedrock Converse API\nschema mapping| H[Amazon Bedrock\nNova Pro / Haiku 4.5]
+    H --&gt;|Canonical field mapping| F
+    F --&gt;|Rule-based financial\nvalidation| F
+    F --&gt;|Valid record| G[DynamoDB\neob-records]
+    F --&gt;|Flagged record| I[SQS Queue\neob-review]
+
+    style D fill:#ff9,stroke:#333
+    style H fill:#9cf,stroke:#333
+    style G fill:#9ff,stroke:#333
+    style I fill:#ffa,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Textract, Amazon Bedrock, Amazon S3, AWS Lambda (x2), Amazon SNS, Amazon DynamoDB, Amazon SQS</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td><code>textract:StartDocumentAnalysis</code>, <code>textract:GetDocumentAnalysis</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>sns:Publish</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>, <code>sqs:SendMessage</code>, <code>iam:PassRole</code> (Lambda passing role to Textract for SNS publish), <code>bedrock:InvokeModel</code> scoped to the specific model ARNs used (Nova Pro and/or Haiku 4.5)</td>
+</tr>
+<tr>
+<td><strong>Bedrock Model Access</strong></td>
+<td>Enable Amazon Nova Pro (<code>amazon.nova-pro-v1:0</code>) or Claude Haiku 4.5 (<code>anthropic.claude-haiku-4-5-20251001-v1:0</code>) in Bedrock Model Access. This recipe uses cross-region inference profiles (<code>us.amazon.nova-pro-v1:0</code>, <code>us.anthropic.claude-haiku-4-5-v1</code>) for capacity routing; these route across us-east-1, us-east-2, and us-west-2. For strict version pinning in production, use full model ARNs rather than inference profile IDs. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate using direct single-region model ARNs (without the <code>us.</code> prefix) rather than cross-region inference profiles.</td>
+</tr>
+<tr>
+<td><strong>Textract Service Role</strong></td>
+<td>A separate IAM role that Textract assumes to publish completion notifications to SNS. This is not the Lambda execution role. Create it explicitly with a trust policy for <code>textract.amazonaws.com</code> and <code>sns:Publish</code> on your specific topic ARN. Pass it in the <code>StartDocumentAnalysis</code> call. The Lambda execution role needs <code>iam:PassRole</code> to pass this role to Textract. Missing this is a common first-time setup failure: jobs complete silently and the processing Lambda never fires.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. EOBs contain member names, member IDs, service dates, provider names, and payment amounts. All constitute PHI under HIPAA. Amazon Bedrock is HIPAA-eligible under a BAA; models do not retain or train on data sent via Bedrock APIs.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. SQS: server-side encryption with KMS. Lambda CloudWatch log groups: configure KMS encryption on each log group; Lambda does not do this automatically, and logs may contain fragments of extracted document content. All API calls over TLS.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: both Lambdas in a VPC with VPC interface endpoints for Textract, SNS, SQS, KMS, and CloudWatch Logs. S3 uses a gateway endpoint (free). DynamoDB can use either gateway or interface endpoint. For Bedrock: the runtime API your Lambda calls is <code>bedrock-runtime</code>, not <code>bedrock</code>; create <code>com.amazonaws.REGION.bedrock-runtime</code> as the interface endpoint. A VPC with only <code>com.amazonaws.REGION.bedrock</code> will not route Lambda's Converse API calls through the private endpoint. Most deployments only need <code>bedrock-runtime</code>; add <code>bedrock</code> separately only if managing model access programmatically. When using cross-region inference profiles, your Lambda's API call goes to the <code>bedrock-runtime</code> VPC endpoint in your deployment region; AWS routes the request internally to the appropriate backend region for capacity. PHI does not traverse the public internet regardless of which backend region processes the request. For organizations documenting data flows for HIPAA, note that model inference may occur in a region other than your deployment region.</td>
+</tr>
+<tr>
+<td><strong>Lambda Timeouts</strong></td>
+<td>The default 3-second Lambda timeout is too low for this pipeline. eob-start (submits Textract job): 30 seconds. eob-process (retrieves paginated results, optionally calls Bedrock, runs financial validation, writes to DynamoDB): at minimum 60 seconds; set to 3 minutes and tune based on observed p99 for complex multi-page EOBs.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all Textract, Bedrock, and S3 API calls. EOBs are PHI-bearing financial documents; the audit trail is a compliance requirement.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Major payers publish sample EOB PDFs on their member portals and provider resource sites. CMS publishes the Medicare Summary Notice format at <a href="https://www.medicare.gov/basics/get-started-with-medicare/medicare-basics/reading-medicare-summary-notice">medicare.gov</a>. Fill in synthetic but realistic dollar amounts and claim numbers. Never use real PHI in development.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Textract async analysis (FORMS + TABLES): $0.065/page ($0.05 forms + $0.015 tables). Bedrock schema mapping call (Nova Pro): under $0.001/EOB for the column header mapping call. For a 2-page EOB using the Bedrock path: ~$0.13 Textract + ~$0.001 Bedrock = ~$0.131 total. For known high-volume payers using the static profile path: ~$0.13, same as before. Lambda and DynamoDB overhead: negligible.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Textract</strong></td>
+<td>Async multi-page extraction: FORMS for claim header fields, TABLES for line item grids. The default Textract <code>StartDocumentAnalysis</code> concurrent job quota is 25 in most regions. File an AWS Support quota increase request before go-live for high-volume deployments.</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>LLM schema mapping: receives raw extracted column headers from Textract, returns canonical EOB field mapping</td>
+</tr>
+<tr>
+<td><strong>Amazon Nova Pro / Claude Haiku 4.5</strong></td>
+<td>The models backing the Bedrock schema mapping call; mid-tier capability is sufficient for this structured mapping task</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Stores incoming EOB PDFs; encrypted at rest with KMS; prefix-organized by date (and optionally by payer for the high-volume shortcut)</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (eob-start)</strong></td>
+<td>Triggered by S3 upload; submits the Textract job; stores job context in DynamoDB</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (eob-process)</strong></td>
+<td>Triggered by SNS notification; retrieves results; checks payer for high-volume shortcut; runs Bedrock schema mapping or applies static profile; runs financial validation; writes to DynamoDB or SQS</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Receives Textract completion signal; delivers to eob-process Lambda</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores structured EOB records (valid and flagged) with an index on claim number and member ID; stores schema mapping metadata (which path was used) alongside each record</td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Review queue for flagged EOBs; consumed by adjuster workflow or human review tooling</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed keys for S3, DynamoDB, SQS, and Lambda CloudWatch log group encryption</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Logs, metrics, and alarms for job failures, validation error rates, schema mapping failures, and Bedrock throttling</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code-walkthrough">Code Walkthrough</h3>
+<p><strong>Step 1: Submit the async Textract job.</strong> The EOB PDF lands in S3 and triggers the eob-start Lambda. We call <code>StartDocumentAnalysis</code> with both FORMS and TABLES feature types. This is identical to Recipe 1.2 and Recipe 1.5. If your S3 intake pipeline organizes EOBs into per-payer prefixes (<code>eobs-inbox/unitedhealthcare/</code>, <code>eobs-inbox/medicare/</code>), record that prefix in the job context: it gives the processing Lambda a free payer hint before running any extraction.</p>
+<pre class="code code-plain"><code>FUNCTION submit_eob_extraction(bucket, key, sns_topic_arn, textract_role_arn):
+    // Submit the EOB PDF to Textract for async analysis.
+    // FORMS extracts claim header fields (claim number, member name, etc.)
+    // TABLES extracts the line item grid (one row per service, with dollar amounts)
+    // Both in one job: Textract bills per page, not per feature type.
+
+    response = call Textract.StartDocumentAnalysis with:
+        document_location = S3 object at bucket/key
+        feature_types     = [&quot;FORMS&quot;, &quot;TABLES&quot;]
+        notification_channel = {
+            sns_topic_arn: sns_topic_arn,
+            role_arn: textract_role_arn    // Textract needs its own role to publish to SNS
+        }
+
+    job_id = response.JobId
+
+    // Parse the S3 prefix to extract a payer hint, if available.
+    // e.g., &quot;eobs-inbox/unitedhealthcare/2026/03/...&quot; → payer_hint = &quot;unitedhealthcare&quot;
+    // This is optional: if your intake pipeline doesn&#x27;t use per-payer prefixes,
+    // payer_hint will be None and all documents will route through Bedrock.
+    // See &quot;Adaptive Mapping&quot; above for header keyword detection as an alternative.
+    payer_hint = extract_payer_from_prefix(key)   // null if prefix has no payer segment
+
+    write to DynamoDB table &quot;textract-jobs&quot;:
+        job_id    = job_id
+        bucket    = bucket
+        key       = key
+        submitted = current UTC timestamp
+        status    = &quot;PENDING&quot;
+        payer_hint = payer_hint    // null is fine here
+
+    RETURN job_id
+</code></pre>
+<p><strong>Step 2: Retrieve all result pages.</strong> When Textract finishes, the SNS notification triggers eob-process Lambda. Paginate through all result pages via <code>GetDocumentAnalysis</code>. This is identical to Recipe 1.2: a multi-page EOB can produce hundreds of blocks, and Textract returns at most 1,000 per API call. Stop early and you have an incomplete document.</p>
+<pre class="code code-plain"><code>FUNCTION retrieve_all_blocks(job_id):
+    all_blocks = empty list
+    next_token = null
+
+    LOOP:
+        params = { job_id: job_id }
+        IF next_token is not null:
+            params.next_token = next_token
+
+        response = call Textract.GetDocumentAnalysis with params
+
+        IF response.JobStatus is &quot;FAILED&quot;:
+            log the failure reason from response.StatusMessage
+            // Do NOT log block content here; blocks may contain PHI
+            RAISE an exception indicating Textract failure
+            // Move the document to failed-documents/ prefix for ops investigation
+
+        append response.Blocks to all_blocks
+        next_token = response.NextToken
+        IF next_token is null:
+            BREAK
+
+    block_map = { block.Id: block for block in all_blocks }
+    RETURN all_blocks, block_map
+</code></pre>
+<p><strong>Step 3: Extract raw header fields and raw table data.</strong> Before schema mapping, we need the raw extracted data: key-value pairs from the document header, and the table grid (row index, column index, cell text) from the line item section. Both come out of the same Textract response.</p>
+<pre class="code code-plain"><code>FUNCTION extract_raw_content(all_blocks, block_map):
+    // --- Header: KEY_VALUE_SET blocks from FORMS extraction ---
+    raw_header = {}    // label text -&gt; { value: text, confidence: float }
+
+    FOR each block in all_blocks:
+        IF block.BlockType != &quot;KEY_VALUE_SET&quot; OR &quot;KEY&quot; not in block.EntityTypes:
+            CONTINUE
+        key_text = concatenate text from CHILD relationships of block using block_map
+        value_block = follow VALUE relationship from block using block_map
+        IF value_block is null: CONTINUE
+        value_text = concatenate text from CHILD relationships of value_block using block_map
+        confidence = min(block.Confidence, value_block.Confidence)
+        raw_header[key_text.strip()] = { value: value_text.strip(), confidence: confidence }
+
+    // --- Tables: TABLE and CELL blocks from TABLES extraction ---
+    raw_tables = []    // list of { headers: [str], rows: [[str]], avg_confidence: float }
+
+    FOR each block in all_blocks:
+        IF block.BlockType != &quot;TABLE&quot;: CONTINUE
+
+        // Reconstruct the grid from CELL blocks.
+        // Check for merged cells (ColumnSpan &gt; 1) before mapping headers to columns.
+        grid = {}        // row_index -&gt; col_index -&gt; { text: str, confidence: float }
+        all_confidences = []
+
+        FOR each cell_id in CHILD relationships of block:
+            cell = block_map[cell_id]
+            IF cell.BlockType != &quot;CELL&quot;: CONTINUE
+            r = cell.RowIndex
+            c = cell.ColumnIndex
+            // If a cell spans multiple columns, expand it before indexing.
+            // Merged headers shift all subsequent column alignments if not handled.
+            IF cell.ColumnSpan &gt; 1:
+                cell_text = concatenate CHILD word text from cell using block_map
+                FOR col_offset from 0 to cell.ColumnSpan - 1:
+                    grid[r][c + col_offset] = { text: cell_text, confidence: cell.Confidence }
+            ELSE:
+                cell_text = concatenate CHILD word text from cell using block_map
+                grid[r][c] = { text: cell_text, confidence: cell.Confidence }
+                all_confidences.append(cell.Confidence)
+
+        IF grid is empty OR max_row(grid) &lt; 2: CONTINUE
+
+        // Row 1 is the header row. Collect header labels.
+        num_cols = max column index in grid[1]
+        headers = [ grid[1][c].text.strip() for c in 1 to num_cols ]
+
+        // Rows 2 through max_row are data rows.
+        rows = []
+        FOR r from 2 to max_row(grid):
+            row = [ grid[r].get(c, {text: &quot;&quot;}).text.strip() for c in 1 to num_cols ]
+            rows.append(row)
+
+        avg_confidence = average of all_confidences if all_confidences else 0.0
+        raw_tables.append({ headers: headers, rows: rows, avg_confidence: avg_confidence })
+
+    RETURN raw_header, raw_tables
+</code></pre>
+<p><strong>Step 4: Map the extracted data to the canonical EOB schema.</strong> This is the step that replaced the static profile library for all but the highest-volume payers. We check whether the payer falls into our short-list of explicitly-profiled payers. If it does, we apply the static profile dictionary directly: it's cheaper, faster, and completely deterministic. If it doesn't, we send the raw extracted column headers to Bedrock and ask the LLM to map them.</p>
+<pre class="code code-plain"><code>// High-volume payer profiles: maintain these for your top 10-20 payers by volume.
+// For these payers, the LLM is not called at all.
+// These are the same profiles as the original Recipe 1.8, but a much shorter list.
+// The LLM handles everything else.
+HIGH_VOLUME_PROFILES = {
+    &quot;unitedhealthcare&quot;: {
+        table_headers: {
+            &quot;date of service&quot;:           &quot;date_of_service&quot;,
+            &quot;procedure code&quot;:            &quot;procedure_code&quot;,
+            &quot;what your provider billed&quot;: &quot;billed_amount&quot;,
+            &quot;network discount&quot;:          &quot;adjustment&quot;,
+            &quot;what your plan paid&quot;:       &quot;plan_paid&quot;,
+            // [EDITOR: review fix: P1 #3 UHC allowed_amount: added &quot;plan allowed&quot; mapping.
+            // Three of four financial validation rules silently skipped for UHC without
+            // allowed_amount. UHC EOBs commonly include a &quot;Plan Allowed&quot; or &quot;Allowed Amount&quot;
+            // column. Add the matching label for your specific UHC template here.
+            // If your UHC documents do not include an explicit allowed column, derive it:
+            // allowed = billed - adjustment (see validate_eob_financials notes below).]
+            &quot;plan allowed&quot;:              &quot;allowed_amount&quot;,
+            &quot;allowed amount&quot;:            &quot;allowed_amount&quot;,
+            &quot;what you owe&quot;:              &quot;member_responsibility&quot;,
+            &quot;deductible&quot;:                &quot;deductible_applied&quot;,
+            &quot;copayment&quot;:                 &quot;copay&quot;,
+            &quot;coinsurance&quot;:               &quot;coinsurance&quot;,
+            &quot;service&quot;:                   &quot;service_description&quot;,
+        },
+        kv_fields: {
+            &quot;claim #&quot;:        &quot;claim_number&quot;,
+            &quot;claim number&quot;:   &quot;claim_number&quot;,
+            &quot;member&quot;:         &quot;member_name&quot;,
+            &quot;member id&quot;:      &quot;member_id&quot;,
+            &quot;group number&quot;:   &quot;group_number&quot;,
+            &quot;provider&quot;:       &quot;provider_name&quot;,
+        }
+    },
+    &quot;medicare&quot;: {
+        table_headers: {
+            &quot;service date&quot;:           &quot;date_of_service&quot;,
+            &quot;services provided&quot;:      &quot;service_description&quot;,
+            &quot;amount charged&quot;:         &quot;billed_amount&quot;,
+            &quot;medicare approved&quot;:      &quot;allowed_amount&quot;,
+            &quot;medicare paid provider&quot;: &quot;plan_paid&quot;,
+            &quot;you may be billed&quot;:      &quot;member_responsibility&quot;,
+            &quot;non-covered amount&quot;:     &quot;non_covered&quot;,
+        },
+        kv_fields: {
+            &quot;claim number&quot;:                  &quot;claim_number&quot;,
+            &quot;patient name&quot;:                  &quot;member_name&quot;,
+            &quot;health insurance claim number&quot;: &quot;member_id&quot;,
+            &quot;hicn&quot;:                          &quot;member_id&quot;,
+            &quot;medicare id&quot;:                   &quot;member_id&quot;,
+        }
+    }
+    // Add other high-volume payers here as needed.
+    // Everything else routes through Bedrock automatically.
+}
+
+// Canonical EOB schema: the fields we want in the output.
+// Send this to the LLM so it understands what it&#x27;s mapping to.
+CANONICAL_SCHEMA = {
+    table_fields: {
+        &quot;date_of_service&quot;:      &quot;The date the medical service was provided&quot;,
+        &quot;procedure_code&quot;:       &quot;CPT or HCPCS billing code for the service&quot;,
+        &quot;service_description&quot;:  &quot;Description of the service or procedure&quot;,
+        &quot;billed_amount&quot;:        &quot;Dollar amount submitted by the provider (before any adjustments)&quot;,
+        &quot;allowed_amount&quot;:       &quot;Contractual allowed amount (after network discount)&quot;,
+        &quot;adjustment&quot;:           &quot;Dollar amount of network discount or contractual adjustment&quot;,
+        &quot;plan_paid&quot;:            &quot;Dollar amount paid by the insurance plan&quot;,
+        &quot;member_responsibility&quot;:&quot;Dollar amount the member owes (deductible + copay + coinsurance)&quot;,
+        &quot;deductible_applied&quot;:   &quot;Portion of member responsibility applied to deductible&quot;,
+        &quot;copay&quot;:                &quot;Fixed copayment amount&quot;,
+        &quot;coinsurance&quot;:          &quot;Percentage-based member cost share&quot;,
+        &quot;non_covered&quot;:          &quot;Amount for non-covered services&quot;,
+    },
+    header_fields: {
+        &quot;claim_number&quot;:    &quot;Unique claim identifier&quot;,
+        &quot;member_name&quot;:     &quot;Name of the insured member&quot;,
+        &quot;member_id&quot;:       &quot;Member&#x27;s insurance ID number&quot;,
+        &quot;group_number&quot;:    &quot;Group or plan number&quot;,
+        &quot;provider_name&quot;:   &quot;Name of the treating provider&quot;,
+        &quot;service_period&quot;:  &quot;Date or date range of the service period&quot;,
+    }
+}
+
+FUNCTION map_to_canonical_schema(raw_header, raw_tables, document_key, payer_hint):
+    // [EDITOR: review fix: P1 #5 idempotency check: check DynamoDB before any expensive
+    // LLM call. SNS delivers at least once; a Lambda retry would otherwise re-invoke
+    // Bedrock needlessly and potentially double-write the record.
+    // This aligns the pseudocode with the guidance in &quot;Why This Isn&#x27;t Production-Ready.&quot;]
+    existing = get_item from DynamoDB &quot;eob-records&quot; where partition_key = document_key
+    IF existing item found AND existing.financial_validation.status == &quot;valid&quot;:
+        RAISE AlreadyProcessedError so caller can return the existing record
+        // Caller should return existing record without reprocessing
+
+    // Step 1: Check if this is a high-volume payer with a static profile.
+    // payer_hint comes from the S3 prefix if your pipeline uses per-payer prefixes.
+    // See &quot;Adaptive Mapping&quot; for header keyword detection if S3 prefixes aren&#x27;t available.
+    IF payer_hint is not null:
+        payer_id = normalize_payer_id(payer_hint)    // lowercase, strip whitespace
+        IF payer_id is in HIGH_VOLUME_PROFILES:
+            profile = HIGH_VOLUME_PROFILES[payer_id]
+            // Apply the static profile mapping and return immediately.
+            // This skips the Bedrock call entirely for these payers.
+            RETURN apply_static_profile(raw_header, raw_tables, profile), &quot;static_profile&quot;
+
+    // Step 2: No static profile. Send to Bedrock for schema mapping.
+    // The LLM receives the raw column headers, a sample of cell values to infer
+    // semantics, and the canonical schema with field descriptions.
+    RETURN map_with_llm(raw_header, raw_tables), &quot;bedrock_mapping&quot;
+
+FUNCTION map_with_llm(raw_header, raw_tables):
+    // Build the prompt payload.
+    // We send column headers and a sample of values (first 2 data rows) so the LLM
+    // can infer semantics from both the label and the content.
+    // Note: sample rows contain PHI (dates, dollar amounts, procedure codes).
+    // Transmission to Bedrock is covered by the BAA; AWS does not retain this data.
+    // Header labels (not values) are sent for the key-value section because label
+    // semantics are sufficient for header field mapping; header values are PHI
+    // and do not add inference value.
+    table_samples = []
+    FOR each table in raw_tables:
+        sample = {
+            headers: sanitize(table.headers),
+            sample_rows: sanitize(table.rows[:2])    // first two rows for inference context
+        }
+        table_samples.append(sample)
+
+    // Build the prompt. Keep it structured and unambiguous.
+    // Do not include full document text; only the structural data needed for mapping.
+    // This minimizes both token cost and the chance of sensitive content in the prompt.
+    user_prompt = format as JSON:
+        {
+            task: &quot;Map the extracted EOB table column headers and form field labels
+                   to the canonical field names in the provided schema.
+                   Return a JSON object with two keys:
+                   &#x27;table_mapping&#x27;: maps each extracted column header to a canonical
+                   field name (or null if no match).
+                   &#x27;header_mapping&#x27;: maps each extracted form field label to a canonical
+                   field name (or null if no match).
+                   Use only the canonical field names from the schema.
+                   Return only valid JSON. No explanation, no markdown.&quot;,
+            extracted_tables:  table_samples,
+            extracted_header:  list of keys from raw_header,
+            canonical_schema:  CANONICAL_SCHEMA
+        }
+
+    // Call Bedrock. Use temperature=0 for deterministic output.
+    // Nova Pro or Haiku 4.5: sufficient capability for this structured task.
+    response = call Bedrock.Converse with:
+        model_id     = &quot;us.amazon.nova-pro-v1:0&quot;    // or us.anthropic.claude-haiku-4-5-v1
+        system       = [{ text: &quot;You are a healthcare data normalization assistant.
+                                 Return only valid JSON. Never include PHI in your response.&quot; }]
+        messages     = [{ role: &quot;user&quot;, content: [{ text: user_prompt }] }]
+        inference_config = { max_tokens: 1024, temperature: 0 }
+
+    // Parse the response. If the JSON is malformed, retry once with an explicit reminder.
+    response_text = extract text from response.output.message.content
+    TRY:
+        mapping = parse JSON from response_text
+    CATCH JSON parse error:
+        // Retry once with an explicit JSON-only reminder appended to the prompt.
+        response = call Bedrock.Converse with same parameters
+                   but user_prompt appended with:
+                   &quot;\n\nYou MUST return only valid JSON. No markdown, no explanation.&quot;
+        response_text = extract text from response.output.message.content
+        mapping = parse JSON from response_text
+        // If this still fails, raise an exception and route the document to review.
+
+    // Validate structure: required keys must be present.
+    IF &quot;table_mapping&quot; not in mapping OR &quot;header_mapping&quot; not in mapping:
+        RAISE ValueError(&quot;Bedrock mapping response missing required keys&quot;)
+
+    // [EDITOR: review fix: P1 #6 canonical field name validation: filter Bedrock output
+    // values against the known canonical set before returning. An off-canonical value
+    // (e.g., &quot;billed_amount_override&quot; or &quot;total_paid&quot; instead of &quot;plan_paid&quot;) would
+    // otherwise write an unknown field name into the DynamoDB record and silently bypass
+    // financial validation. Treating non-canonical values as None (unmapped) enforces
+    // the schema boundary between the LLM step and all downstream steps.
+    // This also limits the blast radius of prompt injection via crafted column headers.]
+    VALID_TABLE_FIELDS  = set of keys from CANONICAL_SCHEMA.table_fields
+    VALID_HEADER_FIELDS = set of keys from CANONICAL_SCHEMA.header_fields
+
+    mapping.table_mapping = {
+        k: (v if v in VALID_TABLE_FIELDS else null)
+        for k, v in mapping.table_mapping
+    }
+    mapping.header_mapping = {
+        k: (v if v in VALID_HEADER_FIELDS else null)
+        for k, v in mapping.header_mapping
+    }
+
+    RETURN mapping
+
+// [EDITOR: review fix: P0 #2 _apply_static_profile processes all tables: changed the
+// inner loop from raw_tables[0].headers to iterate all elements of raw_tables.
+// A 2-page EOB with a summary table on page 1 and line items on page 2 silently lost
+// all line item data on the static profile path. This is the &quot;reliable&quot; path for your
+// highest-volume payers: it must process every table Textract returns, not just the first.]
+FUNCTION apply_static_profile(raw_header, raw_tables, profile):
+    // Map table column headers across ALL extracted tables.
+    // EOBs commonly produce multiple Textract TABLE blocks: a summary section on page 1
+    // and a line item grid on page 2. Both must be mapped for financial validation to work.
+    table_mapping = {}
+    FOR each table in raw_tables:    // iterate all tables, not just raw_tables[0]
+        FOR each header in table.headers:
+            canonical = profile.table_headers.get(header.strip().lowercase())
+            table_mapping[header] = canonical    // null if not in profile
+
+    // Map key-value header labels.
+    header_mapping = {}
+    FOR each label in raw_header.keys():
+        canonical = profile.kv_fields.get(label.strip().lowercase())
+        header_mapping[label] = canonical
+
+    RETURN { table_mapping: table_mapping, header_mapping: header_mapping }
+</code></pre>
+<p><strong>Step 5: Assemble the canonical line items.</strong> Apply the schema mapping (from whichever path produced it) to the raw extracted data. This step is purely structural: walk the rows, rename the columns, strip whitespace.</p>
+<pre class="code code-plain"><code>FUNCTION assemble_line_items(raw_header, raw_tables, mapping):
+    // Apply header mapping to the form fields.
+    header_fields = {}
+    FOR each raw_label, data in raw_header:
+        canonical = mapping.header_mapping.get(raw_label)
+        IF canonical is not null:
+            header_fields[canonical] = data.value
+
+    // Apply table mapping to the line items.
+    line_items = []
+    FOR each table in raw_tables:
+        num_cols = length of table.headers
+        canonical_headers = [mapping.table_mapping.get(h) for h in table.headers]
+        // Keep unmapped columns under their original label; don&#x27;t silently discard.
+        canonical_headers = [ c if c is not null else table.headers[i]
+                               for i, c in enumerate(canonical_headers) ]
+
+        FOR each row in table.rows:
+            item = {}
+            FOR col_index, canonical_name in enumerate(canonical_headers):
+                item[canonical_name] = row[col_index] if col_index &lt; len(row) else &quot;&quot;
+            line_items.append(item)
+
+    RETURN header_fields, line_items
+</code></pre>
+<p><strong>Step 5a: Minimum coverage check.</strong> Before financial validation runs, verify that the mapping produced at least the core financial fields. This is the enforcement point for the LLM-to-validation trust boundary.</p>
+<pre class="code code-plain"><code>FUNCTION check_mapping_coverage(line_items, mapping_path):
+    // If there are no line items at all, the document is incomplete.
+    IF len(line_items) == 0:
+        RETURN false, &quot;no_line_items&quot;
+
+    // Require at least billed_amount and plan_paid to be present
+    // in at least one line item. These are the minimum fields needed
+    // for meaningful financial validation.
+    has_billed   = any(item.get(&quot;billed_amount&quot;) for item in line_items)
+    has_plan_paid = any(item.get(&quot;plan_paid&quot;) for item in line_items)
+
+    IF not has_billed OR not has_plan_paid:
+        RETURN false, &quot;required_fields_missing&quot;
+
+    RETURN true, null
+
+// In the main pipeline, between assemble_line_items and validate_eob_financials:
+coverage_ok, coverage_reason = check_mapping_coverage(line_items, mapping_path)
+IF not coverage_ok:
+    // Route to manual review. Do not run financial validation.
+    // A record with no financial fields cannot be validated; &quot;valid&quot; would be a lie.
+    record = assemble_and_route(
+        document_key,
+        payer_hint,
+        header_fields,
+        line_items,
+        validation_errors = [],
+        mapping_path = &quot;mapping_incomplete&quot;,
+        coverage_reason = coverage_reason
+    )
+    RETURN record
+
+// Only reach validate_eob_financials if minimum coverage is confirmed.
+validation_errors = validate_eob_financials(header_fields, line_items)
+</code></pre>
+<p><strong>Step 6: Financial validation.</strong> This step is unchanged from the original recipe. Extract the numeric values from the canonical line items and apply the arithmetic rules that every well-formed EOB must satisfy. This is rule-based code: deterministic, auditable, and not subject to LLM variance. The validation checks whether extracted numbers are internally consistent. If the math is wrong, something went wrong in extraction or mapping, regardless of what the OCR confidence scores say.</p>
+<pre class="code code-plain"><code>FUNCTION parse_currency(text):
+    IF text is null or text.strip() is empty: RETURN null
+    cleaned = remove &quot;$&quot;, &quot;,&quot; from text.strip()
+    IF cleaned matches a number pattern: RETURN float(cleaned)
+    RETURN null
+
+FUNCTION validate_eob_financials(header_fields, line_items):
+    errors = []
+
+    FOR each index, item in enumerate(line_items):
+        row_num = index + 1    // 1-indexed for human-readable error messages
+
+        billed  = parse_currency(item.get(&quot;billed_amount&quot;))
+        allowed = parse_currency(item.get(&quot;allowed_amount&quot;))
+        paid    = parse_currency(item.get(&quot;plan_paid&quot;))
+        member  = parse_currency(item.get(&quot;member_responsibility&quot;))
+
+        // Rule 1: Billed must be &gt;= allowed.
+        IF billed is not null AND allowed is not null:
+            IF billed &lt; allowed - 0.01:
+                errors.append({
+                    row:    row_num,
+                    rule:   &quot;allowed_exceeds_billed&quot;,
+                    detail: f&quot;Allowed &gt; Billed on line {row_num}&quot;
+                    // Note: do not include extracted dollar values in error detail
+                    // if this record will be logged outside PHI-protected storage.
+                })
+
+        // Rule 2: Allowed must be &gt;= plan paid.
+        IF allowed is not null AND paid is not null:
+            IF paid &gt; allowed + 0.01:
+                errors.append({
+                    row: row_num, rule: &quot;paid_exceeds_allowed&quot;,
+                    detail: f&quot;Paid &gt; Allowed on line {row_num}&quot;
+                })
+
+        // Rule 3: Member responsibility approximates allowed minus plan paid.
+        // $0.05 tolerance for rounding. Tighten this if COB math requires exactness.
+        IF allowed is not null AND paid is not null AND member is not null:
+            expected = round(allowed - paid, 2)
+            IF abs(member - expected) &gt; 0.05:
+                errors.append({
+                    row: row_num, rule: &quot;member_resp_mismatch&quot;,
+                    detail: f&quot;Member responsibility does not reconcile on line {row_num}&quot;
+                })
+
+    // Rule 4: Line item payments should sum to header total, if present.
+    header_total = parse_currency(header_fields.get(&quot;plan_paid&quot;))
+    IF header_total is not null:
+        line_total = sum of parse_currency(item.get(&quot;plan_paid&quot;, &quot;0&quot;) or &quot;0&quot;)
+                     for each item
+        IF abs(line_total - header_total) &gt; 0.10:
+            errors.append({
+                row: &quot;header&quot;, rule: &quot;line_total_mismatch&quot;,
+                detail: &quot;Line items do not sum to header total&quot;
+            })
+
+    RETURN errors
+</code></pre>
+<p><strong>Step 7: Assemble and route.</strong> Combine everything into a canonical EOB record. Store both the mapping metadata (which path was used: static profile or Bedrock) and the validation output alongside the record. Valid records go directly to DynamoDB. Flagged records go to both DynamoDB and SQS.</p>
+<pre class="code code-plain"><code>FUNCTION assemble_and_route(
+        document_key, payer_hint, header_fields, line_items,
+        validation_errors, mapping_path, coverage_reason=null):
+
+    record = {
+        document_key:   document_key,
+        extracted_at:   current UTC timestamp (ISO 8601),
+        payer_hint:     payer_hint,      // from S3 prefix
+        mapping_path:   mapping_path,    // &quot;static_profile&quot;, &quot;bedrock_mapping&quot;,
+                                         // or &quot;mapping_incomplete&quot;
+
+        header: {
+            claim_number:  header_fields.get(&quot;claim_number&quot;),
+            member_name:   header_fields.get(&quot;member_name&quot;),
+            member_id:     header_fields.get(&quot;member_id&quot;),
+            group_number:  header_fields.get(&quot;group_number&quot;),
+            provider_name: header_fields.get(&quot;provider_name&quot;),
+            service_period: header_fields.get(&quot;service_period&quot;),
+        },
+
+        line_items: line_items,
+
+        financial_validation: {
+            errors:       validation_errors,
+            // [EDITOR: review fix: P0 #1 status for incomplete mapping:
+            // mapping_incomplete routes to review without running validation.
+            // mapping_failed routes to review when Bedrock call itself failed.
+            // Both are distinct from &quot;flagged&quot; (validation ran and found errors).]
+            status:       &quot;mapping_incomplete&quot; if mapping_path == &quot;mapping_incomplete&quot;
+                          else &quot;valid&quot; if len(validation_errors) == 0
+                          else &quot;flagged&quot;,
+            validated_at: current UTC timestamp
+        }
+    }
+
+    // Write every record to DynamoDB: valid, flagged, and mapping_incomplete.
+    // Note: idempotency check was already performed before the Bedrock call
+    // in map_to_canonical_schema. At this point we know this is a new record.
+    write record to DynamoDB &quot;eob-records&quot;
+
+    // Send flagged records to the review queue.
+    // mapping_incomplete: Bedrock or static profile did not produce required fields.
+    // mapping_failed: Bedrock call itself failed.
+    // Both require manual review before financial data can be trusted.
+    needs_review = (len(validation_errors) &gt; 0
+                    OR mapping_path == &quot;mapping_failed&quot;
+                    OR mapping_path == &quot;mapping_incomplete&quot;)
+    IF needs_review:
+        reason = &quot;financial_validation_failed&quot; if validation_errors else &quot;schema_mapping_failed&quot;
+        send to SQS &quot;eob-review&quot;:
+            document_key:      document_key,
+            payer_hint:        payer_hint,
+            claim_number:      record.header.claim_number,
+            validation_errors: validation_errors,
+            mapping_path:      mapping_path,
+            reason:            reason
+
+    RETURN record
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter01.08-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd change for a real deployment, including retry configuration for Bedrock throttling, the DynamoDB Decimal gotcha, and how to wire up the high-volume profile shortcut.</p>
+</blockquote>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>A few gaps in the pseudocode above that will cause real problems.</p>
+<p><strong>The Bedrock retry gap.</strong> The pseudocode retries once on JSON parse failure, but doesn't retry on Bedrock throttling or service errors (<code>ThrottlingException</code>, <code>ServiceUnavailableException</code>). At volume, these happen. Add exponential backoff with jitter to the Bedrock client configuration. In Python, <code>botocore.config.Config(retries={&quot;max_attempts&quot;: 3, &quot;mode&quot;: &quot;adaptive&quot;})</code> wires this up automatically. The Python companion shows this.</p>
+<p><strong>PHI in error logs.</strong> The pseudocode notes not to include extracted dollar values in error details &quot;if this record will be logged outside PHI-protected storage.&quot; In production, all log outputs need to be treated as potentially PHI-bearing. Don't log raw extracted cell values, raw header fields, or Bedrock response content in Lambda CloudWatch logs. Log structural metadata: document key, job ID, error rule names, validation counts. Log PHI-containing fields only to DynamoDB (which is encrypted and access-controlled). CloudWatch log groups for your Lambda functions need KMS encryption enabled; Lambda does not configure this automatically.</p>
+<p><strong>The VPC endpoint gap.</strong> The eob-process Lambda calls <code>bedrock-runtime</code>. The required interface endpoint is <code>com.amazonaws.REGION.bedrock-runtime</code>. If you create a <code>bedrock</code> endpoint only, your Lambda's Converse API calls will not route through it. In a private subnet with no NAT, you'll get a timeout with no useful error message. Missing VPC endpoints are a common source of mysterious Lambda failures in HIPAA-compliant architectures. Check this list: Textract, <code>bedrock-runtime</code>, SNS, SQS, DynamoDB (or use gateway endpoint), S3 (gateway endpoint), KMS, CloudWatch Logs. All of these need to be reachable from your Lambda's VPC.</p>
+<p><strong>Lambda timeout.</strong> eob-process does a lot: paginated Textract retrieval, merged cell handling, optional Bedrock call, financial validation, DynamoDB write, optional SQS send. For a complex multi-page EOB, this can run 15 to 45 seconds. The Lambda default timeout is 3 seconds. Set eob-process to at least 3 minutes and tune based on observed p99. Set eob-start to 30 seconds (it just submits a job and exits).</p>
+<p><strong>Financial validation tolerances for COB.</strong> The $0.05 tolerance in the pseudocode is for standard EOBs. Coordination of benefits introduces additional complexity: the secondary payer's member responsibility is calculated against the primary's allowed amount, not the secondary's own billed amount. If you're processing secondary claims in a COB workflow, the basic reconciliation formula doesn't hold. Add COB-specific validation logic that takes the primary EOB record as input and validates the secondary payment against your coordination methodology.</p>
+<p><strong>Bedrock schema mapping for COB summary sections.</strong> EOBs that include COB payment summaries (showing what multiple plans paid) often have non-standard table structures for those sections: merged cells, multi-row headers, columns that represent different payers rather than different field types. Bedrock handles these better than a static profile system, but it still sometimes misidentifies COB summary columns. The minimum coverage check (Step 5a) will catch cases where the COB section confuses the mapping badly enough to lose <code>billed_amount</code> or <code>plan_paid</code>. For more subtle misidentification, add a post-mapping sanity check: if multiple columns map to the same canonical field, flag for review.</p>
+<p><strong>Service Unavailability.</strong> EOB processing has payer-specific response deadlines. A sustained Textract or Bedrock outage stalls the pipeline. Production deployments need: (1) a DLQ on the submission queue with CloudWatch alarms, (2) a periodic scan for EOBs older than a configurable SLA window in processing state, and (3) a fallback that routes unprocessed EOBs to manual processing queues before deadline expiry.</p>
+<p><strong>Dead letter queues on both Lambdas.</strong> Both Lambdas receive asynchronous invocations: eob-start from S3 events, eob-process from SNS. Default Lambda retry behavior on failure: up to three retries, then silent discard. A lost EOB in a COB workflow means a pending secondary claim that never gets adjudicated. Attach an SQS dead letter queue to each Lambda and set a CloudWatch alarm on the queue depth.</p>
+<p><strong>Idempotency.</strong> The pseudocode checks for an existing DynamoDB record before the Bedrock call to avoid redundant LLM invocations on Lambda retry. SNS delivers at least once. Use a DynamoDB conditional write in <code>assemble_and_route</code> as the final guard against duplicate records, but the pre-Bedrock check is the primary cost control.</p>
+<p><strong>Decimal for DynamoDB.</strong> If you write float values to DynamoDB in Python, boto3 raises a <code>TypeError</code> because DynamoDB uses <code>Decimal</code>, not <code>float</code>. The parsed currency values are floats. Convert them before writing. The Python companion handles this.</p>
+<p><strong>Prompt injection.</strong> The LLM prompt includes extracted document content: column headers and sample cell values from the EOB. A pathologically crafted EOB could include cell values designed to manipulate the LLM's mapping output. The risk is lower here than in Recipe 1.4 (where page text goes to a classifier), because we're sending structured column headers rather than free narrative text. Still, strip null bytes, control characters, and content that looks like instruction injection before including cell values in the Bedrock prompt. The canonical field name validation added in Step 4 provides a second defense: even if injection succeeds in producing a plausible-sounding field name, it won't match the canonical set and will be treated as unmapped. Bedrock Guardrails with content filters adds a third defense layer.</p>
+<p><strong>Bedrock TPM limits at EOB scale.</strong> The schema mapping call consumes approximately 400-900 tokens per document. At default Nova Pro TPM limits (~800K TPM), you can sustain roughly 900-2,000 Bedrock-path EOBs per minute before throttling. The adaptive retry config handles transient throttling, but for sustained workloads above 500 Bedrock-path EOBs per minute, file a quota increase request before go-live. Batch claim windows (Monday morning, end-of-month) are the relevant planning scenario.</p>
+<p><strong>Static profiles need unit tests.</strong> The static profiles for high-volume payers are core business logic. A wrong mapping in the UHC profile means every UHC EOB produces incorrect canonical output, silently. Write unit tests that supply sample column headers and assert the canonical output is correct for each payer profile. Test the Bedrock path too: save a library of raw table extractions from various payers and assert that the LLM mapping produces the correct canonical fields. When a payer updates their template, these tests will catch the drift.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Header keyword detection for payer routing.</strong> If your intake pipeline doesn't use per-payer S3 prefixes, you can add keyword detection to <code>map_to_canonical_schema</code>. After the S3 prefix check returns null, scan the raw header label keys for known payer name strings before calling Bedrock:</p>
+<pre class="code code-plain"><code>IF payer_hint is null:
+    header_text = join(raw_header.keys()).lowercase()
+    IF &quot;unitedhealthcare&quot; in header_text OR &quot;united health&quot; in header_text:
+        payer_hint = &quot;unitedhealthcare&quot;
+    ELSE IF &quot;medicare&quot; in header_text OR &quot;medicare summary&quot; in header_text:
+        payer_hint = &quot;medicare&quot;
+    // Add other known payers as needed.
+</code></pre>
+<p>This is a simple string scan on the header label keys (not values). It runs before the Bedrock call and costs nothing. Extend the keyword list as you add profiles.</p>
+<p><strong>Graduated confidence routing for Bedrock mappings.</strong> The minimum coverage check (Step 5a) is the floor. A more nuanced approach scores mapping completeness: how many of the expected financial fields were actually mapped? A UHC document that mapped 8 of 9 expected fields gets high confidence; one that mapped 2 of 9 gets routed to review even if <code>billed_amount</code> and <code>plan_paid</code> are present. This catches systematic LLM misunderstandings as opposed to Textract extraction errors, and reduces false validation passes for partially-mapped documents.</p>
+<p><strong>Promoting Bedrock mappings to static profiles.</strong> When the LLM consistently produces the same correct mapping for a particular payer, that mapping is a validated profile. Automate the promotion: after N successful Bedrock-mapped EOBs for the same payer (detected by payer name in the header) pass financial validation, write that mapping to the high-volume profile configuration. The system learns new payers over time and stops paying the Bedrock cost for them. Over six months, your static profile library grows to cover most of your actual volume, and Bedrock handles only genuinely new or infrequent payers.</p>
+<p><strong>Coordination of benefits automation.</strong> When your system receives a secondary claim, it needs the primary payer's EOB to calculate secondary liability. With structured EOB records in DynamoDB indexed by claim number, you can automate that lookup: when a secondary claim arrives, query by claim number, retrieve the primary EOB record, apply your COB methodology (standard, carve-out, or maintenance of benefits) to calculate the secondary allowed and paid amounts. This is the highest-value automation this recipe enables. COB claim volume is significant for most payers, and manual primary-EOB lookup is one of the most labor-intensive steps in secondary claims processing.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/async.html">Amazon Textract Async Operations</a>: Reference for <code>StartDocumentAnalysis</code> and <code>GetDocumentAnalysis</code>, the async pattern used in this recipe</li>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/how-it-works-tables.html">Amazon Textract Tables Feature</a>: How Textract detects and returns table structure, including merged cell handling</li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html">Amazon Bedrock Converse API</a>: Unified API for sending messages to all Bedrock models; used for the schema mapping call in this recipe</li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html">Amazon Bedrock Model IDs</a>: Reference for model IDs and inference profile IDs for Nova and Claude models</li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-amazon-nova.html">Amazon Nova Models on Bedrock</a>: Overview of Nova Lite, Nova Pro, and Nova Premier capabilities and appropriate use cases</li>
+<li><a href="https://aws.amazon.com/textract/pricing/">Amazon Textract Pricing</a>: Per-page pricing for Forms and Tables features</li>
+<li><a href="https://aws.amazon.com/bedrock/pricing/">Amazon Bedrock Pricing</a>: Per-token pricing for Nova and Claude models</li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a>: Confirms Textract and Bedrock are HIPAA-eligible services</li>
+</ul>
+<p><strong>External Standards:</strong></p>
+<ul>
+<li><a href="https://www.medicare.gov/basics/get-started-with-medicare/medicare-basics/reading-medicare-summary-notice">CMS Medicare Summary Notice Format</a>: CMS's published description of the Medicare Summary Notice layout</li>
+<li><a href="https://www.caqh.org/core/operating-rules">CAQH CORE Operating Rules for EOB</a>: Industry operating rules for electronic EOB standardization</li>
+<li><a href="https://x12.org/products/transaction-sets">X12 835 Electronic Remittance Advice</a>: The HIPAA-standard electronic format for EOB data; relevant if your counterparties send structured 835 files rather than PDFs</li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-textract-code-samples"><code>amazon-textract-code-samples</code></a>: General Textract samples including async document analysis and table extraction</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-textractor"><code>amazon-textract-textractor</code></a>: Python SDK wrapper for Textract that simplifies table extraction and response parsing</li>
+<li><a href="https://github.com/aws-samples/aws-ai-intelligent-document-processing"><code>aws-ai-intelligent-document-processing</code></a>: Comprehensive IDP solutions using AWS AI services and generative AI</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-idp-cdk-constructs"><code>amazon-textract-idp-cdk-constructs</code></a>: CDK constructs for building Textract IDP pipelines with async processing</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/building-an-end-to-end-intelligent-document-processing-solution-using-aws/">Building an End-to-End Intelligent Document Processing Solution Using AWS</a>: Comprehensive walkthrough of multi-stage IDP pipelines with Textract and generative AI</li>
+</ul>
+<hr />
+<hr />
+<p><em>← <a href="chapter01.08-eob-processing.html">Main Recipe 1.8</a> · <a href="chapter01.08-python-example.html">Python Example</a> · <a href="chapter01-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

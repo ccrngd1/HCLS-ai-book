@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 1.6: Handwritten Clinical Note Digitization 🔷</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-16-handwritten-clinical-note-digitization-">Recipe 1.6: Handwritten Clinical Note Digitization 🔷</h1>
+<p><strong>Complexity:</strong> Complex · <strong>Phase:</strong> Phase 3 · <strong>Estimated Cost:</strong> ~$0.08-0.35 per page (blended with human review)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>Every recipe in this chapter has hedged. Recipe 1.1 said it. Recipe 1.2 said it. Recipe 1.4, where we built the Bedrock reasoning layer for prior authorization, said it at least twice. Recipe 1.5 said it again while building document boundary detection for claims packages. The footnote has been consistent: &quot;this approach struggles with handwritten text.&quot;</p>
+<p>Here it is. Let's deal with it.</p>
+<p>Physician handwriting occupies a unique place in healthcare lore. It's the subject of jokes, malpractice cases, and more than a few pharmacy near-misses. Metformin misread as Methotrexate. &quot;QD&quot; (once daily) misread as &quot;QID&quot; (four times daily). The ISMP's list of dangerous abbreviations reads like a catalog of things a tired handwriting recognition system might confuse. This is not abstract. People have been harmed.</p>
+<p>And yet, handwritten clinical notes remain stubbornly common. Progress notes scrawled during patient rounds. Addenda written in chart margins when an EHR is down. Consultation letters from specialists whose practices predate or reject electronic records. Handwritten annotations layered onto typed forms because a checkbox couldn't capture the nuance. Historical charts from before EHR adoption that still matter for longitudinal care. Every payer that processes prior authorizations, claims attachments, and medical records requests encounters handwritten content regularly. It's not going away.</p>
+<p>The records management team at a mid-sized health plan has a person, sometimes two, whose job is essentially to decipher handwriting. They squint at faxed pages. They call provider offices to clarify illegible medication names. They're doing this for dozens of documents a day, sometimes hundreds. It's slow, expensive, and the people doing it are constantly worried about misreading something clinically significant.</p>
+<p>Here's the thing: some of those documents are perfectly readable. A physician with clean handwriting on good-quality paper, scanned properly, comes through at high quality. An automated system can handle those without any human in the loop. But some pages are nearly illegible. Hurried shorthand. Carbon-copy fading. Ballpoint on slick paper photographed with a phone. No automated system gets those right consistently, and the stakes are too high to pretend otherwise.</p>
+<p>So the real problem isn't &quot;can a machine read handwriting?&quot; The answer to that is increasingly &quot;yes, reasonably well, under decent conditions.&quot; The real problem is: <strong>how do you build a system that knows when it can trust its own output, and chooses the right extraction strategy for the quality of input it's seeing?</strong></p>
+<p>Recipes 1.4 and 1.5 introduced the LLM reasoning layer. Both of those recipes sent <em>text</em> to Bedrock: Textract extracted the characters, then Bedrock reasoned about the extracted content. Recipe 1.6 takes a different path entirely. Instead of extracting text first and reasoning about it second, we send the page <em>image</em> directly to a vision model and ask it to read the handwriting in context. That's a fundamentally different capability. The model sees what the human sees: ink on paper, letterforms in the context of surrounding words, clinical shorthand that only makes sense if you understand the sentence around it. This is where the LLM transition in Chapter 1 takes its biggest leap.</p>
+<hr />
+<h2 id="the-technology">The Technology</h2>
+<h3 id="why-handwriting-ocr-is-genuinely-hard">Why Handwriting OCR Is Genuinely Hard</h3>
+<p>Printed text is, from a machine learning perspective, almost a solved problem. The characters are consistent. The spacing is predictable. The font is finite. Modern OCR on clean printed documents achieves accuracy in the high 90s.</p>
+<p>Handwriting is different in almost every way. Each person's letterforms are unique. The same person's handwriting varies with writing speed, fatigue, pen type, paper texture, and angle. Letters run together, lift off the page, bleed into adjacent characters, or simply don't look like any canonical letterform. The letter 'a' looks like a '9' when written quickly by some people. The letter 'l' is indistinguishable from '1' or 'I' in many hands. Medication names get abbreviated in non-standard ways. Clinical jargon gets rendered in shorthand that only makes sense with clinical context.</p>
+<p>Traditional handwriting recognition uses deep learning models, specifically recurrent neural networks and transformer architectures, trained on enormous labeled datasets. The models have gotten significantly better over the last five years. But &quot;better&quot; is relative. Where printed text OCR sits in the 97-99% range for well-scanned documents, handwriting OCR on clinical notes typically lands in the 70-90% range under decent conditions, and considerably lower for difficult handwriting or poor image quality.</p>
+<p>That accuracy gap matters enormously in healthcare. A 5% error rate on insurance card field extraction (Recipe 1.1) means some cards go to human review. A 15% error rate on medication names in a clinical note is a patient safety issue.</p>
+<p>The traditional pipeline answer has been: OCR the handwriting, extract clinical entities with NLP, tier by confidence, route low-confidence items to human review. That's a solid architecture, and the original version of this recipe describes it well. But it has a structural limitation: OCR and NLP are separate stages. The OCR stage converts ink to characters without any understanding of what those characters mean. &quot;Metfornin&quot; is a high-confidence transcription if the letterforms are clear. The NLP stage gets &quot;Metfornin&quot; and has to figure out that it's probably &quot;Metformin&quot; with a transposed letter. The two stages are reasoning independently, passing a flat string between them.</p>
+<p>Vision models work differently. They see the image and the context simultaneously.</p>
+<h3 id="what-vision-models-actually-do-differently">What Vision Models Actually Do Differently</h3>
+<p>A vision model (in the multimodal large language model sense) doesn't do character recognition and then reasoning as separate steps. It processes the entire image as a unified input. When it sees the word &quot;Metfornin&quot; in a clinical note, it can reason: &quot;this is a handwritten clinical note, the word before this is 'prescribed', the word after is '500mg', the letterforms suggest 'Metformin' is the intended word.&quot; The clinical context is available during the extraction decision, not just afterward.</p>
+<p>This matters most in three situations where traditional OCR pipelines fail most often.</p>
+<p><strong>Context-dependent abbreviations.</strong> Clinical handwriting is full of abbreviations that mean different things in different contexts. &quot;HTN&quot; in an assessment section means hypertension. &quot;HTN&quot; after a medication name might be something else. A vision model that reads the surrounding paragraph can disambiguate. OCR producing character strings cannot.</p>
+<p><strong>Ambiguous letterforms.</strong> When a physician writes &quot;1&quot; and it looks like &quot;l&quot; or &quot;I&quot;, traditional OCR picks the highest-probability character match based on the shape alone. A vision model reading &quot;the patient's A1c was l.2%&quot; knows the clinical context implies a numeric value, not the letter &quot;l.&quot; It can resolve the ambiguity that OCR cannot.</p>
+<p><strong>Illegible words in legible sentences.</strong> Traditional OCR returns a confidence score for each word independently. A vision model can sometimes infer a barely-legible word from the surrounding sentence structure. If eight words in a sentence are clearly legible and the ninth is a smear, the model can often reconstruct the ninth from context. OCR just produces a low-confidence output for that word with no access to sentence-level inference.</p>
+<p>None of this means vision models are perfect. They have their own failure modes, including hallucination: confidently generating plausible-sounding text that doesn't match what's actually on the page. Calibrating when to trust the output remains the core engineering challenge. But the failure modes are different, and in important ways better, than pure OCR pipelines.</p>
+<h3 id="the-dual-path-architecture">The Dual-Path Architecture</h3>
+<p>Here's the insight that makes this recipe work: we don't have to choose between traditional OCR and vision models. We run both, and use each for what it's best at.</p>
+<p><strong>Textract</strong> still runs on every page. Not to extract the clinical content (that's the vision model's job now) but to generate a structured quality signal. Textract's word-level confidence scores, and specifically its <code>TextType</code> flag (PRINTED vs. HANDWRITING), tell us how readable the page is and whether the handwriting is the kind the vision model will handle well or the kind that might need escalation to a more capable model or human review.</p>
+<p><strong>The vision model</strong> runs as the primary extraction path. It receives the page image and a structured extraction prompt. It returns clinical entities with its own confidence assessment. Its output is the actual extraction result we use downstream.</p>
+<p>The Textract confidence score becomes a quality gate that determines <em>which</em> vision model to invoke. A page with high average handwriting confidence (the OCR could read it fairly well) routes to a faster, cheaper vision model. A page with low average handwriting confidence (the OCR struggled, which is a reliable signal that the handwriting is difficult) routes to a more capable model that handles hard cases better. Very low confidence pages may route directly to human review without attempting automated extraction at all.</p>
+<p>This is the dual-path architecture. It's a bit more complex to build than either path alone, but it's also more cost-effective. You're spending premium model capacity only where the signal says it's needed.</p>
+<h3 id="quality-signals-textract-confidence-and-vision-self-assessment">Quality Signals: Textract Confidence and Vision Self-Assessment</h3>
+<p>The original version of this recipe used a composite confidence score: the minimum of the OCR confidence and the NLP confidence. The same concept applies here, with updated sources.</p>
+<p><strong>OCR confidence (from Textract):</strong> Still the most reliable signal for image quality and handwriting legibility. Low OCR confidence on handwritten words means the letterforms were ambiguous, the image was blurry, or the handwriting was genuinely difficult. High OCR confidence means the page was readable. This signal applies at the word level, so you can compute it per entity span.</p>
+<p><strong>Vision model confidence (from the model's own output):</strong> When you ask a vision model to extract clinical entities and return a confidence score for each, that score reflects the model's uncertainty about the extraction. It captures things OCR confidence doesn't: &quot;I can read this word, but I'm not sure it's a medication name&quot; or &quot;this abbreviation is ambiguous in context.&quot; Vision model self-reported confidence is less calibrated than OCR confidence (it's part of the generated text, not a separate probabilistic signal), but it's a meaningful additional quality indicator.</p>
+<p>Combined, these two signals give you a richer picture than either alone. An entity with high OCR confidence and high vision confidence can be auto-accepted. An entity with high OCR confidence but low vision confidence should be flagged: the text was legible, but the model is uncertain about its clinical interpretation. An entity with low OCR confidence should route to human review regardless of vision confidence, because the input quality itself is suspect.</p>
+<h3 id="confidence-tiering-same-structure-richer-signals">Confidence Tiering: Same Structure, Richer Signals</h3>
+<p>The three-tier routing model from the original recipe is still the right structure. What changes is the quality signal driving the tiering.</p>
+<p><strong>High confidence:</strong> Auto-accept. High OCR confidence (the page was readable), high vision confidence (the model is certain about the extraction), and the entity type makes clinical sense in context. Automated acceptance is appropriate.</p>
+<p><strong>Medium confidence:</strong> Accept with flag. One of the signals is uncertain but the other is strong. The entity is likely correct but worth downstream review before clinical use.</p>
+<p><strong>Low confidence:</strong> Human review required. Either OCR confidence is low (the image quality or handwriting legibility is poor) or vision confidence is low (the model isn't sure what it extracted) or both. A human reviewer looks at the original image and the model's output, and confirms or corrects.</p>
+<p>The thresholds are calibration parameters, not universal truths. A system processing notes from one provider with consistent handwriting will set different thresholds than one processing mixed input from a hundred providers. Calibrate against your actual document population before going live.</p>
+<h3 id="the-feedback-loop-prompt-engineering-instead-of-model-retraining">The Feedback Loop: Prompt Engineering Instead of Model Retraining</h3>
+<p>The original version of this recipe described a training data capture step: every human correction creates an OCR-text-versus-corrected-text labeled pair, which accumulates into a dataset for fine-tuning a Textract custom adapter. That's still a valid approach if you're staying in a Textract-only pipeline.</p>
+<p>The vision model path changes the feedback mechanism. You're not fine-tuning a model. You're improving a prompt. When a reviewer corrects a vision model extraction, you capture the pair: page image, model's incorrect extraction, and the correct extraction. When you accumulate enough of these, you can add them to your extraction prompt as few-shot examples: &quot;here are three examples of difficult handwriting and how to interpret them correctly.&quot; The model sees these examples as part of its context and improves its extraction accordingly.</p>
+<p>This is operationally simpler than OCR model fine-tuning. You don't need a training pipeline, a labeled dataset infrastructure, or a new model deployment. You need a library of few-shot examples, and you add to it when your reviewers find errors. The model's behavior improves the next time you update the prompt.</p>
+<blockquote>
+<p><strong>⚠ PHI CROSS-CONTAMINATION RISK: Read before building the prompt library.</strong></p>
+<p>The feedback loop captures real patient document images as correction candidates (the <code>image_key</code> in Step 8 points to a photograph of a real clinical note). When a prompt engineer later promotes selected examples into the active <code>EXTRACTION_SYSTEM_PROMPT</code>, those images are embedded in the system prompt sent to Bedrock for every subsequent page processed, including pages from completely different patients.</p>
+<p>This is a HIPAA cross-contamination scenario: PHI from Patient A's clinical note is included in the Bedrock API call made while processing Patient B's note. The few-shot example is not abstract; it is a photograph of a real handwritten note containing names, diagnoses, medications, and other PHI.</p>
+<p><strong>The fix:</strong> before any corrected example is eligible for the prompt library, the source image MUST be replaced with a synthetic de-identified equivalent that preserves the handwriting characteristics (letterforms, ink density, ambiguous letterforms) while removing all PHI. This de-identification step must be part of the prompt engineer's curation workflow, not optional. Treat it as a mandatory gate: no real patient image may enter the active few-shot library. The Python companion includes a <code>_validate_example_is_synthetic()</code> stub to enforce this check programmatically.</p>
+</blockquote>
+<blockquote>
+<p><strong>Technical Enforcement Required</strong></p>
+<p>The <code>_validate_example_is_synthetic()</code> function must fail hard (raise an exception, not log a warning) if it cannot positively confirm an example is synthetic. &quot;Positively confirm&quot; means one of: (a) a metadata tag set only by a designated de-identification workflow, (b) a hash check against an approved synthetic image registry, or (c) a cryptographic signature from the de-identification pipeline.</p>
+<p>The prompt library bucket should use a separate S3 prefix (<code>prompt-library/synthetic/</code>) with IAM permissions restricted to the designated prompt engineer role only. No general developer role should have <code>PutObject</code> access to this prefix. Before deploying an updated prompt to production, run the validation function on all embedded images as a required CI/CD pipeline step. Fail the deployment if any image fails validation.</p>
+<p>Any deployment that enables the feedback loop (promoting real clinical outcomes back into the prompt library) without a validated de-identification pipeline is not HIPAA-compliant. This is not optional.</p>
+</blockquote>
+<p>Prompt caching makes this cost-efficient at scale. A few-shot extraction prompt with six or eight image examples embedded in it would be expensive to send with every API call. With Bedrock's prompt caching feature, the prompt prefix (including the few-shot examples) is cached on the service side. Subsequent calls reuse the cache hit at roughly 10% of the usual input cost. For high-volume deployments, this is significant.</p>
+<h3 id="human-in-the-loop-fewer-items-same-structure">Human-in-the-Loop: Fewer Items, Same Structure</h3>
+<p>The human review architecture from the original recipe still applies: A2I structured review, private workforce for PHI, purpose-built reviewer interface. The difference is routing volume. Vision models understand clinical context in ways that OCR+NLP pipelines don't. The fraction of entities routed to human review is lower, typically 15-25% instead of 25-40%.</p>
+<p>A private workforce remains non-negotiable. PHI cannot touch public or vendor workforces without a BAA you cannot enter into with anonymous contractors. Reviewers must be authenticated through an identity provider you control, trained on HIPAA, and governed by your organization's policies. This is an access control and policy requirement, not a technical complexity. Plan for the organizational setup time.</p>
+<h3 id="the-general-architecture-pattern">The General Architecture Pattern</h3>
+<pre class="code code-plain"><code>[Ingest] → [Pre-process] → [Textract OCR] → [Quality Signal]
+                                                    |
+                              ┌─────────────────────┼──────────────────────┐
+                              ▼                     ▼                      ▼
+                      [High confidence:      [Medium confidence:    [Low confidence:
+                       Tier-1 vision]         Tier-2 vision]         Human review]
+                              │                     │                      │
+                              ▼                     ▼                      │
+                     [Vision Extraction    [Vision Extraction               │
+                      (Haiku/Nova Pro)]     (Sonnet/Opus)]                  │
+                              │                     │                      │
+                              └──────────┬──────────┘                      │
+                                         ▼                                 │
+                              [Composite Quality Score]                    │
+                              (OCR confidence + vision confidence)         │
+                                         │                                 │
+                              ┌──────────┼──────────┐                     │
+                              ▼          ▼          ▼                     ▼
+                         [Auto-Accept] [Flag]  [Human Review] ←──────────┘
+                              └──────────┼──────────┘
+                                         ▼
+                                 [Merge Results]
+                                         ▼
+                           [Final Record + Prompt Examples]
+</code></pre>
+<p><strong>Ingest:</strong> A handwritten document arrives. Scanned page, PDF from a fax, or a photograph. Arrival mechanism affects quality in ways that matter downstream.</p>
+<p><strong>Pre-process:</strong> Improve the image before sending it anywhere. Deskew, enhance contrast, reduce noise. The vision model handles imperfect input better than OCR alone, but better input still produces better output.</p>
+<p><strong>Textract OCR:</strong> Run AnalyzeDocument to get word-level confidence scores and TextType flags. This is not primary extraction. It's a quality signal: how legible is this page, where is the handwriting, and how should we route it?</p>
+<p><strong>Quality Signal:</strong> Compute average handwriting confidence from Textract. Use that to select the vision model tier: Tier 1 (fast, cheap) for readable pages, Tier 2 (more capable) for difficult ones.</p>
+<p><strong>Vision Extraction:</strong> Send the page image to Bedrock with a structured extraction prompt. The model returns clinical entities with confidence assessments. This is the primary extraction result.</p>
+<p><strong>Composite Quality Score:</strong> Combine Textract word-level confidence (for the entity spans) with vision model confidence. Minimum of the two determines the tier.</p>
+<p><strong>Route:</strong> High-composite auto-accept. Medium flag. Low-composite route to human review.</p>
+<p><strong>Human Review:</strong> A2I structured interface showing the original image alongside the model's extraction. Reviewers confirm or correct. Reviewed items become candidate few-shot examples.</p>
+<p><strong>Merge Results:</strong> Auto-accepted and reviewed extractions combine into a single final record.</p>
+<p><strong>Prompt Examples:</strong> Corrected extractions are saved in a format ready to use as few-shot examples in future extraction prompts, but only after de-identification. See the PHI cross-contamination callout above.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter01.06-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>Let me be direct about what changed and what didn't.</p>
+<p><strong>What changed.</strong> The primary extraction path is now a vision model that reads the handwriting in context, not an OCR engine producing a character string. For the genuinely difficult cases (ambiguous letterforms, context-dependent abbreviations, words that only make sense in the sentence around them) this is a meaningfully better approach. The fraction of entities routed to human review goes down. The correction rate among reviewed entities goes down. The feedback loop is a prompt library instead of a training data pipeline, which is operationally simpler.</p>
+<p><strong>What didn't change.</strong> The confidence tiering and human review requirement. Those are features of the problem, not the pipeline. Clinical notes contain PHI and drive care decisions. The stakes require that you know which extractions to trust. The three-tier structure and A2I review workflow are still the right architecture regardless of what's doing the extraction.</p>
+<p><strong>The hallucination caveat is real.</strong> Vision models fail differently from OCR models. OCR returns low confidence when it can't read a word. Vision models sometimes generate plausible-sounding text that isn't actually on the page. &quot;Confident and wrong&quot; is harder to catch than &quot;low confidence.&quot; The composite score approach (combining Textract OCR confidence with vision model confidence) is specifically designed to catch the case where the image was hard to read but the vision model reported high confidence anyway. But it's not a perfect guard. Audit your false-acceptance rate actively in the first few months of production.</p>
+<p><strong>The cost story is better than you might expect.</strong> The &quot;vision models are expensive&quot; framing is true relative to text-only models, but the comparison that matters is the full pipeline cost. Vision extraction plus the Textract quality signal costs roughly $0.055-0.065 per page in AI inference. The original Textract-plus-Comprehend Medical approach cost $0.15 per page. The AI inference cost is lower. The downstream benefit is fewer human reviews, which is where the real money is. A page that auto-accepts at high confidence saves the full A2I review cost ($1.25 at typical reviewer rates). Routing 15-25% of entities to review instead of 25-40% adds up quickly.</p>
+<p><strong>The prompt library requires attention.</strong> The few-shot examples that improve the model's accuracy over time don't curate themselves. Someone needs to review the correction candidates periodically (monthly is reasonable), de-identify the source images, select the most instructive examples, format them as few-shot demonstrations, and update the production prompt. This is not technically complex, but it is an ongoing operational responsibility. If nobody owns it, the prompt library stagnates and the improvement feedback loop closes. Assign it explicitly before you go live.</p>
+<p><strong>Provider variability is still the biggest operational challenge.</strong> Some physicians write clearly; their notes come through at 82% average Textract confidence and the vision model handles them cleanly with under 15% entity review rates. Other physicians produce notes where 40% of entities need human review regardless of how good the AI is. The routing thresholds let you calibrate per-provider, and after a few months of production data you'll know exactly who your challenge cases are. The solution isn't better AI: it's recognizing that some handwriting genuinely requires a human, and building a workflow that gets that human involved efficiently.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 1.4 (Prior Authorization Processing):</strong> Introduced the Bedrock Converse API and the LLM reasoning layer. Recipe 1.6 extends that pattern to vision: the same Converse API, the same model tiering concept, but now with image input instead of text input.</li>
+<li><strong>Recipe 1.5 (Claims Attachment Processing):</strong> Claims attachments regularly contain handwritten pages. Recipe 1.5's document boundary detection classifies pages; the vision extraction pipeline here can be invoked as a sub-workflow for any page classified as handwritten.</li>
+<li><strong>Recipe 1.7 (Prescription Label OCR):</strong> Small-format structured labels with consistent layouts are a case where Textract remains the better tool. Recipe 1.7 illustrates the &quot;right tool for the right problem&quot; balance: not every document type needs a vision model.</li>
+<li><strong>Recipe 1.10 (Historical Chart Migration):</strong> The large-scale chart migration problem uses vision models for degraded historical documents at batch scale. The patterns established here (dual-path architecture, vision model tiering, prompt-based feedback loops) scale directly into Recipe 1.10's architecture.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>document-intelligence</code> · <code>ocr</code> · <code>handwriting</code> · <code>textract</code> · <code>bedrock</code> · <code>vision-models</code> · <code>claude</code> · <code>multimodal</code> · <code>a2i</code> · <code>human-in-the-loop</code> · <code>confidence-scoring</code> · <code>confidence-tiering</code> · <code>clinical-notes</code> · <code>step-functions</code> · <code>private-workforce</code> · <code>hipaa</code> · <code>prompt-engineering</code> · <code>few-shot</code> · <code>dual-path-architecture</code> · <code>complex</code> · <code>phase-3</code></p>
+<hr />
+<p><em>← <a href="chapter01.05-claims-attachment-processing.html">Recipe 1.5 - Claims Attachment Processing</a> · <a href="chapter01-preface.html">↑ Chapter 1 Index</a> · <a href="chapter01.07-prescription-label-ocr.html">Recipe 1.7 - Prescription Label OCR →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

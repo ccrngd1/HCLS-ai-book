@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 15.1: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-151-python-implementation-example">Recipe 15.1: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the RL-based alert threshold optimization from Recipe 15.1. It demonstrates the core concepts (environment definition, agent logic, reward shaping, safety constraints) in working Python. It is not production-ready. A real deployment requires EHR integration, clinical governance, months of offline validation, and infrastructure that this example intentionally skips. Think of it as a simulation sandbox for understanding how the pieces fit together, not something you'd connect to a live alerting system.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need a few packages:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy
+</pre></div>
+
+<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs <code>sagemaker:InvokeEndpoint</code>, <code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>kinesis:PutRecord</code>, and <code>cloudwatch:PutMetricData</code>.</p>
+<p>For the simulation portions of this example (the RL environment and training loop), you only need <code>numpy</code>. The AWS calls are in the deployment sections.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the logic, here's the configuration that drives the entire system. These constants encode clinical priorities, safety bounds, and operational parameters. In a real deployment, these would live in a configuration service (DynamoDB, Parameter Store) so clinical leadership can adjust them without code changes.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># REWARD CONFIGURATION</span>
+<span class="c1"># These weights encode clinical priorities. The relative magnitudes matter:</span>
+<span class="c1"># a missed event is penalized 5x more than a noisy alert, because the</span>
+<span class="c1"># consequences of missing a real deterioration are far worse than annoying</span>
+<span class="c1"># a nurse with one extra beep.</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="n">REWARD_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;action_taken&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>       <span class="c1"># Alert led to a clinical intervention: good signal</span>
+    <span class="s2">&quot;dismissed&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">,</span>         <span class="c1"># Alert dismissed within seconds: noise</span>
+    <span class="s2">&quot;acknowledged&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>       <span class="c1"># Acknowledged but no action: ambiguous, slight positive</span>
+    <span class="s2">&quot;missed_event&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>      <span class="c1"># Deterioration with no preceding alert: very bad</span>
+    <span class="s2">&quot;no_change_bonus&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>   <span class="c1"># Tiny reward for stability (discourages thrashing)</span>
+<span class="p">}</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># SAFETY BOUNDS</span>
+<span class="c1"># These are set by clinical leadership. The RL agent can optimize within</span>
+<span class="c1"># these ranges but can NEVER exceed them. The max_daily_change prevents</span>
+<span class="c1"># the agent from making large swings that confuse clinicians.</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="n">SAFETY_BOUNDS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;heart_rate_high&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">90</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="s2">&quot;max_daily_change&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;step_size&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+    <span class="s2">&quot;heart_rate_low&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span> <span class="s2">&quot;max_daily_change&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;step_size&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+    <span class="s2">&quot;spo2_low&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">85</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">95</span><span class="p">,</span> <span class="s2">&quot;max_daily_change&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;step_size&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+    <span class="s2">&quot;potassium_high&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">6.5</span><span class="p">,</span> <span class="s2">&quot;max_daily_change&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span> <span class="s2">&quot;step_size&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
+    <span class="s2">&quot;systolic_bp_high&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">140</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;max_daily_change&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;step_size&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># ENVIRONMENT PARAMETERS</span>
+<span class="c1"># These control the simulation. In production, you wouldn&#39;t simulate;</span>
+<span class="c1"># you&#39;d observe real alert events and clinician responses.</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="n">ENVIRONMENT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;response_window_seconds&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>  <span class="c1"># 5 minutes to respond before &quot;dismissed&quot;</span>
+    <span class="s2">&quot;state_aggregation_hours&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>    <span class="c1"># Aggregate over one half-shift</span>
+    <span class="s2">&quot;update_frequency_hours&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>     <span class="c1"># Update thresholds once per shift</span>
+    <span class="s2">&quot;rollback_threshold&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>       <span class="c1"># Rollback if action rate drops below this fraction of baseline</span>
+<span class="p">}</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># AGENT HYPERPARAMETERS</span>
+<span class="c1"># These control the learning algorithm. Start conservative (low learning rate,</span>
+<span class="c1"># high epsilon) and tighten as you gain confidence in the policy.</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="n">AGENT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;learning_rate&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>       <span class="c1"># How fast the agent updates its estimates</span>
+    <span class="s2">&quot;discount_factor&quot;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>     <span class="c1"># How much future rewards matter vs. immediate</span>
+    <span class="s2">&quot;epsilon_start&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>        <span class="c1"># Initial exploration rate (30% random actions)</span>
+    <span class="s2">&quot;epsilon_end&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>         <span class="c1"># Final exploration rate (5% random actions)</span>
+    <span class="s2">&quot;epsilon_decay&quot;</span><span class="p">:</span> <span class="mf">0.995</span><span class="p">,</span>      <span class="c1"># Multiply epsilon by this each episode</span>
+<span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-define-the-alert-environment">Step 1: Define the Alert Environment</h2>
+<p><em>The main recipe describes the MDP formulation: state, actions, rewards, transitions. This step implements that as a simulated environment the agent can learn from. In production, the &quot;environment&quot; is the real hospital. For development and offline training, we simulate it.</em></p>
+<div class="code"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">AlertEnvironment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulates a clinical alerting environment for one unit and one alert type.</span>
+
+<span class="sd">    The environment models:</span>
+<span class="sd">    - A patient population with varying acuity</span>
+<span class="sd">    - Alert firing based on current thresholds</span>
+<span class="sd">    - Clinician responses (action, dismiss, acknowledge) based on alert relevance</span>
+<span class="sd">    - Occasional deterioration events that test whether alerts catch real problems</span>
+
+<span class="sd">    This is a simplified simulation. Real alert patterns are messier, more</span>
+<span class="sd">    correlated, and harder to model. But this captures the core dynamics:</span>
+<span class="sd">    lower thresholds = more alerts = more noise but fewer missed events.</span>
+<span class="sd">    Higher thresholds = fewer alerts = less noise but risk of missing things.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">initial_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alert_type</span> <span class="o">=</span> <span class="n">alert_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">SAFETY_BOUNDS</span><span class="p">[</span><span class="n">alert_type</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">initial_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="c1"># Track daily changes for rate limiting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">daily_changes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_day</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Simulation parameters (these model &quot;reality&quot;)</span>
+        <span class="c1"># The &quot;true&quot; optimal threshold where alerts are most informative.</span>
+        <span class="c1"># The agent doesn&#39;t know this; it has to discover it through rewards.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_true_optimal</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># Counters for metrics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_alerts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_actions</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_dismissed</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missed_events</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the current state as a feature vector.</span>
+
+<span class="sd">        Maps to the pseudocode&#39;s aggregate_state() function. In production,</span>
+<span class="sd">        this would query DynamoDB for recent alert statistics. Here we</span>
+<span class="sd">        compute it from the simulation&#39;s internal counters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Normalize features to [0, 1] range for the agent</span>
+        <span class="n">threshold_normalized</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Simulated context features</span>
+        <span class="n">alerts_per_hour</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_alert_rate</span><span class="p">()</span>
+        <span class="n">action_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_actions</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_alerts</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">dismiss_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_dismissed</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_alerts</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">hour_of_day</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">%</span> <span class="mi">24</span><span class="p">)</span> <span class="o">/</span> <span class="mf">24.0</span>
+        <span class="n">acuity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span>  <span class="c1"># simulated average patient acuity</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">threshold_normalized</span><span class="p">,</span>
+            <span class="nb">min</span><span class="p">(</span><span class="n">alerts_per_hour</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>  <span class="c1"># cap at 20/hr for normalization</span>
+            <span class="n">action_rate</span><span class="p">,</span>
+            <span class="n">dismiss_rate</span><span class="p">,</span>
+            <span class="n">hour_of_day</span><span class="p">,</span>
+            <span class="n">acuity</span><span class="p">,</span>
+        <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">state</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Take an action (adjust threshold) and observe the result.</span>
+
+<span class="sd">        Actions:</span>
+<span class="sd">            0 = decrease threshold by one step (more sensitive, more alerts)</span>
+<span class="sd">            1 = no change</span>
+<span class="sd">            2 = increase threshold by one step (less sensitive, fewer alerts)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (next_state, reward, done, info)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">step_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;step_size&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Map action index to threshold delta</span>
+        <span class="n">delta_map</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="o">-</span><span class="n">step_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="n">step_size</span><span class="p">}</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">delta_map</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+
+        <span class="c1"># Apply safety constraints (mirrors pseudocode Step 6)</span>
+        <span class="n">new_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_safely</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">new_threshold</span>
+
+        <span class="c1"># Simulate what happens at this threshold for one time period</span>
+        <span class="n">reward</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_period</span><span class="p">()</span>
+
+        <span class="n">next_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">&gt;=</span> <span class="mi">1000</span>  <span class="c1"># episode length</span>
+
+        <span class="k">return</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_safely</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply threshold change with safety constraints.</span>
+<span class="sd">        Mirrors the apply_threshold_safely() pseudocode from the main recipe.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">proposed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">+</span> <span class="n">delta</span>
+
+        <span class="c1"># Enforce absolute bounds</span>
+        <span class="n">proposed</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">proposed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span>
+        <span class="n">proposed</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">proposed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Enforce daily rate limit</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">//</span> <span class="mi">24</span>
+        <span class="k">if</span> <span class="n">today</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_day</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">daily_changes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_day</span> <span class="o">=</span> <span class="n">today</span>
+
+        <span class="n">total_daily</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">daily_changes</span><span class="p">)</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">total_daily</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max_daily_change&quot;</span><span class="p">]:</span>
+            <span class="c1"># Rate limit exceeded; no change</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">daily_changes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">proposed</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_simulate_alert_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simulate alerts per hour based on current threshold.&quot;&quot;&quot;</span>
+        <span class="c1"># Lower threshold = more alerts (exponential relationship)</span>
+        <span class="n">distance_from_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span>
+        <span class="n">range_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span>
+        <span class="c1"># At minimum threshold: ~15 alerts/hr. At maximum: ~1 alert/hr.</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mf">15.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">distance_from_min</span> <span class="o">/</span> <span class="n">range_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">rate</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_simulate_period</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simulate one time period (e.g., one shift) and compute reward.</span>
+
+<span class="sd">        Models the probability of alerts being actionable vs. noise,</span>
+<span class="sd">        and the probability of missed events at the current threshold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alerts_per_hour</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_alert_rate</span><span class="p">()</span>
+        <span class="n">num_alerts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">alerts_per_hour</span> <span class="o">*</span> <span class="n">ENVIRONMENT_CONFIG</span><span class="p">[</span><span class="s2">&quot;update_frequency_hours&quot;</span><span class="p">]))</span>
+
+        <span class="c1"># Probability that an alert is actionable depends on how close</span>
+        <span class="c1"># the threshold is to the &quot;true optimal.&quot; Too low = mostly noise.</span>
+        <span class="c1"># Too high = you miss things but what fires is more likely real.</span>
+        <span class="n">distance_from_optimal</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_true_optimal</span><span class="p">)</span>
+        <span class="n">range_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span>
+        <span class="n">action_probability</span> <span class="o">=</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">distance_from_optimal</span> <span class="o">/</span> <span class="n">range_size</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.05</span>
+
+        <span class="c1"># Simulate clinician responses for each alert</span>
+        <span class="n">period_reward</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">actions_taken</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dismissed</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_alerts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">action_probability</span><span class="p">:</span>
+                <span class="c1"># Clinician took action: alert was useful</span>
+                <span class="n">period_reward</span> <span class="o">+=</span> <span class="n">REWARD_CONFIG</span><span class="p">[</span><span class="s2">&quot;action_taken&quot;</span><span class="p">]</span>
+                <span class="n">actions_taken</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+                <span class="c1"># Acknowledged but no action</span>
+                <span class="n">period_reward</span> <span class="o">+=</span> <span class="n">REWARD_CONFIG</span><span class="p">[</span><span class="s2">&quot;acknowledged&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Dismissed: noise</span>
+                <span class="n">period_reward</span> <span class="o">+=</span> <span class="n">REWARD_CONFIG</span><span class="p">[</span><span class="s2">&quot;dismissed&quot;</span><span class="p">]</span>
+                <span class="n">dismissed</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Simulate missed events: higher threshold = higher miss probability</span>
+        <span class="n">threshold_normalized</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">range_size</span>
+        <span class="n">miss_probability</span> <span class="o">=</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="p">(</span><span class="n">threshold_normalized</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># quadratic: risk grows fast at high thresholds</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">miss_probability</span><span class="p">:</span>
+            <span class="n">period_reward</span> <span class="o">+=</span> <span class="n">REWARD_CONFIG</span><span class="p">[</span><span class="s2">&quot;missed_event&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">missed_events</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Stability bonus for no-change actions</span>
+        <span class="k">if</span> <span class="n">num_alerts</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">period_reward</span> <span class="o">+=</span> <span class="n">REWARD_CONFIG</span><span class="p">[</span><span class="s2">&quot;no_change_bonus&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Update counters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_alerts</span> <span class="o">+=</span> <span class="n">num_alerts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_actions</span> <span class="o">+=</span> <span class="n">actions_taken</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_dismissed</span> <span class="o">+=</span> <span class="n">dismissed</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;alerts&quot;</span><span class="p">:</span> <span class="n">num_alerts</span><span class="p">,</span>
+            <span class="s2">&quot;actions_taken&quot;</span><span class="p">:</span> <span class="n">actions_taken</span><span class="p">,</span>
+            <span class="s2">&quot;dismissed&quot;</span><span class="p">:</span> <span class="n">dismissed</span><span class="p">,</span>
+            <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="s2">&quot;action_rate&quot;</span><span class="p">:</span> <span class="n">actions_taken</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">num_alerts</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">period_reward</span><span class="p">,</span> <span class="n">info</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-implement-the-rl-agent">Step 2: Implement the RL Agent</h2>
+<p><em>The main recipe discusses contextual bandits and epsilon-greedy exploration. This implements a simple Q-learning agent with epsilon-greedy exploration and safety-aware action selection. For most alert threshold problems, this is sufficient. You don't need deep RL or policy gradients here.</em></p>
+<div class="code"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ThresholdAgent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A tabular Q-learning agent for threshold optimization.</span>
+
+<span class="sd">    Why Q-learning and not something fancier? Because the action space is tiny</span>
+<span class="sd">    (3 actions: up, down, hold), the state can be discretized reasonably, and</span>
+<span class="sd">    interpretability matters in healthcare. A clinician can look at the Q-table</span>
+<span class="sd">    and understand why the agent chose a particular action. Try explaining a</span>
+<span class="sd">    64-layer neural network policy to a chief medical officer.</span>
+
+<span class="sd">    For larger state spaces or continuous actions, you&#39;d upgrade to DQN or</span>
+<span class="sd">    a policy gradient method. But start simple. You can always add complexity</span>
+<span class="sd">    later if the simple version doesn&#39;t converge.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_actions</span> <span class="o">=</span> <span class="n">n_actions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_bins</span> <span class="o">=</span> <span class="n">state_bins</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">AGENT_CONFIG</span><span class="p">[</span><span class="s2">&quot;learning_rate&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">AGENT_CONFIG</span><span class="p">[</span><span class="s2">&quot;discount_factor&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">AGENT_CONFIG</span><span class="p">[</span><span class="s2">&quot;epsilon_start&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon_end</span> <span class="o">=</span> <span class="n">AGENT_CONFIG</span><span class="p">[</span><span class="s2">&quot;epsilon_end&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon_decay</span> <span class="o">=</span> <span class="n">AGENT_CONFIG</span><span class="p">[</span><span class="s2">&quot;epsilon_decay&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Q-table: maps discretized state to action values.</span>
+        <span class="c1"># We discretize each state dimension into bins, then use the</span>
+        <span class="c1"># tuple of bin indices as the state key.</span>
+        <span class="c1"># Initialize optimistically (small positive values) to encourage exploration.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_table</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_discretize_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert continuous state vector to discrete bin indices.</span>
+
+<span class="sd">        Each dimension is clipped to [0, 1] and mapped to one of state_bins buckets.</span>
+<span class="sd">        The resulting tuple is hashable and serves as the Q-table key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">clipped</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="p">(</span><span class="n">clipped</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_bins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_q_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_key</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Q-values for a state, initializing if unseen.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">state_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_table</span><span class="p">:</span>
+            <span class="c1"># Optimistic initialization: start with small positive values</span>
+            <span class="c1"># so the agent is encouraged to try all actions at least once.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_actions</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state_key</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">choose_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Select an action using epsilon-greedy exploration.</span>
+
+<span class="sd">        With probability epsilon: choose a random action (explore).</span>
+<span class="sd">        With probability (1 - epsilon): choose the best-known action (exploit).</span>
+
+<span class="sd">        The epsilon decays over time, so the agent explores less as it</span>
+<span class="sd">        becomes more confident in its learned values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discretize_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">q_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_q_values</span><span class="p">(</span><span class="n">state_key</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
+            <span class="c1"># Explore: random action</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_actions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Exploit: best known action (break ties randomly)</span>
+            <span class="n">max_q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span>
+            <span class="n">best_actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">q_values</span> <span class="o">==</span> <span class="n">max_q</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">best_actions</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update Q-values using the standard Q-learning update rule.</span>
+
+<span class="sd">        Q(s, a) &lt;- Q(s, a) + lr * (reward + gamma * max(Q(s&#39;, a&#39;)) - Q(s, a))</span>
+
+<span class="sd">        This is the core learning step. The agent adjusts its estimate of</span>
+<span class="sd">        how good action &#39;a&#39; is in state &#39;s&#39; based on the reward it received</span>
+<span class="sd">        and its estimate of future value from the next state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discretize_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">next_state_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discretize_state</span><span class="p">(</span><span class="n">next_state</span><span class="p">)</span>
+
+        <span class="n">q_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_q_values</span><span class="p">(</span><span class="n">state_key</span><span class="p">)</span>
+        <span class="n">next_q_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_q_values</span><span class="p">(</span><span class="n">next_state_key</span><span class="p">)</span>
+
+        <span class="c1"># The target: immediate reward + discounted future value</span>
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">reward</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">next_q_values</span><span class="p">)</span>
+
+        <span class="c1"># Update toward the target</span>
+        <span class="n">q_values</span><span class="p">[</span><span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">*</span> <span class="p">(</span><span class="n">target</span> <span class="o">-</span> <span class="n">q_values</span><span class="p">[</span><span class="n">action</span><span class="p">])</span>
+
+        <span class="c1"># Decay exploration rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon_decay</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_policy_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a human-readable summary of what the agent has learned.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;states_visited&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_table</span><span class="p">),</span>
+            <span class="s2">&quot;epsilon&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;sample_preferences&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_preferences</span><span class="p">(),</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_preferences</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show the agent&#39;s preferred action for a few representative states.&quot;&quot;&quot;</span>
+        <span class="n">action_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;decrease (more sensitive)&quot;</span><span class="p">,</span> <span class="s2">&quot;hold&quot;</span><span class="p">,</span> <span class="s2">&quot;increase (less sensitive)&quot;</span><span class="p">]</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">state_key</span><span class="p">,</span> <span class="n">q_values</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_table</span><span class="o">.</span><span class="n">items</span><span class="p">())[:</span><span class="mi">5</span><span class="p">]:</span>
+            <span class="n">best_action</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">q_values</span><span class="p">))</span>
+            <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;state_bins&quot;</span><span class="p">:</span> <span class="n">state_key</span><span class="p">,</span>
+                <span class="s2">&quot;preferred_action&quot;</span><span class="p">:</span> <span class="n">action_names</span><span class="p">[</span><span class="n">best_action</span><span class="p">],</span>
+                <span class="s2">&quot;q_values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">q_values</span><span class="p">],</span>
+            <span class="p">})</span>
+        <span class="k">return</span> <span class="n">samples</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-training-loop-offline-learning">Step 3: Training Loop (Offline Learning)</h2>
+<p><em>The main recipe emphasizes starting with offline learning: train on historical data before touching the live system. This step runs the agent through simulated episodes to learn a policy. In production, you'd replace the simulated environment with replay of historical alert data.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">train_agent</span><span class="p">(</span>
+    <span class="n">alert_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span>
+    <span class="n">initial_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+    <span class="n">n_episodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train the RL agent on simulated alert data.</span>
+
+<span class="sd">    In production, this function would:</span>
+<span class="sd">    1. Load historical alert logs from S3</span>
+<span class="sd">    2. Replay them through the environment (offline RL)</span>
+<span class="sd">    3. Save the trained policy to S3 for deployment via SageMaker</span>
+
+<span class="sd">    Here, we simulate the environment to demonstrate the learning dynamics.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (agent, training_history) - the trained agent and per-episode metrics</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">AlertEnvironment</span><span class="p">(</span><span class="n">alert_type</span><span class="p">,</span> <span class="n">initial_threshold</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">ThresholdAgent</span><span class="p">(</span><span class="n">state_bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_actions</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">history</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">episode</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_episodes</span><span class="p">):</span>
+        <span class="c1"># Reset environment for each episode</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">AlertEnvironment</span><span class="p">(</span><span class="n">alert_type</span><span class="p">,</span> <span class="n">initial_threshold</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="n">episode</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="n">episode_reward</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">episode_steps</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">choose_action</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+            <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">done</span><span class="p">)</span>
+
+            <span class="n">state</span> <span class="o">=</span> <span class="n">next_state</span>
+            <span class="n">episode_reward</span> <span class="o">+=</span> <span class="n">reward</span>
+            <span class="n">episode_steps</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Cap episode length for training efficiency</span>
+            <span class="k">if</span> <span class="n">episode_steps</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="c1"># Record episode metrics</span>
+        <span class="n">episode_metrics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;episode&quot;</span><span class="p">:</span> <span class="n">episode</span><span class="p">,</span>
+            <span class="s2">&quot;total_reward&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">episode_reward</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;final_threshold&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;total_alerts&quot;</span><span class="p">:</span> <span class="n">env</span><span class="o">.</span><span class="n">total_alerts</span><span class="p">,</span>
+            <span class="s2">&quot;action_rate&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">total_actions</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">total_alerts</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;missed_events&quot;</span><span class="p">:</span> <span class="n">env</span><span class="o">.</span><span class="n">missed_events</span><span class="p">,</span>
+            <span class="s2">&quot;epsilon&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">episode_metrics</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">episode</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Episode </span><span class="si">%d</span><span class="s2">: reward=</span><span class="si">%.1f</span><span class="s2">, threshold=</span><span class="si">%.1f</span><span class="s2">, action_rate=</span><span class="si">%.3f</span><span class="s2">, missed=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">episode</span><span class="p">,</span> <span class="n">episode_reward</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+                <span class="n">episode_metrics</span><span class="p">[</span><span class="s2">&quot;action_rate&quot;</span><span class="p">],</span> <span class="n">env</span><span class="o">.</span><span class="n">missed_events</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">agent</span><span class="p">,</span> <span class="n">history</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-safety-constraint-enforcement">Step 4: Safety Constraint Enforcement</h2>
+<p><em>The main recipe's Step 6 (apply_threshold_safely) is the critical safety layer. This step implements it as a standalone module that sits between the agent's recommendations and the live system. In production, this would write to DynamoDB with conditional expressions that enforce bounds at the storage layer.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="n">THRESHOLD_TABLE</span> <span class="o">=</span> <span class="s2">&quot;alert-thresholds&quot;</span>
+<span class="n">AUDIT_TABLE</span> <span class="o">=</span> <span class="s2">&quot;threshold-audit-log&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_threshold_update</span><span class="p">(</span>
+    <span class="n">alert_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">proposed_delta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">daily_changes_so_far</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a threshold change with full safety constraint enforcement.</span>
+
+<span class="sd">    This is the gatekeeper. No matter what the RL agent recommends, this</span>
+<span class="sd">    function ensures:</span>
+<span class="sd">    1. The new threshold stays within clinical safety bounds</span>
+<span class="sd">    2. Daily rate limits are respected</span>
+<span class="sd">    3. Every change is logged for audit</span>
+<span class="sd">    4. Rollback information is preserved</span>
+
+<span class="sd">    Returns a dict with the outcome: applied, clamped, or rejected.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">SAFETY_BOUNDS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alert_type</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;rejected&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Unknown alert type: </span><span class="si">{</span><span class="n">alert_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+
+    <span class="n">proposed_new</span> <span class="o">=</span> <span class="n">current_threshold</span> <span class="o">+</span> <span class="n">proposed_delta</span>
+
+    <span class="c1"># Constraint 1: Absolute bounds</span>
+    <span class="n">clamped</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">proposed_new</span> <span class="o">&gt;</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]:</span>
+        <span class="n">proposed_new</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span>
+        <span class="n">clamped</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">proposed_new</span> <span class="o">&lt;</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]:</span>
+        <span class="n">proposed_new</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span>
+        <span class="n">clamped</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Constraint 2: Daily rate limit</span>
+    <span class="k">if</span> <span class="n">daily_changes_so_far</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">proposed_delta</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max_daily_change&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;rejected&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Daily rate limit exceeded&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;daily_budget_remaining&quot;</span><span class="p">:</span> <span class="n">bounds</span><span class="p">[</span><span class="s2">&quot;max_daily_change&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">daily_changes_so_far</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Constraint 3: Minimum confidence (don&#39;t act on uncertain recommendations)</span>
+    <span class="k">if</span> <span class="n">confidence</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;rejected&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Agent confidence too low: </span><span class="si">{</span><span class="n">confidence</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="n">actual_delta</span> <span class="o">=</span> <span class="n">proposed_new</span> <span class="o">-</span> <span class="n">current_threshold</span>
+
+    <span class="c1"># If no actual change after constraints, skip the write</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">actual_delta</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.001</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;no_change&quot;</span><span class="p">,</span> <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="n">current_threshold</span><span class="p">}</span>
+
+    <span class="c1"># Build the audit record</span>
+    <span class="n">audit_record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;alert_type&quot;</span><span class="p">:</span> <span class="n">alert_type</span><span class="p">,</span>
+        <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">,</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;old_threshold&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">current_threshold</span><span class="p">,</span> <span class="mi">2</span><span class="p">))),</span>
+        <span class="s2">&quot;new_threshold&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">proposed_new</span><span class="p">,</span> <span class="mi">2</span><span class="p">))),</span>
+        <span class="s2">&quot;proposed_delta&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">proposed_delta</span><span class="p">,</span> <span class="mi">2</span><span class="p">))),</span>
+        <span class="s2">&quot;actual_delta&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">actual_delta</span><span class="p">,</span> <span class="mi">2</span><span class="p">))),</span>
+        <span class="s2">&quot;clamped&quot;</span><span class="p">:</span> <span class="n">clamped</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">confidence</span><span class="p">,</span> <span class="mi">3</span><span class="p">))),</span>
+        <span class="s2">&quot;change_source&quot;</span><span class="p">:</span> <span class="s2">&quot;rl_agent&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;applied&quot;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">clamped</span> <span class="k">else</span> <span class="s2">&quot;clamped&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;old_threshold&quot;</span><span class="p">:</span> <span class="n">current_threshold</span><span class="p">,</span>
+        <span class="s2">&quot;new_threshold&quot;</span><span class="p">:</span> <span class="n">proposed_new</span><span class="p">,</span>
+        <span class="s2">&quot;actual_delta&quot;</span><span class="p">:</span> <span class="n">actual_delta</span><span class="p">,</span>
+        <span class="s2">&quot;audit_record&quot;</span><span class="p">:</span> <span class="n">audit_record</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">write_threshold_to_dynamodb</span><span class="p">(</span><span class="n">alert_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">audit_record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Persist the new threshold and audit trail to DynamoDB.</span>
+
+<span class="sd">    Uses conditional writes to prevent race conditions: the update only</span>
+<span class="sd">    succeeds if the current threshold in the database matches what we</span>
+<span class="sd">    expect. If another process changed it in the meantime, we fail safely</span>
+<span class="sd">    and retry on the next cycle.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">THRESHOLD_TABLE</span><span class="p">)</span>
+
+    <span class="c1"># Conditional write: only update if the stored threshold matches our expectation.</span>
+    <span class="c1"># This prevents two concurrent Lambda invocations from both applying changes.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+            <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alert_type&quot;</span><span class="p">:</span> <span class="n">alert_type</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">},</span>
+            <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET threshold_value = :new_val, last_updated = :ts&quot;</span><span class="p">,</span>
+            <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">&quot;threshold_value = :expected&quot;</span><span class="p">,</span>
+            <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;:new_val&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">new_threshold</span><span class="p">,</span> <span class="mi">2</span><span class="p">))),</span>
+                <span class="s2">&quot;:expected&quot;</span><span class="p">:</span> <span class="n">audit_record</span><span class="p">[</span><span class="s2">&quot;old_threshold&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;:ts&quot;</span><span class="p">:</span> <span class="n">audit_record</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConditionalCheckFailedException</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Conditional write failed for </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">. Threshold was modified externally.&quot;</span><span class="p">,</span>
+            <span class="n">alert_type</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># Write audit log (separate table for compliance)</span>
+    <span class="n">audit_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">AUDIT_TABLE</span><span class="p">)</span>
+    <span class="n">audit_record</span><span class="p">[</span><span class="s2">&quot;pk&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alert_type</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">audit_record</span><span class="p">[</span><span class="s2">&quot;sk&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">audit_record</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
+    <span class="n">audit_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">audit_record</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-monitoring-and-rollback">Step 5: Monitoring and Rollback</h2>
+<p><em>The main recipe emphasizes CloudWatch monitoring with automatic rollback. This step implements the monitoring logic that detects degradation and triggers a revert to the previous threshold.</em></p>
+<div class="code"><pre><span></span><span class="n">cloudwatch</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;cloudwatch&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="n">METRIC_NAMESPACE</span> <span class="o">=</span> <span class="s2">&quot;HealthcareAI/AlertOptimization&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">emit_metrics</span><span class="p">(</span><span class="n">alert_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Publish threshold optimization metrics to CloudWatch.</span>
+
+<span class="sd">    These metrics drive the rollback alarms. If action_rate drops or</span>
+<span class="sd">    missed_events spike, CloudWatch alarms trigger automatic rollback.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;AlertType&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">alert_type</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;Unit&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="n">metric_data</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;ActionRate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action_rate&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="n">dimensions</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;AlertsPerHour&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alerts_per_hour&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;Count&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="n">dimensions</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;MissedEvents&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;missed_events&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;Count&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="n">dimensions</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;MetricName&quot;</span><span class="p">:</span> <span class="s2">&quot;CurrentThreshold&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;threshold&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="s2">&quot;Unit&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="n">dimensions</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="n">cloudwatch</span><span class="o">.</span><span class="n">put_metric_data</span><span class="p">(</span><span class="n">Namespace</span><span class="o">=</span><span class="n">METRIC_NAMESPACE</span><span class="p">,</span> <span class="n">MetricData</span><span class="o">=</span><span class="n">metric_data</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_rollback_needed</span><span class="p">(</span><span class="n">alert_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">current_action_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">baseline_action_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine if the current threshold should be rolled back.</span>
+
+<span class="sd">    Rollback triggers if:</span>
+<span class="sd">    1. Action rate drops below 50% of baseline (thresholds too permissive, missing things)</span>
+<span class="sd">    2. Any missed event occurs (immediate rollback for safety)</span>
+
+<span class="sd">    In production, this logic lives in a CloudWatch Alarm that triggers</span>
+<span class="sd">    a Lambda function to revert the threshold. Here we show the decision logic.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rollback_threshold</span> <span class="o">=</span> <span class="n">ENVIRONMENT_CONFIG</span><span class="p">[</span><span class="s2">&quot;rollback_threshold&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">baseline_action_rate</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">current_action_rate</span> <span class="o">&lt;</span> <span class="n">baseline_action_rate</span> <span class="o">*</span> <span class="n">rollback_threshold</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;ROLLBACK TRIGGERED for </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">: action_rate </span><span class="si">%.3f</span><span class="s2"> &lt; </span><span class="si">%.3f</span><span class="s2"> (baseline * </span><span class="si">%.1f</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="n">alert_type</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">current_action_rate</span><span class="p">,</span>
+            <span class="n">baseline_action_rate</span> <span class="o">*</span> <span class="n">rollback_threshold</span><span class="p">,</span> <span class="n">rollback_threshold</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="kc">False</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rollback_threshold</span><span class="p">(</span><span class="n">alert_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">previous_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Revert to the previous known-good threshold.</span>
+
+<span class="sd">    This is the nuclear option. When triggered, it:</span>
+<span class="sd">    1. Writes the old threshold back to DynamoDB</span>
+<span class="sd">    2. Logs the rollback event for audit</span>
+<span class="sd">    3. Emits a CloudWatch metric so dashboards show the revert</span>
+<span class="sd">    4. (In production) pages the on-call engineer</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">THRESHOLD_TABLE</span><span class="p">)</span>
+
+    <span class="n">table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+        <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alert_type&quot;</span><span class="p">:</span> <span class="n">alert_type</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">},</span>
+        <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET threshold_value = :val, last_updated = :ts, rollback = :rb&quot;</span><span class="p">,</span>
+        <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;:val&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">previous_threshold</span><span class="p">,</span> <span class="mi">2</span><span class="p">))),</span>
+            <span class="s2">&quot;:ts&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;:rb&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Rolled back </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2"> to threshold </span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">alert_type</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">previous_threshold</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline: train an agent, evaluate its learned policy, and show how it would integrate with the AWS infrastructure for deployment.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_full_demo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Demonstrate the complete alert threshold optimization pipeline.</span>
+
+<span class="sd">    1. Train an agent on simulated data</span>
+<span class="sd">    2. Evaluate the learned policy</span>
+<span class="sd">    3. Show how a threshold update would flow through safety constraints</span>
+<span class="sd">    4. Demonstrate the monitoring and rollback logic</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ALERT THRESHOLD OPTIMIZATION - RL TRAINING DEMO&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 1: Train the agent ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Phase 1: Training ---&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training agent on simulated ICU heart rate alert data...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(In production, this trains on 6+ months of historical alert logs from S3)&quot;</span><span class="p">)</span>
+
+    <span class="n">agent</span><span class="p">,</span> <span class="n">history</span> <span class="o">=</span> <span class="n">train_agent</span><span class="p">(</span>
+        <span class="n">alert_type</span><span class="o">=</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span>
+        <span class="n">initial_threshold</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">n_episodes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Training complete.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Episodes: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Final epsilon (exploration rate): </span><span class="si">{</span><span class="n">agent</span><span class="o">.</span><span class="n">epsilon</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  States visited: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">q_table</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Show learning progress</span>
+    <span class="n">early_reward</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">h</span><span class="p">[</span><span class="s2">&quot;total_reward&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">history</span><span class="p">[:</span><span class="mi">10</span><span class="p">]])</span>
+    <span class="n">late_reward</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">h</span><span class="p">[</span><span class="s2">&quot;total_reward&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Avg reward (first 10 episodes): </span><span class="si">{</span><span class="n">early_reward</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Avg reward (last 10 episodes):  </span><span class="si">{</span><span class="n">late_reward</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 2: Evaluate learned policy ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Phase 2: Evaluation ---&quot;</span><span class="p">)</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">AlertEnvironment</span><span class="p">(</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">999</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+
+    <span class="c1"># Run one evaluation episode with no exploration (epsilon = 0)</span>
+    <span class="n">original_epsilon</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">epsilon</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># pure exploitation for evaluation</span>
+
+    <span class="n">eval_rewards</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">choose_action</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">eval_rewards</span> <span class="o">+=</span> <span class="n">reward</span>
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="n">agent</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">original_epsilon</span>  <span class="c1"># restore</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Evaluation reward: </span><span class="si">{</span><span class="n">eval_rewards</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Final threshold: </span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">threshold</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> (started at 100.0)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Total alerts: </span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">total_alerts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Action rate: </span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">total_actions</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">total_alerts</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Missed events: </span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">missed_events</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 3: Safety constraint demo ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Phase 3: Safety Constraints ---&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Demonstrating safety layer on proposed threshold changes...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Normal update (should apply)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">apply_threshold_update</span><span class="p">(</span>
+        <span class="n">alert_type</span><span class="o">=</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;ICU-3A&quot;</span><span class="p">,</span>
+        <span class="n">current_threshold</span><span class="o">=</span><span class="mf">105.0</span><span class="p">,</span>
+        <span class="n">proposed_delta</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
+        <span class="n">daily_changes_so_far</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Normal update (+2 bpm): </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;applied&quot;</span><span class="p">,</span> <span class="s2">&quot;clamped&quot;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;old_threshold&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;new_threshold&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Update that exceeds daily limit (should reject)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">apply_threshold_update</span><span class="p">(</span>
+        <span class="n">alert_type</span><span class="o">=</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;ICU-3A&quot;</span><span class="p">,</span>
+        <span class="n">current_threshold</span><span class="o">=</span><span class="mf">105.0</span><span class="p">,</span>
+        <span class="n">proposed_delta</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
+        <span class="n">daily_changes_so_far</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Exceeds daily limit (+3, already changed 4 today): </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Reason: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reason&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;n/a&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Update that would exceed safety ceiling (should clamp)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">apply_threshold_update</span><span class="p">(</span>
+        <span class="n">alert_type</span><span class="o">=</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;ICU-3A&quot;</span><span class="p">,</span>
+        <span class="n">current_threshold</span><span class="o">=</span><span class="mf">148.0</span><span class="p">,</span>
+        <span class="n">proposed_delta</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+        <span class="n">daily_changes_so_far</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Exceeds ceiling (148 + 5 &gt; max 150): </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;clamped&quot;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Clamped to: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;new_threshold&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Low confidence (should reject)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">apply_threshold_update</span><span class="p">(</span>
+        <span class="n">alert_type</span><span class="o">=</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;ICU-3A&quot;</span><span class="p">,</span>
+        <span class="n">current_threshold</span><span class="o">=</span><span class="mf">105.0</span><span class="p">,</span>
+        <span class="n">proposed_delta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+        <span class="n">daily_changes_so_far</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Low confidence (0.15): </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Reason: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reason&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;n/a&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 4: Rollback logic ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Phase 4: Rollback Detection ---&quot;</span><span class="p">)</span>
+    <span class="n">baseline_action_rate</span> <span class="o">=</span> <span class="mf">0.20</span>
+
+    <span class="c1"># Good state: no rollback needed</span>
+    <span class="n">needs_rollback</span> <span class="o">=</span> <span class="n">check_rollback_needed</span><span class="p">(</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span> <span class="s2">&quot;ICU-3A&quot;</span><span class="p">,</span> <span class="mf">0.18</span><span class="p">,</span> <span class="n">baseline_action_rate</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Action rate 0.18 vs baseline 0.20: rollback=</span><span class="si">{</span><span class="n">needs_rollback</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Bad state: action rate collapsed</span>
+    <span class="n">needs_rollback</span> <span class="o">=</span> <span class="n">check_rollback_needed</span><span class="p">(</span><span class="s2">&quot;heart_rate_high&quot;</span><span class="p">,</span> <span class="s2">&quot;ICU-3A&quot;</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="n">baseline_action_rate</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Action rate 0.05 vs baseline 0.20: rollback=</span><span class="si">{</span><span class="n">needs_rollback</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Demo complete. See the main recipe for full architectural context.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">run_full_demo</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example demonstrates the RL concepts and safety patterns. Here's what separates it from something you'd deploy in a hospital:</p>
+<p><strong>EHR integration.</strong> The simulated environment is a toy. Real alert data comes from HL7/FHIR feeds, EHR audit logs, and clinical event streams. Extracting &quot;clinician took action within 5 minutes of alert&quot; from an EHR database is a data engineering project in itself. Most of the implementation timeline is here, not in the RL algorithm.</p>
+<p><strong>Offline RL from historical data.</strong> This example trains online (the agent interacts with a simulation). Production starts with offline RL: you replay 6-12 months of historical alert/response data and learn a policy without touching the live system. Offline RL has its own challenges (distribution shift, extrapolation error) that require techniques like Conservative Q-Learning (CQL) or batch-constrained methods.</p>
+<p><strong>Model serving infrastructure.</strong> The trained policy needs to be deployed as a SageMaker endpoint (or equivalent) that the threshold-update Lambda can call. Model versioning, A/B testing between policy versions, and canary deployments all matter. You don't just pickle the Q-table and call it done.</p>
+<p><strong>Feature engineering.</strong> The 6-dimensional state vector here is a simplification. A production state includes dozens of features: per-alert-type statistics, patient census data, staffing ratios, time since last threshold change, recent missed events, seasonal patterns, and more. Feature engineering is where domain expertise meets ML engineering.</p>
+<p><strong>Reward function validation.</strong> The reward weights in this example are made up. In production, you'd work with clinical leadership to calibrate them. How much worse is a missed event than 100 noisy alerts? That's a clinical judgment call, not an engineering decision. And you'd validate the reward function against historical outcomes before trusting it.</p>
+<p><strong>Multi-unit, multi-alert coordination.</strong> This example optimizes one alert type on one unit. A hospital has dozens of units and dozens of alert types. Some interact (raising the heart rate threshold might increase reliance on SpO2 alerts). A production system either trains independent agents per unit/type (simpler, ignores interactions) or uses a multi-agent approach (complex, captures interactions).</p>
+<p><strong>Clinician feedback loop.</strong> Beyond automated response tracking, production systems include a mechanism for clinicians to explicitly flag &quot;this alert was useful&quot; or &quot;this alert was noise.&quot; That direct feedback is gold for reward shaping but requires UX work in the alerting interface.</p>
+<p><strong>Audit and explainability.</strong> Every threshold change needs a human-readable explanation: &quot;Threshold raised from 105 to 107 because action rate was 0.08 (below target) and no missed events in 14 days.&quot; The audit trail in this example captures the numbers but not the narrative. Regulatory and clinical governance require both.</p>
+<p><strong>Testing.</strong> This example has no tests. A production system needs unit tests for the safety constraint logic (the most critical code path), integration tests against a simulated EHR feed, and backtesting infrastructure that replays historical periods to validate that the learned policy would have performed well.</p>
+<p><strong>Gradual rollout.</strong> You don't flip the switch for the whole hospital at once. Start with one alert type on one unit. Run in &quot;shadow mode&quot; (compute recommendations but don't apply them) for weeks. Compare shadow recommendations against actual outcomes. Then enable with tight safety bounds. Then gradually relax bounds as confidence grows. This takes months.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter15.01-alert-threshold-optimization.html">Recipe 15.1</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

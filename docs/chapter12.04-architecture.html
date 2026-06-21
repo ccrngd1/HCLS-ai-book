@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 12.4 Architecture and Implementation: Lab Result Trend Analysis</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested nav-active" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-124-architecture-and-implementation-lab-result-trend-analysis">Recipe 12.4 Architecture and Implementation: Lab Result Trend Analysis</h1>
+<p><em>Companion to <a href="chapter12.04-lab-result-trend-analysis.html">Recipe 12.4: Lab Result Trend Analysis</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<p>The AWS implementation is shaped by a single platform choice: Amazon HealthLake. Lab data is fundamentally FHIR Observation resources, and HealthLake is designed for exactly this. The other services support specific stages of the pipeline.</p>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon HealthLake for FHIR Observation storage.</strong> Lab results are textbook FHIR Observation resources with LOINC codes, values, units, and reference ranges. <a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">HealthLake</a> ingests HL7 v2 ORU messages and FHIR Observation resources, normalizes them into a queryable FHIR datastore, and exposes them through a FHIR API. It also handles the longitudinal patient timeline natively (each patient's entire result history is queryable as a FHIR bundle). For a lab trend pipeline, HealthLake is the right primary store because lab data is exactly the data shape it was built for.</p>
+<p><strong>Amazon S3 for raw lab feeds and computed baselines.</strong> Raw HL7 messages land in S3 first (so they are preserved even if HealthLake ingestion fails), and computed per-patient baselines, trend scores, and historical trend states land in S3 partitioned by patient and test. S3 is also the durable archive for trained models and clinical rule configurations.</p>
+<p><strong>AWS Glue for harmonization and aggregation.</strong> Glue ETL jobs handle LOINC mapping, UCUM unit conversion, and the periodic per-patient baseline updates. The job runs on a schedule (nightly is typical for chronic-trend baselines) and writes its output back to S3 as the input for the trend detection step.</p>
+<p><strong>Amazon SageMaker for trend detection models.</strong> SageMaker hosts the per-lab trend detection logic. For simple labs, this is a containerized Python service that runs linear regression, Mann-Kendall, and CUSUM. For more sophisticated labs, this is a state-space model fit per patient using PyMC or statsmodels. For population-level hierarchical models, this is a SageMaker Processing or Training job that runs offline. SageMaker's flexibility on container images is what makes the per-lab method choice tractable.</p>
+<p><strong>AWS Lambda for clinical relevance scoring.</strong> The clinical rule layer is straightforward conditional logic: &quot;if creatinine slope &gt; 0.05 mg/dL/month for at least 90 days and the most recent value is at least 0.2 mg/dL above the rolling 12-month baseline, surface this trend.&quot; Lambda is the right fit: low-latency, event-driven, easy to update rules without redeploying a model.</p>
+<p><strong>Amazon DynamoDB for clinician-facing surfaces.</strong> The trends that pass the clinical relevance bar get written to DynamoDB keyed by patient and lab so the EHR-integrated CDS Hooks service or the inbox aggregator can fetch them with single-digit-millisecond latency. Trends are small records (a few hundred bytes), the access pattern is predictable, and DynamoDB is on the AWS HIPAA eligible services list.</p>
+<p><strong>AWS Step Functions for orchestration.</strong> The nightly pipeline has multiple steps with retry semantics: harmonize the day's new results, recompute affected baselines, run trend detection, apply clinical rules, deliver surfaced trends. Step Functions orchestrates this with explicit error handling and is auditable for HIPAA workflows.</p>
+<p><strong>Amazon EventBridge for scheduling.</strong> EventBridge Scheduler triggers the nightly chronic-trend pipeline. For more frequent pipelines (acute monitoring), EventBridge can trigger every few minutes off the lab result stream.</p>
+<p><strong>Amazon CloudWatch for monitoring and alarming.</strong> Pipeline health, trend volume per lab, alert volume per clinician, and drift in baseline distributions all get logged to CloudWatch with alarms on anomalies. Alert volume per clinician is the most important operational metric because alert fatigue is the main failure mode.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    A[EHR Lab Result&lt;br/&gt;HL7 ORU / FHIR Observation] --&gt;|Stream| B[S3 Bucket&lt;br/&gt;raw-results/]
+    B --&gt;|Ingest| C[Amazon HealthLake&lt;br/&gt;FHIR Datastore]
+    C --&gt;|FHIR Query| D[Glue ETL&lt;br/&gt;Harmonization]
+    D --&gt;|LOINC+UCUM normalized| E[S3 Bucket&lt;br/&gt;harmonized/]
+    E --&gt;|Glue ETL&lt;br/&gt;Baseline Job| F[S3 Bucket&lt;br/&gt;patient-baselines/]
+    G[EventBridge Schedule&lt;br/&gt;nightly] --&gt;|Trigger| H[Step Functions&lt;br/&gt;trend-pipeline]
+    H --&gt;|Invoke| I[SageMaker Endpoint&lt;br/&gt;per-lab trend detectors]
+    F --&gt; I
+    E --&gt; I
+    I --&gt;|Trend scores| J[S3 Bucket&lt;br/&gt;trend-scores/]
+    J --&gt;|Lambda| K[Clinical Relevance&lt;br/&gt;Rule Engine]
+    K --&gt;|Surfaced trends| L[DynamoDB&lt;br/&gt;patient-trends]
+    L --&gt;|Query| M[EHR CDS Hooks /&lt;br/&gt;Inbox / Dashboard]
+    H --&gt;|Errors / metrics| N[CloudWatch&lt;br/&gt;Alarms + SNS]
+
+    style C fill:#ff9,stroke:#333
+    style I fill:#9f9,stroke:#333
+    style L fill:#9ff,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon HealthLake, Amazon S3, AWS Glue, Amazon SageMaker, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon EventBridge, Amazon CloudWatch</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td><code>healthlake:StartFHIRImportJob</code>, <code>healthlake:SearchWithGet</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>glue:StartJobRun</code>, <code>sagemaker:InvokeEndpoint</code>, <code>lambda:InvokeFunction</code>, <code>dynamodb:BatchWriteItem</code>, <code>dynamodb:Query</code>, <code>states:StartExecution</code>, <code>kms:Decrypt</code>, <code>kms:Encrypt</code></td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Lab results are PHI in their entirety; every storage and compute service touching this pipeline must be on the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">HIPAA eligible services</a> list.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed CMKs; HealthLake: KMS-encrypted datastore at creation time; DynamoDB: encryption at rest enabled (default); SageMaker training and inference: encrypted EBS volumes and KMS-encrypted output; CloudWatch log groups: explicit KMS encryption. TLS 1.2 minimum in transit.</td>
+</tr>
+</tbody>
+</table>
+<p>| <strong>VPC</strong> | Production: SageMaker training and inference in private subnets with VPC endpoints for S3, HealthLake, DynamoDB, KMS, and CloudWatch Logs. Required posture for HIPAA workloads with PHI. |</p>
+<p>| <strong>CloudTrail</strong> | Enabled for all data-plane services. Lab results are sensitive PHI; the audit trail of who accessed which patient's trend data is non-negotiable. |</p>
+<p>| <strong>Sample Data</strong> | Synthetic FHIR Observation resources for development. The <a href="https://github.com/synthetichealth/synthea">Synthea</a> project produces realistic synthetic patient records including longitudinal lab results with LOINC codes. The <a href="https://physionet.org/content/mimiciv/">MIMIC-IV</a> database is a de-identified real-data option through PhysioNet credentialing. Never use real PHI in dev. |</p>
+<p>| <strong>Cost Estimate</strong> | HealthLake: ~$200-$600/month depending on data volume. SageMaker inference (small endpoint): ~$50/month. Glue ETL (nightly): ~$30/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$50/month combined. Total: ~$300-$1,500/month per panel-of-tests workload depending on patient population size and storage volume. |</p>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon HealthLake</strong></td>
+<td>Stores FHIR Observation resources for all lab results; provides LOINC-aware FHIR API for longitudinal queries</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Stores raw lab feeds, harmonized results, computed baselines, trend scores, model artifacts, and clinical rule configurations</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Harmonization jobs (LOINC mapping, UCUM unit conversion); periodic per-patient baseline computation</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Hosts per-lab trend detection endpoints (slope, change-point, state-space methods); offline training of population-level hierarchical models</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Clinical relevance rule engine; trend post-processing; CDS Hooks responder</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Serves surfaced trends to EHR CDS Hooks, inbox aggregators, and population-health dashboards at low latency</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the nightly pipeline (harmonize → baseline → detect → filter → deliver) with explicit retry and error handling</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Triggers the nightly chronic-trend pipeline and any acute-monitoring sub-pipelines on cron schedules</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Manages customer-managed CMKs for S3, HealthLake, DynamoDB, and SageMaker encryption</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Logs, metrics, alarms for pipeline failures, alert volume per clinician, and baseline drift</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> The following AWS sample resources demonstrate the patterns used in this recipe:</p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">Amazon HealthLake Documentation</a>: The FHIR datastore that backs the longitudinal patient timeline</li>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Official SageMaker examples including custom inference container patterns</li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/workflow-studio.html">AWS Step Functions Workflow Studio</a>: For visually composing the pipeline orchestration</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest and harmonize incoming lab results.</strong> The pipeline starts by consuming HL7 ORU messages or FHIR Observation resources from the EHR feed and normalizing them. Each result gets its test code mapped to a canonical LOINC code, its units converted to the canonical UCUM unit for that LOINC code, and any analyzer or method metadata preserved. This is the unglamorous foundation; if you skip it, every downstream step compares apples to oranges and your trends are noise.</p>
+<pre class="code code-plain"><code>FUNCTION harmonize_lab_result(raw_result):
+    // Map the source-system test code to a canonical LOINC code.
+    // Local lab dictionaries vary; a curated mapping table is the
+    // safest approach. Failing the mapping is far better than guessing.
+    canonical_loinc = lookup_loinc_mapping(raw_result.source_system_id, raw_result.source_test_code)
+    IF canonical_loinc is null:
+        log warning &quot;unmapped test&quot;; quarantine record for manual review
+        RETURN null
+
+    // Normalize the unit. UCUM is the standard; conversion factors live
+    // in a per-LOINC table because not every LOINC has a unique canonical
+    // unit and some require analyte-specific conversion (e.g., glucose
+    // mg/dL &lt;-&gt; mmol/L uses the molecular weight as the factor).
+    canonical_unit = lookup_canonical_unit(canonical_loinc)
+    canonical_value = convert_units(raw_result.value, raw_result.unit, canonical_unit, canonical_loinc)
+    IF canonical_value is null:
+        log warning &quot;unit conversion failed&quot;; quarantine record
+        RETURN null
+
+    // Preserve the issuing lab&#x27;s reference range for context. The patient&#x27;s
+    // own baseline drives trend analysis, but the lab&#x27;s reference range
+    // is still useful when surfacing to the clinician.
+    harmonized = {
+        patient_id:        raw_result.patient_id,
+        loinc_code:        canonical_loinc,
+        value:             canonical_value,
+        unit:              canonical_unit,
+        collection_ts:     raw_result.collection_ts,
+        source_system:     raw_result.source_system_id,
+        source_lab:        raw_result.lab_id,
+        source_method:     raw_result.method_or_analyzer,
+        source_ref_low:    convert_units(raw_result.ref_low, raw_result.unit, canonical_unit, canonical_loinc),
+        source_ref_high:   convert_units(raw_result.ref_high, raw_result.unit, canonical_unit, canonical_loinc),
+        encounter_context: raw_result.encounter_class    // ambulatory, inpatient, emergency, etc.
+    }
+
+    // Tag acute vs. chronic context. Inpatient and emergency results are
+    // tagged acute and excluded from chronic-trend baselines. Ambulatory
+    // and outpatient lab visits are tagged chronic.
+    harmonized.context_tag = IF harmonized.encounter_context in (inpatient, emergency)
+                             THEN &quot;acute&quot;
+                             ELSE &quot;chronic&quot;
+
+    write harmonized to S3 partitioned by (loinc_code, year, month)
+    write harmonized to HealthLake as a FHIR Observation resource
+
+    RETURN harmonized
+</code></pre>
+<p><strong>Step 2: Maintain per-patient baselines.</strong> For each (patient, LOINC code) pair, the pipeline keeps a rolling baseline computed only from chronic-context measurements over a configurable window (12 months is a strong default for most chronic labs). The baseline is updated whenever a new chronic-context value arrives. Acute-context values are intentionally excluded; including a patient's hospitalization labs in their outpatient creatinine baseline produces unstable comparisons.</p>
+<pre class="code code-plain"><code>FUNCTION update_patient_baseline(patient_id, loinc_code, baseline_window_months = 12):
+    // Pull the chronic-context history for this (patient, lab) over the window.
+    history = query_harmonized_results(
+        patient_id        = patient_id,
+        loinc_code        = loinc_code,
+        context_tag       = &quot;chronic&quot;,
+        from_ts           = now() - baseline_window_months
+    )
+
+    // Need a minimum number of values for the baseline to be trustworthy.
+    // Typical thresholds: 4 for monthly-frequency labs, 3 for quarterly-frequency.
+    minimum_required = lookup_baseline_minimum(loinc_code)
+    IF count(history) &lt; minimum_required:
+        baseline = {
+            patient_id:    patient_id,
+            loinc_code:    loinc_code,
+            status:        &quot;insufficient_history&quot;,
+            sample_count:  count(history),
+            updated_ts:    now()
+        }
+        write baseline to S3 patient-baselines/
+        RETURN baseline
+
+    // Use a robust statistic to resist outliers. The interquartile mean
+    // (mean of values between the 25th and 75th percentile) is a strong
+    // default. Median works too. Plain mean is too sensitive to outliers.
+    baseline_value      = interquartile_mean(history.values)
+    baseline_dispersion = mad(history.values)    // median absolute deviation
+
+    baseline = {
+        patient_id:           patient_id,
+        loinc_code:           loinc_code,
+        status:               &quot;ready&quot;,
+        baseline_value:       baseline_value,
+        baseline_dispersion:  baseline_dispersion,
+        sample_count:         count(history),
+        window_start_ts:      min(history.collection_ts),
+        window_end_ts:        max(history.collection_ts),
+        updated_ts:           now()
+    }
+
+    write baseline to S3 patient-baselines/
+
+    RETURN baseline
+</code></pre>
+<p><strong>Step 3: Run trend detection per (patient, lab).</strong> With baselines computed, the pipeline runs the appropriate trend detector for each (patient, LOINC code) pair. Different labs benefit from different methods. A configuration table drives the choice. The detector returns a trend object that includes the slope (or change-point posterior), the magnitude of deviation from baseline, the duration of the trend, and a confidence measure.</p>
+<pre class="code code-plain"><code>FUNCTION detect_trend(patient_id, loinc_code, baseline, recent_window_months = 6):
+    // Pull the recent chronic-context history for this (patient, lab).
+    recent = query_harmonized_results(
+        patient_id        = patient_id,
+        loinc_code        = loinc_code,
+        context_tag       = &quot;chronic&quot;,
+        from_ts           = now() - recent_window_months
+    )
+
+    // Need at least three recent values to run any meaningful trend test.
+    IF count(recent) &lt; 3 OR baseline.status != &quot;ready&quot;:
+        RETURN { trend_status: &quot;insufficient_data&quot; }
+
+    // Look up the configured detector for this LOINC code. Different
+    // labs benefit from different methods. The detector library typically
+    // includes: linear regression, Mann-Kendall + Theil-Sen, CUSUM,
+    // Bayesian online change-point detection, and a state-space (Kalman
+    // filter) option for irregularly sampled labs.
+    detector_name = lookup_detector_for_loinc(loinc_code)
+    detector      = load_detector(detector_name)
+
+    // Run the detector. The contract: every detector returns a normalized
+    // trend object with at least slope, slope_p_value, deviation_from_baseline,
+    // trend_duration_days, and method_specific_diagnostics.
+    trend = detector.run(
+        recent_values     = recent,
+        baseline_value    = baseline.baseline_value,
+        baseline_dispersion = baseline.baseline_dispersion
+    )
+
+    trend.patient_id        = patient_id
+    trend.loinc_code        = loinc_code
+    trend.detector_used     = detector_name
+    trend.computed_at_ts    = now()
+
+    write trend to S3 trend-scores/
+
+    RETURN trend
+</code></pre>
+<p><strong>Step 4: Apply the clinical relevance rule layer.</strong> Statistically significant trends are not always clinically meaningful. The relevance rule layer is a per-LOINC configuration that filters trends to those that meet a clinical threshold. The threshold combines magnitude, direction, duration, and deviation from baseline. This is where most teams underinvest and end up with alert fatigue. Get this layer right and the surfaced trends become trustworthy nudges.</p>
+<pre class="code code-plain"><code>FUNCTION apply_clinical_relevance(trend):
+    // Look up the configured clinical thresholds for this LOINC code.
+    rules = lookup_clinical_rules(trend.loinc_code)
+    // Example rule shape for serum creatinine in CKD monitoring:
+    //   minimum_slope_per_month:    0.05 mg/dL/month
+    //   minimum_duration_days:      90
+    //   minimum_deviation_from_baseline: 0.2 mg/dL
+    //   concerning_direction:       &quot;rising&quot;
+    //   minimum_slope_significance: p &lt; 0.05
+
+    // Direction check. Some labs are concerning when rising (creatinine,
+    // ALT, A1c), some when falling (hemoglobin, platelets, eGFR), some
+    // when changing in either direction (sodium).
+    direction_match = check_direction(trend.slope, rules.concerning_direction)
+
+    // Magnitude check. The slope must exceed the clinical threshold.
+    magnitude_pass  = abs(trend.slope) &gt;= rules.minimum_slope_per_month
+                       AND trend.slope_p_value &lt;= rules.minimum_slope_significance
+
+    // Duration check. The trend must be sustained for the clinical minimum.
+    duration_pass   = trend.trend_duration_days &gt;= rules.minimum_duration_days
+
+    // Deviation check. The current value must be far enough from baseline
+    // to be clinically meaningful (filters out statistically significant
+    // but tiny drifts that don&#x27;t matter).
+    deviation_pass  = abs(trend.deviation_from_baseline) &gt;= rules.minimum_deviation_from_baseline
+
+    surface = direction_match AND magnitude_pass AND duration_pass AND deviation_pass
+
+    IF surface:
+        // Compose the clinician-facing payload. Emphasis on plain language
+        // and on showing the data, not just the conclusion.
+        payload = {
+            patient_id:           trend.patient_id,
+            loinc_code:           trend.loinc_code,
+            test_display_name:    lookup_loinc_display(trend.loinc_code),
+            trend_direction:      &quot;rising&quot; IF trend.slope &gt; 0 ELSE &quot;falling&quot;,
+            slope_per_month:      trend.slope,
+            duration_days:        trend.trend_duration_days,
+            most_recent_value:    trend.most_recent_value,
+            baseline_value:       trend.baseline_value,
+            deviation_from_baseline: trend.deviation_from_baseline,
+            recent_values:        last 6 chronic-context values for this (patient, lab),
+            lab_reference_range:  most_recent_lab_ref_range,
+            explanation_text:     compose_clinician_explanation(trend, rules),
+            severity_band:        compute_severity_band(trend, rules),  // info / advisory / urgent
+            generated_at_ts:      now(),
+            model_version:        rules.version + &quot;:&quot; + trend.detector_used
+        }
+        RETURN { surface: true, payload: payload }
+
+    RETURN { surface: false, suppressed_reason: details_of_failed_check }
+</code></pre>
+<p><strong>Step 5: Deliver surfaced trends to clinical consumers.</strong> Surfaced trends get written to DynamoDB keyed by patient and lab so the EHR-integrated CDS Hooks service, the inbox aggregator, or any other consumer can fetch them at low latency. Suppressed trends are logged but not delivered. The historical record of suppressed trends is valuable for tuning the clinical rules over time.</p>
+<pre class="code code-plain"><code>FUNCTION deliver_trends(relevance_results, table_name):
+    surfaced     = filter relevance_results where surface = true
+    suppressed   = filter relevance_results where surface = false
+
+    // Surfaced trends go to DynamoDB for clinician-facing surfaces.
+    batches = chunk surfaced into groups of 25
+    FOR each batch in batches:
+        write batch to DynamoDB table_name with:
+            partition_key = patient_id
+            sort_key      = loinc_code + &quot;#&quot; + generated_at_ts
+            attributes    = full payload object
+        retry unprocessed items with exponential backoff
+
+    // Suppressed trends go to S3 for analysis and rule tuning.
+    write suppressed to S3 suppressed-trends/ partitioned by date
+
+    // Optional: emit a CloudWatch metric per LOINC code for surfaced
+    // and suppressed counts so the operations team can monitor alert
+    // volume per clinician and per panel.
+    emit_cloudwatch_metric(&quot;trends.surfaced&quot;, surfaced.count, dimensions = (loinc_code))
+    emit_cloudwatch_metric(&quot;trends.suppressed&quot;, suppressed.count, dimensions = (loinc_code))
+
+    RETURN { surfaced_count: surfaced.count, suppressed_count: suppressed.count }
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, statsmodels for trend detection, and the FHIR client libraries, check out the <a href="chapter12.04-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample surfaced trend payload for a CKD patient with rising creatinine:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient-7c4e9a12&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loinc_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2160-0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;test_display_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Creatinine, Serum&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;trend_direction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rising&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;slope_per_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.06</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;slope_p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.011</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;duration_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;most_recent_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.62</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;most_recent_unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mg/dL&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;most_recent_collection_ts&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-08T08:14:00-05:00&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;baseline_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.18</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;baseline_window_months&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;deviation_from_baseline&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.44</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;recent_values&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-04-12&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.21</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-07-10&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.30</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-10-05&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.38</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-01-09&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.49</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-08&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.62</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;lab_reference_range&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.70</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.30</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mg/dL&quot;</span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;explanation_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Serum creatinine has been rising at approximately 0.06 mg/dL per month over the last 14 months. Most recent value (1.62) is 0.44 above the patient&#39;s 12-month rolling baseline (1.18). All recent values are from chronic ambulatory care.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;severity_band&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;advisory&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;generated_at_ts&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-09T02:14:33Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ckd-creatinine-rules-v3:theil-sen-detector-v2&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nightly pipeline runtime (100k active patients, 6 chronic-condition labs)</td>
+<td>30-90 minutes</td>
+</tr>
+<tr>
+<td>Per-patient inference latency (single lab)</td>
+<td>50-200 ms</td>
+</tr>
+<tr>
+<td>Surfaced trends per patient per month</td>
+<td>0-2 across all monitored labs</td>
+</tr>
+<tr>
+<td>Suppressed-but-detected trends per patient per month</td>
+<td>5-15</td>
+</tr>
+<tr>
+<td>Cost per panel-of-tests workload per month</td>
+<td>$300-$1,500</td>
+</tr>
+<tr>
+<td>Median clinician inbox alerts per day from this pipeline</td>
+<td>3-8</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong> Patients with fewer than 4 historical chronic-context values for a given lab (the baseline cannot be established). Patients on therapies that fundamentally change the lab's distribution (a patient who started erythropoiesis-stimulating agents needs a baseline reset for hemoglobin). Labs that are intrinsically noisy at small sample counts (peripheral lymphocyte percentages, vitamin D in the absence of seasonal correction). Patients undergoing active medication titration where the lab changes are intended (the system may flag the intended trajectory as concerning). Multi-site care where the patient's labs are split across systems that the harmonization layer has not unified. Reference range variability across labs that exceeds the clinical threshold of the trend (rare but real, especially for older labs without strong harmonization standards).</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. Deploying this to a real population requires addressing several gaps that are intentionally outside the scope of a cookbook recipe.</p>
+<p><strong>Medication and intervention awareness.</strong> A patient whose creatinine is climbing because they were started on an ACE inhibitor for blood pressure control is on an expected trajectory, not a concerning one. A pipeline that does not know about the medication change will produce a high-quality false positive. Production systems integrate medication history and clinical interventions either as features in the trend model (treat the intervention as a known regime change point) or as a post-detection filter (suppress trends temporally adjacent to relevant interventions). This is the single most important refinement after the basic pipeline works.</p>
+<p><strong>Multi-lab joint reasoning.</strong> Some trends matter much more in combination than in isolation. A rising creatinine plus a falling hemoglobin plus an unchanged platelet count is a different story than any one of those alone (it suggests CKD progression with anemia of chronic disease). A pipeline that surfaces each trend independently asks the clinician to integrate. A more sophisticated pipeline runs panel-level rules that look for combinations and surfaces the integrated finding. This is where Recipe 7.x (predictive analytics) starts to overlap.</p>
+<p><strong>Clinician feedback capture.</strong> Every surfaced trend should have a feedback path: was this useful? Did you take action? If the clinician dismisses a particular type of alert ten times in a row, the rule layer should learn that the threshold is too sensitive for that LOINC code at that magnitude. Without feedback capture, the system stays calibrated to its launch-day rules forever and slowly accumulates a noise reputation.</p>
+<p><strong>EHR integration via CDS Hooks or FHIR Subscriptions.</strong> The DynamoDB-backed surface is fine for an inbox aggregator or a population-health dashboard. For in-workflow CDS, you need a FHIR-native interface: <a href="https://cds-hooks.org/">CDS Hooks</a> firing during chart open, or a FHIR Subscription that pushes relevant patient surfaces. The integration work is neither hard nor cheap and is highly EHR-vendor-specific.</p>
+<p><strong>Patient-pool segmentation.</strong> A population health team responsible for diabetes management wants the diabetes-relevant trends surfaced. A nephrologist's panel wants kidney-function trends. A primary care doctor wants the integrated view across their assigned patients. Routing surfaced trends to the right consumer based on patient panel and trend type is its own engineering exercise that grows in importance as the system gets used.</p>
+<p><strong>Baseline reset events.</strong> Some clinical events legitimately reset the patient's baseline: starting a new chronic medication, transitioning between therapy lines, a major surgery, a new diagnosis. Production systems either track these explicitly (event-driven baseline resets) or detect them via change-point analysis and reset the baseline at the detected change point. Without this, a patient's old baseline can produce misleading &quot;trends&quot; that are really just regime changes the system should have known about.</p>
+<p><strong>Lab harmonization quality assurance.</strong> The harmonization layer (LOINC mapping, UCUM unit conversion, method/analyzer awareness) is the single biggest source of subtle bugs in the pipeline. Production systems run continuous quality checks on the harmonized data: distribution shifts in a LOINC code over time, sudden changes in unit distribution, new source codes appearing without a mapping. Catching a harmonization error in week three is two weeks of bad trends; catching it in month three is a much bigger cleanup.</p>
+<p><strong>Idempotency and rerun safety.</strong> The nightly pipeline can fail and need to be rerun. Each step needs to be safe to repeat: harmonization is idempotent on (patient, source_code, collection_ts); baseline computation is deterministic given the input; trend detection is deterministic given the inputs; DynamoDB writes overwrite cleanly by primary key.</p>
+<p><strong>Regulatory framing.</strong> Lab trend analysis that triggers actionable clinical decisions sits in a gray zone of FDA software-as-a-medical-device (SaMD) regulation. A pipeline that surfaces &quot;your patient's creatinine is rising; consider nephrology referral&quot; can be characterized as clinical decision support, which is largely exempt from FDA premarket review under the 21st Century Cures Act if it meets specific transparency and explainability requirements. A pipeline that says &quot;diagnose CKD progression&quot; is not exempt. Working with regulatory counsel on the framing of the surfaced output is non-negotiable for any deployment that goes beyond a research pilot.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Bayesian state-space models for irregular sampling.</strong> The simple slope-based detectors work well when sampling is roughly periodic. For labs with highly irregular sampling, a Bayesian state-space model with a continuous-time formulation handles the gaps natively and produces calibrated uncertainty intervals. Implementations in PyMC or Stan, hosted in a SageMaker container, are tractable for chronic-disease labs and produce noticeably better-calibrated alerts at irregular intervals.</p>
+<p><strong>Hierarchical models that borrow strength across patients.</strong> A pure per-patient model has trouble in early visits when each patient has only a handful of values. A hierarchical model that learns lab-specific between-patient variability and uses it as a prior gives the per-patient estimate a head start. This is particularly valuable for slow-frequency labs (a patient with two HbA1c values is hard to model in isolation but tractable hierarchically).</p>
+<p><strong>Deep learning for embedding-based &quot;patients like this.&quot;</strong> Rather than comparing the patient to themselves alone, train a representation that finds similar patients and uses their trajectories as additional context. Useful for early-history patients and for rare conditions where individual baselines are sparse. Adds complexity and explainability burden; only worth it once the simpler methods are saturating their value.</p>
+<p><strong>Combined panel-level reasoning.</strong> Move from per-lab trend surfaces to panel-level findings. A combined &quot;kidney function panel&quot; surface integrates creatinine, eGFR, BUN, and electrolyte trends and produces a single integrated assessment. This is closer to clinical reasoning and can dramatically reduce alert volume while increasing relevance.</p>
+<p><strong>FHIR Subscription-based real-time delivery.</strong> Move from nightly batch to real-time streaming. New lab results trigger immediate harmonization, baseline update, trend detection, and surface delivery via FHIR Subscriptions or CDS Hooks. The clinical value of &quot;real-time&quot; for chronic-trend analysis is debatable (a 24-hour delay rarely matters for slow-moving trends), but the architecture is straightforward to extend.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">Amazon HealthLake Documentation</a></li>
+<li><a href="https://aws.amazon.com/healthlake/pricing/">Amazon HealthLake Pricing</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Documentation</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA Security and Compliance on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Official SageMaker examples including custom container patterns for non-built-in models</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code> GitHub Organization</a>: Search for HealthLake and FHIR-related samples relevant to longitudinal patient data</li>
+</ul>
+<p><strong>External Resources:</strong></p>
+<ul>
+<li><a href="https://loinc.org/">LOINC Documentation</a>: The standard for lab test codes; essential for the harmonization layer</li>
+<li><a href="https://ucum.org/">UCUM Specification</a>: The unit code standard used for canonical unit conversions</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea Synthetic Patient Generator</a>: Realistic synthetic FHIR patient records including longitudinal lab results</li>
+<li><a href="https://physionet.org/content/mimiciv/">MIMIC-IV on PhysioNet</a>: De-identified real ICU and hospital data for credentialed researchers, including extensive lab time series</li>
+<li><a href="https://otexts.com/fpp3/">Forecasting: Principles and Practice (Hyndman &amp; Athanasopoulos)</a>: Free online textbook with strong chapters on irregularly sampled time series and state-space models</li>
+<li><a href="https://arxiv.org/abs/0710.3742">Bayesian Online Change-Point Detection (Adams &amp; MacKay)</a>: Foundational paper on the change-point method useful for some lab trend tasks</li>
+<li><a href="https://cds-hooks.org/">CDS Hooks Specification</a>: The standard for in-EHR clinical decision support; the right interface for surfacing trends in chart-open workflows</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library (Healthcare and AI/ML)</a>: Filter by Healthcare and AI/ML for reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/category/industries/healthcare/">AWS Machine Learning Blog (Healthcare tag)</a>: Search for FHIR, HealthLake, and longitudinal patient analytics posts</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<ul>
+<li><strong>Basic pipeline (one chronic-disease panel, slope detection, nightly cadence):</strong> 4-6 weeks</li>
+<li><strong>Production-ready (multi-panel, change-point detection, clinical rule layer, monitoring, drift detection):</strong> 12-20 weeks</li>
+<li><strong>With variations (hierarchical models, panel-level reasoning, real-time CDS Hooks integration):</strong> 24-36 weeks</li>
+</ul>
+<hr />
+<hr />
+<p><em>← <a href="chapter12.04-lab-result-trend-analysis.html">Main Recipe 12.4</a> · <a href="chapter12.04-python-example.html">Python Example</a> · <a href="chapter12-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

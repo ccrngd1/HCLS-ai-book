@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 5: Entity Resolution & Record Linkage</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link nav-active" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="chapter-5-entity-resolution--record-linkage">Chapter 5: Entity Resolution &amp; Record Linkage</h1>
+<p><em>Are These Two Records the Same Person?</em></p>
+<p>Here's a question that has no good answer in American healthcare: <em>how do you know two records are about the same person?</em></p>
+<p>Walk into any reasonably-sized health system tomorrow morning, query their database for &quot;Maria Garcia, born March 1972,&quot; and brace yourself. You'll get hits. Plural. Some of those records might be the same Maria Garcia with three different chart numbers because she was registered three different times by three different front-desk staff who each typed her name slightly differently. Some of those might be different Maria Garcias entirely (it is, statistically, not an unusual name). Some of them might be the same Maria Garcia, but one of the records is from before her marriage and uses her maiden name, and your database doesn't know that. One of them might be her mother. One of them might be a typo for &quot;Maria Gracia&quot; that's been sitting there for fifteen years and nobody's noticed.</p>
+<p>Now imagine you're trying to give Maria the right care. Her allergy to penicillin is documented in record number two. Her hypertension is in record number five. Her last colonoscopy is in record number one. Her active prescription list is split across records three and four. The system that's supposed to give her clinician a single, accurate view of her health history shows them, at best, one of these records, and at worst, a confused merge of two or three of them with conflicting information.</p>
+<p>This is the entity resolution problem. It is, depending on who you ask, either the most important unsolved problem in healthcare data or just a deeply unglamorous plumbing issue that nobody wants to fund. Both of those things are true at the same time. And it's the subject of this chapter.</p>
+<hr />
+<h2 id="what-entity-resolution-actually-is">What Entity Resolution Actually Is</h2>
+<p>Entity resolution is the practice of figuring out which records in one or more datasets refer to the same real-world thing. The &quot;thing&quot; can be a patient, a provider, an organization, an address, an insurance plan. The &quot;records&quot; can come from one system or many. The output is a decision: these records are the same entity, or they are not, or we are not sure and need a human to look.</p>
+<p>Other names for the same problem, because the literature is fragmented and every field reinvented this independently: record linkage, deduplication, identity resolution, master data management, fuzzy matching, data integration, the &quot;patient matching&quot; problem (specifically when the entity is a patient). They all have the same core: you have records that <em>might</em> be about the same entity, and you need a system that decides when they are.</p>
+<p>There are three broad approaches that show up across the recipes, and they're worth knowing because they drive very different architectures:</p>
+<p><strong>Deterministic matching.</strong> Exact match on a set of key fields. If first name, last name, date of birth, and SSN all match exactly, it's the same person. Simple, fast, easy to explain, easy to audit. Falls apart the moment any field has typos, formatting differences, or missing values, which in healthcare data is constantly. Useful as a fast first pass and as the right answer when you have a strong identifier (NPI for providers, plan-issued member ID within a payer's own data).</p>
+<p><strong>Probabilistic matching.</strong> Score each field comparison (exact match, similar but not exact, mismatch, missing) and combine the scores into a single match probability. The classical foundation for this is the Fellegi-Sunter model from 1969, and it's still the workhorse of most production patient-matching systems six decades later, because it's actually quite good and very interpretable. You set a high threshold for auto-match, a low threshold for auto-non-match, and everything in between goes to human review. Tunable, explainable, the right answer for most healthcare entity resolution problems.</p>
+<p><strong>ML-based matching.</strong> Train a classifier (gradient boosting, neural networks, transformer-based embeddings) to predict whether a pair of records refers to the same entity. Can incorporate features that are awkward in probabilistic frameworks (string embeddings, address geocoding distances, network features). Higher ceiling on accuracy when you have labeled training data. Lower interpretability, harder to audit, and still usually wrapped around a probabilistic core for the parts that need to be defensible.</p>
+<p>Most production systems are hybrids. Deterministic for the easy cases, probabilistic for the medium cases, ML re-ranking for the hard ones, and humans for the cases the system isn't confident about. The recipes in this chapter are explicit about which combination they use and why.</p>
+<hr />
+<h2 id="why-healthcare-is-uniquely-bad-at-this">Why Healthcare Is Uniquely Bad At This</h2>
+<p>Most data integration tutorials use clean examples: customer records with a customer ID, business records with a tax ID, product records with a SKU. The &quot;join&quot; is a SQL operation. Entity resolution feels like a niche concern. Then you get to healthcare, and you discover that the United States, alone among developed countries, has explicitly prohibited the creation of a national patient identifier since 1998 (Section 510 of the Labor-HHS appropriations bill, renewed every year since).</p>
+<p>That single policy decision is why this chapter exists. Without a national identifier, every healthcare entity resolution problem is fundamentally an inferential one, and that inference has to work across a series of data realities that are uniquely brutal:</p>
+<h3 id="demographic-data-is-lower-quality-than-you-think">Demographic Data Is Lower-Quality Than You Think</h3>
+<p>Front-desk registration is one of the highest-volume, lowest-paid, most-rotated jobs in healthcare, and it is also the one place where every piece of demographic data enters the system. Names get typed with typos. Date of birth gets entered as &quot;01/01/1900&quot; because the patient didn't have ID and the system required something. Phone numbers are landlines that haven't been active in a decade. Addresses are out of date by an average of several years per population because Americans move constantly. Social Security numbers, where collected at all, have entry error rates that are not small.  The data you're trying to match on is not pristine ground truth. It's a noisy approximation of pristine ground truth.</p>
+<p>This is the single biggest reason &quot;just join on name and DOB&quot; doesn't work. You're joining on noise.</p>
+<h3 id="names-are-not-stable">Names Are Not Stable</h3>
+<p>In the abstract, a name is a string. In practice, names change. People get married and take their spouse's name. People get divorced and take their previous name back. People legally change their name for any number of reasons. People go through gender transition and change their name (and sometimes other demographic data) accordingly. People use nicknames, middle names, or initials inconsistently. People with names from naming conventions outside the dominant culture get their names mangled in ways that vary by who's doing the data entry. Suffixes (Jr, Sr, II, III) drop and reappear. Patronymics, hyphenations, and apostrophes get normalized differently in every system.</p>
+<p>The &quot;longitudinal patient matching across name changes&quot; recipe (5.7) is in the complex tier specifically because name change is a regular, expected event in a long enough timeframe, and your matching system has to handle it without losing the historical record or accidentally outing patients who don't want their identity changes broadcast.</p>
+<h3 id="family-members-are-a-confounder">Family Members Are a Confounder</h3>
+<p>Family members live at the same address, share last names, sometimes share first names (Sr/Jr/III), share insurance plans, and are sometimes seen at the same practices. Twins share birthdays. Mothers and infants are often co-registered with overlapping data fields. Spouses share insurance member IDs but with dependent codes that some systems strip out. Probabilistic matchers built without family-aware logic regularly merge a father and son into a single record, or split a mother's prenatal and postpartum records onto two different patients. Households are useful for some recipes (5.3) and dangerous in others (5.5, 5.7).</p>
+<h3 id="different-systems-capture-the-same-thing-differently">Different Systems Capture the Same Thing Differently</h3>
+<p>Every EHR has demographic fields. Every payer system has demographic fields. Every state immunization registry has demographic fields. None of them define those fields the same way. &quot;Race&quot; is one field in some systems and seven check-boxes in others. &quot;Address&quot; might be a single string, a parsed object, or a USPS-standardized normalized form. &quot;Phone&quot; might or might not include extension. &quot;Date of birth&quot; usually behaves, but you'd be surprised. When you're matching across organizations, half the work is just normalizing the fields enough to compare them.</p>
+<h3 id="the-cost-of-errors-is-asymmetric-and-severe">The Cost of Errors Is Asymmetric and Severe</h3>
+<p>Two kinds of mistakes, each bad in different ways:</p>
+<p><strong>False merges</strong> (wrong-patient overlay) combine two real people into one record. The clinician sees one person's allergy list overlaid with another person's medications. This is the patient safety failure mode, and there are documented cases of it killing people.</p>
+<p><strong>False splits</strong> (failure to match) leave a single patient with multiple records that the system doesn't know are connected. Critical history is missing when the clinician needs it. Tests get repeated unnecessarily. Care gaps go unflagged. This is the cost-and-quality failure mode. It's less acutely dangerous than a false merge but often more common, and at scale it represents enormous waste and worse outcomes.</p>
+<p>The thresholds you tune in a probabilistic matcher are explicitly choosing the balance between these two failure modes. Most healthcare matching systems are tuned conservatively (favor false splits over false merges) because the patient safety asymmetry is real. The recipes are explicit about this tradeoff and how to communicate it to the people who own the consequences.</p>
+<h3 id="privacy-constraints-limit-your-options">Privacy Constraints Limit Your Options</h3>
+<p>If two organizations want to match patients across their populations, they can't just exchange flat files of demographics. That's a HIPAA-regulated activity at minimum, and depending on the relationship, it may not be permitted at all without specific patient consent. Privacy-preserving record linkage (recipe 5.8) exists precisely because the natural approach (just send me your data and I'll match it) is often not legally available. Cryptographic and statistical techniques let two parties find their overlapping records without revealing the non-overlapping ones, but they impose accuracy costs and operational complexity that make them last-resort tools rather than default ones.</p>
+<h3 id="the-stakes-range-from-administrative-to-existential">The Stakes Range From Administrative to Existential</h3>
+<p>Provider matching to NPI (5.2) is administratively important and has minimal patient impact when it goes wrong. Patient matching for billing eligibility (5.4) affects revenue cycle. Patient matching for clinical care (5.5) affects safety and outcomes. Patient matching for outcomes research (5.6) affects what we collectively learn from the data. National-scale matching for interoperability (5.9) affects whether the digital health infrastructure of the country actually functions. The difficulty of the problem varies; so does what failure means. Both of those shape the architecture.</p>
+<hr />
+<h2 id="the-progression-simple-to-complex">The Progression: Simple to Complex</h2>
+<p>This chapter is ordered by a combination of data complexity, governance complexity, and stakes. Here's the journey:</p>
+<p><strong>Recipes 5.1 to 5.2 (Simple).</strong> Internal duplicate patient detection within one system, and provider NPI matching against an authoritative registry. Both are constrained problems with controllable inputs and well-understood techniques. Recipe 5.1 is your first stop because every healthcare organization has duplicate patient records sitting in their database right now, and a focused dedup project pays for itself fast (in cleaner reporting, in avoided clinical mistakes, in reclaimed staff time). Recipe 5.2 is similarly tractable: NPI is a real, reliable national identifier (just not for patients), and the registry is queryable. These are your two- to four-month projects, and they build the operational muscle (review queues, threshold tuning, survivorship rules, audit trails) that the harder recipes need.</p>
+<p><strong>Recipe 5.3 (Simple-Medium).</strong> Address standardization and household linkage. Where geography enters the picture. USPS address standardization is a solved problem if you use the right tools, and household inference is a useful extension for outreach and SDOH analysis. The complexity comes from data quality and from being thoughtful about what assumptions you're encoding when you say &quot;these two patients live in the same household&quot; (you might be right about the address and wrong about the relationship).</p>
+<p><strong>Recipes 5.4 to 5.5 (Medium).</strong> Insurance eligibility matching and cross-facility patient matching for health information exchange. Now you're crossing organizational boundaries. No shared identifiers. Different demographic conventions. Real-time performance requirements (eligibility checks happen at point-of-service). Governance layers (HIE consent, BAA, data use agreements) become part of the architecture. Budget a quarter, and make sure your privacy and compliance team is at the table from the scoping phase.</p>
+<p><strong>Recipe 5.6 (Medium-Complex).</strong> Claims-to-clinical data linkage. The headache problem of healthcare analytics: link the administrative trail of a patient's encounter (claims) to the clinical record of that same encounter (EHR data). Different identifiers, timing misalignment, many-to-many relationships, data quality issues on both sides. This is the recipe that powers most outcomes research, most quality measurement, and most value-based care contracting. It's harder than it looks.</p>
+<p><strong>Recipe 5.7 (Complex).</strong> Longitudinal patient matching across name changes. Real-world identity is not stable in time, and your matching system has to handle that without losing data continuity or violating patient autonomy around their own identity. This recipe pulls in temporal logic, history-aware matching, and a sensitivity layer that most entity resolution systems don't have. It's also the recipe most likely to be retrofitted into an existing system, with all the migration complexity that implies.</p>
+<p><strong>Recipe 5.8 (Complex).</strong> Privacy-preserving record linkage. When you can't exchange raw data, you exchange Bloom filters, secure hashes, or computed match keys instead. The cryptographic techniques are well-established (Bloom-filter-based protocols have been in academic literature for over a decade), but operational deployment is still uncommon and the accuracy ceiling is lower than direct matching. The reason this is in the chapter is that the legal and trust frameworks around healthcare data sharing are tightening, not loosening, and you should know what your options are when &quot;send me your data&quot; stops being one of them.</p>
+<p><strong>Recipes 5.9 to 5.10 (Complex).</strong> National-scale patient matching under TEFCA, and deceased patient resolution. Both stretch the operational and governance dimensions to their limits. National-scale matching has to work at populations of hundreds of millions of records across thousands of participating organizations with widely varying data quality, no central authority, and governance frameworks that are still maturing. Deceased patient resolution sounds simpler but isn't: death data sources are heterogeneous, lag months to years, and surface duplicates that nobody noticed. These recipes are in the chapter because they matter, not because most readers should start here.</p>
+<p>You can read the chapter in order or jump to the recipe that maps to your immediate problem. If you're new to entity resolution as a practice, recipes 5.1 and 5.2 will build the mental models that make 5.5 onward make sense.</p>
+<hr />
+<h2 id="the-techniques-youll-see">The Techniques You'll See</h2>
+<p>The recipes pull from several technique families. Quick tour, because the names recur:</p>
+<p><strong>String similarity and normalization.</strong> The foundation. Levenshtein edit distance (number of single-character edits to turn one string into another), Jaro-Winkler (a tweaked variant that weights early-string matches more heavily, which helps for names), Soundex and double metaphone (phonetic encodings that group similar-sounding strings together), n-gram comparisons (overlapping character sequences). None of these is &quot;the right one.&quot; Production matchers typically use several in combination. The classic patient-matching trick is to compute Jaro-Winkler on first name, Levenshtein on last name, exact match on DOB, and reasonable string similarity on phone-number-as-string, then feed the scores into a probabilistic combiner.</p>
+<p><strong>Probabilistic record linkage (Fellegi-Sunter).</strong> The 1969 paper that almost everyone cites and almost nobody actually reads in full. The core idea: for each field, estimate the probability that the field matches given that the records refer to the same entity (the &quot;m&quot; probability), and the probability that the field matches given that they don't (the &quot;u&quot; probability). The log-likelihood ratio of those probabilities, summed across fields, gives you a match score. Cleaner than ad-hoc weighted scoring, and the m/u probabilities can be estimated from the data via expectation-maximization. Almost every commercial EMPI is some flavor of this.</p>
+<p><strong>Blocking and candidate generation.</strong> The unspoken constraint of all entity resolution: comparing every record to every other record is O(n²), and at any reasonable scale that's not feasible. Blocking partitions the records into smaller buckets that are then compared internally, dramatically reducing the comparison count. Common blocking keys: first three letters of last name plus year of birth, soundex of last name plus first letter of first name, ZIP code plus last name. Good blocking keys produce small buckets that still contain the true matches; bad blocking keys produce huge buckets or split true matches into separate buckets. Most of the engineering work in a production matcher is in the blocking, not the comparison logic.</p>
+<p><strong>Machine learning classifiers.</strong> Treat the pair of records as a feature vector (similarity scores, demographic deltas, geographic distances, behavioral overlaps), and train a classifier (gradient boosting, deep networks, or transformer-based pair embeddings) to predict match/non-match. Higher accuracy ceiling than purely probabilistic, but requires labeled training data (often produced by clerical review of probabilistic output) and is harder to audit. Increasingly common as the wrapper around a probabilistic core.</p>
+<p><strong>Embedding-based matching.</strong> Represent strings or records as dense vectors in a learned space, and match based on vector proximity. Particularly useful when the data is messy in ways that string-similarity heuristics don't capture (transliteration variations, abbreviations, semantic equivalents). Also relevant for matching unstructured fields, like comparing a free-text &quot;reason for visit&quot; string to a structured diagnosis code. Bedrock's text embedding models, sentence transformers, and domain-specific models all live here.</p>
+<p><strong>Cryptographic and privacy-preserving methods.</strong> Bloom-filter-based matching, secure hash chains, secure multi-party computation, differential privacy. Used when raw demographic data can't be exchanged. Recipe 5.8 is the one that goes deep on these; the others touch them lightly when applicable.</p>
+<p><strong>Graph and network methods.</strong> When the entity resolution problem has natural relational structure (provider-patient-claim graphs, patient-household graphs), graph-based clustering can find communities of related records that pairwise comparison misses. Useful for fraud-ring detection (which spans into Chapter 3 territory) and for resolving complex many-to-many relationships in claims-to-clinical linkage.</p>
+<p>You don't need all of these for any one recipe. You do need to recognize them when you see them, because the technique family drives the architecture and the failure modes.</p>
+<hr />
+<h2 id="key-architectural-patterns-youll-see-repeatedly">Key Architectural Patterns You'll See Repeatedly</h2>
+<p>A few patterns compound across the chapter. Calling them out here saves repetition later:</p>
+<p><strong>The match-score-plus-review-queue pattern.</strong> Almost every recipe ends with a three-bucket output: auto-match (above the high threshold), auto-non-match (below the low threshold), and human-review (everything in between). The thresholds are tunable and explicit. The review queue is where most of the recipe's operational work lives: prioritization, workflow integration, decision capture, feedback into model retraining. A matcher without a review queue is incomplete; the review queue <em>is</em> the product, often more than the score is.</p>
+<p><strong>Survivorship rules.</strong> When you decide two records are the same and need to merge them, which fields win? Most-recent? Most-trusted source? Longest non-null? A combination per field? Survivorship is unglamorous and absolutely critical, because the merged record is what downstream systems consume. Wrong survivorship rules can lose clinically significant data even when the match itself was correct. The recipes flag where survivorship needs explicit design.</p>
+<p><strong>Master Patient Index (MPI) / Enterprise Master Patient Index (EMPI).</strong> The name for the data structure that holds the &quot;this set of source records is the same person&quot; relationships. An internal MPI lives within one organization. An EMPI links across organizations, often with cross-references back to source-system identifiers. Recipe 5.5 onward generally assumes some flavor of MPI or EMPI exists or is being built. The recipe explains the structure where it matters; the term itself just means &quot;the place we store the resolved identity decisions.&quot;</p>
+<p><strong>Audit trails and reversibility.</strong> Every match decision (especially every merge) needs to be reversible. Wrong merges happen, and when they do, you need to be able to unmerge cleanly without losing data. That requires storing, for each merged record, a complete history of where it came from, who or what decided to merge it, and what the source-system identifiers were before the merge. This is not optional. The compliance, legal, and patient-safety implications of a non-reversible merge are large enough that &quot;we'll add audit later&quot; is the wrong answer.</p>
+<p><strong>Real-time vs. batch matching.</strong> Some recipes need to answer &quot;is this person already in our system?&quot; in milliseconds at point of registration. Others can run nightly batch jobs to find and queue duplicates for review. The architecture differs significantly. Real-time matching usually requires precomputed blocking indices, in-memory probabilistic scoring, and a cap on candidate set size. Batch can be more thorough, run more techniques, and afford to look at every pair in a block.</p>
+<p><strong>Feedback loops and continuous improvement.</strong> Every match reviewed by a human generates a label that should flow back into model retraining or threshold tuning. Without that loop, the matcher's accuracy decays over time as data conventions drift. The recipes treat the feedback loop as a first-class component, not an optional add-on.</p>
+<p><strong>Confidence-aware downstream consumption.</strong> Match decisions carry confidence levels. Downstream systems should know what confidence they're consuming. A care coordination workflow can comfortably act on auto-matches; a billing reconciliation workflow might require manual approval for borderline matches; a research dataset might need to exclude any match below a configurable threshold. The architectures pass confidence through, rather than collapsing every decision to a binary.</p>
+<hr />
+<h2 id="healthcare-specific-considerations">Healthcare-Specific Considerations</h2>
+<p>Beyond the patterns, a few considerations recur:</p>
+<p><strong>PHI is the input and the output.</strong> Demographic data is PHI. Match logs are PHI. The reviewer interface displays PHI. Every BAA, encryption, audit, and access control concern from earlier chapters applies. Specifically for entity resolution: the review queue is a high-PHI-density artifact, and the people staffing it (often called health information management or HIM staff) need appropriate role-based access and audit logging on every decision.</p>
+<p><strong>Bias in matching is a documented equity issue.</strong> Patient matching accuracy is not uniform across populations. Names from naming conventions outside the dominant culture (Hispanic surnames with multiple components, Asian names with order variations, Arabic names with transliteration variations) match worse on average than dominant-culture names, because the standard string-similarity heuristics were tuned on the dominant-culture cases. Address-based matching works worse for housing-insecure populations. Phone-based matching works worse for low-income populations who change numbers more often.  Every complex recipe in this chapter notes where these disparities show up and what monitoring is needed.</p>
+<p><strong>Consent and information-sharing rules vary by context.</strong> A patient who consented to be matched within their primary health system has not necessarily consented to being matched into a regional HIE, a research dataset, or a national framework. Some matching is permitted under treatment, payment, or operations exceptions; some requires explicit consent; some requires consent that can be revoked. The recipes flag where these legal questions enter, but your privacy office and legal counsel are the authoritative source.</p>
+<p><strong>The 21st Century Cures Act and information blocking.</strong> The legal landscape for healthcare data sharing has shifted: organizations are now legally required to share patient data on request, with specific exceptions, under information blocking rules. That changes the calculus for entity resolution. Refusing to match is harder to defend than it used to be. Conversely, sharing with poor matching quality can create harm. The architectures need to support the obligation to share without blowing past the obligation to share accurately.</p>
+<p><strong>TEFCA and the maturing national infrastructure.</strong> The Trusted Exchange Framework and Common Agreement is the closest the United States has gotten to a national health data exchange framework. Recipe 5.9 covers it specifically. As of writing, the operational rollout is still in progress and the patient matching standards within TEFCA are evolving. Build to the current standard, but architect for change.</p>
+<p><strong>Identity sensitivity and dignity.</strong> Patient matching touches things that are deeply personal: names, gender, sex assigned at birth, relationship status, address. The systems that handle this data need to do so with dignity, not just compliance. A patient who has changed their name and gender should not have their old identity surfaced unnecessarily, even if the matcher needs it internally for historical record linkage. The recipes that touch this (5.7 specifically, but also 5.5 and 5.9 in more general terms) include design considerations for how to keep the historical match without exposing the identity transition to anyone who doesn't need it.</p>
+<hr />
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>By the end of this chapter, you'll have patterns for:</p>
+<ul>
+<li>Finding and merging duplicate patient records within your own database, with the audit and review infrastructure that makes those merges safe</li>
+<li>Matching provider records to NPI registry entries for credentialing, directory accuracy, and regulatory reporting</li>
+<li>Standardizing addresses and inferring household relationships for outreach, social determinant analysis, and care coordination</li>
+<li>Verifying insurance eligibility in real time when payer demographics don't quite match your records</li>
+<li>Linking patient records across unaffiliated facilities for health information exchange and care continuity</li>
+<li>Joining administrative claims data to clinical EHR data for the same patient and encounter, enabling outcomes research and quality measurement</li>
+<li>Maintaining patient identity continuity across name changes over multi-year timeframes, without losing history or violating patient autonomy</li>
+<li>Matching records across organizational boundaries without sharing raw demographic data, using cryptographic and statistical privacy-preserving techniques</li>
+<li>Operating patient matching at national scale through TEFCA-like frameworks, with the governance and quality monitoring that scale demands</li>
+<li>Reconciling deceased patient records across vital statistics sources, surfacing previously hidden duplicates and closing longitudinal records appropriately</li>
+</ul>
+<p>Each recipe is self-contained, but the infrastructure compounds. The blocking indices, similarity functions, probabilistic combiner, review queue, and audit trail you build for recipe 5.1 are directly reusable for 5.5 and 5.7. The privacy and consent patterns from 5.5 carry into 5.8 and 5.9. Treat the early recipes as capability investments, not just point solutions; the later ones will be faster, safer, and cheaper because of them.</p>
+<p>One last thing before we dive in: entity resolution is a problem that is never finished. The data keeps coming, the people keep changing, and the systems keep evolving. Treat it as ongoing operational work rather than a project that completes. The organizations that do entity resolution well have a team that owns it, monitors it, and improves it continuously. The organizations that treat it as a one-time data cleanup are the organizations that, three years later, are doing the cleanup again, with worse data and harder problems.</p>
+<p>Alright. Let's figure out who's who.</p>
+<hr />
+<p><em>→ <a href="chapter05.01-internal-duplicate-patient-detection.html">Recipe 5.1: Internal Duplicate Patient Detection</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

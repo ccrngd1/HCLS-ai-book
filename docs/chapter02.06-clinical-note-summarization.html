@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 2.6: Clinical Note Summarization</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-26-clinical-note-summarization">Recipe 2.6: Clinical Note Summarization</h1>
+<p><strong>Complexity:</strong> Medium · <strong>Phase:</strong> MVP → Production · <strong>Estimated Cost:</strong> ~$0.05-$0.25 per patient summary</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>It's 6:45 AM on a Monday. A hospitalist starts her week covering a 22-bed medicine service. Eight of those patients she's never met. Each one has been on the service for somewhere between two and nine days. Each chart has, on average, forty-something notes: admission H&amp;P, daily progress notes from whoever covered the weekend, consult notes from cardiology and nephrology, nursing notes, case management notes, PT/OT notes. She has a 7:00 AM huddle. She has rounds starting at 8:00. She has exactly fifteen minutes to &quot;chart biopsy&quot; eight unfamiliar patients well enough to not embarrass herself in front of the team and, more importantly, well enough to not miss something clinically important.</p>
+<p>So she does what everyone does: she scrolls. Open the most recent progress note. Scan the assessment and plan. Open the admission H&amp;P. Read the HPI. Maybe scan through a consult note if the specialist's name catches her eye. The rest? She doesn't read. She can't. There isn't time. By the time she's making a decision about whether to continue diuresis on bed 4, she's working from a mental model built in ninety seconds from three notes out of forty.</p>
+<p>This isn't a failure of clinician diligence. It's a structural mismatch between how clinical information is generated (a running log of notes, one per day per service, accumulating forever) and how it needs to be consumed (a concise picture of &quot;where is this patient, and what matters right now&quot;). The system produces prose. The clinician needs a briefing.</p>
+<p>The ICU handoff version of the same problem is sharper. Night shift hands off to day shift. The day attending gets a verbal sign-out in five minutes, then is on the hook for twelve hours of decisions. If the overnight resident forgets to mention that the family has been meeting with palliative care, the day team can spend an hour on aggressive workup for a patient who's already been transitioned to comfort-focused goals. If nobody mentions that the patient self-extubated once already, the day team won't be as cautious on the next extubation attempt. The consequences of a missed detail in handoff are real and documented. The I-PASS multi-center trial (<a href="https://doi.org/10.1056/NEJMsa1405556">Starmer AJ et al., &quot;Changes in Medical Errors After Implementation of a Handoff Program,&quot; N Engl J Med 2014;371:1803-1812</a>) showed a 23% reduction in medical errors and a 30% reduction in preventable adverse events after implementing a structured handoff program.</p>
+<p>The readmission version is sharper still. A patient hospitalized at Hospital A in March gets readmitted at Hospital B in May. The ED physician at Hospital B is staring at eighty pages of outside records that arrived by fax. Somewhere in those eighty pages is the detail that matters (the patient was discharged on a new immunosuppressant, had a drug reaction documented on day three, and the reaction is recurring right now). That detail is buried between page forty-three and page forty-five, inside a consult note from a rheumatologist. The ED physician has seven other patients and ninety minutes to disposition this one. Statistically, they're going to miss it.</p>
+<p>The hospital course summarization problem is its own beast. A patient spends eleven days in the hospital. Admitted for sepsis, source unclear. Day two: blood cultures grow MRSA. Day three: echo shows a vegetation. Day four: tagged &quot;endocarditis.&quot; Day five: consult to cardiothoracic surgery. Day seven: surgery declines, recommends six weeks of IV antibiotics. Day nine: PICC placed. Day eleven: discharged to a skilled nursing facility. The attending who discharges the patient has to write a discharge summary that captures that entire arc in a readable form. If they do it well (pulling threads across eleven notes from four services), it takes forty minutes. If they do it poorly, they copy-paste from the latest progress note and the receiving facility gets a document that says &quot;patient admitted for sepsis, treated, now stable&quot; and nothing useful about the surgical consultation or the antibiotic plan.</p>
+<p>The specialty-consultation version. A primary care physician refers a patient to endocrinology. The endocrinologist's referral packet includes: the PCP's last six progress notes, a year of lab results, a hospital discharge summary from nine months ago, and a three-sentence referral letter. The endocrinologist has twenty-five minutes for the new-patient visit. Before the patient walks in, they need to know: what's the patient's diabetes story, what meds have been tried, what has the A1c done, is there any complication history, any kidney involvement. That story is absolutely in the packet. It takes fifteen minutes to construct it by reading. They don't have fifteen minutes.</p>
+<p>What all of these scenarios have in common is the same underlying gap: the clinical chart is designed for writing and documentation, not reading. A note is written once, by one person, in one context. It accumulates into a chart. Someone later has to reconstruct a picture of the patient by reading a stack of notes that were never intended to be read as a whole. The reconstruction is cognitively expensive, time-consuming, and error-prone. And the stakes of a missed detail can be substantial.</p>
+<p>This is a place where &quot;summarize this for me&quot; is not a luxury. It's an operational necessity that's been on clinicians' wish lists for thirty years. The tooling wasn't there. Now it is, mostly, with caveats that matter.</p>
+<hr />
+<h2 id="the-technology-clinical-summarization-is-not-general-summarization">The Technology: Clinical Summarization Is Not General Summarization</h2>
+<h3 id="why-clinical-summarization-is-its-own-problem">Why Clinical Summarization Is Its Own Problem</h3>
+<p>General-purpose summarization, the kind that produces a three-paragraph summary of a news article, has been a solved-ish problem for years. Point a modern LLM at a long document, ask for a summary, and you'll get something coherent and largely faithful to the source. That's impressive. It's also not what clinicians need.</p>
+<p>Clinical summarization has constraints that general summarization doesn't:</p>
+<p><strong>Omission is the primary failure mode, not hallucination.</strong> With patient-facing content (Recipe 2.5), the risk is the model saying something that isn't in the source. With clinician-facing summarization, the risk is the model leaving something out. A hospital course summary that reads beautifully but forgets to mention the patient's PICC line is useless, and possibly worse than useless because the clinician reading it thinks they've been briefed when they haven't.</p>
+<p><strong>&quot;Important&quot; is context-dependent.</strong> A patient's cardiology history is front-and-center for a cardiology consult and background for a dermatology consult. A medication allergy is always important. A remote appendectomy is rarely important. The model has to decide what to foreground based on who's reading and why. Generic summarization treats all content as equally eligible for the summary, which is wrong for clinical use.</p>
+<p><strong>Temporal structure matters.</strong> &quot;Patient had a PE in 2012&quot; and &quot;Patient had a PE last week&quot; are radically different clinical facts. A summarization that collapses them into &quot;history of pulmonary embolism&quot; has destroyed the signal. Clinical summarization has to preserve when things happened, not just that they happened.</p>
+<p><strong>Negation is often more important than assertion.</strong> &quot;Ruled out myocardial infarction&quot; is a critical clinical finding. A summarizer that drops negations (either because they feel like less signal, or because they paraphrase around them) can flip the meaning of a workup. The canonical failure mode here: a source note says &quot;no evidence of active bleeding&quot;; the summary says &quot;patient has been bleeding.&quot; Same words, inverted meaning, real consequences.</p>
+<p><strong>Quantitative trends beat point values.</strong> A single troponin of 0.04 means one thing. A trend of troponins going 0.04 → 0.08 → 0.12 → 0.31 over four hours means something very different. Clinical summarization has to recognize and preserve trends, not just snapshot values.</p>
+<p><strong>Must-include categories.</strong> Some content categories are never droppable. Allergies. Active problems. Current medications. Code status. DNR/DNI status. Advance directive existence. Key consult recommendations. These are summary-level decisions that aren't the model's call; the architecture has to enforce inclusion.</p>
+<h3 id="abstractive-vs-extractive-and-why-you-want-both">Abstractive vs Extractive, and Why You Want Both</h3>
+<p>There are two classical approaches to automated summarization.</p>
+<p><strong>Extractive summarization</strong> pulls the most important sentences out of the source, in the original wording, and presents them as a summary. Pros: nothing is hallucinated because every sentence is verbatim from the source. Cons: the output reads like a pile of disconnected sentences, redundancy is common (the same fact is often stated in multiple notes), and the summary is only as good as the sentences the algorithm decides are &quot;important.&quot;</p>
+<p><strong>Abstractive summarization</strong> generates new prose that captures the meaning of the source. Pros: the output reads naturally, redundancy is eliminated, and the summary can integrate across multiple sources. Cons: this is where hallucination risk lives, because the model is writing sentences it chose rather than quoting sentences it found.</p>
+<p>Modern clinical summarization systems are abstractive (because clinicians want readable output), but they use extractive elements as controls: every abstractive claim should trace back to an extractive source. The architecture supports both, even though the default output is abstractive prose. This is essentially the same grounded-generation pattern as the patient-facing recipes, with the difference that the audience can tolerate (and often prefers) clinical terminology.</p>
+<h3 id="the-long-document-problem">The Long-Document Problem</h3>
+<p>An inpatient stay can easily accumulate 50,000 to 200,000 words of notes. A multi-year chart, many times that. Even modern &quot;long context&quot; LLMs have practical limits: sending 400,000 tokens costs real money, latency is painful, and the model's attention degrades across very long inputs (it can miss content in the middle of a large prompt, a phenomenon that's been studied and confirmed). Feeding the entire chart into a single prompt is a bad strategy at scale.</p>
+<p>The architectural pattern that works is hierarchical summarization. Roughly:</p>
+<ol>
+<li><strong>Chunk</strong> the input. Chunks can be per-note, per-day, per-service, or some combination.</li>
+<li><strong>Summarize each chunk</strong> into a structured representation (key facts, not prose).</li>
+<li><strong>Aggregate</strong> the structured representations.</li>
+<li><strong>Generate</strong> the final prose summary from the aggregated structure.</li>
+</ol>
+<p>This is a map-reduce pattern applied to clinical text. The &quot;map&quot; step extracts facts from each chunk. The &quot;reduce&quot; step combines those facts into a single structured object. The &quot;generate&quot; step produces readable prose from the structured object.</p>
+<p>The advantage: the prose-writing step operates on a clean, fielded input that's small enough to fit in any context window. The cost and latency scale with chart size roughly linearly rather than quadratically. And the structured intermediate representation is independently valuable (for downstream analytics, for validation, for keeping the summary updatable as new notes arrive).</p>
+<h3 id="specialty-aware-summarization">Specialty-Aware Summarization</h3>
+<p>Summarizing for a nephrologist is different from summarizing for an orthopedic surgeon. The nephrologist wants kidney-specific information front-and-center: baseline creatinine, recent creatinine, fluid status, medications that matter for kidneys, current dialysis status if any. They don't want three paragraphs about the orthopedic surgery unless it caused a kidney complication.</p>
+<p>This is handled architecturally through specialty-specific prompt templates or specialty-specific post-processing. The &quot;structured summary&quot; step is specialty-neutral (extract all the relevant facts). The &quot;generate prose&quot; step takes a specialty parameter that changes which facts get foregrounded, how much detail they get, and what ordering the sections use. The alternative, trying to build one prompt that works for all specialties, usually produces summaries that are generic enough to disappoint everyone.</p>
+<p>For primary care or general hospitalist use, &quot;no specialty&quot; is itself a specialty: the summary has to be broad, cover active problems comprehensively, and not over-specialize in any one area.</p>
+<h3 id="risk-aware-omission-detection">Risk-Aware Omission Detection</h3>
+<p>The single most dangerous failure in clinical summarization is a confident, readable summary that silently drops a critical detail. You cannot detect this failure by reading the summary; the summary reads fine. You have to detect it by comparing what's in the source to what's in the summary and flagging categories that went missing.</p>
+<p>A practical approach: maintain a checklist of high-risk categories (allergies, active problems, recent critical findings, code status, medications with narrow therapeutic windows, active infections, active devices like lines and tubes, recent procedures). For each category, the system verifies that the summary includes at least one mention if the source contains relevant content. Missing categories are either regenerated or flagged for clinician review.</p>
+<p>The model is not trusted to decide what's safe to drop. The checklist enforces what must be present.</p>
+<h3 id="why-llms-are-the-right-tool-here-despite-the-risks">Why LLMs Are the Right Tool Here (Despite the Risks)</h3>
+<p>Earlier generations of this problem were attacked with rule-based extraction (regex and templates, which produced either sparse or noisy output) and traditional machine learning classification (which required thousands of labeled summaries to train and was brittle to new note styles). Both approaches shipped, both worked partially, neither reached the quality bar clinicians actually needed to trust the output.</p>
+<p>Modern LLMs change the math for two reasons. First, they can operate on unlabeled free text with zero training, using prompts alone, which eliminates the data-labeling bottleneck that killed earlier efforts. Second, they understand medical terminology well enough to handle variations in how clinicians write (one physician's &quot;pt c/o CP radiating to L arm&quot; is another's &quot;patient complains of substernal chest pain with radiation to the left arm,&quot; and both parse correctly). The combination of zero-shot capability and medical-language fluency is what makes clinical summarization finally viable.</p>
+<p>What it doesn't do, and this has to be stated clearly, is remove the need for careful architecture. The model is good. The architecture around the model is what makes the output trustworthy enough to ship to clinicians.</p>
+<h3 id="the-failure-modes-you-have-to-design-around">The Failure Modes You Have to Design Around</h3>
+<p><strong>Silent omission of high-risk categories.</strong> Already covered. Architectural mitigation via must-include checklists.</p>
+<p><strong>Fact blending across patients or visits.</strong> The model, summarizing a long document, mixes facts from one encounter into another. &quot;Patient had appendectomy in 2019&quot; becomes &quot;Patient had appendectomy during this admission.&quot; Mitigation: chunk by encounter and never let the summarizer cross encounter boundaries during the extraction step.</p>
+<p><strong>Recency collapse.</strong> &quot;Patient was on vancomycin&quot; might be from three years ago or three hours ago. The summary drops the date. Mitigation: force every summarized fact to carry a date or a relative-time qualifier (&quot;this admission,&quot; &quot;prior hospitalization,&quot; &quot;outpatient history&quot;).</p>
+<p><strong>Chief-complaint drift.</strong> The summary focuses on whatever the most recent note focused on, which may not be the actual reason for the admission. A patient admitted for septic shock who then develops acute kidney injury may have summaries that drift into being &quot;about&quot; AKI and downplay the original sepsis. Mitigation: anchor the summary to the admission diagnosis explicitly, and include admission-reason as a required section.</p>
+<p><strong>Consultant silo-ing.</strong> A consulting service's perspective is treated as gospel or as irrelevant, rather than as one opinion in a thread. Mitigation: represent consults as attributed recommendations, not as unattributed facts (&quot;Cardiology recommended X on day 4&quot; rather than &quot;X is recommended&quot;).</p>
+<p><strong>Negation errors.</strong> Already covered. Hardest failure mode to catch automatically. Mitigation: negation-aware extraction (Comprehend Medical and similar tools handle this reasonably); explicit preservation of negating language in the structured representation.</p>
+<p><strong>Over-confident language.</strong> The model smooths &quot;possible pulmonary embolism, CT scheduled&quot; into &quot;pulmonary embolism diagnosed.&quot; Mitigation: preserve clinical uncertainty language in the extraction step and instruct the generator not to strengthen it.</p>
+<p><strong>De-duplication gone wrong.</strong> A fact mentioned in twenty notes gets deduplicated to one mention, but the repetition was itself the signal (persistent finding, recurring complaint). Mitigation: track mention counts across notes and use frequency as an input to the generator.</p>
+<p><strong>Style mismatch.</strong> The summary reads like a story when the clinician wanted a problem list. Or it reads like a problem list when the clinician wanted a narrative for the discharge summary. Mitigation: multiple output formats driven by use-case parameters, not one-size-fits-all prose.</p>
+<hr />
+<h2 id="the-general-architecture-pattern">The General Architecture Pattern</h2>
+<p>At a high level, the pipeline looks like this:</p>
+<pre class="code code-plain"><code>[Summary Request]
+    → [Define Scope &amp; Audience]
+    → [Retrieve Source Documents]
+    → [Chunk and Preprocess]
+    → [Extract Structured Facts Per Chunk]
+    → [Aggregate and Deduplicate Facts]
+    → [Apply Must-Include Checklist]
+    → [Generate Prose by Section]
+    → [Validate Against Extracted Facts]
+    → [Attach Provenance Links]
+    → [Deliver to Requesting Clinician]
+    → [Log for Audit]
+</code></pre>
+<p>Let's walk through the conceptual stages.</p>
+<p><strong>Summary request.</strong> Someone (or something) asks for a summary. The request specifies who's asking (specialty, role), why (handoff, consult review, pre-admission review, discharge summary drafting), the scope (this admission, last N months, all time), and the desired format (narrative, problem-oriented, SBAR, specialty-focused). These parameters drive downstream decisions. A generic &quot;summarize this patient&quot; is almost always the wrong request; specificity improves output quality dramatically.</p>
+<p><strong>Retrieve source documents.</strong> Pull the notes that are in scope. For a current-admission summary, that's the notes from this encounter. For a longitudinal summary, it's a broader pull bounded by the time window the clinician specified. Retrieval should also include structured data relevant to the summary scope: medication lists, problem lists, allergies, recent labs, recent imaging reads. Structured data is easier to summarize faithfully than prose. Critically, retrieval must filter out notes from restricted data categories (42 CFR Part 2 substance-use-treatment records, HIV-related content, adolescent confidential notes, genetic test results) unless the requesting user has a specific disclosure consent on file. Access control is enforced at the retrieval layer, not bolted on downstream.</p>
+<p><strong>Chunk and preprocess.</strong> Break the input into manageable pieces. Natural chunking boundaries: per-note, per-day, per-service. For each chunk, lightweight preprocessing: remove boilerplate headers and footers, normalize dates, flag negation phrases, tag entities. This preprocessing makes the extraction step more reliable.</p>
+<p><strong>Extract structured facts per chunk.</strong> For each chunk, produce a fielded structured object: what happened, when, who said it, with what certainty. This is where the heavy lifting happens. The extraction prompt is specialty-neutral at this stage; the goal is to capture everything the chunk contains, not to pre-filter for relevance.</p>
+<p><strong>Aggregate and deduplicate facts.</strong> Combine the per-chunk extractions into a single structured object. Deduplicate facts that appear in multiple notes while preserving the original count (a finding mentioned in ten notes is probably important). Resolve conflicting information (one note says the patient is on warfarin, another says apixaban; which is current?). Build a timeline of events.</p>
+<p><strong>Apply must-include checklist.</strong> Check that the aggregated object covers the required categories for this summary type. Allergies present? Active medications present? Code status present if inpatient? Recent critical findings present? Missing categories either get explicitly populated from structured data sources (if available) or flagged as gaps.</p>
+<p><strong>Generate prose by section.</strong> With a clean structured object in hand, produce the readable summary. Use the audience and format parameters from the request to shape the output. Different sections may use different prompts (the narrative section is written differently from the active-problems section). The generation is the last step where new prose is created; everything downstream is validation and rendering.</p>
+<p><strong>Validate against extracted facts.</strong> Check that every specific claim in the generated prose traces back to a fact in the structured object, and through that to a source note. Flag unverified claims. For a clinician-facing tool, unverified claims are typically held for regeneration or explicit clinician review rather than auto-shipped.</p>
+<p><strong>Attach provenance links.</strong> Each section or each fact in the summary gets a link or reference back to the source notes it came from. Clinicians don't trust summaries they can't audit. Good provenance is the difference between &quot;this is a starting point I can verify&quot; and &quot;this is a black box output I can't defend.&quot;</p>
+<p><strong>Deliver to requesting clinician.</strong> Render and display the summary in the environment the clinician is working in: the EHR's context-sensitive sidebar, a handoff tool, a separate review UI. Delivery channel affects format (an EHR sidebar is tighter than a full-page review document).</p>
+<p><strong>Log for audit.</strong> Every summary generated, every input set, every version. Clinical summaries that influence care decisions are part of the legal record. You need to be able to reconstruct what a summary said at a specific moment.</p>
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter02.06-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>Clinical summarization is one of those problems I've watched teams underestimate repeatedly. The demo is easy: pick a nice-looking inpatient chart, generate a summary, show it to leadership, watch them nod. Of course it works. Modern models are good at this. The demo is not the hard part.</p>
+<p>The hard part is everything downstream of the demo. Does it handle the chart with twelve nursing notes full of &quot;patient resting comfortably&quot; and three actually-informative progress notes? Does it handle the consult note that's three pages of copy-pasted history before the one sentence that matters? Does it correctly foreground the DNR status for the patient whose code status changed on hospital day five? Does it distinguish the three different sodium values from three different days? Does it preserve the negation in &quot;ruled out PE&quot; instead of quietly dropping it? Does it flag the disagreement between cardiology and nephrology rather than smoothing it into a single recommendation? Does the clinician reading the summary at 6:45 AM on a Monday actually find it more useful than scrolling the chart themselves?</p>
+<p>In my experience, the delta between &quot;this works on our demo chart&quot; and &quot;this works reliably on production charts&quot; is about nine months of engineering and clinical iteration. Not three weeks. Teams that budget three weeks and then try to ship get the pattern I described in the AVS recipe: beautiful summaries on cherry-picked charts, subtle errors in production, clinician trust erodes, project gets paused for rework. Budget the nine months. Build the validation, the must-include checklist, the provenance linking, the feedback loop, and the evaluation methodology as first-class components, not as afterthoughts.</p>
+<p>The second thing I'd emphasize: specialty is not optional. The teams that try to build &quot;one summarizer for all clinicians&quot; produce summaries that are generic enough to disappoint everyone. A nephrologist reading a generic summary still has to read the notes to find the kidney stuff. An oncologist reading a generic summary still has to read the notes to find the treatment history. The generic summary saves them five minutes; reading for the missing stuff costs them ten. Net negative. Specialty-specific templates from day one, with the specialty's clinical leadership involved in defining priorities, produce tools that actually save time.</p>
+<p>The third thing: provenance is not a nice-to-have. It's the feature that makes the tool defensible. Without provenance, a clinician who acts on the summary and then has something go wrong cannot explain their decision except as &quot;I read the AI summary.&quot; That's a weak defense clinically and a terrible one legally. With provenance, the clinician can say &quot;I read the summary, verified the specific claim that informed my decision against the source note, and documented my independent assessment.&quot; That's the defensible workflow, and it only works if provenance is present, accurate, and easy to click through.</p>
+<p>Fourth: listen to the clinicians who don't use the tool. The clinicians who adopt it early and love it will tell you what's working. The clinicians who try it once and never come back are telling you something at least as important. Set up a process to interview the non-adopters. What made them stop? Was it a specific error? A UI friction point? A trust concern? A performance issue? Usually it's one or two specific issues that are fixable; you just have to know what they are.</p>
+<p>Fifth: this use case has a stealth benefit that's worth naming. The structured extraction step, properly designed, produces a clean, fielded representation of a patient's clinical state. That representation is independently valuable. It can power population health dashboards that today rely on brittle parsing of structured problem lists. It can power quality-measure reporting that today requires manual chart review. It can feed longitudinal analytics that today are blocked because the content lives in free text. Teams that build the summarization pipeline well tend to discover six months later that they built a clinical-data asset they didn't originally plan for. Design the extraction schema with that downstream use in mind and the ROI is substantially better than the summarization use case alone would suggest.</p>
+<p>Finally: the bar for &quot;useful&quot; here is lower than teams often assume. Clinicians are not expecting the summary to replace reading the chart. They're expecting it to give them enough of a picture to know which notes to read carefully and which to skim. That's a reachable bar. You don't need perfect summaries. You need summaries that are good enough to orient the reader, honest about their gaps, and fast enough to use in the fifteen-minute window before rounds. Build for that bar, not for the imaginary bar where the summary replaces the chart entirely.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 2.2 (Medical Terminology Simplification):</strong> Where clinical summarization targets clinicians (and keeps clinical terminology), simplification targets patients. Same source material, different audience, different constraints.</li>
+<li><strong>Recipe 2.3 (Clinical Documentation Improvement):</strong> CDI looks at notes to suggest improvements for coding and billing. The structured extraction techniques used here are closely related to what CDI tools need, and the two pipelines can share extraction infrastructure.</li>
+<li><strong>Recipe 2.4 (Prior Authorization Letter Generation):</strong> Another grounded-generation use case. The aggregation and validation patterns transfer; the output format differs substantially.</li>
+<li><strong>Recipe 2.5 (After-Visit Summary Generation):</strong> Patient-facing version of the summarization problem. Shares the grounded-generation architecture, the validation discipline, and the must-include checklist concept; differs in audience, tone, and reading level.</li>
+<li><strong>Recipe 2.8 (Ambient Clinical Documentation):</strong> When ambient documentation is producing the notes that get summarized, the input quality is higher and more consistent, which improves downstream summarization quality.</li>
+<li><strong>Recipe 2.9 (Clinical Decision Support Synthesis):</strong> Summarization and decision support sit on a continuum. Pure summarization stays descriptive; decision support adds recommendations. The regulatory posture differs; the architectural patterns overlap.</li>
+<li><strong>Recipe 7.5 (30-Day Readmission Risk):</strong> Structured extractions produced by the summarization pipeline can feed risk models. The same normalized problem list, medication list, and finding timeline that drive the discharge summary can drive downstream readmission-risk predictions.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>llm</code> · <code>generative-ai</code> · <code>bedrock</code> · <code>healthlake</code> · <code>comprehend-medical</code> · <code>clinical-summarization</code> · <code>clinician-facing</code> · <code>grounded-generation</code> · <code>provenance</code> · <code>handoff</code> · <code>hospital-course</code> · <code>specialty-aware</code> · <code>map-reduce</code> · <code>hierarchical-summarization</code> · <code>must-include-checklist</code> · <code>guardrails-contextual-grounding</code> · <code>medium-complexity</code> · <code>hipaa</code> · <code>fhir</code> · <code>smart-on-fhir</code></p>
+<hr />
+<p><em>← <a href="chapter02.05-after-visit-summary-generation.html">Recipe 2.5: After-Visit Summary Generation</a> · <a href="chapter02-preface.html">Chapter 2 Index</a> · <a href="chapter02.07-literature-search-evidence-synthesis.html">Next: Recipe 2.7 - Literature Search and Evidence Synthesis →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

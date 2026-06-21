@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 14.10: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-1410-python-implementation-example">Recipe 14.10: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the network design optimization from Recipe 14.10. It demonstrates the mathematical formulation, solver invocation, and result interpretation using a small synthetic health system. It is not production-ready. A real network design model would have thousands of variables, validated demand forecasts, and calibrated gravity model parameters. Think of this as the sketch on the whiteboard that shows you the shape of the problem. A starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need PuLP (a Python linear programming library that wraps open-source solvers) and boto3 for the AWS integration pieces:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pulp<span class="w"> </span>boto3<span class="w"> </span>numpy
+</pre></div>
+
+<p>PuLP ships with the CBC solver (COIN-OR Branch and Cut), which handles mixed-integer programs out of the box. For larger problems, you'd swap in HiGHS or Gurobi, but CBC is fine for learning the formulation.</p>
+<p>Your environment needs AWS credentials configured if you want to run the S3 storage and SageMaker pieces. For just the optimization logic, you only need PuLP and numpy.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the optimization logic, here's the problem data. In a real system, this comes from your data warehouse (patient origin analysis, financial models, demographic projections). Here we define a small synthetic health system so you can actually run this and see results.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pulp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">LpProblem</span><span class="p">,</span> <span class="n">LpMaximize</span><span class="p">,</span> <span class="n">LpVariable</span><span class="p">,</span> <span class="n">LpBinary</span><span class="p">,</span> <span class="n">LpContinuous</span><span class="p">,</span>
+    <span class="n">LpInteger</span><span class="p">,</span> <span class="n">lpSum</span><span class="p">,</span> <span class="n">PULP_CBC_CMD</span><span class="p">,</span> <span class="n">value</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># --- SYNTHETIC HEALTH SYSTEM ---</span>
+<span class="c1"># A small system with 3 existing facilities, 2 candidate new sites,</span>
+<span class="c1"># 8 demand zones, and 3 service lines. Small enough to solve instantly,</span>
+<span class="c1"># large enough to show the formulation patterns.</span>
+
+<span class="n">FACILITIES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;main_campus&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Main Campus Downtown&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;existing&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.95</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.17</span><span class="p">,</span>
+        <span class="s2">&quot;current_services&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;primary_care&quot;</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;suburban_east&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Suburban Campus East&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;existing&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.98</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.05</span><span class="p">,</span>
+        <span class="s2">&quot;current_services&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;primary_care&quot;</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;community_north&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Community Hospital North&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;existing&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">40.05</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.15</span><span class="p">,</span>
+        <span class="s2">&quot;current_services&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;primary_care&quot;</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;candidate_south&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Candidate Site South&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;candidate&quot;</span><span class="p">,</span>  <span class="c1"># not yet built</span>
+        <span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.88</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.20</span><span class="p">,</span>
+        <span class="s2">&quot;current_services&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;candidate_west&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Candidate Site West&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;candidate&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.95</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.30</span><span class="p">,</span>
+        <span class="s2">&quot;current_services&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">SERVICE_LINES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;revenue_per_case&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>
+        <span class="s2">&quot;min_volume_threshold&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>   <span class="c1"># need at least 500 visits/year to justify</span>
+        <span class="s2">&quot;fixed_annual_cost&quot;</span><span class="p">:</span> <span class="mi">800000</span><span class="p">,</span>   <span class="c1"># staff, space, overhead</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;revenue_per_case&quot;</span><span class="p">:</span> <span class="mi">4500</span><span class="p">,</span>
+        <span class="s2">&quot;min_volume_threshold&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>   <span class="c1"># accreditation requires minimum volume</span>
+        <span class="s2">&quot;fixed_annual_cost&quot;</span><span class="p">:</span> <span class="mi">5000000</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;revenue_per_case&quot;</span><span class="p">:</span> <span class="mi">6000</span><span class="p">,</span>
+        <span class="s2">&quot;min_volume_threshold&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+        <span class="s2">&quot;fixed_annual_cost&quot;</span><span class="p">:</span> <span class="mi">4000000</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="c1"># Demand zones: geographic areas with projected annual demand by service line.</span>
+<span class="c1"># In reality these come from patient origin analysis + demographic projections.</span>
+<span class="n">DEMAND_ZONES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;zone_downtown&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.95</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.16</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">3000</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">400</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">}},</span>
+    <span class="s2">&quot;zone_northeast&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">40.02</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.05</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">2500</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">}},</span>
+    <span class="s2">&quot;zone_north&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">40.06</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.14</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">2000</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">180</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">}},</span>
+    <span class="s2">&quot;zone_south&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.87</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.18</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">2800</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">320</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">280</span><span class="p">}},</span>
+    <span class="s2">&quot;zone_west&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.94</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.32</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">1800</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">180</span><span class="p">}},</span>
+    <span class="s2">&quot;zone_southeast&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.90</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.08</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">2200</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">190</span><span class="p">}},</span>
+    <span class="s2">&quot;zone_northwest&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">40.03</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.28</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">1500</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">120</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">130</span><span class="p">}},</span>
+    <span class="s2">&quot;zone_central&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">39.97</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.20</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">2600</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">280</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">220</span><span class="p">}},</span>
+<span class="p">}</span>
+
+<span class="c1"># Capital costs for opening new facilities or adding service lines.</span>
+<span class="c1"># Existing facilities adding a new service line still incur capital costs</span>
+<span class="c1"># (renovations, equipment, recruitment).</span>
+<span class="n">CAPITAL_COSTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;new_facility_base&quot;</span><span class="p">:</span> <span class="mi">25000000</span><span class="p">,</span>       <span class="c1"># base cost to open a candidate site</span>
+    <span class="s2">&quot;add_primary_care&quot;</span><span class="p">:</span> <span class="mi">2000000</span><span class="p">,</span>         <span class="c1"># add primary care to any site</span>
+    <span class="s2">&quot;add_cardiology&quot;</span><span class="p">:</span> <span class="mi">15000000</span><span class="p">,</span>          <span class="c1"># cath lab, equipment, recruitment</span>
+    <span class="s2">&quot;add_orthopedics&quot;</span><span class="p">:</span> <span class="mi">12000000</span><span class="p">,</span>         <span class="c1"># OR suites, imaging, recruitment</span>
+<span class="p">}</span>
+
+<span class="n">TOTAL_BUDGET</span> <span class="o">=</span> <span class="mi">60000000</span>  <span class="c1"># $60M capital budget for this planning cycle</span>
+
+<span class="c1"># Capacity limits (annual cases) per facility per service line.</span>
+<span class="n">CAPACITY_PER_FACILITY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mi">4000</span><span class="p">,</span>
+    <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mi">600</span><span class="p">,</span>
+    <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Distance sensitivity by service line (higher = patients less willing to travel).</span>
+<span class="c1"># These would normally come from gravity model calibration.</span>
+<span class="n">DISTANCE_BETA</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>   <span class="c1"># patients strongly prefer nearby primary care</span>
+    <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>     <span class="c1"># patients will travel for cardiac care</span>
+    <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>    <span class="c1"># moderate willingness to travel</span>
+<span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-compute-travel-times">Step 1: Compute Travel Times</h2>
+<p><em>The main recipe's Step 2 estimates a gravity model from historical patient flows. Here we use a simplified distance-based utility model. The math is the same; we just skip the parameter estimation step since we don't have historical data to calibrate against.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_travel_time</span><span class="p">(</span><span class="n">zone</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">facility</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute approximate travel time in minutes between a demand zone</span>
+<span class="sd">    and a facility using straight-line distance with a road-network multiplier.</span>
+
+<span class="sd">    In production, you&#39;d use a real routing API (Google Maps, HERE, OSRM)</span>
+<span class="sd">    to get actual drive times. Straight-line distance with a 1.4x multiplier</span>
+<span class="sd">    is a common approximation for planning purposes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Haversine-lite: at these latitudes, 1 degree lat ~ 69 miles, 1 degree lon ~ 53 miles</span>
+    <span class="n">lat_diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">zone</span><span class="p">[</span><span class="s2">&quot;lat&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">facility</span><span class="p">[</span><span class="s2">&quot;lat&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">69</span>
+    <span class="n">lon_diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">zone</span><span class="p">[</span><span class="s2">&quot;lon&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">facility</span><span class="p">[</span><span class="s2">&quot;lon&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">53</span>
+    <span class="n">straight_line_miles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">lat_diff</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">lon_diff</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Road network multiplier: roads aren&#39;t straight lines</span>
+    <span class="n">road_miles</span> <span class="o">=</span> <span class="n">straight_line_miles</span> <span class="o">*</span> <span class="mf">1.4</span>
+
+    <span class="c1"># Assume average 30 mph in urban/suburban setting</span>
+    <span class="n">travel_minutes</span> <span class="o">=</span> <span class="p">(</span><span class="n">road_miles</span> <span class="o">/</span> <span class="mi">30</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span>
+
+    <span class="k">return</span> <span class="n">travel_minutes</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_choice_probabilities</span><span class="p">(</span><span class="n">zones</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">facilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">service_line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute patient choice probabilities using a gravity model.</span>
+
+<span class="sd">    The gravity model says: probability of choosing facility f from zone z</span>
+<span class="sd">    is proportional to exp(-beta * travel_time(z, f)).</span>
+
+<span class="sd">    Facilities that don&#39;t offer the service line get zero probability.</span>
+<span class="sd">    This function returns probabilities assuming ALL facilities offer the service;</span>
+<span class="sd">    the optimizer will zero out flows to facilities that don&#39;t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">DISTANCE_BETA</span><span class="p">[</span><span class="n">service_line</span><span class="p">]</span>
+    <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">zone_id</span><span class="p">,</span> <span class="n">zone_data</span> <span class="ow">in</span> <span class="n">zones</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">utilities</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">fac_id</span><span class="p">,</span> <span class="n">fac_data</span> <span class="ow">in</span> <span class="n">facilities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">travel</span> <span class="o">=</span> <span class="n">compute_travel_time</span><span class="p">(</span><span class="n">zone_data</span><span class="p">,</span> <span class="n">fac_data</span><span class="p">)</span>
+            <span class="c1"># Gravity model: utility decays exponentially with travel time</span>
+            <span class="n">utilities</span><span class="p">[</span><span class="n">fac_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="n">travel</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>  <span class="c1"># normalize to hours</span>
+
+        <span class="c1"># Convert utilities to probabilities (softmax-style normalization)</span>
+        <span class="n">total_utility</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">utilities</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">probabilities</span><span class="p">[</span><span class="n">zone_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">fac_id</span><span class="p">:</span> <span class="n">util</span> <span class="o">/</span> <span class="n">total_utility</span>
+            <span class="k">for</span> <span class="n">fac_id</span><span class="p">,</span> <span class="n">util</span> <span class="ow">in</span> <span class="n">utilities</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">probabilities</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-formulate-the-optimization-model">Step 2: Formulate the Optimization Model</h2>
+<p><em>This is the core of Recipe 14.10. We translate the network design problem into a mixed-integer program. Binary variables represent open/close and service offering decisions. Continuous variables represent patient flows. Constraints enforce budget, capacity, minimum volume, and demand satisfaction.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">formulate_network_model</span><span class="p">(</span>
+    <span class="n">facilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">zones</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">service_lines</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">budget</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LpProblem</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build the mixed-integer programming model for health system network design.</span>
+
+<span class="sd">    Decision variables:</span>
+<span class="sd">    - offer[f][s]: binary, 1 if facility f offers service line s</span>
+<span class="sd">    - open[f]: binary, 1 if candidate facility f is opened</span>
+<span class="sd">    - flow[z][f][s]: continuous, patient volume from zone z to facility f for service s</span>
+
+<span class="sd">    Objective: maximize net contribution margin (revenue minus fixed costs minus capital amortization)</span>
+
+<span class="sd">    Constraints: budget, capacity, demand satisfaction, minimum volume, gravity model consistency</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">LpProblem</span><span class="p">(</span><span class="s2">&quot;HealthSystemNetworkDesign&quot;</span><span class="p">,</span> <span class="n">LpMaximize</span><span class="p">)</span>
+
+    <span class="n">facility_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">facilities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">zone_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">zones</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">service_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">service_lines</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># --- DECISION VARIABLES ---</span>
+
+    <span class="c1"># Binary: does facility f offer service line s?</span>
+    <span class="n">offer</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">f</span><span class="p">:</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="n">LpVariable</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;offer_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">cat</span><span class="o">=</span><span class="n">LpBinary</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Binary: is candidate facility f opened?</span>
+    <span class="n">open_fac</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">f</span><span class="p">:</span> <span class="n">LpVariable</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;open_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">cat</span><span class="o">=</span><span class="n">LpBinary</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span>
+        <span class="k">if</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;candidate&quot;</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Continuous: patient flow from zone z to facility f for service s</span>
+    <span class="n">flow</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">z</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">f</span><span class="p">:</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="n">LpVariable</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;flow_</span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">lowBound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cat</span><span class="o">=</span><span class="n">LpContinuous</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zone_ids</span>
+    <span class="p">}</span>
+
+    <span class="c1"># --- PRECOMPUTE CHOICE PROBABILITIES ---</span>
+    <span class="c1"># These cap how much flow can go from each zone to each facility</span>
+    <span class="c1"># (patients won&#39;t all drive past a closer facility to reach a farther one)</span>
+    <span class="n">choice_probs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">s</span><span class="p">:</span> <span class="n">compute_choice_probabilities</span><span class="p">(</span><span class="n">zones</span><span class="p">,</span> <span class="n">facilities</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span>
+    <span class="p">}</span>
+
+    <span class="c1"># --- OBJECTIVE FUNCTION ---</span>
+    <span class="c1"># Maximize: total revenue - fixed costs - annualized capital costs</span>
+    <span class="c1"># Capital is amortized over 10 years for this simplified model.</span>
+
+    <span class="n">revenue</span> <span class="o">=</span> <span class="n">lpSum</span><span class="p">(</span>
+        <span class="n">service_lines</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="s2">&quot;revenue_per_case&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">flow</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zone_ids</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span>
+    <span class="p">)</span>
+
+    <span class="n">fixed_costs</span> <span class="o">=</span> <span class="n">lpSum</span><span class="p">(</span>
+        <span class="n">service_lines</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="s2">&quot;fixed_annual_cost&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Capital amortization (10-year straight-line)</span>
+    <span class="n">capital_annual</span> <span class="o">=</span> <span class="n">LpVariable</span><span class="p">(</span><span class="s2">&quot;capital_annual&quot;</span><span class="p">,</span> <span class="n">lowBound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cat</span><span class="o">=</span><span class="n">LpContinuous</span><span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">+=</span> <span class="n">revenue</span> <span class="o">-</span> <span class="n">fixed_costs</span> <span class="o">-</span> <span class="n">capital_annual</span><span class="p">,</span> <span class="s2">&quot;NetContributionMargin&quot;</span>
+
+    <span class="c1"># --- CONSTRAINTS ---</span>
+
+    <span class="c1"># 1. Budget constraint: total capital spend cannot exceed budget</span>
+    <span class="n">capital_expr</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;candidate&quot;</span><span class="p">:</span>
+            <span class="n">capital_expr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CAPITAL_COSTS</span><span class="p">[</span><span class="s2">&quot;new_facility_base&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">open_fac</span><span class="p">[</span><span class="n">f</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;current_services&quot;</span><span class="p">]:</span>
+                <span class="n">cost_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;add_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="n">cost_key</span> <span class="ow">in</span> <span class="n">CAPITAL_COSTS</span><span class="p">:</span>
+                    <span class="n">capital_expr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CAPITAL_COSTS</span><span class="p">[</span><span class="n">cost_key</span><span class="p">]</span> <span class="o">*</span> <span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">])</span>
+
+    <span class="n">model</span> <span class="o">+=</span> <span class="n">lpSum</span><span class="p">(</span><span class="n">capital_expr</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">budget</span><span class="p">,</span> <span class="s2">&quot;BudgetLimit&quot;</span>
+    <span class="n">model</span> <span class="o">+=</span> <span class="n">capital_annual</span> <span class="o">==</span> <span class="n">lpSum</span><span class="p">(</span><span class="n">capital_expr</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;CapitalAmortization&quot;</span>
+
+    <span class="c1"># 2. Capacity constraints: volume at each facility cannot exceed capacity</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="n">lpSum</span><span class="p">(</span><span class="n">flow</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zone_ids</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">CAPACITY_PER_FACILITY</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">],</span>
+                <span class="sa">f</span><span class="s2">&quot;Capacity_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># 3. Demand satisfaction: all demand must be assigned</span>
+    <span class="c1">#    (in this simplified model, we allow &quot;leakage&quot; by not requiring 100% capture)</span>
+    <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zone_ids</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="n">lpSum</span><span class="p">(</span><span class="n">flow</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">zones</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="s2">&quot;demand&quot;</span><span class="p">][</span><span class="n">s</span><span class="p">],</span>
+                <span class="sa">f</span><span class="s2">&quot;DemandCap_</span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># 4. Gravity model consistency: flow cannot exceed what the choice model predicts</span>
+    <span class="c1">#    Patients won&#39;t all choose a distant facility over a nearby one.</span>
+    <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zone_ids</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+                <span class="n">max_flow</span> <span class="o">=</span> <span class="n">zones</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="s2">&quot;demand&quot;</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="n">choice_probs</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">z</span><span class="p">][</span><span class="n">f</span><span class="p">]</span>
+                <span class="n">model</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="n">flow</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_flow</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;GravityBound_</span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+    <span class="c1"># 5. Minimum volume: if you offer a service, you must hit minimum volume</span>
+    <span class="c1">#    (quality and accreditation requirement)</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="n">lpSum</span><span class="p">(</span><span class="n">flow</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zone_ids</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">service_lines</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="s2">&quot;min_volume_threshold&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">],</span>
+                <span class="sa">f</span><span class="s2">&quot;MinVolume_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># 6. Candidate facilities: can only offer services if the facility is opened</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;candidate&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">open_fac</span><span class="p">[</span><span class="n">f</span><span class="p">],</span>
+                    <span class="sa">f</span><span class="s2">&quot;MustBeOpen_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+    <span class="c1"># 7. Existing services: facilities already offering a service must continue</span>
+    <span class="c1">#    (closing an existing service is a separate, politically charged decision)</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;current_services&quot;</span><span class="p">]:</span>
+            <span class="n">model</span> <span class="o">+=</span> <span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;KeepExisting_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">offer</span><span class="p">,</span> <span class="n">open_fac</span><span class="p">,</span> <span class="n">flow</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-solve-and-extract-results">Step 3: Solve and Extract Results</h2>
+<p><em>Once the model is formulated, we hand it to the solver. PuLP's interface makes this a single function call. The interesting part is interpreting the solution: which facilities should offer which services, and how do patient flows redistribute?</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">LpProblem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Invoke the MIP solver and return solve metadata.</span>
+
+<span class="sd">    CBC (the default PuLP solver) uses branch-and-bound with cutting planes.</span>
+<span class="sd">    For this small problem it solves in under a second. For production-scale</span>
+<span class="sd">    problems (50K+ variables), you&#39;d use Gurobi or HiGHS and set a time limit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">solver</span> <span class="o">=</span> <span class="n">PULP_CBC_CMD</span><span class="p">(</span>
+        <span class="n">msg</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>           <span class="c1"># show solver output (set to 0 for silent)</span>
+        <span class="n">timeLimit</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>   <span class="c1"># 5-minute time limit (generous for this size)</span>
+        <span class="n">gapRel</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>     <span class="c1"># accept solutions within 2% of proven optimal</span>
+    <span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">solver</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+        <span class="s2">&quot;status_text&quot;</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">sol_status</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">status</span><span class="p">]</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;sol_status&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">status</span><span class="p">),</span>
+        <span class="s2">&quot;objective_value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">objective</span><span class="p">)</span> <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_solution</span><span class="p">(</span>
+    <span class="n">facilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">zones</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">service_lines</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">offer</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">open_fac</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">flow</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pull the optimal decisions out of the solved model variables.</span>
+
+<span class="sd">    This is where the math becomes actionable recommendations:</span>
+<span class="sd">    which facilities to open, which services to add, and how patients</span>
+<span class="sd">    are expected to flow through the network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">facility_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">facilities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">zone_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">zones</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">service_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">service_lines</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># Extract facility opening decisions</span>
+    <span class="n">new_facilities</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;candidate&quot;</span> <span class="ow">and</span> <span class="n">value</span><span class="p">(</span><span class="n">open_fac</span><span class="p">[</span><span class="n">f</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">new_facilities</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;facility&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]})</span>
+
+    <span class="c1"># Extract service line decisions</span>
+    <span class="n">service_decisions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span><span class="p">(</span><span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="ow">and</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;current_services&quot;</span><span class="p">]:</span>
+                <span class="n">service_decisions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;facility&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">,</span>
+                    <span class="s2">&quot;facility_name&quot;</span><span class="p">:</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;service_line&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                    <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;ADD_SERVICE_LINE&quot;</span><span class="p">,</span>
+                <span class="p">})</span>
+
+    <span class="c1"># Extract patient flow summary</span>
+    <span class="n">flow_summary</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+            <span class="n">total_flow</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">value</span><span class="p">(</span><span class="n">flow</span><span class="p">[</span><span class="n">z</span><span class="p">][</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">])</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">zone_ids</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">total_flow</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># ignore negligible flows</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">flow_summary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;facility&quot;</span><span class="p">:</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;service_line&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                    <span class="s2">&quot;projected_annual_volume&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_flow</span><span class="p">),</span>
+                    <span class="s2">&quot;capacity_utilization&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_flow</span> <span class="o">/</span> <span class="n">CAPACITY_PER_FACILITY</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="p">}</span>
+
+    <span class="c1"># Compute total capital required</span>
+    <span class="n">total_capital</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;candidate&quot;</span> <span class="ow">and</span> <span class="n">value</span><span class="p">(</span><span class="n">open_fac</span><span class="p">[</span><span class="n">f</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">total_capital</span> <span class="o">+=</span> <span class="n">CAPITAL_COSTS</span><span class="p">[</span><span class="s2">&quot;new_facility_base&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">service_ids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span><span class="p">(</span><span class="n">offer</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="n">s</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="ow">and</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">facilities</span><span class="p">[</span><span class="n">f</span><span class="p">][</span><span class="s2">&quot;current_services&quot;</span><span class="p">]:</span>
+                <span class="n">cost_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;add_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="n">cost_key</span> <span class="ow">in</span> <span class="n">CAPITAL_COSTS</span><span class="p">:</span>
+                    <span class="n">total_capital</span> <span class="o">+=</span> <span class="n">CAPITAL_COSTS</span><span class="p">[</span><span class="n">cost_key</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;new_facilities_opened&quot;</span><span class="p">:</span> <span class="n">new_facilities</span><span class="p">,</span>
+        <span class="s2">&quot;service_line_additions&quot;</span><span class="p">:</span> <span class="n">service_decisions</span><span class="p">,</span>
+        <span class="s2">&quot;patient_flow_summary&quot;</span><span class="p">:</span> <span class="n">flow_summary</span><span class="p">,</span>
+        <span class="s2">&quot;total_capital_required&quot;</span><span class="p">:</span> <span class="n">total_capital</span><span class="p">,</span>
+        <span class="s2">&quot;budget_remaining&quot;</span><span class="p">:</span> <span class="n">TOTAL_BUDGET</span> <span class="o">-</span> <span class="n">total_capital</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-scenario-analysis">Step 4: Scenario Analysis</h2>
+<p><em>The main recipe emphasizes that no single demand forecast is reliable. This step runs the optimization under multiple demand scenarios and identifies robust versus contingent decisions.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_scenarios</span><span class="p">(</span><span class="n">base_zones</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define demand scenarios for sensitivity analysis.</span>
+
+<span class="sd">    Each scenario modifies the base demand by applying multipliers.</span>
+<span class="sd">    In production, these come from demographic models and market analysis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scenarios</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;base_case&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">SERVICE_LINES</span><span class="p">},</span>
+        <span class="s2">&quot;high_growth&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="mf">1.2</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">SERVICE_LINES</span><span class="p">},</span>
+        <span class="s2">&quot;low_growth&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="mf">0.85</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">SERVICE_LINES</span><span class="p">},</span>
+        <span class="s2">&quot;cardiology_surge&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary_care&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;cardiology&quot;</span><span class="p">:</span> <span class="mf">1.4</span><span class="p">,</span> <span class="s2">&quot;orthopedics&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+        <span class="s2">&quot;competitor_entry&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="mf">0.75</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">SERVICE_LINES</span><span class="p">},</span>  <span class="c1"># lose 25% market share</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">scenarios</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_scenario</span><span class="p">(</span>
+    <span class="n">facilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">base_zones</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">service_lines</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">budget</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">demand_multipliers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the optimization under a single demand scenario.</span>
+
+<span class="sd">    Applies demand multipliers to the base zones, formulates, solves,</span>
+<span class="sd">    and returns the solution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Apply demand multipliers to create scenario-specific zones</span>
+    <span class="n">scenario_zones</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">z_id</span><span class="p">,</span> <span class="n">z_data</span> <span class="ow">in</span> <span class="n">base_zones</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">scenario_zones</span><span class="p">[</span><span class="n">z_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="n">z_data</span><span class="p">[</span><span class="s2">&quot;lat&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;lon&quot;</span><span class="p">:</span> <span class="n">z_data</span><span class="p">[</span><span class="s2">&quot;lon&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;demand&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">z_data</span><span class="p">[</span><span class="s2">&quot;demand&quot;</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="n">demand_multipliers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">z_data</span><span class="p">[</span><span class="s2">&quot;demand&quot;</span><span class="p">]</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+
+    <span class="n">model</span><span class="p">,</span> <span class="n">offer</span><span class="p">,</span> <span class="n">open_fac</span><span class="p">,</span> <span class="n">flow</span> <span class="o">=</span> <span class="n">formulate_network_model</span><span class="p">(</span>
+        <span class="n">facilities</span><span class="p">,</span> <span class="n">scenario_zones</span><span class="p">,</span> <span class="n">service_lines</span><span class="p">,</span> <span class="n">budget</span>
+    <span class="p">)</span>
+
+    <span class="n">solve_result</span> <span class="o">=</span> <span class="n">solve_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">solve_result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;infeasible&quot;</span><span class="p">,</span> <span class="s2">&quot;solve_result&quot;</span><span class="p">:</span> <span class="n">solve_result</span><span class="p">}</span>
+
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">extract_solution</span><span class="p">(</span>
+        <span class="n">facilities</span><span class="p">,</span> <span class="n">scenario_zones</span><span class="p">,</span> <span class="n">service_lines</span><span class="p">,</span> <span class="n">offer</span><span class="p">,</span> <span class="n">open_fac</span><span class="p">,</span> <span class="n">flow</span>
+    <span class="p">)</span>
+    <span class="n">solution</span><span class="p">[</span><span class="s2">&quot;objective_value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">solve_result</span><span class="p">[</span><span class="s2">&quot;objective_value&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">solution</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">identify_robust_decisions</span><span class="p">(</span><span class="n">scenario_results</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare solutions across scenarios to find decisions that are</span>
+<span class="sd">    consistent (robust) versus those that change (contingent).</span>
+
+<span class="sd">    A robust decision appears in every scenario&#39;s optimal solution.</span>
+<span class="sd">    A contingent decision only appears in some scenarios.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Collect all service line additions across scenarios</span>
+    <span class="n">all_additions</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">scenario_name</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">scenario_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;infeasible&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">addition</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service_line_additions&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">addition</span><span class="p">[</span><span class="s1">&#39;facility&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">addition</span><span class="p">[</span><span class="s1">&#39;service_line&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_additions</span><span class="p">:</span>
+                <span class="n">all_additions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">addition</span><span class="p">,</span> <span class="s2">&quot;scenarios&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+            <span class="n">all_additions</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;scenarios&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">)</span>
+
+    <span class="n">feasible_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">scenario_results</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;infeasible&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">robust</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">contingent</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">all_additions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;scenarios&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="n">feasible_count</span><span class="p">:</span>
+            <span class="n">robust</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">contingent</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="o">**</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;appears_in_scenarios&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;scenarios&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;frequency&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;scenarios&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">feasible_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;robust_decisions&quot;</span><span class="p">:</span> <span class="n">robust</span><span class="p">,</span> <span class="s2">&quot;contingent_decisions&quot;</span><span class="p">:</span> <span class="n">contingent</span><span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-store-results-to-s3">Step 5: Store Results to S3</h2>
+<p><em>The optimization results need to land somewhere durable for the executive dashboard (QuickSight) to pick up. S3 is the natural landing zone.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="n">RESULTS_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;health-system-network-optimization&quot;</span>
+<span class="c1"># Replace with your actual bucket name. Must have SSE-KMS encryption enabled.</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">store_optimization_results</span><span class="p">(</span><span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write optimization results to S3 as JSON for downstream consumption.</span>
+
+<span class="sd">    The QuickSight dashboard reads from this location. Step Functions</span>
+<span class="sd">    triggers a SPICE refresh after this write completes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;optimization-runs/</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">/results.json&quot;</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;run_id&quot;</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">RESULTS_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="c1"># In production, specify your KMS key ID with SSEKMSKeyId parameter</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Results stored to s3://</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">RESULTS_BUCKET</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">RESULTS_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single callable function. This is what your Step Functions workflow would invoke via a SageMaker Processing Job.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_network_design_optimization</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute the full health system network design optimization pipeline.</span>
+
+<span class="sd">    Steps:</span>
+<span class="sd">    1. Compute travel times and choice probabilities</span>
+<span class="sd">    2. Formulate the base optimization model</span>
+<span class="sd">    3. Solve under multiple demand scenarios</span>
+<span class="sd">    4. Identify robust vs. contingent decisions</span>
+<span class="sd">    5. Store results for dashboard consumption</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Health System Network Design Optimization ===&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1-2: Formulate and solve base case</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 1: Formulating base case model...&quot;</span><span class="p">)</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">offer</span><span class="p">,</span> <span class="n">open_fac</span><span class="p">,</span> <span class="n">flow</span> <span class="o">=</span> <span class="n">formulate_network_model</span><span class="p">(</span>
+        <span class="n">FACILITIES</span><span class="p">,</span> <span class="n">DEMAND_ZONES</span><span class="p">,</span> <span class="n">SERVICE_LINES</span><span class="p">,</span> <span class="n">TOTAL_BUDGET</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Model has </span><span class="si">%d</span><span class="s2"> variables, </span><span class="si">%d</span><span class="s2"> constraints&quot;</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">numVariables</span><span class="p">(),</span> <span class="n">model</span><span class="o">.</span><span class="n">numConstraints</span><span class="p">())</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 2: Solving base case...&quot;</span><span class="p">)</span>
+    <span class="n">base_result</span> <span class="o">=</span> <span class="n">solve_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Solver status: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">base_result</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">base_result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Base case infeasible or unbounded. Check constraints.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Base case did not solve optimally&quot;</span><span class="p">,</span> <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="n">base_result</span><span class="p">}</span>
+
+    <span class="n">base_solution</span> <span class="o">=</span> <span class="n">extract_solution</span><span class="p">(</span>
+        <span class="n">FACILITIES</span><span class="p">,</span> <span class="n">DEMAND_ZONES</span><span class="p">,</span> <span class="n">SERVICE_LINES</span><span class="p">,</span> <span class="n">offer</span><span class="p">,</span> <span class="n">open_fac</span><span class="p">,</span> <span class="n">flow</span>
+    <span class="p">)</span>
+    <span class="n">base_solution</span><span class="p">[</span><span class="s2">&quot;objective_value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_result</span><span class="p">[</span><span class="s2">&quot;objective_value&quot;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Base case objective: $</span><span class="si">%s</span><span class="s2"> annual net margin&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_result</span><span class="p">[</span><span class="s1">&#39;objective_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Run scenario analysis</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 3: Running scenario analysis...&quot;</span><span class="p">)</span>
+    <span class="n">scenarios</span> <span class="o">=</span> <span class="n">create_scenarios</span><span class="p">(</span><span class="n">DEMAND_ZONES</span><span class="p">)</span>
+    <span class="n">scenario_results</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">scenario_name</span><span class="p">,</span> <span class="n">multipliers</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Solving scenario: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">scenario_name</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">run_scenario</span><span class="p">(</span>
+            <span class="n">FACILITIES</span><span class="p">,</span> <span class="n">DEMAND_ZONES</span><span class="p">,</span> <span class="n">SERVICE_LINES</span><span class="p">,</span> <span class="n">TOTAL_BUDGET</span><span class="p">,</span> <span class="n">multipliers</span>
+        <span class="p">)</span>
+        <span class="n">scenario_results</span><span class="p">[</span><span class="n">scenario_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;objective_value&quot;</span><span class="p">,</span> <span class="s2">&quot;N/A&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="o">!=</span> <span class="s2">&quot;N/A&quot;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;    Objective: $</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obj</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Identify robust decisions</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 4: Identifying robust vs. contingent decisions...&quot;</span><span class="p">)</span>
+    <span class="n">robustness</span> <span class="o">=</span> <span class="n">identify_robust_decisions</span><span class="p">(</span><span class="n">scenario_results</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Robust decisions: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">robustness</span><span class="p">[</span><span class="s2">&quot;robust_decisions&quot;</span><span class="p">]))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Contingent decisions: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">robustness</span><span class="p">[</span><span class="s2">&quot;contingent_decisions&quot;</span><span class="p">]))</span>
+
+    <span class="c1"># Assemble final output</span>
+    <span class="n">final_output</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;base_case_solution&quot;</span><span class="p">:</span> <span class="n">base_solution</span><span class="p">,</span>
+        <span class="s2">&quot;scenario_results&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;objective_value&quot;</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;objective_value&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;new_facilities&quot;</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;new_facilities_opened&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;service_additions&quot;</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service_line_additions&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;capital_required&quot;</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_capital_required&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">scenario_results</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;infeasible&quot;</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;robustness_analysis&quot;</span><span class="p">:</span> <span class="n">robustness</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Step 5: Store results (uncomment when you have the S3 bucket configured)</span>
+    <span class="c1"># run_id = f&quot;net-design-{datetime.datetime.now(timezone.utc).strftime(&#39;%Y%m%d-%H%M%S&#39;)}&quot;</span>
+    <span class="c1"># store_optimization_results(run_id, final_output)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Optimization Complete ===&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">final_output</span>
+
+<span class="c1"># Run the pipeline</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">run_network_design_optimization</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;OPTIMIZATION RESULTS SUMMARY&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="n">base</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;base_case_solution&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Base Case Annual Net Margin: $</span><span class="si">{</span><span class="n">base</span><span class="p">[</span><span class="s1">&#39;objective_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total Capital Required: $</span><span class="si">{</span><span class="n">base</span><span class="p">[</span><span class="s1">&#39;total_capital_required&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Budget Remaining: $</span><span class="si">{</span><span class="n">base</span><span class="p">[</span><span class="s1">&#39;budget_remaining&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">base</span><span class="p">[</span><span class="s2">&quot;new_facilities_opened&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">New Facilities to Open:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fac</span> <span class="ow">in</span> <span class="n">base</span><span class="p">[</span><span class="s2">&quot;new_facilities_opened&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">fac</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">base</span><span class="p">[</span><span class="s2">&quot;service_line_additions&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Service Line Additions:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">add</span> <span class="ow">in</span> <span class="n">base</span><span class="p">[</span><span class="s2">&quot;service_line_additions&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">add</span><span class="p">[</span><span class="s1">&#39;facility_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: add </span><span class="si">{</span><span class="n">add</span><span class="p">[</span><span class="s1">&#39;service_line&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Patient Flow Summary:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow_data</span> <span class="ow">in</span> <span class="n">base</span><span class="p">[</span><span class="s2">&quot;patient_flow_summary&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">flow_data</span><span class="p">[</span><span class="s1">&#39;facility&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">flow_data</span><span class="p">[</span><span class="s1">&#39;service_line&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">flow_data</span><span class="p">[</span><span class="s1">&#39;projected_annual_volume&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> cases &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">flow_data</span><span class="p">[</span><span class="s1">&#39;capacity_utilization&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">% utilization)&quot;</span><span class="p">)</span>
+
+    <span class="n">robust</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;robustness_analysis&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Robust Decisions (same in all scenarios): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">robust</span><span class="p">[</span><span class="s1">&#39;robust_decisions&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">robust</span><span class="p">[</span><span class="s2">&quot;robust_decisions&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;facility_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: add </span><span class="si">{</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;service_line&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Contingent Decisions (scenario-dependent): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">robust</span><span class="p">[</span><span class="s1">&#39;contingent_decisions&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">robust</span><span class="p">[</span><span class="s2">&quot;contingent_decisions&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;facility_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: add </span><span class="si">{</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;service_line&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;(appears in </span><span class="si">{</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> scenarios)&quot;</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example runs. It formulates a real MIP, solves it, and produces actionable network design recommendations. But there's a significant distance between this teaching example and something you'd use to inform $200M capital decisions. Here's where that gap lives:</p>
+<p><strong>Demand model calibration.</strong> The synthetic demand numbers here are made up. A real system needs patient origin analysis from your EHR (where do patients come from?), state discharge databases for total market sizing, and demographic projections from census data. Budget 3-6 months just for demand model development and validation.</p>
+<p><strong>Gravity model estimation.</strong> We used fixed distance-decay parameters. In production, you'd estimate these from historical patient flow data using maximum likelihood (conditional logit model). The parameters vary by service line, payer, and patient demographics. A miscalibrated gravity model produces confidently wrong recommendations.</p>
+<p><strong>Solver selection.</strong> CBC works for this toy problem. For a real health system (50+ facilities, 20+ service lines, 2000+ demand zones), you need Gurobi or CPLEX. The solve time difference is 10x-100x. Budget $10K-$50K/year for a commercial solver license. It's trivial relative to the capital decisions being informed.</p>
+<p><strong>Stochastic optimization.</strong> Our scenario analysis runs deterministic optimizations under different assumptions and compares results. True stochastic programming optimizes expected performance across probability-weighted scenarios simultaneously. This produces solutions that are explicitly hedged against uncertainty, but requires specialized formulation techniques and longer solve times.</p>
+<p><strong>Service line dependencies.</strong> We didn't model dependencies (e.g., you can't offer cardiac surgery without a cardiac ICU, you can't offer orthopedic surgery without post-acute rehab access). These are critical constraints that prevent the optimizer from recommending infeasible configurations.</p>
+<p><strong>Multi-period staging.</strong> This model makes all decisions simultaneously. Real capital planning is staged: build X in year 1, expand Y in year 3. A multi-period formulation adds time-indexed variables and linking constraints. Significantly more complex but captures the reality that early decisions constrain later ones.</p>
+<p><strong>Error handling and retries.</strong> No try/except blocks, no handling of solver timeouts, no graceful degradation if the model is infeasible. Production code needs all of this, plus structured logging of solver progress for debugging.</p>
+<p><strong>IAM least-privilege.</strong> The S3 write uses whatever credentials are in the environment. Production uses a role scoped to exactly <code>s3:PutObject</code> on the specific results bucket, <code>sagemaker:CreateProcessingJob</code> for solver execution, and nothing else.</p>
+<p><strong>VPC and encryption.</strong> Patient-level data (even aggregated utilization data) is PHI-adjacent. Production runs in a VPC with private subnets, VPC endpoints for S3, and KMS customer-managed keys for all data at rest.</p>
+<p><strong>Model validation.</strong> Before trusting any recommendation, you need to validate that the model reproduces current utilization patterns. If it can't explain today, it has no business predicting tomorrow. Backtest against historical facility openings and closings.</p>
+<p><strong>Stakeholder interface.</strong> Executives don't read JSON. The QuickSight dashboard needs interactive maps showing proposed network configurations, side-by-side scenario comparisons, and sensitivity sliders that let decision-makers explore &quot;what if we constrain this facility to stay open?&quot; The dashboard is half the work.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter14.10-health-system-network-design.html">Recipe 14.10</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

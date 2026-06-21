@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 9.2: Patient Photo Verification - Python Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-92-patient-photo-verification---python-example">Recipe 9.2: Patient Photo Verification - Python Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of patient photo verification using face comparison. It's meant to show one way you could translate the concepts from Recipe 9.2 into working Python code. It is not production-ready. There's no liveness detection, no anti-spoofing, no multi-angle enrollment. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a hospital check-in kiosk on Monday morning.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>pillow
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs these permissions:</p>
+<ul>
+<li><strong>Verification (runtime):</strong> <code>rekognition:CompareFaces</code>, <code>rekognition:SearchFacesByImage</code>, <code>s3:GetObject</code>, <code>dynamodb:PutItem</code></li>
+<li><strong>Enrollment (setup/admin):</strong> <code>rekognition:CreateCollection</code>, <code>rekognition:IndexFaces</code>, <code>rekognition:DeleteFaces</code>, <code>s3:PutObject</code>, <code>dynamodb:GetItem</code></li>
+</ul>
+<p>Scope these to specific resource ARNs in production (e.g., <code>arn:aws:s3:::patient-photos-hipaa/*</code> for S3, your specific table ARN for DynamoDB).</p>
+<blockquote>
+<p><strong>Before you start:</strong> Confirm your AWS Business Associate Agreement (BAA) covers Rekognition, S3, DynamoDB, and any other services processing patient photos. Rekognition is BAA-eligible, but you must explicitly add it to your BAA before processing biometric PHI.</p>
+</blockquote>
+<p>Pillow is optional here but useful for image validation before sending to Rekognition. You don't want to burn API calls on corrupt or undersized images.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the steps, here's the configuration that drives the verification logic. Thresholds are the heart of any face verification system. Too strict and you reject legitimate patients. Too lenient and you let the wrong person through.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. Never log PHI (patient names, MRNs, photos).</span>
+<span class="c1"># Log patient_id references only, never the biometric data itself.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Retry config for AWS API calls. Face comparison is fast but can throttle</span>
+<span class="c1"># under burst load (think: 200 patients checking in at 8am Monday).</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># --- Verification Thresholds ---</span>
+<span class="c1">#</span>
+<span class="c1"># SIMILARITY_THRESHOLD: minimum confidence (0-100) that two faces are the same person.</span>
+<span class="c1"># Rekognition returns a similarity score for each face comparison.</span>
+<span class="c1"># 95% is conservative. You&#39;ll reject some legitimate patients who look different</span>
+<span class="c1"># from their enrollment photo (new glasses, weight change, aging). But you&#39;ll</span>
+<span class="c1"># catch almost all mismatches.</span>
+<span class="c1">#</span>
+<span class="c1"># In practice, most healthcare orgs start at 90% and tune upward based on</span>
+<span class="c1"># false-accept rates. The cost of a false accept (wrong patient gets treatment)</span>
+<span class="c1"># is much higher than a false reject (patient re-verifies with staff).</span>
+<span class="n">SIMILARITY_THRESHOLD</span> <span class="o">=</span> <span class="mf">95.0</span>
+
+<span class="c1"># MINIMUM_FACE_CONFIDENCE: minimum confidence that Rekognition actually detected</span>
+<span class="c1"># a face in the image. Below this, the image quality is too poor to trust.</span>
+<span class="n">MINIMUM_FACE_CONFIDENCE</span> <span class="o">=</span> <span class="mf">99.0</span>
+
+<span class="c1"># IMAGE_QUALITY_THRESHOLDS: brightness and sharpness minimums.</span>
+<span class="c1"># Rekognition returns quality metrics for each detected face.</span>
+<span class="c1"># These catch the &quot;photo taken in a dark hallway&quot; and &quot;blurry selfie&quot; cases.</span>
+<span class="n">IMAGE_QUALITY_BRIGHTNESS_MIN</span> <span class="o">=</span> <span class="mf">40.0</span>
+<span class="n">IMAGE_QUALITY_SHARPNESS_MIN</span> <span class="o">=</span> <span class="mf">40.0</span>
+
+<span class="c1"># Maximum age (in days) for an enrollment photo before requiring re-enrollment.</span>
+<span class="c1"># Faces change. A 5-year-old enrollment photo is unreliable.</span>
+<span class="n">ENROLLMENT_PHOTO_MAX_AGE_DAYS</span> <span class="o">=</span> <span class="mi">730</span>  <span class="c1"># ~2 years</span>
+
+<span class="c1"># S3 bucket for patient photos (enrollment and verification attempts).</span>
+<span class="n">PHOTO_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;patient-photos-hipaa&quot;</span>
+
+<span class="c1"># DynamoDB table for verification audit records.</span>
+<span class="n">AUDIT_TABLE</span> <span class="o">=</span> <span class="s2">&quot;patient-photo-verifications&quot;</span>
+
+<span class="c1"># Rekognition collection for indexed patient faces.</span>
+<span class="c1"># Collections let you search across enrolled faces without re-uploading reference images.</span>
+<span class="n">FACE_COLLECTION_ID</span> <span class="o">=</span> <span class="s2">&quot;patient-faces&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-validate-the-verification-image">Step 1: Validate the Verification Image</h2>
+<p><em>The pseudocode calls this part of <code>handle_verification_request</code>. Before calling Rekognition's comparison API, check that the captured image is usable. This catches garbage inputs early and saves API costs.</em></p>
+<div class="code"><pre><span></span><span class="n">rekognition_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;rekognition&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_verification_image</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check that the verification image contains exactly one face with</span>
+<span class="sd">    acceptable quality metrics.</span>
+
+<span class="sd">    Why exactly one face? If there are zero faces, the image is useless.</span>
+<span class="sd">    If there are multiple faces, we don&#39;t know which one is the patient.</span>
+<span class="sd">    Both cases require a retake.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the verification image</span>
+<span class="sd">        key: S3 object key for the verification image</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with &#39;valid&#39; (bool), &#39;face_detail&#39; (if valid), and &#39;reason&#39; (if invalid).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># DetectFaces gives us face count, quality metrics, and bounding boxes</span>
+    <span class="c1"># without comparing to anything. It&#39;s our pre-flight check.</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">rekognition_client</span><span class="o">.</span><span class="n">detect_faces</span><span class="p">(</span>
+        <span class="n">Image</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S3Object&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Bucket&quot;</span><span class="p">:</span> <span class="n">bucket</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">}},</span>
+        <span class="c1"># DEFAULT returns Quality metrics (Brightness, Sharpness), BoundingBox,</span>
+        <span class="c1"># and Confidence. Use &quot;ALL&quot; if you also need age range, gender, emotions.</span>
+        <span class="n">Attributes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">faces</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FaceDetails&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="c1"># Check: exactly one face present</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">faces</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no_face_detected&quot;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">faces</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;multiple_faces_detected&quot;</span><span class="p">,</span> <span class="s2">&quot;face_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">faces</span><span class="p">)}</span>
+
+    <span class="n">face</span> <span class="o">=</span> <span class="n">faces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Check: face detection confidence</span>
+    <span class="k">if</span> <span class="n">face</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Confidence&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">MINIMUM_FACE_CONFIDENCE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;low_face_confidence&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">face</span><span class="p">[</span><span class="s2">&quot;Confidence&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Check: image quality (brightness and sharpness)</span>
+    <span class="n">quality</span> <span class="o">=</span> <span class="n">face</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Quality&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">brightness</span> <span class="o">=</span> <span class="n">quality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Brightness&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">sharpness</span> <span class="o">=</span> <span class="n">quality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Sharpness&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">brightness</span> <span class="o">&lt;</span> <span class="n">IMAGE_QUALITY_BRIGHTNESS_MIN</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;too_dark&quot;</span><span class="p">,</span> <span class="s2">&quot;brightness&quot;</span><span class="p">:</span> <span class="n">brightness</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">sharpness</span> <span class="o">&lt;</span> <span class="n">IMAGE_QUALITY_SHARPNESS_MIN</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;too_blurry&quot;</span><span class="p">,</span> <span class="s2">&quot;sharpness&quot;</span><span class="p">:</span> <span class="n">sharpness</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;face_detail&quot;</span><span class="p">:</span> <span class="n">face</span><span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-compare-faces">Step 2: Compare Faces</h2>
+<p><em>The pseudocode calls this <code>compare_faces</code>. This is the core of the verification. We compare the check-in photo against the patient's enrolled reference photo. Rekognition does the heavy lifting: it extracts face embeddings (128-dimensional vectors representing facial geometry) and computes similarity.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compare_faces</span><span class="p">(</span><span class="n">source_bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                  <span class="n">target_bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare two face images and return a similarity score.</span>
+
+<span class="sd">    The &#39;source&#39; is the verification image (just captured at check-in).</span>
+<span class="sd">    The &#39;target&#39; is the enrollment image (stored when the patient registered).</span>
+
+<span class="sd">    Rekognition compares the largest face in the source against all faces in</span>
+<span class="sd">    the target. Since we validated both images have exactly one face, we expect</span>
+<span class="sd">    exactly one comparison result.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        source_bucket: Bucket for the verification (check-in) image</span>
+<span class="sd">        source_key: Key for the verification image</span>
+<span class="sd">        target_bucket: Bucket for the enrollment (reference) image</span>
+<span class="sd">        target_key: Key for the enrollment image</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with &#39;match&#39; (bool), &#39;similarity&#39; (float 0-100), and metadata.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">rekognition_client</span><span class="o">.</span><span class="n">compare_faces</span><span class="p">(</span>
+        <span class="n">SourceImage</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S3Object&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Bucket&quot;</span><span class="p">:</span> <span class="n">source_bucket</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="n">source_key</span><span class="p">}},</span>
+        <span class="n">TargetImage</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S3Object&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Bucket&quot;</span><span class="p">:</span> <span class="n">target_bucket</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="n">target_key</span><span class="p">}},</span>
+        <span class="n">SimilarityThreshold</span><span class="o">=</span><span class="n">SIMILARITY_THRESHOLD</span><span class="p">,</span>
+        <span class="c1"># QualityFilter removes low-quality faces from comparison.</span>
+        <span class="c1"># AUTO lets Rekognition decide. For healthcare identity verification,</span>
+        <span class="c1"># you want this on. A blurry reference photo shouldn&#39;t produce a match.</span>
+        <span class="n">QualityFilter</span><span class="o">=</span><span class="s2">&quot;AUTO&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">face_matches</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FaceMatches&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">unmatched_faces</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UnmatchedFaces&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="n">face_matches</span><span class="p">:</span>
+        <span class="c1"># Match found above our threshold</span>
+        <span class="n">best_match</span> <span class="o">=</span> <span class="n">face_matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">similarity</span> <span class="o">=</span> <span class="n">best_match</span><span class="p">[</span><span class="s2">&quot;Similarity&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;match&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;similarity&quot;</span><span class="p">:</span> <span class="n">similarity</span><span class="p">,</span>
+            <span class="s2">&quot;face_matches_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">face_matches</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># No match above threshold. UnmatchedFaces lists faces detected in the</span>
+        <span class="c1"># target image that didn&#39;t match the source above the threshold. Since</span>
+        <span class="c1"># we validated both images contain exactly one face, this means the</span>
+        <span class="c1"># target face exists but its similarity to the source is below our</span>
+        <span class="c1"># threshold.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Note: Rekognition doesn&#39;t return the actual similarity score when below</span>
+        <span class="c1"># the threshold. We use 0.0 as a sentinel. The real score could be</span>
+        <span class="c1"># anywhere from 0 to just below SIMILARITY_THRESHOLD.</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;match&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;similarity&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;unmatched_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">unmatched_faces</span><span class="p">),</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;below_threshold&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-search-by-face-collection-alternative-path">Step 3: Search by Face Collection (Alternative Path)</h2>
+<p><em>For organizations with many patients, comparing against individual S3 images doesn't scale. Rekognition Collections let you index faces once and search against the entire collection in a single API call. This is the &quot;search a million faces in 500ms&quot; approach.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">enroll_patient_face</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Index a patient&#39;s enrollment photo into the Rekognition collection.</span>
+
+<span class="sd">    This stores a face embedding (not the image itself) in the collection,</span>
+<span class="sd">    tagged with the patient_id as external metadata. Future searches can</span>
+<span class="sd">    find this patient by face without knowing their ID in advance.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: Unique patient identifier (MRN or similar)</span>
+<span class="sd">        bucket: S3 bucket containing the enrollment photo</span>
+<span class="sd">        key: S3 key for the enrollment photo</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with face_id (Rekognition&#39;s internal ID) and status.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">rekognition_client</span><span class="o">.</span><span class="n">index_faces</span><span class="p">(</span>
+        <span class="n">CollectionId</span><span class="o">=</span><span class="n">FACE_COLLECTION_ID</span><span class="p">,</span>
+        <span class="n">Image</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S3Object&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Bucket&quot;</span><span class="p">:</span> <span class="n">bucket</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">}},</span>
+        <span class="c1"># ExternalImageId links this face back to your patient record.</span>
+        <span class="c1"># Max 255 chars. Use the patient_id so you can resolve matches later.</span>
+        <span class="n">ExternalImageId</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+        <span class="c1"># Only index the largest face in the image.</span>
+        <span class="n">MaxFaces</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">QualityFilter</span><span class="o">=</span><span class="s2">&quot;AUTO&quot;</span><span class="p">,</span>
+        <span class="n">DetectionAttributes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">indexed_faces</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FaceRecords&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">indexed_faces</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no_face_indexed&quot;</span><span class="p">}</span>
+
+    <span class="n">face_record</span> <span class="o">=</span> <span class="n">indexed_faces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;face_id&quot;</span><span class="p">:</span> <span class="n">face_record</span><span class="p">[</span><span class="s2">&quot;Face&quot;</span><span class="p">][</span><span class="s2">&quot;FaceId&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">face_record</span><span class="p">[</span><span class="s2">&quot;Face&quot;</span><span class="p">][</span><span class="s2">&quot;Confidence&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">search_patient_by_face</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Search the patient face collection for a match to the verification image.</span>
+
+<span class="sd">    This is the scalable alternative to compare_faces. Instead of comparing</span>
+<span class="sd">    against one known patient&#39;s photo, we search the entire enrolled population.</span>
+<span class="sd">    Useful for scenarios where the patient hasn&#39;t identified themselves yet</span>
+<span class="sd">    (walk-up kiosk, no appointment context).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the verification image</span>
+<span class="sd">        key: S3 key for the verification image</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with match results. If matched, includes patient_id and similarity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">rekognition_client</span><span class="o">.</span><span class="n">search_faces_by_image</span><span class="p">(</span>
+        <span class="n">CollectionId</span><span class="o">=</span><span class="n">FACE_COLLECTION_ID</span><span class="p">,</span>
+        <span class="n">Image</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S3Object&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Bucket&quot;</span><span class="p">:</span> <span class="n">bucket</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">}},</span>
+        <span class="n">FaceMatchThreshold</span><span class="o">=</span><span class="n">SIMILARITY_THRESHOLD</span><span class="p">,</span>
+        <span class="n">MaxFaces</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># return top 3 matches for audit purposes</span>
+    <span class="p">)</span>
+
+    <span class="n">matches</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FaceMatches&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;match&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no_match_in_collection&quot;</span><span class="p">}</span>
+
+    <span class="c1"># Best match is first (sorted by similarity descending)</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;match&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">best</span><span class="p">[</span><span class="s2">&quot;Face&quot;</span><span class="p">][</span><span class="s2">&quot;ExternalImageId&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;similarity&quot;</span><span class="p">:</span> <span class="n">best</span><span class="p">[</span><span class="s2">&quot;Similarity&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;face_id&quot;</span><span class="p">:</span> <span class="n">best</span><span class="p">[</span><span class="s2">&quot;Face&quot;</span><span class="p">][</span><span class="s2">&quot;FaceId&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;total_candidates&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-record-the-verification-attempt">Step 4: Record the Verification Attempt</h2>
+<p><em>The pseudocode calls this <code>log_verification</code>. Every verification attempt gets an audit record. This is non-negotiable in healthcare. You need to know who was verified, when, whether it succeeded, and what the confidence was. This feeds compliance reporting and fraud investigation.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">record_verification_attempt</span><span class="p">(</span>
+    <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">verification_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write an audit record for this verification attempt to DynamoDB.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: The patient being verified</span>
+<span class="sd">        verification_key: S3 key of the check-in photo</span>
+<span class="sd">        result: The comparison/search result dict</span>
+<span class="sd">        method: &quot;compare&quot; (1:1) or &quot;search&quot; (1:N)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The audit record that was written.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">AUDIT_TABLE</span><span class="p">)</span>
+
+    <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;verification_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;verification_image_key&quot;</span><span class="p">:</span> <span class="n">verification_key</span><span class="p">,</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">method</span><span class="p">,</span>
+        <span class="s2">&quot;match&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;match&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="c1"># DynamoDB requires Decimal for numbers, not float.</span>
+        <span class="s2">&quot;similarity_score&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;similarity&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">))),</span>
+        <span class="s2">&quot;outcome&quot;</span><span class="p">:</span> <span class="s2">&quot;verified&quot;</span> <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;match&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Add failure reason if present</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;match&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;reason&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">record</span><span class="p">[</span><span class="s2">&quot;failure_reason&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;reason&quot;</span><span class="p">]</span>
+
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">record</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-handle-consent-withdrawal-delete-patient-face">Step 5: Handle Consent Withdrawal (Delete Patient Face)</h2>
+<p><em>When a patient revokes biometric consent, you must delete their face data from both S3 and the Rekognition collection. This is a legal requirement under BIPA, CCPA, and most state biometric privacy laws. Embeddings stored in Rekognition collections persist indefinitely until explicitly deleted.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">delete_patient_face</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">face_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">enrollment_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove a patient&#39;s biometric data when they withdraw consent.</span>
+
+<span class="sd">    This deletes the face embedding from the Rekognition collection AND</span>
+<span class="sd">    the enrollment photo from S3. Both must happen. A partial deletion</span>
+<span class="sd">    (removing the photo but leaving the embedding, or vice versa) violates</span>
+<span class="sd">    the consent withdrawal requirement.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: The patient withdrawing consent</span>
+<span class="sd">        face_id: The Rekognition FaceId from enrollment (stored in your patient index)</span>
+<span class="sd">        enrollment_key: The S3 key for their enrollment photo</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict confirming deletion status for each resource.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">}</span>
+
+    <span class="c1"># Delete from Rekognition collection first. If this fails, don&#39;t delete the</span>
+    <span class="c1"># S3 photo (you&#39;d lose the ability to identify which face to remove later).</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rekognition_client</span><span class="o">.</span><span class="n">delete_faces</span><span class="p">(</span>
+            <span class="n">CollectionId</span><span class="o">=</span><span class="n">FACE_COLLECTION_ID</span><span class="p">,</span>
+            <span class="n">FaceIds</span><span class="o">=</span><span class="p">[</span><span class="n">face_id</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;collection_deleted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Deleted face embedding for patient </span><span class="si">%s</span><span class="s2"> from collection&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;collection_deleted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;collection_error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Failed to delete face from collection for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="c1"># Don&#39;t proceed to S3 deletion if collection deletion failed.</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="c1"># Delete enrollment photo from S3.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s3_client</span><span class="o">.</span><span class="n">delete_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">PHOTO_BUCKET</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">enrollment_key</span><span class="p">)</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;s3_deleted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Deleted enrollment photo for patient </span><span class="si">%s</span><span class="s2"> from S3&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;s3_deleted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;s3_error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Failed to delete S3 photo for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+    <span class="c1"># Record the consent withdrawal in the audit log.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">AUDIT_TABLE</span><span class="p">)</span>
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;verification_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;consent_withdrawal&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;match&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;similarity_score&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;outcome&quot;</span><span class="p">:</span> <span class="s2">&quot;biometric_data_deleted&quot;</span><span class="p">,</span>
+    <span class="p">})</span>
+    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;audit_recorded&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full verification pipeline assembled into a single function. This is what your check-in kiosk application or Lambda handler would call.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">verify_patient</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">verification_bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                   <span class="n">verification_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">enrollment_bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                   <span class="n">enrollment_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full patient photo verification pipeline.</span>
+
+<span class="sd">    This is the 1:1 comparison path: we know who the patient claims to be</span>
+<span class="sd">    (they scanned their badge, entered their MRN, etc.) and we&#39;re confirming</span>
+<span class="sd">    their face matches their enrollment photo.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: Who the patient claims to be</span>
+<span class="sd">        verification_bucket: Bucket with the just-captured check-in photo</span>
+<span class="sd">        verification_key: Key for the check-in photo</span>
+<span class="sd">        enrollment_bucket: Bucket with the stored enrollment photo</span>
+<span class="sd">        enrollment_key: Key for the enrollment photo</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with verification outcome, similarity score, and audit record.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Step 1: Validate the verification image before wasting a comparison call.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 1: Validating verification image for patient </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">)</span>
+    <span class="n">validation</span> <span class="o">=</span> <span class="n">validate_verification_image</span><span class="p">(</span><span class="n">verification_bucket</span><span class="p">,</span> <span class="n">verification_key</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">validation</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Image validation failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">validation</span><span class="p">[</span><span class="s2">&quot;reason&quot;</span><span class="p">])</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;match&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;similarity&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">validation</span><span class="p">[</span><span class="s2">&quot;reason&quot;</span><span class="p">]}</span>
+        <span class="n">audit</span> <span class="o">=</span> <span class="n">record_verification_attempt</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">verification_key</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="s2">&quot;compare&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;verified&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">validation</span><span class="p">[</span><span class="s2">&quot;reason&quot;</span><span class="p">],</span> <span class="s2">&quot;audit&quot;</span><span class="p">:</span> <span class="n">audit</span><span class="p">}</span>
+
+    <span class="c1"># Step 2: Compare the verification image against the enrollment image.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 2: Comparing faces&quot;</span><span class="p">)</span>
+    <span class="n">comparison</span> <span class="o">=</span> <span class="n">compare_faces</span><span class="p">(</span>
+        <span class="n">source_bucket</span><span class="o">=</span><span class="n">verification_bucket</span><span class="p">,</span>
+        <span class="n">source_key</span><span class="o">=</span><span class="n">verification_key</span><span class="p">,</span>
+        <span class="n">target_bucket</span><span class="o">=</span><span class="n">enrollment_bucket</span><span class="p">,</span>
+        <span class="n">target_key</span><span class="o">=</span><span class="n">enrollment_key</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Match: </span><span class="si">%s</span><span class="s2">, Similarity: </span><span class="si">%.1f%%</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;match&quot;</span><span class="p">],</span> <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;similarity&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Step 3: Record the attempt for audit trail.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 3: Recording verification attempt&quot;</span><span class="p">)</span>
+    <span class="n">audit</span> <span class="o">=</span> <span class="n">record_verification_attempt</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">verification_key</span><span class="p">,</span> <span class="n">comparison</span><span class="p">,</span> <span class="s2">&quot;compare&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;verified&quot;</span><span class="p">:</span> <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;match&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;similarity&quot;</span><span class="p">:</span> <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;similarity&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;audit&quot;</span><span class="p">:</span> <span class="n">audit</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="c1"># Example: verify a patient at check-in</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">verify_patient</span><span class="p">(</span>
+        <span class="n">patient_id</span><span class="o">=</span><span class="s2">&quot;MRN-00482931&quot;</span><span class="p">,</span>
+        <span class="n">verification_bucket</span><span class="o">=</span><span class="s2">&quot;patient-photos-hipaa&quot;</span><span class="p">,</span>
+        <span class="n">verification_key</span><span class="o">=</span><span class="s2">&quot;verifications/2026/05/31/kiosk-03/capture-001.jpg&quot;</span><span class="p">,</span>
+        <span class="n">enrollment_bucket</span><span class="o">=</span><span class="s2">&quot;patient-photos-hipaa&quot;</span><span class="p">,</span>
+        <span class="n">enrollment_key</span><span class="o">=</span><span class="s2">&quot;enrollments/MRN-00482931/primary.jpg&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Never print the actual image data or biometric embeddings.</span>
+    <span class="c1"># Only print the verification decision and metadata.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example works. Point it at two face images in S3 and it will tell you whether they match. But there's a meaningful distance between &quot;works in a script&quot; and &quot;runs at a hospital check-in kiosk handling real patients.&quot; Here's where that gap lives:</p>
+<p><strong>Liveness detection.</strong> This code compares two static images. A production system needs to confirm the person is physically present, not holding up a printed photo or a phone screen showing someone else's face. AWS Rekognition Face Liveness (released 2023) handles this with a short video challenge that detects depth, texture, and motion. Without liveness detection, your system is trivially spoofable. The main recipe describes the full architecture as: Capture, Liveness, Quality, Compare, Audit. This example omits liveness for simplicity, but it's not optional in production.</p>
+<p><strong>Anti-spoofing beyond liveness.</strong> Even with liveness detection, sophisticated attacks exist: 3D-printed masks, deepfake video feeds, high-resolution displays. A production system layers multiple signals: device attestation (is this our kiosk hardware?), session binding (is this the same device that started the check-in flow?), and behavioral signals (did the person interact naturally with the kiosk?).</p>
+<p><strong>Enrollment quality control.</strong> This code assumes the enrollment photo is good. In reality, enrollment photos are often terrible: taken years ago, poor lighting, wrong angle, patient wearing sunglasses. A production system validates enrollment photos at capture time using the same quality checks we apply to verification images, and prompts re-enrollment when photos age past the threshold.</p>
+<p><strong>Enrollment photo staleness.</strong> The config defines <code>ENROLLMENT_PHOTO_MAX_AGE_DAYS = 730</code> but this example never checks the enrollment photo's age. A production system checks enrollment metadata (S3 object LastModified or a DynamoDB enrollment timestamp) and returns a &quot;re-enrollment required&quot; response when the photo is too old to trust.</p>
+<p><strong>Bias testing and fairness.</strong> Face recognition systems have well-documented accuracy disparities across demographics (skin tone, age, gender). A production deployment must measure false-accept and false-reject rates across demographic groups and ensure the system doesn't systematically disadvantage any patient population. This isn't optional. It's both an ethical requirement and, increasingly, a regulatory one.</p>
+<p><strong>Fallback workflows.</strong> What happens when verification fails? A production system needs graceful degradation: staff-assisted verification, alternative identity methods (ID card scan, knowledge-based questions), or manual override with audit. The face check is one factor in a multi-factor identity workflow, not the sole gatekeeper. The main recipe defines a tiered decision model (VERIFIED, STEP_UP_REQUIRED, MANUAL_REVIEW) that ensures no patient is ever denied care based solely on a face mismatch.</p>
+<p><strong>Consent management and biometric data retention.</strong> Biometric data collection requires explicit patient consent in most jurisdictions. Illinois BIPA, Texas CUBI, Washington state law, and GDPR all have specific requirements. Your system needs consent capture, storage, and revocation workflows. BIPA in particular requires a publicly available retention and destruction schedule. Biometric PHI requires separate, stricter access controls than standard PHI, with dedicated S3 buckets and tighter IAM policies. The <code>delete_patient_face</code> function in Step 5 shows the deletion path, but the consent management workflow around it (capturing consent, tracking it, honoring withdrawals) is its own subsystem.</p>
+<p><strong>Photo storage and retention.</strong> Enrollment photos and verification captures are biometric PHI. They need encryption at rest (KMS CMK), access logging (CloudTrail), retention policies (auto-delete after consent withdrawal or account closure), and geographic restrictions (some regulations require biometric data stay in-jurisdiction).</p>
+<p><strong>Error handling and retries.</strong> Rekognition can throttle under load, return transient errors, or timeout on large images. A production system handles each failure mode specifically: retry throttling with backoff, fail gracefully on service errors, and resize oversized images before submission.</p>
+<p><strong>VPC and network isolation.</strong> Patient photos are PHI. They should never traverse the public internet. Production deployments use VPC endpoints for S3 (<code>com.amazonaws.{region}.s3</code>) and Rekognition (<code>com.amazonaws.{region}.rekognition</code>). For healthcare deployments requiring FIPS 140-2 compliance, use the FIPS endpoint (<code>com.amazonaws.{region}.rekognition-fips</code>). The kiosk itself connects via a private network path (Site-to-Site VPN, Direct Connect, or TLS to API Gateway with pre-signed S3 URLs with short expiration for image upload).</p>
+<p><strong>Performance at scale.</strong> The 1:1 comparison path (<code>compare_faces</code>) works when you know who the patient is. For walk-up scenarios or large populations, the collection-based search (<code>search_faces_by_image</code>) scales to millions of enrolled faces. But collection management (adding faces, removing faces on consent withdrawal, handling duplicates) is its own operational challenge.</p>
+<p><strong>Testing with synthetic data.</strong> Never use real patient photos in development or testing. Generate synthetic face images or use publicly available face datasets (with appropriate licensing). Your test suite should cover: matching pairs, non-matching pairs, poor quality images, multiple faces, no faces, and edge cases like twins or patients with significant appearance changes.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter09.02-patient-photo-verification.html">Recipe 9.2</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

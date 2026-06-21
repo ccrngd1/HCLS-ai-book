@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 4.3 Architecture and Implementation: Provider Directory Search Optimization</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested nav-active" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-43-architecture-and-implementation-provider-directory-search-optimization">Recipe 4.3 Architecture and Implementation: Provider Directory Search Optimization</h1>
+<p><em>Companion to <a href="chapter04.03-provider-directory-search-optimization.html">Recipe 4.3: Provider Directory Search Optimization</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon OpenSearch Service for the search workhorse.</strong> OpenSearch is the right home for this kind of hybrid IR workload. It handles BM25 keyword scoring, attribute filters, and k-NN vector search in a single index. The query DSL lets you combine all three in one round-trip, which is exactly what Stages 2 and 3 of the pipeline want. OpenSearch Service is HIPAA-eligible and supports VPC-only deployment, encryption at rest, and node-to-node encryption. A single small cluster handles the load for a regional health plan; large national plans graduate to a multi-shard configuration.</p>
+<p><strong>Amazon DynamoDB for the provider catalog of record.</strong> The provider record is a point-lookup workload (given an NPI or internal provider ID, fetch all attributes). DynamoDB is a fit: low-latency single-record reads, encryption at rest with customer-managed KMS, HIPAA-eligible. The OpenSearch index is a denormalized projection of the DynamoDB table; on update, a stream event fires a Lambda that re-indexes the affected provider. Two DynamoDB tables in this design: <code>provider-catalog</code> for the core record, and <code>provider-freshness</code> for the per-field verification timestamps that drive the data quality scoring.</p>
+<p><strong>Amazon DynamoDB also for the patient context.</strong> The same patient-profile table from Recipe 4.1 (and 4.2) is the source of truth for the patient's plan, language, prior providers, and stated preferences. The directory search Lambda reads this table on every search to enrich the query with personalization context. No new tables required if you've already shipped 4.1.</p>
+<p><strong>Amazon Bedrock for query understanding and explanation rendering.</strong> The Stage 1 query parser (&quot;knee doctor&quot; → orthopedic specialty + knee sub-interest) is well-suited to a small LLM call with structured-output guardrails (JSON schema, function-calling-style output). Anthropic Claude Haiku, Amazon Nova Lite, or Meta Llama models are all reasonable choices for the parsing work; Bedrock hosts them with HIPAA eligibility under BAA. Response times for these smaller models fit inside the search latency budget. The same Bedrock endpoint can be used in Stage 7 to render natural-language result explanations from structured ranking features. Confirm in your BAA acceptance and Bedrock service terms that customer prompts and completions are not used to train the underlying foundation models and are not retained beyond the request lifecycle.</p>
+<p><strong>Amazon Bedrock Titan Text Embeddings (or equivalent) for provider profile vectors.</strong> Each provider's bio, specialty list, and services description gets embedded once at ingestion and stored as a dense vector in the OpenSearch index. Patient queries get embedded at search time. Vector cosine similarity becomes one of the candidate-retrieval signals in Stage 3. The embedding cost is small because the catalog is small.</p>
+<p><strong>AWS Lambda for the query path orchestration.</strong> The seven-stage query pipeline lives in a Lambda function (or a small set of Lambdas, depending on how you decompose). Lambda's burst-scaling fits the bursty traffic pattern of a public-facing &quot;Find a Doctor&quot; page. Reserved concurrency on the search Lambda protects the patient-facing path from noisy-neighbor effects.</p>
+<p><strong>Amazon API Gateway for the search endpoint.</strong> The &quot;Find a Doctor&quot; page on the member portal calls the search endpoint. Other consumers include member services tooling (the call-center rep searching on behalf of a member) and the appointment-reminder pipeline (Recipe 4.1) when it's checking in-network alternatives. API Gateway gives you authenticated entry, throttling, WAF integration, and the ability to differentiate public-portal callers (Cognito or Lambda authorizer) from service-to-service callers (IAM SigV4). The search Lambda must validate that the caller is allowed to act on the requested patient_id; do not rely on the upstream service.</p>
+<p><strong>AWS Step Functions for the catalog ingestion pipeline.</strong> The match/merge/validate/annotate/embed/index DAG is a natural fit for Step Functions. Each stage is a Lambda. Failed records get routed to a DLQ with a <code>(provider_id, stage, failure_reason)</code> envelope so the data quality team can triage.</p>
+<p><strong>Amazon EventBridge for source feed events.</strong> Credentialing system updates, claims-derived signals (a provider hasn't billed under this plan in 90 days, a strong negative signal), and self-attestation submissions all arrive as events. EventBridge routes them to the appropriate Step Functions executions. Schedules in EventBridge also drive the periodic refresh tasks: nightly NPPES status checks, weekly phone-number validation sweeps, monthly geocoding reverification.</p>
+<p><strong>Amazon Kinesis Data Streams for engagement events.</strong> Same engagement-event bus you stood up for Recipes 4.1 and 4.2. New event types added: search_impression, search_click, provider_call_initiated, appointment_booked, directory_complaint_filed. The attribution Lambda picks up directory-related events and persists them into a structured engagement table for both ranker training and data quality monitoring.</p>
+<p><strong>Amazon SageMaker for LTR training and (optional) hosting.</strong> The ranker is an XGBoost-Ranker or LightGBM <code>lambdarank</code> model. SageMaker Training Jobs handle the periodic retraining; for a starter implementation, you can host the trained model as a Lambda layer and skip the endpoint. The Lambda-layer approach hits the 250 MB ceiling once you add XGBoost with numpy/scipy dependencies, so plan to graduate to a SageMaker Endpoint when the layer approach starts feeling cramped.</p>
+<p><strong>Amazon Location Service for geocoding and distance.</strong> Patient location strings (&quot;123 Main St, Springfield&quot;) need to become coordinates for distance calculation. Provider addresses need the same. Amazon Location Service handles both, with HIPAA eligibility under BAA. The distance feature for the ranker comes from Location Service; the search-radius filter in OpenSearch uses Location-derived coordinates.</p>
+<p><strong>AWS Glue / Amazon Athena for the offline analytics and exposure dashboards.</strong> Engagement data lands in S3 (via Kinesis Firehose) in Parquet. Glue crawlers maintain the schema, Athena queries power the cohort dashboards (NDCG by language, exposure distribution, ghost-provider rate). QuickSight or a custom dashboard fronts Athena for the operations team.</p>
+<p><strong>AWS KMS for encryption, CloudTrail for audit, CloudWatch for operations.</strong> Same PHI infrastructure pattern as previous recipes. Customer-managed KMS keys for every data store, CloudTrail data events for the patient-context lookups and the ranking-log table, CloudWatch alarms on search latency, error rate, and per-cohort NDCG drift.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Sources
+      A1[Credentialing System]
+      A2[Claims Feed]
+      A3[Provider Self-Attestation]
+      A4[NPPES periodic check]
+    end
+
+    A1 --&gt;|Events| B[EventBridge]
+    A2 --&gt;|Events| B
+    A3 --&gt;|Events| B
+    A4 --&gt;|Schedule| B
+
+    B --&gt; C[Step Functions\ningest-provider]
+    C --&gt; D[Lambda\nmatch-and-merge]
+    D --&gt; E[Lambda\nvalidate]
+    E --&gt; F[Lambda\nannotate-taxonomy]
+    F --&gt; G[Bedrock\nTitan Embed]
+    G --&gt; H[OpenSearch\nhybrid index]
+    F --&gt; I[DynamoDB\nprovider-catalog]
+    F --&gt; J[DynamoDB\nprovider-freshness]
+    E --&gt; K[SQS DLQ\nfailed records]
+
+    L[Member Portal\nFind a Doctor] --&gt;|Search request| M[API Gateway]
+    M --&gt; N[Lambda\nsearch-orchestrator]
+    N --&gt;|Query parsing| O[Bedrock\nClaude Haiku]
+    N --&gt;|Patient context| P[DynamoDB\npatient-profile]
+    N --&gt;|Hybrid search| H
+    N --&gt;|Provider hydrate| I
+    N --&gt;|Distance| Q[Location Service]
+    N --&gt;|Re-rank| R[SageMaker / Lambda Layer\nLambdaMART]
+    N --&gt;|Explanations| O
+    N --&gt;|Search log| S[DynamoDB\nsearch-log]
+    N --&gt;|Return| M
+
+    T[Patient] -.Click / Call / Book.-&gt; L
+    L --&gt;|Engagement events| U[Kinesis\nengagement-stream]
+    U --&gt; V[Lambda\nattribution]
+    V --&gt; W[DynamoDB\nengagement-table]
+    V --&gt; X[Kinesis Firehose]
+    X --&gt; Y[S3 Parquet\nlake]
+    Y --&gt; Z[Glue + Athena\ncohort dashboards]
+    W --&gt;|Periodic retrain| AA[SageMaker Training\nLTR]
+    AA --&gt; R
+    V --&gt; AB[CloudWatch\nNDCG by cohort,\nExposure dist,\nGhost-provider rate]
+
+    style H fill:#9ff,stroke:#333
+    style I fill:#9ff,stroke:#333
+    style J fill:#9ff,stroke:#333
+    style P fill:#9ff,stroke:#333
+    style S fill:#9ff,stroke:#333
+    style W fill:#9ff,stroke:#333
+    style Y fill:#cfc,stroke:#333
+    style U fill:#f9f,stroke:#333
+    style K fill:#fcc,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon OpenSearch Service, Amazon DynamoDB, Amazon Bedrock, AWS Lambda, Amazon API Gateway, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, Amazon S3, AWS Glue, Amazon Athena, Amazon SageMaker, Amazon Location Service, AWS Step Functions, Amazon EventBridge, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: <code>dynamodb:GetItem</code>/<code>UpdateItem</code> scoped to specific tables; <code>bedrock:InvokeModel</code> on specific model ARNs; <code>aoss:APIAccessAll</code> or <code>es:ESHttpPost</code>/<code>es:ESHttpGet</code> scoped to the OpenSearch domain ARN; <code>geo:SearchPlaceIndex*</code> and <code>geo:CalculateRoute*</code> scoped to the Location Service resource; <code>kinesis:PutRecord</code> on the engagement stream. Never <code>*</code>.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. All services in the architecture must be HIPAA-eligible: OpenSearch Service, DynamoDB, Bedrock, Lambda, API Gateway, Kinesis, Firehose, S3, SageMaker, Step Functions, EventBridge, Location Service, KMS are all on the HIPAA Eligible Services list.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>DynamoDB: customer-managed KMS at rest. OpenSearch: encryption at rest, node-to-node encryption, HTTPS-only. Kinesis and Firehose: server-side encryption. S3: SSE-KMS with bucket-level keys. All Lambda log groups KMS-encrypted. Search-log table contains patient queries which may include PHI (a patient's name in a &quot;find Dr. X&quot; search, an NPI tied to a known patient relationship); treat it as PHI from the outset.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas in VPC, OpenSearch domain in VPC (not public), VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (<code>states</code>), EventBridge (<code>events</code>), Location Service, STS. NAT Gateway only if calling external services without VPC endpoints (e.g., NPPES public API for provider verification); restrict egress security groups. VPC Flow Logs enabled. Provider data feeds from external SaaS credentialing systems may need a Direct Connect tunnel or PrivateLink connection rather than NAT egress.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the patient-profile table, search-log table, and the engagement-event table. Provider-catalog table data events are recommended once it contains attributes derived from PHI (e.g., patient-overlap counts).</td>
+</tr>
+<tr>
+<td><strong>Network and Compliance</strong></td>
+<td>Provider directory accuracy requirements vary by line of business: Medicare Advantage and Medicaid managed care have CMS and state requirements respectively, ACA marketplace plans have separate requirements, commercial plans have state DOI requirements. The recipe assumes the architecture supports the strictest requirement applicable to the implementing plan; verify with compliance before scoping.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>A starter provider catalog (a few hundred providers across multiple specialties) with realistic-but-synthetic addresses, languages, and tier assignments. The <a href="https://npiregistry.cms.hhs.gov/">NPPES NPI Registry</a> is public and can seed an NPI/specialty/address index for development; never use real claims-derived attributes for non-production environments. <a href="https://github.com/synthetichealth/synthea">Synthea</a> for synthetic patient encounters that produce realistic prior-provider relationships.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a 400,000-member health plan with 12,000 providers and (illustratively) 500,000 searches per month: OpenSearch Service: a <code>m6g.large.search</code> 2-node domain runs in the $200-300/month range, scaling up with usage. DynamoDB on-demand: $50-150/month. Lambda + API Gateway: $50-150/month at this volume. Bedrock query parsing (typical Haiku-class request): roughly $0.0005-0.001 per search, so $250-500/month at 500K searches. Bedrock embedding for ingestion: a few dollars/month. Location Service: $0.50 per 1000 geocoding requests, so under $300/month at typical volumes. Kinesis + Firehose + S3 + Athena: $100-300/month. Estimated total: $1,000-2,500/month range for a regional plan, before SageMaker hosting costs.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon OpenSearch Service</strong></td>
+<td>Hosts the hybrid keyword + filter + k-NN vector index of providers; serves Stage 3 candidate retrieval</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores the provider catalog of record, freshness metadata, patient profiles, search logs, and engagement aggregates</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Hosts the LLM for query understanding (Stage 1) and explanation rendering (Stage 7); hosts the embedding model for provider profiles</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Runs the search orchestrator, ingestion handlers, attribution worker, and (optionally) the LTR scorer as a layer</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Fronts the search endpoint with auth, throttling, and WAF integration; supports public portal and service-to-service callers</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Carries impression, click, call, booking, and complaint events into the attribution pipeline</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Lands engagement events in S3 Parquet for offline analytics and ranker training data prep</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Stores the engagement data lake, training artifacts, and ranker models</td>
+</tr>
+<tr>
+<td><strong>AWS Glue / Amazon Athena</strong></td>
+<td>Schema management and SQL access for the engagement data lake; powers the cohort dashboards</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Trains the LTR ranker periodically; optionally hosts the ranker as a low-latency endpoint</td>
+</tr>
+<tr>
+<td><strong>Amazon Location Service</strong></td>
+<td>Geocodes patient and provider addresses; computes distances for ranking and radius filtering</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the catalog ingestion DAG with retry, DLQ, and visibility into per-stage failures</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Routes upstream provider data events and schedules periodic refresh tasks</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all PHI-containing stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, cohort-sliced NDCG and exposure dashboards, alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all PHI-related API calls</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful aws-samples patterns for this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-opensearch-service-samples"><code>amazon-opensearch-service-samples</code></a>: Reference patterns for hybrid search (BM25 + filters + k-NN) directly applicable to Stages 2-3 here.</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Demonstrates structured-output prompting with Claude and embedding generation with Titan, the building blocks for Stages 1 and 7.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest a provider record and validate it before indexing.</strong> When a provider event arrives (new credentialing record, claims-derived update, NPPES delta), the ingestion pipeline matches the record to existing providers (NPI is the primary key; tax ID and address-similarity are fallbacks for dedupe), validates the data, annotates it with the standardized taxonomy, generates an embedding for the searchable profile text, and only then promotes it into the index. Skip validation and you index garbage; skip embedding and you lose semantic search; skip the staging step and bad records are visible to patients before anyone notices.</p>
+<pre class="code code-plain"><code>FUNCTION on_provider_event(event):
+    // Match the inbound record to an existing catalog entry. NPI is the
+    // primary key; if NPI is missing or the inbound record is from a system
+    // that doesn&#x27;t track NPI cleanly, fall back to (tax_id + address_similarity)
+    // and (name + state + specialty). Each match strategy has a confidence
+    // score. Below a threshold, the record goes to manual review.
+    candidate_record = build_record_from_event(event)
+    matched_provider_id = match_to_existing(candidate_record)
+        // returns provider_id or null
+
+    IF matched_provider_id is null AND candidate_record has NPI:
+        provider_id = create_new_provider(candidate_record.NPI)
+    ELSE IF matched_provider_id is null:
+        ROUTE_TO_MANUAL_REVIEW(candidate_record, reason = &quot;no_match_no_NPI&quot;)
+        RETURN
+    ELSE:
+        provider_id = matched_provider_id
+
+    // Validate. Each validation that fails goes to a freshness-decay table
+    // and may demote (not delete) the corresponding field in the index.
+    validation_results = {
+        npi_active:       check_NPPES_active(candidate_record.NPI),
+        address_geocoded: Location.SearchPlaceIndex(candidate_record.address),
+        phone_reachable:  check_phone_format_and_reachability(candidate_record.phone),
+        specialty_known:  taxonomy_lookup(candidate_record.specialty)
+    }
+    failed_validations = [k for k, v in validation_results if v is False]
+
+    // Annotate. Map source-system specialty strings to a canonical taxonomy
+    // (NUCC Healthcare Provider Taxonomy is the standard). Normalize languages
+    // to ISO 639-1 codes. Assign network tier based on contracting metadata.
+    annotated = {
+        provider_id:      provider_id,
+        canonical_specialty: map_to_NUCC(candidate_record.specialty),
+        sub_specialties:  extract_sub_specialties(candidate_record),
+        languages:        normalize_languages(candidate_record.languages),
+        gender:           candidate_record.gender,
+        accepts_new_patients: candidate_record.accepts_new_patients,
+        network_tier:     network_tier_lookup(provider_id, candidate_record.contracting),
+        location:         {
+            address:   candidate_record.address,
+            lat_lon:   validation_results.address_geocoded.coordinates,
+            location_id: hash(candidate_record.address)   // a provider may have multiple
+        },
+        contact:          {
+            phone:        candidate_record.phone,
+            phone_status: validation_results.phone_reachable
+        },
+        services:         candidate_record.services,
+        bio:              candidate_record.bio,
+        last_verified_at: current UTC timestamp,
+        source_system:    event.source_system
+    }
+
+    // Generate embedding for the searchable profile text. This is what
+    // powers semantic match in Stage 3.
+    profile_text = build_profile_text(annotated)
+        // e.g., &quot;Pediatrician. Sees newborns through age 18.
+        //        Special interest in asthma and developmental pediatrics.
+        //        Speaks English and Spanish.&quot;
+    embedding = Bedrock.InvokeModel(
+                    model_id = TITAN_EMBED_MODEL_ID,
+                    body     = { &quot;inputText&quot;: profile_text })
+                    .embedding
+
+    // Persist canonical record to DynamoDB.
+    DynamoDB.PutItem(&quot;provider-catalog&quot;, annotated)
+
+    // Update the per-field freshness table. The directory uses freshness as
+    // a ranking signal: stale fields demote the provider in candidate retrieval.
+    update_freshness_table(provider_id, validation_results, current UTC timestamp)
+
+    // Index into OpenSearch. The hybrid index has BM25-scored text fields
+    // (name, specialty, services), filter fields (network_tier, languages,
+    // accepts_new_patients, location.lat_lon), and a vector field (embedding).
+    OpenSearch.IndexDocument(
+        index = &quot;provider-directory&quot;,
+        id    = provider_id,
+        body  = {
+            provider_id:          provider_id,
+            name:                 annotated.name,
+            canonical_specialty:  annotated.canonical_specialty,
+            sub_specialties:      annotated.sub_specialties,
+            languages:            annotated.languages,
+            gender:               annotated.gender,
+            accepts_new_patients: annotated.accepts_new_patients,
+            network_tier:         annotated.network_tier,
+            location:             annotated.location.lat_lon,
+            services_text:        annotated.services,
+            bio_text:             annotated.bio,
+            embedding:            embedding,
+            last_verified_at:     annotated.last_verified_at,
+            freshness_score:      compute_freshness_score(provider_id),
+            status:               &quot;active&quot; IF len(failed_validations) == 0 ELSE &quot;demoted&quot;
+        })
+
+    // Emit a CloudWatch metric for ingestion observability.
+    emit_metric(&quot;provider_ingest&quot;, value = 1, dimensions = {
+        source_system: event.source_system,
+        outcome:       &quot;active&quot; if len(failed_validations) == 0 else &quot;demoted&quot;
+    })
+</code></pre>
+<p><strong>Step 2: Parse the search query into structured intent.</strong> The patient typed something into a search box. Stage 1's job is to figure out what they meant. The output is a structured intent object that downstream stages use to build the OpenSearch query. Skip this and you'll be doing keyword matching against unnormalized free text, which works for exact-name searches and falls down on everything else.</p>
+<pre class="code code-plain"><code>FUNCTION parse_query(query_string, patient_context):
+    // For a small set of obvious patterns, take a fast path that skips the LLM.
+    // Empty query, exact NPI lookup, or a name-shaped string are deterministic.
+    fast_path_intent = try_fast_path(query_string)
+    IF fast_path_intent is not null:
+        RETURN fast_path_intent
+
+    // For the rest, structured-output prompt to a small Bedrock model.
+    // Provide the canonical specialty taxonomy as part of the prompt context
+    // so the model maps free-text inputs onto known specialties.
+    prompt = build_query_understanding_prompt(query_string, patient_context.locale)
+    schema = {
+        &quot;intent_type&quot;:     &quot;specialty_search | name_search | service_search | unknown&quot;,
+        &quot;specialty&quot;:       &quot;NUCC code or null&quot;,
+        &quot;sub_specialty&quot;:   &quot;string or null&quot;,
+        &quot;services&quot;:        [&quot;string&quot;],
+        &quot;filters&quot;: {
+            &quot;language&quot;:             &quot;ISO 639-1 code or null&quot;,
+            &quot;gender&quot;:               &quot;male | female | non_binary | null&quot;,
+            &quot;accepts_new_patients&quot;: &quot;true | false | null&quot;,
+            &quot;telehealth&quot;:           &quot;true | false | null&quot;
+        },
+        &quot;free_text_residual&quot;: &quot;string&quot;
+    }
+    response = Bedrock.InvokeModel(
+                   model_id = QUERY_PARSER_MODEL_ID,    // e.g., Claude Haiku or Nova Lite
+                   body     = { &quot;messages&quot;: [...], &quot;response_format&quot;: { &quot;schema&quot;: schema } })
+
+    intent = parse_json(response.completion)
+    validate_against_schema(intent, schema)   // belt-and-suspenders
+
+    // Defensive fallbacks. If the model returns an unknown specialty code,
+    // drop the structured filter and fall back to BM25 on the free-text residual.
+    IF intent.specialty is not null AND intent.specialty not in TAXONOMY:
+        intent.free_text_residual = query_string
+        intent.specialty = null
+
+    RETURN intent
+</code></pre>
+<p><strong>Step 3: Apply eligibility filters and retrieve candidates with hybrid search.</strong> Stages 2 and 3 combine into a single OpenSearch query. The filter clause enforces hard &quot;shall not show&quot; rules; the must clause does keyword and vector match for relevance; the should clause adds soft signals (sub-specialty match, language preference) as boosts. Skip the filters and you'll show out-of-network providers in in-network searches, which is a contractual problem. Skip the hybrid match and you'll be choosing between keyword brittleness and vector black-box; you want both.</p>
+<pre class="code code-plain"><code>FUNCTION retrieve_candidates(intent, patient_context, top_k = 200):
+    // Build the patient-context filters that are non-negotiable.
+    eligibility_filters = [
+        { term: { &quot;status&quot;: &quot;active&quot; } },
+        // Network match. The patient&#x27;s plan determines which network tier(s)
+        // they can see. A &quot;preferred&quot; plan can see preferred and standard;
+        // a &quot;standard&quot; plan can see standard only.
+        { terms: { &quot;network_tier&quot;: allowed_tiers_for_plan(patient_context.plan_id) } }
+    ]
+
+    // The intent can add filters: language, gender, accepts_new_patients.
+    // Filters from intent are required only when the intent system is confident.
+    IF intent.filters.language is not null:
+        eligibility_filters.append({ term: { &quot;languages&quot;: intent.filters.language } })
+    IF intent.filters.gender is not null:
+        eligibility_filters.append({ term: { &quot;gender&quot;: intent.filters.gender } })
+    IF intent.filters.accepts_new_patients == true:
+        eligibility_filters.append({ term: { &quot;accepts_new_patients&quot;: true } })
+
+    // Geographic radius. Patients always have a location (from explicit input
+    // or from the address on file). Default radius depends on geography:
+    // urban dense, 10 miles; suburban, 25; rural, 50. UI lets the patient adjust.
+    eligibility_filters.append({
+        geo_distance: {
+            distance: patient_context.search_radius_miles + &quot;mi&quot;,
+            location: patient_context.search_location
+        }
+    })
+
+    // Embed the free-text residual + the canonical specialty for the vector match.
+    // Combining them gives the embedding both the structured signal and any
+    // free-text nuance the parser couldn&#x27;t capture.
+    embedding_input = (intent.specialty or &quot;&quot;) + &quot; &quot; + (intent.free_text_residual or &quot;&quot;)
+    query_embedding = Bedrock.InvokeModel(
+                          model_id = TITAN_EMBED_MODEL_ID,
+                          body     = { &quot;inputText&quot;: embedding_input })
+                          .embedding
+
+    // Build the hybrid query. The boost weights here are the kind of thing
+    // you tune by hand, then harden once you have evaluation data.
+    query = {
+        size: top_k,
+        query: {
+            bool: {
+                filter: eligibility_filters,
+                must: [
+                    {
+                        // Vector similarity: how well does the provider&#x27;s
+                        // profile match the parsed intent semantically.
+                        knn: {
+                            embedding: {
+                                vector: query_embedding,
+                                k: top_k
+                            }
+                        }
+                    }
+                ],
+                should: [
+                    // BM25 keyword match on name and specialty as a boost.
+                    {
+                        multi_match: {
+                            query: intent.free_text_residual or &quot;&quot;,
+                            fields: [&quot;name^3&quot;, &quot;canonical_specialty^2&quot;, &quot;sub_specialties&quot;, &quot;services_text&quot;, &quot;bio_text&quot;],
+                            boost: 1.5
+                        }
+                    },
+                    // Sub-specialty match if the parser found one.
+                    {
+                        terms: { &quot;sub_specialties&quot;: intent.sub_specialty ? [intent.sub_specialty] : [] }
+                    },
+                    // Freshness boost. Recently-verified records get a small lift.
+                    {
+                        range: { &quot;last_verified_at&quot;: { gte: &quot;now-30d&quot;, boost: 1.2 } }
+                    }
+                ]
+            }
+        }
+    }
+
+    response = OpenSearch.Search(index = &quot;provider-directory&quot;, body = query)
+    RETURN response.hits   // typically 100-300 candidates after filters
+</code></pre>
+<p><strong>Step 4: Join personalization features for the ranker.</strong> The candidates from Stage 3 are relevant in aggregate, but the personalized ranker needs more signal: distance, prior visits, provider quality, panel openness, freshness penalties. This step parallel-fetches those signals from the patient profile, the provider catalog, and any feature-store enrichments. Underinvest here and the ranker has nothing personal to rank by.</p>
+<pre class="code code-plain"><code>FUNCTION join_features(candidates, patient_context):
+    // For each candidate, build a feature vector that the LTR model consumes.
+    feature_rows = []
+    FOR each c in candidates:
+        // Prior visits: claims-derived &quot;has this patient seen this provider before&quot;
+        // signal. Strong positive feature, but only valid when the patient has
+        // claims history with the plan. New members have null here.
+        prior_visits = patient_context.claims_summary.visits_by_provider.get(c.provider_id, 0)
+
+        // Distance from patient. Already filtered by radius, but distance
+        // within radius is still a useful feature.
+        distance_miles = haversine(patient_context.search_location, c.location)
+
+        // Provider quality scores (HEDIS performance, patient satisfaction
+        // if you have it). Many plans don&#x27;t make these available at the
+        // individual provider level; cohort-level fallback if not.
+        quality_score = lookup_provider_quality(c.provider_id) or cohort_mean
+
+        // Availability signals. Next-available appointment if you have it
+        // (some scheduling systems expose this; many don&#x27;t). Panel-openness
+        // is a coarser fallback.
+        next_available_days = lookup_next_available(c.provider_id)   // null if not known
+        panel_openness      = c.accepts_new_patients ? 1 : 0
+
+        // Freshness penalty. Records with stale verification get demoted
+        // proportional to staleness. This is the data-quality lever.
+        freshness_penalty = compute_freshness_penalty(c.last_verified_at)
+
+        // Specialty fit. How well the provider&#x27;s specialty matches the
+        // parsed intent. Strong match = 1, partial = 0.5, weak = 0.
+        specialty_fit = compute_specialty_fit(c.canonical_specialty, intent.specialty)
+
+        feature_rows.append({
+            provider_id:     c.provider_id,
+            // From the candidate retrieval step:
+            vector_score:    c.vector_similarity,
+            bm25_score:      c.bm25_score,
+            // From this stage:
+            distance_miles:           distance_miles,
+            prior_visits:             prior_visits,
+            quality_score:            quality_score,
+            next_available_days:      next_available_days,
+            panel_openness:           panel_openness,
+            freshness_penalty:        freshness_penalty,
+            specialty_fit:            specialty_fit,
+            language_match:           1 if patient_context.preferred_language in c.languages else 0,
+            network_tier_rank:        tier_to_rank(c.network_tier),
+            is_safety_net_provider:   c.provider_flags.includes(&quot;safety_net&quot;) ? 1 : 0
+        })
+
+    RETURN feature_rows
+</code></pre>
+<p><strong>Step 5: Score and rank with the LTR model.</strong> The feature rows feed an XGBoost-Ranker (or LightGBM <code>lambdarank</code>) model. The model produces a relevance score per provider. Sorting by that score gives the raw ranking. Skip this step and you're back to &quot;closest first,&quot; which is what you were trying to escape.</p>
+<pre class="code code-plain"><code>FUNCTION rank(feature_rows, model):
+    // Build the feature matrix in the order the model expects.
+    X = build_feature_matrix(feature_rows, FEATURE_ORDER)
+
+    // Score. XGBoost-Ranker.predict returns a score per row.
+    scores = model.predict(X)
+
+    // Attach scores back to feature rows and sort descending.
+    FOR i, row in enumerate(feature_rows):
+        row.relevance_score = scores[i]
+
+        // Capture per-row feature contributions for explainability.
+        // SHAP values give the model&#x27;s accounting of why this row got this score.
+        row.shap_values = model.get_shap_values(X[i])
+
+    sorted_rows = sort feature_rows by relevance_score DESC
+    RETURN sorted_rows
+</code></pre>
+<p><strong>Step 6: Re-rank for fairness and diversity.</strong> The raw LTR output is locally optimal but may produce structurally bad outcomes (a handful of providers dominating impressions, safety-net providers buried, near-duplicates clustering). The fairness re-ranker enforces explicit policy constraints. Skip this step and you ship a system that quietly concentrates patient flow on a small subset of the network.</p>
+<pre class="code code-plain"><code>FUNCTION fairness_rerank(sorted_rows, patient_context, policy):
+    // Three policies typically apply, in order:
+
+    // 1. Exposure caps: limit how often any single provider appears at the
+    // top across a rolling window. Pull live exposure counts from the
+    // engagement aggregates table.
+    exposure_window = get_exposure_window(provider_ids = [r.provider_id for r in sorted_rows],
+                                          window = &quot;last_24h&quot;)
+    FOR row in sorted_rows:
+        IF exposure_window[row.provider_id].impressions_at_top_3 &gt; policy.max_top3_impressions:
+            row.relevance_score = row.relevance_score * 0.7
+            row.applied_factors.append(&quot;exposure_cap_top3: x0.7&quot;)
+
+    // 2. Safety-net floor: ensure at least one safety-net-flagged provider
+    // appears in the top N when relevant. If the raw ranking didn&#x27;t surface
+    // one in the top N but the candidate set has a high-fit safety-net
+    // provider, promote it. Strict thresholds: only promote if the safety-net
+    // provider&#x27;s specialty_fit and freshness are above floor levels, so we
+    // don&#x27;t surface bad data in the name of fairness.
+    IF policy.safety_net_floor_enabled:
+        top_n = first N of sorted_rows
+        IF none of top_n is_safety_net_provider:
+            best_safety_net_candidate = highest-relevance safety-net row in sorted_rows
+                                        WHERE specialty_fit &gt;= 0.7
+                                          AND freshness_penalty &lt;= 0.2
+            IF best_safety_net_candidate exists:
+                promote_to_position(best_safety_net_candidate, sorted_rows, position = N)
+
+    // 3. Near-duplicate suppression: if two providers in the top N work at
+    // the same practice and have similar specialties, demote the second.
+    // Patients want choice, not copies of the same office.
+    suppressed = []
+    FOR i, row in enumerate(sorted_rows):
+        FOR j, prior in enumerate(sorted_rows[:i]):
+            IF j in suppressed:
+                continue
+            IF same_practice(row, prior) AND specialty_overlap(row, prior) &gt; 0.8:
+                row.relevance_score = row.relevance_score * 0.6
+                row.applied_factors.append(&quot;near_duplicate_dampened: x0.6&quot;)
+                suppressed.append(i)
+                break
+
+    // Resort after all the score adjustments. The reorder is small in
+    // practice (most rows are unaffected) but enforces the policies cleanly.
+    reranked = sort sorted_rows by relevance_score DESC
+    RETURN reranked
+</code></pre>
+<p><strong>Step 7: Assemble results with explanations and log the search.</strong> Each result returned to the UI carries a short rationale. Skip the explanations and patients can't tell why one provider is ranked above another, which erodes trust and makes the system feel arbitrary. Skip the search log and you cannot evaluate the ranker, debug a complaint, or train the next model.</p>
+<pre class="code code-plain"><code>FUNCTION assemble_and_log(reranked_rows, patient_context, intent, top_n = 10):
+    search_id = new UUID
+
+    // Hydrate the top N with display fields from the provider catalog.
+    top = first top_n of reranked_rows
+    results = []
+    FOR row in top:
+        provider = DynamoDB.GetItem(&quot;provider-catalog&quot;, row.provider_id)
+        // Build a short, structured explanation from ranking features
+        // before optionally rephrasing with an LLM.
+        structured_explanation = {
+            specialty_fit:     row.features.specialty_fit,
+            language_match:    row.features.language_match,
+            prior_visits:      row.features.prior_visits,
+            distance_miles:    row.features.distance_miles,
+            network_tier:      provider.network_tier,
+            freshness_penalty: row.features.freshness_penalty,
+            applied_factors:   row.applied_factors
+        }
+        // Optional: render a friendly explanation via Bedrock. Run this
+        // batched (one call per result page) rather than one call per row
+        // to keep latency in check. Cache by structured_explanation hash.
+        nl_explanation = render_explanation_via_llm(structured_explanation, patient_context.locale)
+            // e.g., &quot;Matches your search for a Spanish-speaking pediatrician.
+            //       You&#x27;ve seen this provider before. In your plan&#x27;s
+            //       preferred network. 4.2 miles from your address.&quot;
+
+        results.append({
+            provider_id:     row.provider_id,
+            name:            provider.name,
+            specialty:       provider.canonical_specialty,
+            address:         provider.location.address,
+            distance_miles:  round(row.features.distance_miles, 1),
+            languages:       provider.languages,
+            accepting_new_patients: provider.accepts_new_patients,
+            network_tier:    provider.network_tier,
+            phone:           provider.contact.phone,
+            relevance_score: row.relevance_score,
+            explanation:     nl_explanation,
+            structured_explanation: structured_explanation
+        })
+
+    // Persist the search log. This is the join point for engagement
+    // attribution and the basis of the ranker&#x27;s training data.
+    // IMPORTANT: minimize. Persist parsed-intent fields and cohort features
+    // used by the ranker. Do NOT persist the verbatim query string into
+    // the same record as the patient_id; the raw query may include the
+    // patient&#x27;s own name, a prior provider&#x27;s name, or other identifying
+    // free text. Send the raw query to a separate, append-only audit log
+    // with stricter access and shorter retention.
+    DynamoDB.PutItem(&quot;search-log&quot;, {
+        search_id:     search_id,
+        patient_id:    patient_context.patient_id,
+        timestamp:     current UTC timestamp,
+        intent:        intent,
+        // Only the cohort features the ranker training pipeline needs.
+        feature_snapshot: {
+            plan_id:            patient_context.plan_id,
+            preferred_language: patient_context.preferred_language,
+            search_radius:      patient_context.search_radius_miles,
+            patient_locale:     patient_context.locale
+        },
+        ranked_provider_ids: [r.provider_id for r in results],
+        ranked_scores:       [r.relevance_score for r in results],
+        model_version:       CURRENT_LTR_MODEL_VERSION,
+        policy_version:      CURRENT_POLICY_VERSION
+    })
+
+    // Send the verbatim query to the audit channel separately, with its own
+    // access controls and retention.
+    AuditLog.Append(&quot;search-query-audit&quot;, {
+        search_id:    search_id,
+        timestamp:    current UTC timestamp,
+        query_string: query_string
+        // No patient_id here; reconstruction requires joining via search_id
+        // through the audit access workflow, which logs the joiner.
+    })
+
+    // Emit an impression event for each result shown.
+    FOR rank_pos, result in enumerate(results):
+        Kinesis.PutRecord(stream = &quot;engagement-stream&quot;, record = {
+            event_type:  &quot;search_impression&quot;,
+            search_id:   search_id,
+            provider_id: result.provider_id,
+            patient_id:  patient_context.patient_id,
+            position:    rank_pos + 1,
+            timestamp:   current UTC timestamp
+        })
+
+    RETURN { search_id: search_id, results: results }
+</code></pre>
+<p><strong>Step 8: Capture engagement and feed back into ranker training and data quality.</strong> A separate Lambda consumes the engagement stream, joins each event back to the search log, applies position-bias correction, and updates two things: ranker training data (for the periodic retrain) and the provider catalog's freshness signals (a &quot;ghost provider&quot; complaint is high-priority operational signal). Underinvest here and the model stops learning and the catalog stops self-correcting.</p>
+<pre class="code code-plain"><code>FUNCTION process_engagement_event(event):
+    // Look up the originating search.
+    search = DynamoDB.GetItem(&quot;search-log&quot;, event.search_id)
+    IF search is null:
+        LOG(&quot;engagement event for unknown search_id: &quot; + event.search_id)
+        RETURN
+
+    // Validate the event references a provider that was actually shown.
+    IF event.provider_id NOT IN search.ranked_provider_ids:
+        LOG(&quot;event provider_id not in ranked list; dropping&quot;)
+        RETURN
+
+    // Validate the patient identity. Same integrity boundary as Recipe 4.2.
+    IF event.patient_id != search.patient_id:
+        LOG(&quot;engagement event patient_id mismatch with search; dropping&quot;)
+        RETURN
+
+    position_in_results = search.ranked_provider_ids.index_of(event.provider_id) + 1
+
+    // Persist to the engagement table for offline training.
+    DynamoDB.PutItem(&quot;engagement-events&quot;, {
+        event_id:    new UUID,
+        search_id:   event.search_id,
+        provider_id: event.provider_id,
+        patient_id:  event.patient_id,
+        event_type:  event.event_type,
+        position:    position_in_results,
+        timestamp:   event.timestamp,
+        feature_snapshot: search.feature_snapshot
+    })
+
+    // Compute position-bias-corrected reward. Patients click position 1 more
+    // than position 10 regardless of quality; ranker training that doesn&#x27;t
+    // correct for this just learns to repeat the existing ranking.
+    propensity = position_propensity(position_in_results)
+        // simple position-based model: e.g., 1.0, 0.7, 0.5, 0.4, ...
+    bias_corrected_reward = (event_to_reward(event) / propensity)
+
+    // Update the rolling exposure aggregates that the fairness re-ranker reads.
+    DynamoDB.UpdateItem(&quot;exposure-aggregates&quot;, event.provider_id,
+        &quot;ADD impressions_total :one&quot; +
+        IF event.event_type == &quot;search_impression&quot; AND position_in_results &lt;= 3
+            THEN &quot;, impressions_at_top_3 :one&quot;
+            ELSE &quot;&quot;,
+        values = { &quot;:one&quot;: 1 })
+
+    // Special handling: a directory complaint (the directory sent the patient
+    // to a closed practice, wrong number, etc.) is a gold-standard data
+    // quality signal. Flag the provider for immediate review and demote in
+    // the index until the catalog team re-verifies.
+    IF event.event_type == &quot;directory_complaint_filed&quot;:
+        flag_provider_for_review(event.provider_id, reason = event.complaint_reason)
+        OpenSearch.UpdateDocument(
+            index = &quot;provider-directory&quot;,
+            id    = event.provider_id,
+            body  = { doc: { status: &quot;demoted&quot;, freshness_score: 0.1 } })
+        emit_metric(&quot;ghost_provider_complaint&quot;, value = 1, dimensions = {
+            region: lookup_region(event.provider_id),
+            specialty: lookup_specialty(event.provider_id)
+        })
+
+    // Emit cohort-sliced metrics for fairness monitoring.
+    emit_metric(&quot;search_engagement&quot;,
+                value = 1,
+                dimensions = {
+                    event_type: event.event_type,
+                    plan_id:    search.feature_snapshot.plan_id,
+                    language:   search.feature_snapshot.preferred_language,
+                    position_band: bucket(position_in_results)
+                })
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter04.03-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample search response:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;search_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;9b8c3a40-2c19-4e8b-b3f1-50f4d8c0a1b2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-000482&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-04T19:32:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rank-v0.7&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;policy_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fair-rerank-v0.3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intent&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;intent_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;specialty_search&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;207Q00000X&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;specialty_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Family Medicine&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;filters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;es&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;accepts_new_patients&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;provider_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prv-018442&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dr. Maria Hernandez, MD&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Family Medicine&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1244 Elm St, Springfield&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;distance_miles&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;languages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;en&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;es&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;accepting_new_patients&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;network_tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;preferred&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;phone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;555-0140&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relevance_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.42</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Spanish-speaking family physician, 2.1 miles from your address. Accepting new patients. In your plan&#39;s preferred network.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;provider_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prv-021903&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dr. Carlos Reyes, DO&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Family Medicine&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;808 Oak Ave, Springfield&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;distance_miles&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;languages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;en&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;es&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;accepting_new_patients&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;network_tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;preferred&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;phone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;555-0188&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relevance_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.31</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Spanish-speaking family physician, 4.4 miles from your address. Accepting new patients.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;provider_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prv-009811&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Springfield Community Health Center&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Family Medicine&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 River Rd, Springfield&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;distance_miles&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;languages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;en&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;es&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;vi&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;accepting_new_patients&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;network_tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;preferred&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;phone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;555-0099&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relevance_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.18</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Federally Qualified Health Center, multiple Spanish-speaking providers, sliding-fee scale available.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample exposure aggregate record (for fairness re-ranker):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;provider_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prv-018442&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;impressions_total_24h&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;impressions_at_top_3_24h&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">218</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;clicks_total_24h&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">47</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;calls_initiated_24h&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;appointments_booked_24h&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;complaints_filed_24h&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rolling_exposure_share&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.084</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;note&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Above plan-wide median exposure share but below cap (0.10)&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Distance-only baseline</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NDCG@10</td>
+<td>0.55-0.65</td>
+<td>0.78-0.85 (observed range, depends heavily on label quality and catalog completeness)</td>
+</tr>
+<tr>
+<td>Click-through rate at top 3</td>
+<td>25-35%</td>
+<td>45-60%</td>
+</tr>
+<tr>
+<td>Calls placed per search session</td>
+<td>5-10%</td>
+<td>12-20%</td>
+</tr>
+<tr>
+<td>Ghost-provider complaints per 10K searches</td>
+<td>30-50</td>
+<td>8-15 (after a few months of data-quality feedback)</td>
+</tr>
+<tr>
+<td>End-to-end search latency (p95)</td>
+<td>&lt;100 ms</td>
+<td>&lt;500 ms (incl. LLM query parsing)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Brand-new members with no claims history.</strong> The ranker leans heavily on prior-visit and quality features that aren't available for members in their first 30-60 days. Cohort-level fallbacks (similar plan + similar geography) help, but the new-member experience is more generic until claims start accumulating.</li>
+<li><strong>Specialties with thin networks.</strong> Searches for less-common specialties (e.g., pediatric subspecialties in rural areas) return small candidate sets where ranking matters less than the bare fact of network adequacy. The recommender will be honest, but the patient's experience is &quot;there are three options and they're all 40 miles away.&quot;</li>
+<li><strong>Provider-data systems that don't expose availability.</strong> &quot;Next-available appointment&quot; is a strong feature when you have it. Many organizations don't have a single source of truth across all contracted providers. Without it, the ranker uses panel-openness as a coarse proxy and accepts the loss of granularity.</li>
+<li><strong>Patient queries in languages the parser hasn't been tested on.</strong> The Stage 1 LLM may handle Spanish well and Vietnamese poorly, depending on the underlying model and the prompt's coverage. Test parsing quality per language before launching, and route low-confidence parses to a fallback BM25 path rather than letting a low-quality structured intent drive the rest of the pipeline.</li>
+<li><strong>Member services agents searching on behalf of multiple members.</strong> A call-center agent doing dozens of searches per shift may produce engagement signals that don't represent any single patient's preferences. Tag agent-initiated searches separately so they don't poison the personalization signal.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Provider-data governance.</strong> The recipe assumes events arrive from credentialing, claims, and self-attestation systems. In a real plan, those systems are owned by different teams with different priorities, different data formats, and different SLAs. Standing up the ingestion pipeline is half the work; standing up the cross-functional process that keeps the catalog accurate (provider relations chasing down stale records, network operations reconciling tier assignments, compliance auditing accuracy) is the other half. Underinvest here and the recipe is technically correct but operationally brittle.</p>
+<p><strong>Network-adequacy reporting.</strong> Plans are required to demonstrate network adequacy: enough providers in each specialty within reasonable travel distance for each member. The directory data is the source for adequacy reporting. Make sure the data pipeline that powers search is the same data pipeline that powers adequacy reports, or you'll have two sources of truth and the regulatory one will be out of date.</p>
+<p><strong>Multi-language UI and parsing.</strong> The pipeline supports a <code>language</code> filter, but the search box itself probably needs to accept queries in non-English languages and return localized explanations. The Stage 1 parser must be tested and prompted for each supported language; the Stage 7 explanation rendering needs locale-aware templates. Skip this and the personalization stops at the first non-English query.</p>
+<p><strong>Audit log access workflow.</strong> The recipe puts the verbatim query string into a separate audit log. That log needs an access workflow: who can read it, what authorization is required, how requests get logged, how the log itself is retained and disposed of. Define this with privacy and legal before the system is live, not after.</p>
+<p><strong>Position-bias correction at training time.</strong> The pseudocode references position-based bias correction in the engagement attribution. Production-grade LTR training does this correction explicitly inside the loss function (counterfactual learning to rank, IPS-weighted ranker). Wiring that into the training pipeline is real work and worth scoping early.</p>
+<p><strong>Exposure-cap calibration.</strong> The fairness re-ranker uses exposure caps as a policy lever. Setting those caps is a network-operations decision, not a data-science decision. Engage with provider relations early. A cap that's too tight starves high-quality providers of patients; a cap that's too loose lets concentration drift back in. Plan to recalibrate quarterly with data-driven inputs.</p>
+<p><strong>Safety-net floor governance.</strong> The &quot;promote a safety-net provider into the top N&quot; rule is sensitive. It needs a written policy, with criteria for which provider categories qualify, what fit thresholds apply, and how the policy is reviewed annually. Document this. Audit logs need to record when the floor fired and which provider was promoted, so a compliance review can confirm the policy is being applied as intended.</p>
+<p><strong>Data quality SLAs.</strong> The recipe references freshness scoring but doesn't define the SLAs. Production: define explicit SLAs by field (e.g., &quot;phone number reverified within 90 days,&quot; &quot;address geocoded within 180 days,&quot; &quot;panel-openness flag refreshed monthly via provider self-attestation&quot;). Each SLA gets a CloudWatch metric, an alarm, and a remediation playbook. The directory's regulatory standing depends on this.</p>
+<p><strong>Privacy in the search log.</strong> The search log table contains patient IDs joined to ranked provider lists joined to feature snapshots. That join is sensitive: patterns of search behavior (a member repeatedly searching for &quot;oncologist&quot; or &quot;addiction medicine&quot;) are inferentially identifying. Apply the same controls as the patient profile: customer-managed KMS, CloudTrail data events, narrow IAM read scopes, defined retention. As noted in the pseudocode, do not persist verbatim query strings into the same record as the patient_id; route those to a separate audit channel with stricter access and shorter retention.</p>
+<p><strong>Cohort fairness review.</strong> The architecture emits cohort-sliced metrics, but a dashboard nobody reads is useless. Establish a quarterly review with a cross-functional committee (data science, network operations, compliance, member services). Watch for: cohorts with consistently lower NDCG (signaling poor parsing or data-quality coverage), provider exposure distributions that drift toward concentration, ghost-provider complaint rates that vary by region or language. Each finding should produce an action item with an owner.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Telehealth-aware ranking.</strong> Add a <code>telehealth_capable</code> flag and a <code>telehealth_preference</code> patient feature, and let the ranker treat telehealth as a first-class option rather than a sub-filter. For a working parent in a rural area, a telehealth-only Spanish-speaking pediatrician 200 miles away may be a better match than an in-person English-speaking pediatrician 8 miles away. The ranker can balance the trade-off if the data captures it.</p>
+<p><strong>Care episode awareness.</strong> When a patient has an active care episode (recent ED visit, recent cancer diagnosis, post-surgical follow-up window), boost specialists relevant to that episode and continuity-of-care signals (the providers who saw them during the episode). Episode signals come from the same claims-derived feature pipeline that powers prior-visit features; the extension is using episode tags as boosting features in the ranker.</p>
+<p><strong>Insurance coverage explainability.</strong> Combine the ranker output with member-specific cost estimation: &quot;Dr. Hernandez is in your preferred tier; your estimated visit cost is $30 copay.&quot; This requires integrating with the plan's claims-pricing engine, but the patient experience leap is large. Make sure the cost estimates are clearly labeled as estimates and update them as plan-design changes.</p>
+<p><strong>Provider-side tooling for directory accuracy.</strong> A provider self-service portal where contracted providers can review and correct their own directory entries. Submissions enter the validation pipeline (Step 1) the same way as other source events. This shifts the data quality burden onto the parties best positioned to know the truth (the providers), with appropriate workflow to catch and flag self-attested changes that look anomalous (a provider claiming to speak fifteen languages, a sudden change in tax ID).</p>
+<p><strong>LLM-rendered comparative explanations.</strong> When the patient is comparing two or three results, generate a short comparative paragraph: &quot;Dr. Hernandez and Dr. Reyes are both Spanish-speaking family physicians in your network. Dr. Hernandez is closer (2.1 miles vs 4.4); Dr. Reyes has earlier next-available appointments (2 weeks vs 4).&quot; This is one Bedrock call per comparison and significantly improves the decision-making experience for patients juggling multiple criteria.</p>
+<p><strong>Cross-recipe orchestration with Recipe 4.1.</strong> When the channel optimizer (Recipe 4.1) sends an appointment reminder to a patient, it can include a note about in-network alternatives if the appointment has been canceled or if the original provider has gone out of network: &quot;Your appointment with Dr. Smith is canceled. Here are three in-network alternatives.&quot; This composition consumes the search endpoint but pre-filters by specialty and existing relationships.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html">Amazon OpenSearch Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/knn.html">Amazon OpenSearch Service k-NN Plugin</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/neural-search.html">Amazon OpenSearch Service hybrid query patterns</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/inference-call-tools.html">Amazon Bedrock structured output and function calling</a></li>
+<li><a href="https://docs.aws.amazon.com/location/latest/developerguide/what-is-amazon-location.html">Amazon Location Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/xgboost.html">Amazon SageMaker XGBoost Built-in Algorithm</a> (<code>rank:pairwise</code> and <code>rank:ndcg</code> objectives for learning-to-rank)</li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-opensearch-service-samples"><code>amazon-opensearch-service-samples</code></a>: Demonstrates hybrid keyword + vector search patterns, directly applicable to the candidate retrieval step</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Hands-on labs covering structured-output prompting and embedding generation with Titan</li>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: XGBoost-based learning-to-rank notebooks (search &quot;learning to rank&quot; or &quot;lambdarank&quot;) for the eventual LTR training pipeline</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter AI/ML and Healthcare): browse for search and recommendation reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;hybrid search,&quot; &quot;OpenSearch vector,&quot; &quot;learning to rank,&quot; and &quot;provider directory&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/architecture/">AWS Architecture Blog</a>: search &quot;search architecture&quot; and &quot;recommendation system&quot; for end-to-end reference architectures</li>
+</ul>
+<p><strong>External References (Conceptual and Regulatory):</strong></p>
+<ul>
+<li><a href="https://npiregistry.cms.hhs.gov/">NPPES NPI Registry</a>: public registry of National Provider Identifiers; foundational data source for credentialing and verification</li>
+<li><a href="https://www.nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40">NUCC Healthcare Provider Taxonomy</a>: canonical specialty taxonomy used by CMS and most plans</li>
+<li><a href="https://www.cms.gov/medicare/health-drug-plans/medicare-advantage">CMS Medicare Advantage Provider Directory Requirements</a>: regulatory baseline for accuracy and refresh requirements</li>
+<li><a href="https://www.cms.gov/nosurprises">No Surprises Act, Provider Directory Provisions</a>: federal accuracy requirements and patient protections related to inaccurate directory listings</li>
+<li><a href="https://en.wikipedia.org/wiki/Learning_to_rank">Learning to Rank, Wikipedia</a>: conceptual overview of the technique family that powers the ranker</li>
+<li><a href="https://arxiv.org/abs/1602.05352">Counterfactual Learning to Rank, primer</a>: foundational paper on inverse-propensity-weighted ranker training (position-bias correction at training time)</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient data generator for non-PHI development</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Catalog ingestion (single-source), hybrid OpenSearch index, eligibility filters, basic LTR ranker, distance-aware ranking</td>
+<td>6-8 weeks</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full pipeline: multi-source ingestion + validation + freshness scoring + query understanding LLM + LTR ranker + fairness re-rank + engagement attribution + cohort dashboards + audit log channel</td>
+<td>4-6 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add telehealth awareness, episode-aware boosting, cost-estimation overlay, provider self-service portal, comparative LLM explanations, cross-recipe orchestration</td>
+<td>6-12 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter04.03-provider-directory-search-optimization.html">Main Recipe 4.3</a> · <a href="chapter04.03-python-example.html">Python Example</a> · <a href="chapter04-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

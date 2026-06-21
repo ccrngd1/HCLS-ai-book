@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 10.8 Architecture and Implementation: Voice Biomarker Detection</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested nav-active" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-108-architecture-and-implementation-voice-biomarker-detection">Recipe 10.8 Architecture and Implementation: Voice Biomarker Detection</h1>
+<p><em>Companion to <a href="chapter10.08-voice-biomarker-detection.html">Recipe 10.8: Voice Biomarker Detection</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon S3 for high-fidelity audio sample storage.</strong> The biomarker pipeline benefits from preserving the original captured audio at full fidelity. S3 holds the audio with SSE-KMS encryption using customer-managed keys, with a lifecycle policy that enforces the institutional audio-retention window (often hours to days, occasionally longer with explicit consent). A separate S3 bucket holds extracted feature vectors with longer retention; the feature vectors are derived data with substantially smaller per-sample storage cost and lower re-identification risk than the raw audio. A third bucket holds the audit archive for regulatory and clinical-quality review with Object Lock in compliance mode.</p>
+<p><strong>Amazon SageMaker for per-indication model hosting and per-cohort calibration.</strong> Voice biomarker models are typically not standard-catalog services; they are research-derived models for specific indications, often built on top of pretrained speech embeddings, with per-cohort calibration layers. SageMaker provides the model-hosting substrate. Each validated indication is hosted as a separate SageMaker endpoint or as a multi-model endpoint, with per-cohort threshold maps applied at the inference orchestration layer. SageMaker's monitoring features support post-market surveillance with model-quality monitor and data-quality monitor jobs against the inference traffic.</p>
+<p><strong>Amazon SageMaker Inference Recommender and Asynchronous Inference for cost-efficient scoring.</strong> Voice biomarker inference is not always real-time. Many use cases (longitudinal monitoring, research workflows, post-encounter analysis) tolerate near-real-time scoring (minutes rather than seconds). SageMaker Asynchronous Inference reduces cost compared to real-time endpoints for these workloads. Real-time endpoints serve the use cases where in-encounter feedback is required.</p>
+<p><strong>AWS Lambda and AWS Step Functions for pipeline orchestration.</strong> Per-stage Lambdas implement the orchestration: capture-finalization handler, audio-quality-assessment Lambda, feature-extraction Lambda, eligibility-check Lambda, scoring Lambda, interpretation-packaging Lambda. Step Functions coordinates the multi-stage pipeline with durable state, retry semantics, and observable failure handling. For real-time use cases the orchestration runs within tighter latency budgets; for asynchronous use cases the orchestration tolerates longer per-stage latencies.</p>
+<p><strong>Amazon Transcribe Medical for the speech-to-text path used in cognitive and linguistic biomarkers.</strong> When the biomarker pipeline uses linguistic features (lexical diversity, idea density, word-finding patterns) extracted from spoken samples, Transcribe Medical produces the transcript that the linguistic-feature extractor consumes. The transcript is used for biomarker feature extraction; it is not the primary output. Recipe 10.4 covers the medical-dictation transcribe pipeline; the same primitives apply here at lower volume.</p>
+<p><strong>Amazon Comprehend Medical for clinical-entity extraction from spontaneous-speech samples.</strong> Spontaneous-speech tasks (describing a picture, telling a story) sometimes include clinical content the system can use for both biomarker features (semantic coherence, topic adherence) and incidental clinical-content capture. Comprehend Medical extracts the clinical entities; the biomarker pipeline uses them as features and the orchestration layer routes any clinically actionable content (a patient describing chest pain in their spontaneous-speech sample, for instance) to the appropriate clinical workflow.</p>
+<p><strong>Amazon Bedrock for natural-language interpretation packaging and clinician communication.</strong> When the biomarker output needs to be summarized into a clinician-facing or patient-facing communication, Bedrock provides the LLM layer that converts the structured score into natural-language explanations. Bedrock is also useful for the linguistic-feature extraction in cognitive-decline biomarker pipelines, where LLM-judged semantic coherence and topic adherence are part of the feature pipeline. Recipe 2.6 (clinical note summarization) and recipe 2.5 (after-visit summary generation) cover the LLM-driven summarization patterns that apply here.</p>
+<p><strong>Amazon Bedrock Guardrails for safety filtering on patient-facing communications.</strong> When the biomarker output is communicated to the patient directly (not as a diagnosis but as patient-facing context), Guardrails apply content filters and contextual-grounding checks against the underlying biomarker output, ensuring the patient communication does not over-claim what the biomarker supports.</p>
+<p><strong>AWS HealthLake for FHIR-based biomarker observation storage.</strong> The biomarker score is an Observation resource in FHIR terms. HealthLake stores the FHIR Observations and supports the longitudinal-trajectory queries the workflow needs. For non-FHIR EHR integrations, the institutional EHR-integration layer translates the FHIR Observation into the EHR-specific representation.</p>
+<p><strong>Amazon DynamoDB for per-patient longitudinal-state storage.</strong> The per-patient trajectory data (baseline scores, score history, calibration context, confound flags per sample) is well-shaped for DynamoDB. A per-patient table with the patient hash as partition key and the sample timestamp as sort key supports the trajectory queries efficiently. KMS at rest with customer-managed keys.</p>
+<p><strong>Amazon API Gateway for the capture and result APIs.</strong> The patient-facing or clinician-facing capture experience submits audio through an API Gateway endpoint. The clinician-facing result-retrieval experience reads the structured biomarker output through API Gateway endpoints backed by Lambda. Cognito or institutional-IdP authentication applies to all endpoints.</p>
+<p><strong>Amazon Cognito or institutional IdP via OIDC/SAML for authentication.</strong> Clinician access to results uses the institutional identity provider with appropriate clinical-application scopes. Patient access (where applicable) uses a patient-identity flow with appropriate scopes.</p>
+<p><strong>AWS KMS for cryptographic key custody.</strong> Customer-managed keys for the audio bucket, the feature-vector bucket, the audit archive, the DynamoDB tables, and Secrets Manager. Voice samples and feature vectors use separate KMS keys for blast-radius containment and finer retention control. Per-state biometric-data law sometimes requires distinct cryptographic isolation; the architecture supports per-jurisdiction key management where required.</p>
+<p><strong>AWS Secrets Manager for EHR integration credentials and any external-vendor API credentials.</strong> The Lambdas that write biomarker results back to the EHR or that call external clinical-validation services hold their credentials in Secrets Manager with rotation per the institutional cadence.</p>
+<p><strong>Amazon EventBridge for cross-system event flow.</strong> Sample-capture, scoring-complete, and result-delivered events flow through EventBridge. Downstream consumers (the post-market surveillance pipeline, the operational dashboards, the patient-portal release workflow) react to events without coupling to the orchestration Lambdas.</p>
+<p><strong>Amazon CloudWatch for operational metrics and alarms.</strong> Per-stage latency, per-cohort score distributions, eligibility-check pass rates, indeterminate-result rates, audio-quality scores, post-deployment accuracy proxies. Alarms on per-cohort drift thresholds, on indeterminate-result-rate spikes, on aggregate accuracy regressions.</p>
+<p><strong>AWS CloudTrail for API-level audit.</strong> All access to PHI-bearing and biometric-data-bearing resources logged. SageMaker invocations logged. KMS key uses logged. CloudTrail logs in a dedicated bucket with Object Lock and lifecycle to S3 Glacier Deep Archive after 90 days.</p>
+<p><strong>Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon QuickSight (optional) for analytics.</strong> Audit and telemetry flow to S3 via Firehose. Glue catalogs the data. Athena provides SQL access for the operational and post-market surveillance analytics. QuickSight renders the dashboards.</p>
+<p><strong>Amazon SageMaker Model Monitor and Clarify for post-market surveillance.</strong> Model Monitor compares production inference against the training-time baseline for data-quality drift and model-quality drift. Clarify produces feature-attribution and bias reports per cohort on a scheduled cadence. Together, they provide the per-cohort surveillance the regulatory and clinical-quality posture requires.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Capture
+      PATIENT[Patient or&lt;br/&gt;Clinician Device]
+      CONSENT[Consent and&lt;br/&gt;Protocol Capture]
+      QA[Real-Time&lt;br/&gt;Audio QA]
+    end
+
+    subgraph Ingest
+      APIGW_IN[API Gateway&lt;br/&gt;Capture API]
+      L_INGEST[Lambda&lt;br/&gt;Sample Ingest]
+      S3_AUDIO[(S3 Audio&lt;br/&gt;Brief Retention&lt;br/&gt;SSE-KMS)]
+    end
+
+    subgraph Pipeline
+      SF[Step Functions&lt;br/&gt;Pipeline Orchestrator]
+      L_FEAT[Lambda&lt;br/&gt;Feature Extraction]
+      TS_MED[Transcribe Medical&lt;br/&gt;(linguistic biomarkers)]
+      COMP_MED[Comprehend Medical&lt;br/&gt;(clinical entities)]
+      L_ELIG[Lambda&lt;br/&gt;Eligibility Check]
+      SM_PARK[(SageMaker Endpoint&lt;br/&gt;Parkinson&#x27;s Model)]
+      SM_RESP[(SageMaker Endpoint&lt;br/&gt;Respiratory Model)]
+      SM_COG[(SageMaker Endpoint&lt;br/&gt;Cognitive Model)]
+      L_CAL[Lambda&lt;br/&gt;Per-Cohort&lt;br/&gt;Calibration]
+      L_PKG[Lambda&lt;br/&gt;Interpretation&lt;br/&gt;Packaging]
+      BR[Bedrock&lt;br/&gt;NL Communication]
+      BR_GR[Bedrock&lt;br/&gt;Guardrails]
+    end
+
+    subgraph Storage
+      S3_FEAT[(S3 Feature Vectors&lt;br/&gt;SSE-KMS)]
+      DDB_TRAJ[(DynamoDB&lt;br/&gt;Patient Trajectory)]
+      HL[HealthLake&lt;br/&gt;FHIR Observations]
+      S3_AUDIT[(S3 Audit Archive&lt;br/&gt;Object Lock)]
+    end
+
+    subgraph Workflow
+      APIGW_OUT[API Gateway&lt;br/&gt;Result API]
+      COGNITO[Cognito +&lt;br/&gt;Institutional IdP]
+      EHR[EHR FHIR&lt;br/&gt;Integration]
+      CLINICIAN[Clinician&lt;br/&gt;Decision-Support UI]
+      PATIENT_VIEW[Patient-Facing UI&lt;br/&gt;(where applicable)]
+    end
+
+    subgraph Surveillance
+      EB[EventBridge]
+      KIN[Kinesis Firehose]
+      GLUE[Glue Catalog]
+      ATH[Athena]
+      QS[QuickSight]
+      MM[SageMaker Model Monitor]
+      CLAR[SageMaker Clarify]
+      CW[CloudWatch]
+      CT[CloudTrail]
+    end
+
+    subgraph Keys
+      KMS[(AWS KMS&lt;br/&gt;Customer-Managed)]
+      SM_SEC[(Secrets Manager&lt;br/&gt;EHR Creds)]
+    end
+
+    PATIENT --&gt; CONSENT
+    CONSENT --&gt; QA
+    QA --&gt; APIGW_IN
+    APIGW_IN --&gt; L_INGEST
+    L_INGEST --&gt; S3_AUDIO
+    S3_AUDIO --&gt; SF
+    SF --&gt; L_FEAT
+    L_FEAT --&gt; TS_MED
+    L_FEAT --&gt; COMP_MED
+    L_FEAT --&gt; S3_FEAT
+    SF --&gt; L_ELIG
+    L_ELIG --&gt; SM_PARK
+    L_ELIG --&gt; SM_RESP
+    L_ELIG --&gt; SM_COG
+    SM_PARK --&gt; L_CAL
+    SM_RESP --&gt; L_CAL
+    SM_COG --&gt; L_CAL
+    L_CAL --&gt; L_PKG
+    L_PKG --&gt; BR
+    BR --&gt; BR_GR
+    L_PKG --&gt; DDB_TRAJ
+    L_PKG --&gt; HL
+    L_PKG --&gt; APIGW_OUT
+    APIGW_OUT --&gt; COGNITO
+    APIGW_OUT --&gt; CLINICIAN
+    APIGW_OUT --&gt; PATIENT_VIEW
+    APIGW_OUT --&gt; EHR
+    EHR --&gt; SM_SEC
+    SF --&gt; EB
+    L_PKG --&gt; EB
+    EB --&gt; KIN
+    KIN --&gt; S3_AUDIT
+    S3_AUDIT --&gt; GLUE
+    GLUE --&gt; ATH
+    ATH --&gt; QS
+    SM_PARK --&gt; MM
+    SM_RESP --&gt; MM
+    SM_COG --&gt; MM
+    MM --&gt; CLAR
+    SF --&gt; CW
+    APIGW_OUT --&gt; CT
+    KMS --&gt; S3_AUDIO
+    KMS --&gt; S3_FEAT
+    KMS --&gt; S3_AUDIT
+    KMS --&gt; DDB_TRAJ
+    KMS --&gt; SM_SEC
+
+    style SM_PARK fill:#fcf,stroke:#333
+    style SM_RESP fill:#fcf,stroke:#333
+    style SM_COG fill:#fcf,stroke:#333
+    style TS_MED fill:#fcf,stroke:#333
+    style COMP_MED fill:#fcf,stroke:#333
+    style BR fill:#fcf,stroke:#333
+    style BR_GR fill:#fcf,stroke:#333
+    style MM fill:#fcf,stroke:#333
+    style CLAR fill:#fcf,stroke:#333
+    style DDB_TRAJ fill:#9ff,stroke:#333
+    style S3_AUDIO fill:#cfc,stroke:#333
+    style S3_FEAT fill:#cfc,stroke:#333
+    style S3_AUDIT fill:#cfc,stroke:#333
+    style HL fill:#9ff,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon S3, Amazon SageMaker (endpoints, Asynchronous Inference, Model Monitor, Clarify), AWS Lambda, AWS Step Functions, Amazon Transcribe Medical, Amazon Comprehend Medical, Amazon Bedrock (with Guardrails), AWS HealthLake, Amazon DynamoDB, Amazon API Gateway, Amazon Cognito, AWS KMS, AWS Secrets Manager, Amazon EventBridge, Amazon CloudWatch, AWS CloudTrail, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena. Optionally Amazon QuickSight for dashboards.</td>
+</tr>
+<tr>
+<td><strong>Validated Models</strong></td>
+<td>Per-indication validated voice-biomarker models. For most institutions this means selecting commercial vendors with FDA clearances or strong published evidence (cough analysis, Parkinson's screening) rather than building from scratch. Building from scratch requires a multi-year validation study with the cohort, evidence, and regulatory work that implies. The architecture supports either pattern: third-party model integration through SageMaker endpoint or vendor API; institutionally-built models hosted on SageMaker endpoints.</td>
+</tr>
+<tr>
+<td><strong>External Inputs</strong></td>
+<td>Capture-protocol scripts and prompts (per indication). Microphone characterization data for the supported capture-device classes. Per-cohort calibration data per validated model. Per-cohort threshold maps. Per-language linguistic-feature configurations where applicable. Validation cohort data for ongoing post-market surveillance. EHR FHIR write surface for biomarker Observation resources.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege roles. The capture-ingest Lambda has S3 write to the audio bucket only and SQS or EventBridge publish for the pipeline trigger. The feature-extraction Lambda has S3 read on the audio bucket and write on the feature bucket plus Transcribe and Comprehend Medical permissions. The scoring Lambda has SageMaker invoke-endpoint permissions for the validated indication endpoints only. The packaging Lambda has DynamoDB write, HealthLake write, Bedrock invoke-model, and EventBridge publish permissions. The EHR integration Lambda has Secrets Manager access for the EHR credentials and the EHR-specific egress only. Avoid wildcard actions and resources in production.</td>
+</tr>
+<tr>
+<td><strong>BAA and Compliance</strong></td>
+<td>AWS BAA signed. Amazon S3, SageMaker, Lambda, Step Functions, Transcribe (general and Medical), Comprehend Medical, Bedrock (verify the specific models and regions covered), HealthLake, DynamoDB, API Gateway, Cognito, KMS, Secrets Manager, EventBridge, CloudWatch Logs, CloudTrail, Kinesis Firehose, Glue, Athena are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference).  Voice samples are biometric data; biometric-data law (Illinois BIPA, Texas, Washington, and similar) applies in addition to HIPAA where the patient's jurisdiction triggers it. SaMD regulatory consideration for any model that produces clinical claims; pre-deployment FDA strategy review for indications where a SaMD pathway is relevant. IRB or institutional review for research-track deployments and for cohort-development data collection. State-specific regulatory rules for any indication that intersects controlled-substance management, mental-health crisis response, or other regulated domains.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Audio samples: SSE-KMS with customer-managed keys, retention bound to the consent terms (often hours to days, occasionally longer with explicit consent). Feature vectors: SSE-KMS with separate customer-managed keys, retention as needed for surveillance and re-validation per institutional policy. Biomarker results: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, biometric-data law retention requirements (which can be longer than HIPAA's), state medical-records-retention rules, and institutional regulatory floor. DynamoDB tables, HealthLake datastore, Lambda environment variables, and Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all API calls.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas that call back-office APIs (EHR FHIR, patient portal) run in VPC with controlled egress. VPC endpoints for S3, DynamoDB, KMS, Secrets Manager, CloudWatch Logs, EventBridge, SageMaker Runtime, Transcribe, Comprehend Medical, Bedrock, Lambda. Endpoint policies pin access to the specific resources the pipeline uses. SageMaker endpoints in VPC mode where supported by the chosen container.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the audio bucket, the feature bucket, the audit-archive bucket, the DynamoDB tables, the Secrets Manager secrets, and the customer-managed KMS keys. SageMaker invocations logged. Bedrock invocations logged with metadata only (not full input/output, to avoid persisting biometric or PHI content in CloudTrail). Lambda invocations logged. API Gateway access logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Public voice-biomarker datasets for development and feature-pipeline validation. Examples include the mPower Parkinson's voice dataset, the Coswara cough dataset, and the DementiaBank speech corpora; each has its own access terms that must be reviewed before integration.  Synthetic capture-quality test signals for the audio QA pipeline (recordings of known-quality test tones, swept sines, or reference speech samples for microphone characterization). Never use uncoded production patient voice samples in development without explicit consent and IRB or institutional review; voice samples are biometric data with non-trivial governance implications.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a mid-sized institution scale (50,000 voice samples per year, mixed across two or three indications): SageMaker endpoint hosting and inference at typically $25,000-100,000 per year depending on real-time vs. asynchronous and instance class. Transcribe Medical and Comprehend Medical at typically $5,000-15,000 per year. Bedrock at typically $1,000-5,000 per year for natural-language interpretation packaging. Lambda, Step Functions, S3, DynamoDB, HealthLake, CloudWatch, KMS, Secrets Manager, EventBridge, Kinesis Firehose, Glue, Athena total approximately $10,000-25,000 per year combined. Total AWS infrastructure typically $40,000-150,000 per year at this scale. The per-sample cost is dominated by the SageMaker model inference. The validation, regulatory, and clinical-evidence costs are typically much larger than the infrastructure costs at this scale.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>High-fidelity audio sample storage with brief-retention lifecycle; feature-vector storage with longer retention; audit archive with Object Lock</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Per-indication validated model hosting (real-time and asynchronous endpoints), per-cohort calibration application, post-market surveillance via Model Monitor and Clarify</td>
+</tr>
+<tr>
+<td><strong>Amazon Transcribe Medical</strong></td>
+<td>Speech-to-text for linguistic-feature extraction in cognitive-decline biomarkers and other linguistic-feature pipelines</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Clinical-entity extraction from spontaneous-speech transcripts when used as biomarker features and for incidental clinical-content routing</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Natural-language interpretation packaging for clinician communication; LLM-based linguistic-feature scoring (semantic coherence, topic adherence) where used in cognitive biomarkers</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Guardrails</strong></td>
+<td>Content filtering and contextual-grounding checks on patient-facing biomarker communications</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Per-stage orchestration for capture-ingest, feature-extraction, eligibility-check, scoring, calibration, packaging, EHR write</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Pipeline orchestration with durable state, retry semantics, and observable failure handling</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake</strong></td>
+<td>FHIR-based biomarker Observation storage and longitudinal-trajectory queries</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Per-patient trajectory tables, per-sample state, per-cohort calibration lookup</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Capture API for sample submission; result API for clinician and patient consumption</td>
+</tr>
+<tr>
+<td><strong>Amazon Cognito</strong></td>
+<td>Clinician and patient authentication federated through institutional IdP</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all PHI-bearing and biometric-bearing data stores; separate keys per data class for blast-radius containment</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>EHR API and external-vendor API credentials with rotation</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Cross-system event flow for capture, scoring, and delivery events</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, per-cohort drift alarms, indeterminate-result-rate alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>API-level audit logging for PHI-bearing and biometric-bearing resources and AI/ML service invocations</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Streaming audit and telemetry into the audit archive</td>
+</tr>
+<tr>
+<td><strong>AWS Glue + Amazon Athena</strong></td>
+<td>SQL access to audit and surveillance data for operational and clinical-quality analytics</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight (optional)</strong></td>
+<td>Dashboards for clinical-quality and post-market surveillance teams</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Capture the audio sample with the indication-specific protocol, real-time quality assessment, and explicit biometric-data consent.</strong> When the patient or clinician initiates a capture, the system selects the indication-specific protocol, prompts the speaker through the tasks, runs real-time quality checks, and records the consent context including the biometric-data terms. Skip the per-protocol prompt design and the resulting audio cannot be reliably scored against the model's validation conditions. Skip the consent capture and the institution accumulates biometric data without proper authorization, which is a compliance and trust failure.</p>
+<pre class="code code-plain"><code>ON capture_initiated(patient_id, indication, capture_context):
+
+    // Step 1A: select the protocol for the indication.
+    // The protocol defines the tasks, expected duration,
+    // recording-quality minimums, and per-task quality
+    // gates.
+    protocol = lookup_protocol(
+        indication: indication,
+        patient_language: lookup_patient_language(patient_id),
+        capture_context: capture_context)
+    // capture_context includes device class (smartphone,
+    // dedicated mic, telehealth call), environment
+    // (clinic, home), and prior-visit baseline status.
+
+    IF protocol IS NULL:
+        // No validated protocol exists for this
+        // combination. The system declines to capture
+        // rather than capture out-of-protocol audio.
+        RETURN { status: &quot;PROTOCOL_NOT_AVAILABLE&quot; }
+
+    // Step 1B: capture biometric-data consent.
+    // Voice samples are biometric data; the consent
+    // disclosure is more specific than generic PHI
+    // consent. Per-jurisdiction biometric-data law
+    // (Illinois BIPA, Texas, Washington) determines
+    // the disclosure requirements.
+    consent_outcome = capture_consent(
+        patient_id: patient_id,
+        consent_type: &quot;voice_biomarker_collection&quot;,
+        disclosure: build_disclosure(
+            indication: indication,
+            retention_terms: protocol.retention,
+            jurisdiction: lookup_patient_jurisdiction(
+                patient_id),
+            third_party_disclosure: protocol.disclosures),
+        require_explicit: protocol.requires_explicit_consent)
+
+    IF NOT consent_outcome.granted:
+        log_consent_decline(
+            patient_id, indication, consent_outcome)
+        RETURN { status: &quot;CONSENT_DECLINED&quot; }
+
+    // Step 1C: bootstrap the capture session.
+    session_id = generate_uuid()
+    capture_session_table.put({
+        session_id: session_id,
+        patient_id_hash: hash(patient_id),
+        indication: indication,
+        protocol_version: protocol.version,
+        consent_id: consent_outcome.consent_id,
+        capture_context: capture_context,
+        device_class: capture_context.device_class,
+        started_at: now(),
+        jurisdiction:
+            lookup_patient_jurisdiction(patient_id)
+    })
+
+    // Step 1D: walk the speaker through the protocol
+    // tasks and capture audio for each.
+    captured_segments = []
+    FOR task IN protocol.tasks:
+        prompt_speaker(task.prompt_text)
+        segment_audio = capture_audio_with_quality_assessment(
+            task: task,
+            quality_thresholds: task.quality_thresholds,
+            max_retries: task.max_retries)
+
+        IF segment_audio.quality_score &lt; task.minimum_quality:
+            log_capture_quality_failure(
+                session_id, task, segment_audio)
+            // Indication may still be assessable on
+            // partial-task data; the protocol determines
+            // whether to proceed or abort.
+            IF task.required:
+                RETURN { status: &quot;INSUFFICIENT_QUALITY&quot;,
+                         failed_task: task.task_id }
+
+        captured_segments.append({
+            task_id: task.task_id,
+            audio_ref: segment_audio.s3_uri,
+            duration_seconds: segment_audio.duration,
+            quality_score: segment_audio.quality_score,
+            sample_rate: segment_audio.sample_rate,
+            codec: segment_audio.codec,
+            snr_db: segment_audio.snr_db,
+            clipping_detected: segment_audio.clipping
+        })
+
+    // Step 1E: persist the capture-session record and
+    // emit the pipeline trigger.
+    capture_session_table.update(
+        session_id: session_id,
+        captured_segments: captured_segments,
+        capture_completed_at: now(),
+        status: &quot;captured&quot;)
+
+    EventBridge.PutEvents([{
+        source: &quot;voice_biomarker&quot;,
+        detail_type: &quot;sample_captured&quot;,
+        detail: {
+            session_id: session_id,
+            indication: indication,
+            segment_count: len(captured_segments)
+        }
+    }])
+
+    RETURN { session_id: session_id, status: &quot;CAPTURED&quot; }
+</code></pre>
+<p><strong>Step 2: Extract acoustic and linguistic features from each task segment, with bandwidth and codec-aware processing.</strong> Each task segment is processed through the appropriate feature pipeline: sustained-vowel segments produce vocal-fold-function features; read-passage and spontaneous-speech segments produce timing, prosody, and articulation features plus optional linguistic features from the transcript; cough-collection segments produce acoustic-event features. The feature extraction is bandwidth-aware; features that depend on frequencies the recording chain does not preserve are flagged as unmeasurable rather than computed against missing signal. Skip the bandwidth-awareness and the resulting features include garbage values from frequencies that the codec discarded.</p>
+<pre class="code code-plain"><code>FUNCTION extract_features(session_id):
+    state = capture_session_table.get(session_id)
+    feature_set = {
+        session_id: session_id,
+        indication: state.indication,
+        per_segment_features: {},
+        recording_chain_metadata: {
+            device_class: state.device_class,
+            min_codec_bandwidth_hz:
+                determine_codec_bandwidth(state)
+        }
+    }
+
+    // Step 2A: per-segment feature extraction.
+    FOR segment IN state.captured_segments:
+        task_def = lookup_task_definition(
+            indication: state.indication,
+            task_id: segment.task_id)
+
+        // Bandwidth-aware feature selection. Some
+        // features (high-frequency spectral tilt, for
+        // instance) are not reliably measurable when the
+        // codec aggressively compresses high frequencies.
+        applicable_features = filter_features_by_bandwidth(
+            requested_features: task_def.feature_list,
+            available_bandwidth_hz:
+                feature_set.recording_chain_metadata
+                    .min_codec_bandwidth_hz)
+
+        // Acoustic features.
+        acoustic_features = compute_acoustic_features(
+            audio_ref: segment.audio_ref,
+            features: applicable_features.acoustic,
+            // Per-feature confidence: features computed
+            // on shorter or noisier segments get lower
+            // per-feature confidence.
+            return_confidence: true)
+
+        // Pretrained-representation features (frozen
+        // self-supervised speech embeddings) for the
+        // downstream model&#x27;s pretrained-rep inputs.
+        embedding_features = compute_speech_embeddings(
+            audio_ref: segment.audio_ref,
+            model_id: task_def.embedding_model_id)
+
+        // Linguistic features (if task is read-passage
+        // or spontaneous-speech and indication uses
+        // linguistic features, e.g., cognitive
+        // biomarkers).
+        linguistic_features = NULL
+        IF task_def.uses_linguistic_features:
+            transcript = transcribe_medical.start_job(
+                audio_ref: segment.audio_ref,
+                language: state.protocol.language,
+                show_speaker_labels: false)
+            wait_for_transcribe(transcript.job_name)
+            transcript_text = retrieve_transcript(
+                transcript.job_name)
+
+            // TODO (TechWriter): Expert review A9 (MEDIUM). Transcribe Medical async job-wait inside the feature-extraction Lambda is a latency-and-reliability anti-pattern (Lambda billed for wait period, 15-minute maximum execution time may be exceeded for long samples). Split linguistic-feature extraction into separate Step Functions step or use wait-for-callback pattern; feature-extraction Lambda invokes start_job and returns job_name; Step Functions awaits job-completion event; separate Lambda step retrieves transcript and invokes extract_linguistic_features.
+
+            linguistic_features = extract_linguistic_features(
+                transcript: transcript_text,
+                requested_features:
+                    applicable_features.linguistic)
+
+            // For spontaneous-speech samples that may
+            // contain incidental clinical content,
+            // route through Comprehend Medical to
+            // surface anything that needs clinical
+            // attention regardless of the biomarker
+            // result.
+            IF task_def.is_spontaneous_speech:
+                clinical_entities =
+                    comprehend_medical.detect_entities_v2(
+                        text: transcript_text)
+                IF has_actionable_clinical_content(
+                       clinical_entities):
+                    route_to_clinical_review(
+                        session_id, clinical_entities)
+
+        feature_set.per_segment_features[segment.task_id] = {
+            acoustic: acoustic_features,
+            embeddings: embedding_features,
+            linguistic: linguistic_features,
+            unmeasurable_features: applicable_features.excluded
+        }
+
+    // Step 2B: persist features.
+    feature_set_archive.put(
+        session_id: session_id,
+        feature_set: feature_set)
+
+    capture_session_table.update(
+        session_id: session_id,
+        feature_set_archive_ref:
+            f&quot;s3://{FEATURE_BUCKET}/{session_id}/features.json&quot;,
+        features_extracted_at: now(),
+        status: &quot;features_extracted&quot;)
+
+    RETURN { feature_set_ref: feature_set.archive_ref }
+</code></pre>
+<p><strong>Step 3: Check eligibility for each candidate biomarker model based on validation envelope.</strong> Each per-indication model has a validation envelope: the demographic distributions, recording-chain conditions, and task-completion expectations the model was validated under. Before the model is invoked, the system checks whether the current sample fits the envelope. Out-of-envelope samples produce an &quot;indication not assessable&quot; result rather than a potentially-misleading score. Skip the eligibility check and the system silently produces scores on samples the model was not validated for, which is a clinical-safety failure mode.</p>
+<pre class="code code-plain"><code>FUNCTION check_eligibility(session_id, candidate_indications):
+    state = capture_session_table.get(session_id)
+    feature_set = feature_set_archive.get(session_id)
+    eligibility_results = {}
+
+    FOR indication IN candidate_indications:
+        model_card = lookup_model_card(indication)
+
+        // Step 3A: demographic eligibility.
+        patient_demographics = lookup_patient_demographics(
+            state.patient_id_hash)
+        demographic_fit = check_demographic_envelope(
+            patient_demographics,
+            model_card.validation_demographics)
+
+        // Step 3B: recording-chain eligibility.
+        recording_fit = check_recording_envelope(
+            recording_metadata:
+                feature_set.recording_chain_metadata,
+            validation_envelope:
+                model_card.validation_recording_envelope)
+
+        // Step 3C: task-completion eligibility.
+        task_fit = check_task_completion(
+            captured_segments: state.captured_segments,
+            required_tasks: model_card.required_tasks,
+            min_per_task_quality:
+                model_card.min_per_task_quality)
+
+        // Step 3D: confound-flag check.
+        confound_flags = check_confounds(
+            patient_id_hash: state.patient_id_hash,
+            recent_clinical_events: lookup_recent_events(
+                state.patient_id_hash,
+                window_days: 30),
+            model_confounds: model_card.confounds_to_flag)
+
+        eligibility_results[indication] = {
+            eligible:
+                demographic_fit.eligible AND
+                recording_fit.eligible AND
+                task_fit.eligible,
+            demographic_fit: demographic_fit,
+            recording_fit: recording_fit,
+            task_fit: task_fit,
+            confound_flags: confound_flags,
+            // Cohort assignment for per-cohort
+            // calibration at the next step.
+            assigned_cohort: assign_cohort(
+                patient_demographics,
+                feature_set.recording_chain_metadata,
+                model_card.cohort_definitions)
+        }
+
+    capture_session_table.update(
+        session_id: session_id,
+        eligibility: eligibility_results,
+        eligibility_assessed_at: now())
+
+    RETURN eligibility_results
+</code></pre>
+<p><strong>Step 4: Score the eligible biomarkers, applying per-cohort calibration and producing indeterminate results when uncertainty is high.</strong> For each indication that passed eligibility, the system invokes the validated model, applies the per-cohort calibration to the raw model output, and packages the result. When the model's confidence is below the institutional threshold, the result is marked indeterminate rather than passed through as a confident score. Skip the per-cohort calibration and the system produces uncalibrated outputs that perform inconsistently across cohorts. Skip the indeterminate handling and edge-case samples produce confident-looking scores that the clinical workflow takes at face value.</p>
+<pre class="code code-plain"><code>FUNCTION score_biomarkers(session_id):
+    state = capture_session_table.get(session_id)
+    feature_set = feature_set_archive.get(session_id)
+    eligibility = state.eligibility
+    scores = {}
+
+    FOR indication, elig IN eligibility:
+        IF NOT elig.eligible:
+            scores[indication] = {
+                status: &quot;NOT_ASSESSABLE&quot;,
+                ineligibility_reasons:
+                    summarize_ineligibility(elig)
+            }
+            CONTINUE
+
+        model_card = lookup_model_card(indication)
+        endpoint_name = model_card.sagemaker_endpoint
+
+        // Step 4A: assemble model inputs.
+        model_input = assemble_model_input(
+            feature_set: feature_set,
+            model_card: model_card)
+
+        // Step 4B: invoke the SageMaker endpoint.
+        // Real-time endpoints for in-encounter use
+        // cases; asynchronous endpoints for
+        // longitudinal-monitoring use cases.
+        IF model_card.inference_mode == &quot;real_time&quot;:
+            raw_response = sagemaker_runtime.invoke_endpoint(
+                endpoint_name: endpoint_name,
+                content_type: &quot;application/json&quot;,
+                body: serialize(model_input))
+        ELSE:
+            raw_response = sagemaker_runtime.invoke_endpoint_async(
+                endpoint_name: endpoint_name,
+                input_location: model_input.s3_uri)
+            wait_for_async_response(raw_response.output_location)
+            raw_response = retrieve_async_output(
+                raw_response.output_location)
+
+        raw_score = parse_score(raw_response)
+
+        // Step 4C: apply per-cohort calibration.
+        // The cohort was assigned at eligibility step.
+        // Each cohort has its own calibration curve and
+        // its own threshold map.
+        calibration = lookup_cohort_calibration(
+            indication: indication,
+            cohort: elig.assigned_cohort)
+        calibrated_score = apply_calibration(
+            raw_score, calibration.curve)
+
+        // Step 4D: indeterminate-result handling.
+        // Calibrated confidence intervals beyond the
+        // institutional threshold for actionable
+        // results produce indeterminate output.
+        confidence_interval = compute_confidence_interval(
+            score: calibrated_score,
+            cohort_size: calibration.cohort_size,
+            calibration_uncertainty:
+                calibration.calibration_uncertainty)
+
+        IF confidence_interval.width &gt;
+           model_card.indeterminate_threshold:
+            scores[indication] = {
+                status: &quot;INDETERMINATE&quot;,
+                raw_score: raw_score,
+                calibrated_score: calibrated_score,
+                confidence_interval: confidence_interval,
+                cohort: elig.assigned_cohort,
+                confound_flags: elig.confound_flags,
+                recommended_action: &quot;recapture_or_clinician_review&quot;
+            }
+            CONTINUE
+
+        // Step 4E: threshold-based category assignment.
+        category = assign_category(
+            calibrated_score, calibration.thresholds)
+
+        // Step 4F: feature-attribution explanation.
+        // For models that support it, surface the
+        // top contributing features for clinician
+        // interpretation.
+        feature_attribution = compute_attribution(
+            model_card: model_card,
+            model_input: model_input,
+            raw_response: raw_response)
+
+        scores[indication] = {
+            status: &quot;SCORED&quot;,
+            raw_score: raw_score,
+            calibrated_score: calibrated_score,
+            confidence_interval: confidence_interval,
+            category: category,
+            cohort: elig.assigned_cohort,
+            confound_flags: elig.confound_flags,
+            top_features: feature_attribution.top_features,
+            model_version: model_card.model_version,
+            calibration_version: calibration.version,
+            scored_at: now()
+        }
+
+    capture_session_table.update(
+        session_id: session_id,
+        scores: scores,
+        scoring_completed_at: now(),
+        status: &quot;scored&quot;)
+
+    // TODO (TechWriter): Expert review S2 (HIGH). capture_session_table accumulates biomarker scores with patient feature values (top_features.patient_value, cohort_baseline_mean) outside the archive-reference pattern; same chapter pattern as 10.1-10.7 with recipe-distinct biometric-derived-data extension. Adopt audit-record discipline uniformly: write full scores content to per-session score-archive S3 bucket with biometric-derived KMS key class; metadata table holds only references plus structural metadata (status, category, cohort, model_version, calibration_version, faithfulness_annotations_summary, archive_refs). Update Cross-Cutting Design Points to elevate working-store-as-archive-reference pattern.
+
+    RETURN scores
+</code></pre>
+<p><strong>Step 5: Compute longitudinal trajectory and package the clinical interpretation.</strong> For patients with prior samples, the system computes the trajectory delta against the patient's baseline. The packaged interpretation includes the score, the trajectory, the supporting features, the cohort context, the confound flags, and the institutionally-approved clinical-action mapping. Skip the trajectory computation and the system loses the per-patient longitudinal context that makes voice biomarkers most reliable. Skip the institutional clinical-action mapping and individual clinicians have to infer how to act on the score, which produces inconsistent and sometimes inappropriate clinical actions.</p>
+<pre class="code code-plain"><code>FUNCTION package_interpretation(session_id):
+    state = capture_session_table.get(session_id)
+    scores = state.scores
+    interpretations = {}
+
+    FOR indication, score IN scores:
+        IF score.status IN [&quot;NOT_ASSESSABLE&quot;, &quot;INDETERMINATE&quot;]:
+            interpretations[indication] = score
+            CONTINUE
+
+        // Step 5A: longitudinal trajectory.
+        // Trajectory is more reliable than single-sample
+        // scoring for many indications.
+        prior_samples = trajectory_table.get_history(
+            patient_id_hash: state.patient_id_hash,
+            indication: indication,
+            window_days: 730)
+
+        trajectory = NULL
+        IF len(prior_samples) &gt;= MIN_SAMPLES_FOR_TRAJECTORY:
+            baseline = compute_patient_baseline(
+                prior_samples,
+                exclude_recent_days: 30)
+            trajectory = compute_trajectory_delta(
+                current_score: score.calibrated_score,
+                baseline: baseline,
+                model_card: lookup_model_card(indication))
+
+        // Step 5B: clinical-action mapping.
+        // The institution-approved mapping translates
+        // the score and trajectory into one of a small
+        // set of clinical actions (clinician review,
+        // patient communication, longitudinal store
+        // only, no action).
+        clinical_action = lookup_clinical_action_mapping(
+            indication: indication,
+            category: score.category,
+            trajectory: trajectory,
+            confound_flags: score.confound_flags,
+            institutional_policy: INSTITUTIONAL_POLICY)
+
+        // Step 5C: clinician-facing summary using
+        // Bedrock for natural-language packaging.
+        clinician_summary = bedrock.invoke_model(
+            model_id: SUMMARY_MODEL,
+            prompt: build_summary_prompt(
+                indication: indication,
+                score: score,
+                trajectory: trajectory,
+                clinical_action: clinical_action,
+                template: CLINICIAN_SUMMARY_TEMPLATE),
+            guardrail_id: BIOMARKER_GUARDRAIL_ID,
+            response_format: {
+                type: &quot;json_schema&quot;,
+                schema: SUMMARY_SCHEMA
+            },
+            max_tokens: 800)
+
+        // Step 5D: store the trajectory record.
+        trajectory_table.put({
+            patient_id_hash: state.patient_id_hash,
+            indication: indication,
+            sample_timestamp: state.started_at,
+            session_id: session_id,
+            calibrated_score: score.calibrated_score,
+            cohort: score.cohort,
+            confound_flags: score.confound_flags,
+            recording_chain:
+                state.feature_set.recording_chain_metadata,
+            trajectory_delta:
+                (trajectory.delta if trajectory else NULL)
+        })
+
+        interpretations[indication] = {
+            status: &quot;INTERPRETED&quot;,
+            score: score,
+            trajectory: trajectory,
+            clinical_action: clinical_action,
+            clinician_summary: clinician_summary.content,
+            packaged_at: now()
+        }
+
+    capture_session_table.update(
+        session_id: session_id,
+        interpretations: interpretations,
+        packaging_completed_at: now(),
+        status: &quot;interpreted&quot;)
+
+    // TODO (TechWriter): Expert review S2 (HIGH) continued. interpretations content (including LLM-generated clinician_summary) and trajectory_table entries (calibrated_score, cohort, confound_flags, recording_chain, trajectory_delta) need archive-reference pattern. Write interpretations content to per-session interpretation-archive S3 bucket with same KMS key class; metadata holds only references. Classify trajectory_table as biometric-derived data store with biometric-data governance.
+    // TODO (TechWriter): Expert review A2 (MEDIUM). Faithfulness check on the LLM-generated clinician_summary architecturally implicit. Add faithfulness-check stage between Bedrock summary generation and interpretation packaging: structured-output schema validation, citation grounding for each summary section to source biomarker fields, LLM-judge faithfulness scoring as secondary check for high-stakes indications, rule-based contradiction detection. Fall back to render_structured_summary on faithfulness block. Per-cohort faithfulness-failure-rate as launch gate.
+    // TODO (TechWriter): Expert review S4 (MEDIUM). Foundation-model prompt-injection risk for the LLM-judged linguistic-feature-extraction and clinician-summary-rendering paths underspecified. Add delimited-input framing for transcript content (&lt;transcript&gt;...&lt;/transcript&gt;), strict structured-output validation, secondary deterministic-feature-engineering check; per-language and prompt-injection edge-case test discipline.
+
+    RETURN interpretations
+</code></pre>
+<p><strong>Step 6: Deliver the result to the clinical workflow with explicit indeterminate handling and clinician override capture.</strong> The clinician sees the biomarker result in their decision-support context, with the option to acknowledge, override, or request follow-up. The biomarker is decision support, not diagnosis; the clinician retains diagnostic authority. The result is also written to the EHR as a FHIR Observation for the longitudinal record. Skip the clinician override capture and the institution loses the feedback loop that supports post-market surveillance. Skip the EHR write and the result is invisible to the rest of the care team.</p>
+<pre class="code code-plain"><code>FUNCTION deliver_to_workflow(session_id):
+    state = capture_session_table.get(session_id)
+    interpretations = state.interpretations
+
+    FOR indication, interpretation IN interpretations:
+        // Step 6A: write the biomarker as a FHIR
+        // Observation. The Observation includes the
+        // score, the cohort context, the confound flags,
+        // and the indeterminate-result status where
+        // applicable.
+        observation_resource = build_fhir_observation(
+            patient_id: lookup_patient_id(
+                state.patient_id_hash),
+            indication: indication,
+            interpretation: interpretation,
+            performed_at: state.started_at)
+
+        healthlake_client.create_resource(
+            resource_type: &quot;Observation&quot;,
+            resource: observation_resource)
+
+        // TODO (TechWriter): Expert review A3 (MEDIUM). Idempotency for HealthLake FHIR Observation write-back architecturally implicit; duplicate write produces duplicate Observation triggering duplicate decision-support alert, mis-sized longitudinal baseline, mis-calibrated trajectory. Specify per-write idempotency key (session_id, indication) or (patient_id_hash, indication, captured_at_truncated_to_minute); on idempotency-match return prior resource_id; FHIR conditional-create where HealthLake supports.
+
+        // Step 6B: surface the result to the clinical
+        // workflow per the institutionally-approved
+        // clinical-action mapping.
+        IF interpretation.clinical_action == &quot;clinician_review&quot;:
+            create_decision_support_alert(
+                patient_id_hash: state.patient_id_hash,
+                indication: indication,
+                interpretation: interpretation,
+                priority:
+                    interpretation.score.category)
+        ELIF interpretation.clinical_action == &quot;patient_communication&quot;:
+            // Patient-facing message goes through
+            // additional Guardrails check for
+            // appropriate framing.
+            patient_message = generate_patient_message(
+                interpretation,
+                guardrail_id: PATIENT_MESSAGING_GUARDRAIL)
+            schedule_patient_communication(
+                patient_id_hash: state.patient_id_hash,
+                message: patient_message,
+                channel: lookup_patient_preference(
+                    state.patient_id_hash))
+        ELIF interpretation.clinical_action == &quot;longitudinal_only&quot;:
+            // Result stored, not surfaced to clinician
+            // for individual review. Aggregate trajectory
+            // available in clinician&#x27;s longitudinal view.
+            log_longitudinal_only(session_id, indication)
+        ELSE:
+            // No-action mapping. Result stored only.
+            log_no_action(session_id, indication)
+
+        // Step 6C: emit the delivery event for
+        // surveillance and feedback loops.
+        EventBridge.PutEvents([{
+            source: &quot;voice_biomarker&quot;,
+            detail_type: &quot;result_delivered&quot;,
+            detail: {
+                session_id: session_id,
+                indication: indication,
+                clinical_action:
+                    interpretation.clinical_action,
+                category:
+                    (interpretation.score.category if
+                     interpretation.status == &quot;INTERPRETED&quot;
+                     else interpretation.status)
+            }
+        }])
+
+ON clinician_acknowledges_result(session_id, clinician_id,
+                                  indication, action_taken,
+                                  feedback):
+    // Step 6D: capture the clinician&#x27;s response. This
+    // is the feedback loop for post-market surveillance:
+    // did the clinician agree with the biomarker, did
+    // they take an action, did the action match the
+    // institutional clinical-action mapping?
+    clinician_feedback_table.put({
+        session_id: session_id,
+        indication: indication,
+        clinician_id: clinician_id,
+        action_taken: action_taken,
+        agreement_with_biomarker:
+            (action_taken == interpretation.clinical_action),
+        feedback: feedback,
+        responded_at: now()
+    })
+
+    EventBridge.PutEvents([{
+        source: &quot;voice_biomarker&quot;,
+        detail_type: &quot;clinician_feedback_captured&quot;,
+        detail: {
+            session_id: session_id,
+            indication: indication,
+            agreement: (action_taken ==
+                        interpretation.clinical_action)
+        }
+    }])
+</code></pre>
+<p><strong>Step 7: Audit, retain audio per consent, and feed cohort-stratified post-market surveillance.</strong> Every sample produces a durable audit record with the score, the cohort context, the confound flags, and the clinical-action linkage. Audio is retained per the consent terms and then deleted; feature vectors are retained longer for surveillance and re-validation. Cohort-stratified metrics feed the post-market surveillance dashboards that monitor the deployed biomarker's performance against ground-truth clinical outcomes. Skip the audio retention enforcement and the institution silently accumulates biometric data beyond its consent commitment. Skip the cohort-stratified surveillance and per-cohort drift surfaces only through complaints.</p>
+<pre class="code code-plain"><code>FUNCTION audit_and_surveillance(session_id):
+    state = capture_session_table.get(session_id)
+    interpretations = state.interpretations
+
+    audit_record = {
+        session_id: session_id,
+        patient_id_hash: state.patient_id_hash,
+        captured_at: state.started_at,
+        capture_completed_at: state.capture_completed_at,
+        scoring_completed_at: state.scoring_completed_at,
+        delivered_at: state.packaging_completed_at,
+        indications_attempted:
+            list(interpretations.keys()),
+        per_indication_outcomes: {
+            indication: {
+                status: interp.status,
+                category:
+                    (interp.score.category
+                     if interp.status == &quot;INTERPRETED&quot;
+                     else NULL),
+                cohort:
+                    (interp.score.cohort
+                     if interp.status == &quot;INTERPRETED&quot;
+                     else NULL),
+                clinical_action:
+                    (interp.clinical_action
+                     if interp.status == &quot;INTERPRETED&quot;
+                     else NULL),
+                confound_flags:
+                    (interp.score.confound_flags
+                     if interp.status == &quot;INTERPRETED&quot;
+                     else NULL),
+                model_version:
+                    (interp.score.model_version
+                     if interp.status == &quot;INTERPRETED&quot;
+                     else NULL),
+                calibration_version:
+                    (interp.score.calibration_version
+                     if interp.status == &quot;INTERPRETED&quot;
+                     else NULL)
+            }
+            FOR indication, interp IN interpretations
+        },
+        recording_chain_metadata:
+            state.feature_set.recording_chain_metadata,
+        consent_id: state.consent_id,
+        protocol_version: state.protocol_version
+    }
+
+    audit_archive_kinesis_firehose.put(audit_record)
+
+    // Step 7A: schedule audio deletion per consent
+    // terms. Feature-vector retention is configured
+    // separately, typically longer than audio.
+    schedule_audio_deletion(
+        audio_refs:
+            [seg.audio_ref for seg in state.captured_segments],
+        delete_after: lookup_audio_retention(
+            consent_id: state.consent_id,
+            jurisdiction: state.jurisdiction))
+
+    // Step 7B: per-cohort surveillance metrics.
+    FOR indication, outcome IN audit_record.per_indication_outcomes:
+        IF outcome.status == &quot;INTERPRETED&quot;:
+            cloudwatch.put_metric(
+                namespace: &quot;VoiceBiomarker&quot;,
+                metric_name: &quot;BiomarkerCategoryRate&quot;,
+                value: 1,
+                dimensions: {
+                    indication: indication,
+                    category: outcome.category,
+                    cohort: outcome.cohort,
+                    model_version: outcome.model_version
+                })
+        cloudwatch.put_metric(
+            namespace: &quot;VoiceBiomarker&quot;,
+            metric_name: &quot;PerOutcomeStatus&quot;,
+            value: 1,
+            dimensions: {
+                indication: indication,
+                outcome_status: outcome.status,
+                cohort:
+                    (outcome.cohort if outcome.cohort
+                     else &quot;not_eligible&quot;)
+            })
+
+    // Step 7C: SageMaker Model Monitor data-quality
+    // and model-quality jobs run on a scheduled
+    // cadence against the inference traffic. SageMaker
+    // Clarify produces per-cohort attribution and bias
+    // reports. Both feed the post-market surveillance
+    // dashboard.
+
+    EventBridge.PutEvents([{
+        source: &quot;voice_biomarker&quot;,
+        detail_type: &quot;session_audited&quot;,
+        detail: {
+            session_id: session_id,
+            audited_at: now()
+        }
+    }])
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter10.08-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample biomarker output (illustrative, synthetic patient):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;session_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;vbm-3a8c4f9b-7d2e-4f1a&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;p_8bf7e1c4...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;captured_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-23T14:08:11Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;indications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;parkinsons_screening&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INTERPRETED&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;score&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;raw_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.71</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;calibrated_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.64</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;confidence_interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.57</span><span class="p">,</span><span class="w"> </span><span class="mf">0.71</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;elevated_signal&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;65-74_male_english_clinic_recording&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;parkinsons_v3.2.1&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;calibration_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;calibration_v3.2.1_20260301&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;top_features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;harmonic_to_noise_ratio_sustained_a&quot;</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;patient_value_z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.8</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;cohort_baseline_mean&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">21.4</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;patient_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">14.2</span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pitch_range_passage&quot;</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;patient_value_z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.4</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;cohort_baseline_mean&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">78.2</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;patient_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">51.0</span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;articulation_rate_passage&quot;</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;patient_value_z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1.1</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;cohort_baseline_mean&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.1</span><span class="p">,</span>
+<span class="w">           </span><span class="nt">&quot;patient_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.3</span><span class="p">}</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;confound_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;trajectory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;baseline_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.41</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;current_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.64</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.23</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;delta_significance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outside_typical_variation&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;samples_in_baseline&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;baseline_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-09-01_to_2025-09-01&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;clinical_action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clinician_review&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;clinician_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Voice features show acoustic patterns associated with Parkinsonian speech: reduced harmonic-to-noise ratio, narrowed pitch range, and slowed articulation rate. The patient&#39;s score has increased meaningfully relative to their own baseline over the past 12 months. This is a decision-support signal, not a diagnosis. Consider movement-disorder workup if other clinical signs warrant; the biomarker does not establish or exclude a Parkinson&#39;s diagnosis on its own.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;respiratory_monitoring&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;NOT_ASSESSABLE&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ineligibility_reasons&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;no_cough_segment_in_protocol&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;recording_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;device_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clinic_dedicated_microphone&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sample_rate_hz&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">44100</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;codec&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PCM_16&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;min_codec_bandwidth_hz&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;snr_db&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">28</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;environment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;exam_room&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative; ranges depend heavily on indication, validation cohort, and recording chain; your mileage will vary):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Cough Classification (productive cough vs. dry vs. URI vs. asthma exacerbation)</th>
+<th>Parkinson's Screening (single-point)</th>
+<th>Parkinson's Trajectory Monitoring (longitudinal)</th>
+<th>Depression Severity (decision-support score)</th>
+<th>Cognitive-Decline Screening</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AUC on validation cohort</td>
+<td>0.85-0.92</td>
+<td>0.75-0.88</td>
+<td>0.85-0.93</td>
+<td>0.65-0.78</td>
+<td>0.70-0.85</td>
+</tr>
+<tr>
+<td>AUC on out-of-distribution cohort (different population)</td>
+<td>0.65-0.85</td>
+<td>0.55-0.75</td>
+<td>0.70-0.85</td>
+<td>0.50-0.65</td>
+<td>0.55-0.75</td>
+</tr>
+<tr>
+<td>Sensitivity at clinically-actionable threshold</td>
+<td>70-85%</td>
+<td>60-78%</td>
+<td>75-88%</td>
+<td>50-70%</td>
+<td>55-75%</td>
+</tr>
+<tr>
+<td>Specificity at clinically-actionable threshold</td>
+<td>75-90%</td>
+<td>65-82%</td>
+<td>78-90%</td>
+<td>60-78%</td>
+<td>65-80%</td>
+</tr>
+<tr>
+<td>Indeterminate-result rate (typical clinical population)</td>
+<td>5-10%</td>
+<td>12-25%</td>
+<td>8-18%</td>
+<td>18-30%</td>
+<td>15-28%</td>
+</tr>
+<tr>
+<td>Per-sample latency (real-time endpoint)</td>
+<td>1-3 seconds</td>
+<td>2-5 seconds</td>
+<td>3-8 seconds</td>
+<td>2-5 seconds</td>
+<td>3-8 seconds</td>
+</tr>
+<tr>
+<td>Per-sample latency (asynchronous endpoint)</td>
+<td>1-3 minutes</td>
+<td>2-5 minutes</td>
+<td>3-7 minutes</td>
+<td>2-5 minutes</td>
+<td>3-7 minutes</td>
+</tr>
+<tr>
+<td>Per-sample AWS infrastructure cost</td>
+<td>$0.05-0.15</td>
+<td>$0.10-0.25</td>
+<td>$0.15-0.35</td>
+<td>$0.10-0.30</td>
+<td>$0.15-0.40</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li>
+<p><strong>Cross-cohort generalization.</strong> A model validated on one population (often a clinical-research cohort with specific demographic skew) frequently underperforms on a deployment population that does not match. This is the single largest gap between published voice-biomarker accuracy and real-world deployment accuracy. Mitigations: per-cohort validation before per-cohort deployment, eligibility checking that refuses out-of-envelope samples, per-cohort calibration with explicit cohort disclosure on every result, ongoing post-market surveillance with per-cohort accuracy tracking against ground-truth outcomes.</p>
+</li>
+<li>
+<p><strong>Recording-chain variability.</strong> Smartphone capture, telephony capture, telehealth video-call capture, and dedicated-microphone capture produce meaningfully different feature vectors. A model trained on one recording chain often fails on another. Mitigations: per-recording-chain validation, bandwidth-aware feature extraction, per-codec calibration where supported, recording-chain disclosure on every result.</p>
+</li>
+<li>
+<p><strong>State vs. trait confounds.</strong> A patient with a cold has a different voice than the same patient without a cold; the difference can be larger than the disease-specific signal the biomarker is trying to measure. Mitigations: confound flagging at the eligibility step, asking the patient about recent respiratory illness or other relevant factors as part of the protocol, longitudinal analysis that filters transient state effects from durable trait changes, indeterminate-result handling for samples with high-impact confound flags.</p>
+</li>
+<li>
+<p><strong>Demographic confounds masquerading as disease signal.</strong> Without careful experimental design, models can learn to predict the demographics of the speaker rather than the disease state, and the apparent accuracy is the consequence of demographic-disease correlation in the training data. Mitigations: speaker-disjoint train/test splits, propensity-matched cohort design, explicit demographic-fairness analysis at the validation step, per-demographic-cohort performance reporting.</p>
+</li>
+<li>
+<p><strong>Insufficient data for rare conditions.</strong> Many candidate voice biomarkers target conditions with too little training data to support robust models (rare neurological conditions, early-stage diseases before diagnosis). Mitigations: focus initial deployment on indications with adequate published evidence and adequate validation cohorts; treat data-poor indications as research-track only; collaborate with academic medical centers to grow validation cohorts over time.</p>
+</li>
+<li>
+<p><strong>The reproducibility tail.</strong> Some commercially-promoted voice biomarkers are based on published results that have not replicated or that survive only with weaker performance than originally claimed. Mitigations: vendor due diligence including review of replication studies, preference for indications with multiple independent validation studies, explicit institutional-quality review of vendor evidence packages before clinical deployment.</p>
+</li>
+<li>
+<p><strong>Patient acceptance and consent.</strong> Voice samples are biometric data; patient comfort with their voice being recorded and analyzed varies substantially by population, age, prior privacy experience, and the specific indication. Mitigations: clear consent disclosures, explicit retention terms, patient-friendly explanations of what voice biomarkers can and cannot tell, easy opt-out, attentive privacy-officer involvement in patient-facing communications.</p>
+</li>
+<li>
+<p><strong>Clinician trust and workflow integration.</strong> A voice biomarker that surfaces in the EHR with little context is a likely-to-be-ignored alert. The combined information density (a number plus a category plus a confound flag plus a cohort context plus a trajectory) is more than a typical EHR alert is designed to convey. Mitigations: thoughtful decision-support interface design, per-indication clinician training, careful clinical-action mapping that makes the response to the result obvious, ongoing clinician-feedback collection and adjustment.</p>
+</li>
+<li>
+<p><strong>The mental-health-specific concerns.</strong> Voice biomarkers for depression severity and suicidality risk are clinically promising but methodologically delicate. The state-vs-trait problem is acute (a patient's voice changes when they are having a bad day independent of their underlying clinical state). The clinical-action mapping is high-stakes (acting on a false-positive suicidality flag may be helpful or may damage trust). Mitigations: deploy as decision-support to clinicians rather than as automated screens, conservative thresholds with high indeterminate rates, integration with established mental-health workflows that the biomarker informs but does not replace.</p>
+</li>
+<li>
+<p><strong>Voice-modification and active deception.</strong> Voice samples can be intentionally modified by the speaker (clearing throat, deliberately slowing or speeding speech, changing voice quality consciously). This is rare in cooperative patient populations but is a consideration in some workflow contexts (e.g., disability assessments, research participation). Mitigations: protocol design that makes intentional modification harder (multi-task protocols with surprise tasks), longitudinal trajectory analysis that flags abrupt within-patient changes, explicit acknowledgment that voice biomarkers can be confounded by intentional modification.</p>
+</li>
+<li>
+<p><strong>Regulatory drift.</strong> A model that is FDA-cleared today may have its clearance affected by post-market findings, regulatory framework updates, or changes in the standard of care. Models that are not FDA-cleared but are deployed in clinical workflows may attract regulatory scrutiny over time. Mitigations: explicit regulatory-strategy review at the start, ongoing engagement with the regulatory affairs team, willingness to pause or modify deployments based on regulatory developments.</p>
+</li>
+<li>
+<p><strong>Audio-storage and biometric-data-disclosure exposure.</strong> Voice samples are biometric and can be re-identified from the audio itself, independent of any patient metadata. Storage breaches are biometric-data breaches with potentially distinct legal implications. Mitigations: short audio retention, feature-vector-only retention beyond the QA window, encryption at rest with separate keys, access controls, breach-response plans that explicitly address biometric data.</p>
+</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment for any specific indication needs to close substantial gaps that are out of scope for a recipe.</p>
+<p><strong>Per-indication validation evidence.</strong> This is the dominant gap. The architecture supports per-indication models; the institution needs to either select commercial vendors with appropriate validation evidence (and the contracts to back the institution's own due-diligence) or build models with their own validation studies. Building a clinically-defensible voice biomarker for a single indication is a multi-year, multi-million-dollar undertaking requiring clinical-research staff, IRB-approved cohort development, and biostatistical expertise. Most institutions should be buying validated models, not building them.</p>
+<p><strong>FDA SaMD strategy.</strong> Any voice biomarker that produces clinical claims (diagnosis, treatment recommendation, disease-state measurement) is potentially subject to FDA's SaMD regulatory framework. The strategy decision (pursue clearance, deploy as wellness tool, deploy as research instrument, deploy as decision-support without specific claims) is upstream of the technical work. The strategy decision is also indication-specific: the same architectural component might support an FDA-cleared cough-classification model and a research-only cognitive-decline model, with different clinical-action mappings, different consent terms, and different post-market surveillance obligations per indication.</p>
+<p><strong>Cohort development and ongoing cohort expansion.</strong> Whether buying or building, the institution needs validation cohort data that matches its deployed population. Cohort expansion over time (collecting voice samples with linked clinical outcomes, with explicit IRB-approved consent for biomarker development) is the long-term workstream that determines how robust the deployed biomarkers become. Plan cohort expansion as a multi-year, named-clinical-research-team workstream.</p>
+<p><strong>Per-cohort validation gates.</strong> Per-cohort accuracy must meet the institutional threshold for that cohort before the biomarker is deployed to that cohort. Cohorts where per-cohort performance is inadequate either get the biomarker disabled, or get it deployed with explicit caveats and adjusted clinical-action mapping. Without this gate, the institution silently underserves the cohorts where the biomarker performs poorly.</p>
+<p><strong>Clinical-action mapping by named clinical-quality leadership.</strong> What clinicians and patients should do with each possible biomarker output is an institutional clinical-quality decision, not a technical decision. The mapping (high-risk score triggers what; indeterminate triggers what; trajectory delta triggers what; specific confound combinations trigger what) is owned by the clinical-quality officer or equivalent, in collaboration with the clinical-informatics team and the relevant specialty leadership. Without this ownership, the biomarker outputs are interpreted inconsistently across clinicians, and the clinical-quality outcomes are unpredictable.</p>
+<p><strong>Consent infrastructure for biometric data.</strong> The architecture captures consent at protocol initiation. Production deployment requires the privacy officer's review of the consent disclosure language, the per-jurisdiction biometric-data terms, the retention policies, and the right-to-deletion workflow. The infrastructure for honoring biometric-data deletion requests (deleting audio, feature vectors, scores, longitudinal trajectory entries upon patient request, with disclosure-accounting for any prior uses) is a substantial workstream.</p>
+<p><strong>Recording-chain control or characterization.</strong> The biomarker performance depends on the recording chain. Production deployment either standardizes the recording chain (all samples captured with the institution's specified microphone class, in specified environments, with specified protocols) or characterizes and validates against the realistic distribution of recording chains in the actual deployment context. The first is more reliable but limits where the biomarker can be deployed; the second is more flexible but requires more validation work.</p>
+<p><strong>Post-market surveillance with regulatory reporting.</strong> Voice biomarker performance changes over time in production for many reasons. The architecture collects the surveillance data; the institution needs the analytical capacity to act on it. Re-validation triggers, model retraining cadences, FDA reporting obligations (for cleared SaMD devices), and institutional-quality review meetings all need to be operational. Plan a quarterly per-indication clinical-quality review meeting at minimum.</p>
+<p><strong>Layered safety review for high-stakes indications.</strong> Mental-health voice biomarkers, in particular, deserve a more cautious deployment path: small-cohort pilots with intensive clinician feedback before broad deployment, conservative thresholds, explicit override paths for clinicians, integration with established crisis-response workflows where applicable. The same care applies to any indication where false-positive or false-negative results have direct clinical-safety implications.</p>
+<p><strong>Patient-facing communication design.</strong> When voice-biomarker results are communicated to patients (rather than only to clinicians), the messaging design is part of clinical safety. A patient receiving a biomarker score without context may misinterpret it as a diagnosis. The patient-facing interface design, the explicit framing of the biomarker as not-a-diagnosis, and the clear path to clinician follow-up are part of the deployment workstream. For SaMD-cleared devices, the patient-facing communications are part of the regulatory submission.</p>
+<p><strong>Equity-focused validation that goes beyond demographic categories.</strong> Demographic categories (age band, sex, race, ethnicity) are starting points for equity analysis, not endpoints. Voice biomarkers can fail along axes that the standard demographic categories do not capture: speakers with denture status, with smoking history, with hearing loss that affects their speech monitoring, with non-native-language English usage, with regional accents not represented in the training data. Equity validation needs to push beyond the demographic categories that are easy to measure to the speaker-property axes that actually drive performance variation.</p>
+<p><strong>Integration with clinical research workflows.</strong> Voice biomarker work in healthcare often spans the clinical-care boundary: research data can inform clinical care, and clinical-care data can inform research-track validation. The architecture for moving data between research and clinical contexts (with appropriate consent, IRB approval, and de-identification) is complex and needs explicit governance. Without it, the institution either silos the research and clinical work (limiting scientific progress and clinical improvement) or blurs the boundary improperly (creating compliance and trust risks).</p>
+<p><strong>Disaster recovery and degraded-mode operation.</strong> When upstream services fail (SageMaker endpoint outage, Bedrock outage, HealthLake outage), the system must degrade gracefully. The biomarker is decision support; its absence does not block clinical care. Document the per-mode behavior and test the failure modes in staging.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Cough-classification monitoring for COPD and asthma.</strong> A focused deployment of cough-acoustic classification for chronic respiratory-disease management. Patients submit short cough samples through a mobile app or telehealth check-in; the system classifies cough type, tracks frequency and trajectory, and surfaces deterioration patterns to the care team. This is one of the most evidence-supported voice-biomarker indications and the easiest to deploy as a focused first capability.</p>
+<p><strong>Parkinson's progression monitoring in established patients.</strong> For patients with confirmed Parkinson's disease, voice biomarker tracking provides a non-invasive, frequent-sample method of monitoring disease progression and treatment response. The longitudinal trajectory is more clinically actionable than the single-sample score, and the deployment context (patients with established diagnosis, motivated to monitor their own condition) is more appropriate than population-level screening.</p>
+<p><strong>Post-stroke aphasia recovery monitoring.</strong> Voice and speech features track recovery from stroke-induced aphasia, supporting the speech-pathology team's assessment of progress between in-person therapy sessions. The patient's own pre-stroke voice (where available) provides a strong baseline; deltas from baseline are the primary clinical signal. Recipe 10.9 (speech therapy assessment and monitoring) covers the broader speech-pathology integration.</p>
+<p><strong>ICU sedation depth and delirium monitoring.</strong> ICU patients' voice and speech features can correlate with sedation depth and emerging delirium. The architecture is similar; the clinical-action mapping is more intensive (delirium triggers ICU-specific protocols). Validation in ICU populations is its own multi-year clinical-research undertaking.</p>
+<p><strong>Anesthesia-recovery monitoring after surgery.</strong> Voice features post-anesthesia track the patient's recovery trajectory. The clinical use case is post-operative discharge readiness assessment and identification of patients with prolonged anesthesia effects. Deployment is in PACU and recovery units with their specific workflow context.</p>
+<p><strong>Suicide risk decision-support in mental-health settings.</strong> Voice-based suicidality risk scoring as a decision-support signal to mental-health clinicians. This is one of the higher-stakes deployments and warrants the most cautious clinical-action mapping. Integration with established crisis-response workflows is essential. Most institutions deploying this are research-track or carefully-piloted clinical-research deployments rather than broad clinical deployments.</p>
+<p><strong>At-home longitudinal monitoring for early-dementia detection.</strong> Patients with mild cognitive impairment or family history of dementia perform short voice-and-speech tasks at home on a weekly cadence; the system tracks longitudinal trajectory and flags meaningful changes for clinician review. The infrastructure for at-home capture (apps, kiosks, devices) is its own engineering effort. Patient acceptance and adoption are the workflow challenges.</p>
+<p><strong>Pediatric speech and developmental screening.</strong> Voice biomarkers for pediatric populations (autism spectrum disorder screening, developmental language disorder identification) are an active research area. Pediatric cohorts require their own validation, and pediatric-specific consent and assent considerations layer on top of the standard biometric-data governance. Most current deployments are research-track.</p>
+<p><strong>Language-specific deployment expansion.</strong> Most published voice-biomarker research is in English-speaking cohorts. Deployment in other languages requires per-language validation, per-language calibration, and often per-language model retraining. The architecture supports per-language deployment; the validation work per language is its own undertaking.</p>
+<p><strong>Multi-modal integration with EHR data, wearable data, and structured questionnaires.</strong> Voice biomarkers combined with EHR data (medications, prior diagnoses, vitals trends), wearable data (movement, sleep patterns, heart rate variability), and structured questionnaire responses (PHQ-9, MoCA, ADAS-Cog) often produce stronger combined signals than voice alone. The architectural extension is the multi-modal feature combination layer and the per-modality eligibility checking.</p>
+<p><strong>Voice-driven self-monitoring for chronic-disease patients.</strong> Patients with chronic conditions (CHF, COPD, atrial fibrillation) record short voice samples on a defined cadence (daily, weekly); the system tracks trajectory and surfaces deterioration patterns to the care team for proactive outreach. The patient-empowerment framing changes the consent and workflow design from clinician-initiated to patient-initiated.</p>
+<p><strong>Integration with ambient documentation pipelines (recipe 10.7).</strong> The audio captured for ambient clinical documentation can also support voice-biomarker analysis, with appropriate consent and quality verification. The architectural extension is the shared audio infrastructure between the documentation and biomarker pipelines, with explicit governance for the dual use. Audio fidelity requirements are higher for biomarkers than for documentation, so the documentation pipeline's audio must be preserved at biomarker-grade fidelity, which is not the typical default.</p>
+<p><strong>Real-time clinical-decision-support during telehealth visits.</strong> During a telehealth encounter, voice features computed from the in-call audio surface decision-support signals to the clinician (the patient's voice acoustics suggest unusual respiratory effort, atypical articulation, or other clinically-relevant patterns). The architectural extension is the streaming-feature-extraction-and-scoring path. Clinical-action mapping during the encounter is more time-pressured than the asynchronous pattern, which raises the stakes for indeterminate handling and false-positive rates.</p>
+<p><strong>Group-comparison cohort studies.</strong> The same architecture supports retrospective cohort studies: applying validated biomarkers to a defined patient population to study disease epidemiology, treatment response, or other research questions. The research-track use of the same infrastructure as the clinical-track use requires governance for the data movement and the analytical separation, but the underlying infrastructure is the same.</p>
+<p><strong>De-identified-cohort sharing for federated validation.</strong> Multiple institutions can share de-identified cohort data (or, with privacy-preserving techniques, federated training) to build larger validation cohorts than any single institution could assemble. The architectural extension involves the privacy-preserving computation layer and the inter-institutional governance. Recipe 5.8 (privacy-preserving record linkage) covers analogous patterns.</p>
+<p><strong>Linguistic-feature pipelines for cognitive assessment.</strong> A cognitive-decline-focused deployment combines voice biomarkers with linguistic features extracted from the transcript: lexical diversity, idea density, semantic coherence, word-finding patterns. Recipe 8 (NLP) and recipe 2 (LLM) cover the linguistic-analysis primitives. The integration produces a richer cognitive-assessment signal than acoustic features alone.</p>
+<p><strong>Patient-facing voice-biomarker self-tracking apps.</strong> Some institutions offer patient-facing apps where the patient can capture voice samples themselves and see their own trajectory. This is a wellness-tool framing rather than a clinical-tool framing, with corresponding consent, regulatory, and clinical-action implications. The architectural extension is the patient-facing UI and the patient-friendly result presentation. The clinician is informed but not in the active loop for low-risk results.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/async-inference.html">Amazon SageMaker Asynchronous Inference</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html">Amazon SageMaker Model Monitor</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-fairness-and-explainability.html">Amazon SageMaker Clarify</a></li>
+<li><a href="https://docs.aws.amazon.com/transcribe/latest/dg/transcribe-medical.html">Amazon Transcribe Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>aws-samples/amazon-sagemaker-examples</code></a>: SageMaker examples including model-hosting, Model Monitor, and Clarify patterns</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-asr-and-audio-samples"><code>aws-samples/amazon-sagemaker-asr-and-audio-samples</code></a>: audio-processing samples on SageMaker</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-samples"><code>aws-samples/amazon-bedrock-samples</code></a>: Bedrock invocation patterns including grounded generation and Guardrails</li>
+<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-samples"><code>aws-samples/amazon-comprehend-medical-samples</code></a>: clinical-entity extraction patterns</li>
+<li><a href="https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks"><code>aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks</code></a>: healthcare AI/ML sample notebooks</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;voice,&quot; &quot;audio,&quot; &quot;biomarker,&quot; &quot;SageMaker&quot; for implementation deep dives</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: healthcare-specific AI/ML case studies</li>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences): browse for clinical-decision-support and post-market-surveillance reference architectures</li>
+</ul>
+<p><strong>External References (Standards, Frameworks, and Regulatory):</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/fhir/">HL7 FHIR Specification</a>: the data model for biomarker-result EHR integration</li>
+<li><a href="https://www.hl7.org/fhir/observation.html">FHIR Observation Resource</a>: canonical FHIR resource for biomarker-result write-back</li>
+<li><a href="https://loinc.org/">LOINC</a>: standard codes for laboratory and clinical observations, including some voice-and-speech-derived measures</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/index.html">HIPAA Privacy Rule</a>: governs PHI in voice biomarker workflows</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/security/index.html">HIPAA Security Rule</a>: governs technical and administrative safeguards</li>
+<li><a href="https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004">Illinois Biometric Information Privacy Act (BIPA)</a>: biometric-data law applicable to voice samples in Illinois</li>
+<li><a href="https://www.fda.gov/medical-devices/digital-health-center-excellence/software-medical-device-samd">FDA Software as a Medical Device (SaMD)</a>: regulatory framework for software medical devices, including voice-based biomarkers</li>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software">FDA Clinical Decision Support Software Guidance</a>: guidance on the regulatory boundary between clinical decision support and regulated medical devices</li>
+<li><a href="https://www.fda.gov/medical-devices/digital-health-center-excellence">FDA Pre-Cert Program (Digital Health)</a>: FDA's framework for digital-health software regulation</li>
+</ul>
+<p><strong>Research and Datasets:</strong></p>
+<ul>
+<li><a href="https://www.synapse.org/#!Synapse:syn4993293">mPower Parkinson's Voice Dataset</a>: public Parkinson's voice dataset for research</li>
+<li><a href="https://github.com/iiscleap/Coswara-Data">Coswara Cough Dataset</a>: public cough dataset for respiratory-disease research</li>
+<li><a href="https://dementia.talkbank.org/">DementiaBank</a>: research corpus of speech samples from individuals with dementia, with appropriate access controls</li>
+<li><a href="https://www.interspeech2024.org/">INTERSPEECH and ICASSP Conferences</a>: primary speech-and-audio research venues; voice-biomarker work appears regularly</li>
+<li><a href="https://www.jvoice.org/">Journal of Voice</a>: peer-reviewed clinical journal covering voice-and-speech research</li>
+<li><a href="https://www.nature.com/npjdigitalmed/">npj Digital Medicine</a>: peer-reviewed journal covering digital health and biomarkers including voice</li>
+</ul>
+<p><strong>Industry and Clinical Resources:</strong></p>
+<ul>
+<li><a href="https://www.asha.org/">American Speech-Language-Hearing Association</a>: professional organization for speech-language pathologists, with relevant clinical-practice guidance</li>
+<li><a href="https://www.aan.org/">American Academy of Neurology</a>: professional organization for neurologists, with guidance on Parkinson's, dementia, and related conditions where voice biomarkers may apply</li>
+<li><a href="https://www.psychiatry.org/">American Psychiatric Association</a>: professional organization with guidance on mental-health clinical practice, relevant for mental-health voice-biomarker deployments</li>
+<li><a href="https://www.hhs.gov/hipaa/index.html">HHS Office for Civil Rights HIPAA Guidance</a>: HIPAA Privacy and Security Rule guidance applicable to biometric voice samples</li>
+<li><a href="https://iapp.org/">International Association of Privacy Professionals (IAPP)</a>: industry resource on biometric-data law and emerging-technology privacy</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Single indication (typically cough classification or Parkinson's monitoring), commercial-vendor model integration through SageMaker endpoint or vendor API, single capture-device class (e.g., dedicated clinic microphone or specific telehealth platform), per-cohort calibration for two or three cohorts, basic clinician-facing decision-support display, FHIR Observation write-back to the EHR, brief-retention audio policy, English-only, pilot with one or two clinical sites</td>
+<td>3-5 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Multiple validated indications (cough, Parkinson's, perhaps one mental-health-specific indication as decision support), multiple capture-device classes with per-class validation, full per-cohort calibration with eligibility gates, indeterminate-result handling, longitudinal trajectory tracking with per-patient baselines, layered post-market surveillance with SageMaker Model Monitor and Clarify plus regular clinical-quality review, biometric-data consent infrastructure with right-to-deletion workflow, full HIPAA-and-biometric-data-law compliance review, structured rollout with named operational owners, multi-language support (English plus at least one additional language), clinician training and feedback program, per-jurisdiction regulatory analysis</td>
+<td>12-18 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Cough monitoring deployment in chronic respiratory-disease management workflows, Parkinson's progression monitoring in established-patient cohorts, post-stroke aphasia recovery monitoring, ICU sedation and delirium monitoring, anesthesia recovery monitoring, suicide-risk decision-support pilots, at-home longitudinal cognitive-decline monitoring, pediatric speech-and-language screening, multi-modal integration with EHR plus wearable plus questionnaire data, integration with ambient documentation pipelines, real-time decision support during telehealth, federated cohort validation across institutions</td>
+<td>8-15 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter10.08-voice-biomarker-detection.html">Main Recipe 10.8</a> · <a href="chapter10.08-python-example.html">Python Example</a> · <a href="chapter10-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

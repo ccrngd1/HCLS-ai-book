@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 1.5 Architecture and Implementation: Claims Attachment Processing 🔶</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested nav-active" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-15-architecture-and-implementation-claims-attachment-processing-">Recipe 1.5 Architecture and Implementation: Claims Attachment Processing 🔶</h1>
+<p><em>Companion to <a href="chapter01.05-claims-attachment-processing.html">Recipe 1.5: Claims Attachment Processing 🔶</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Textract with LAYOUT feature type.</strong> Unchanged from Recipe 1.4. Textract is still the right tool for OCR and structural extraction. LAYOUT blocks provide section headers, title blocks, and body paragraph structure that the boundary detection LLM uses as context alongside the page text. FORMS + TABLES + LAYOUT covers structured forms, tabular data (EOBs, billing statements), and general document structure.</p>
+<p><strong>Amazon Bedrock (Nova Lite) for boundary detection and classification.</strong> The Converse API introduced in Recipe 1.4 makes it easy to call any Bedrock model with the same code. Nova Lite (<code>us.amazon.nova-lite-v1:0</code>) is the right model for boundary detection: it's a well-defined binary question per page pair, and Nova Lite handles it reliably at $0.06 per million input tokens. At a 30-page package generating 29 page pair comparisons, the boundary detection cost is roughly three cents of tokens. The same model handles document classification, where it evaluates full document text against the taxonomy.</p>
+<p><strong>Amazon Bedrock (Claude Sonnet 4.6) for claim line matching.</strong> Claim line matching requires genuine clinical reasoning: understanding what a CPT code describes, reading a procedure narrative, and making a judgment about whether they match. This is a Tier 3 task. Claude Sonnet 4.6 (<code>us.anthropic.claude-sonnet-4-6-v1:0</code>) handles it well and produces assessments with supporting evidence that the downstream assembler can surface to examiners.</p>
+<p><strong>Amazon Comprehend Medical for ICD-10 code validation on clinical documents.</strong> The same hybrid approach as Recipe 1.4: the LLM extracts clinical concepts from operative reports, pathology reports, and discharge summaries. Comprehend Medical maps those concepts to high-confidence ICD-10 codes. LLMs are good at extracting clinical meaning. They're less reliable for producing exact, consistent medical codes. Keep <code>InferICD10CM</code> in the pipeline for code validation.</p>
+<p><strong>AWS Step Functions (Standard Workflows).</strong> The pipeline has more branches than Recipe 1.4. Boundary detection introduces conditional logic, and the claim line matching step needs results from all the type-specific extractors before it can run. Step Functions handles parallel extraction branches, waits for all of them, then runs the assembly and matching step. Standard Workflows over Express because the execution history in the console is how you debug a misclassified 38-page package. The audit trail is also a claims processing compliance requirement.</p>
+<p><strong>Amazon S3, DynamoDB, SNS, SQS, and KMS.</strong> Same patterns as Recipe 1.4. PHI in transit and at rest. Step Functions payload limit workaround via S3 references. S3 Object Lock in compliance mode for claims records retention.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[📠 Provider / Clearinghouse] --&gt;|Claims Attachment PDF| B[S3 Bucket\nclaims-attachments/]
+    B --&gt;|S3 Event| C[Lambda\nclaim-start]
+    C --&gt;|StartDocumentAnalysis\nFORMS + TABLES + LAYOUT| D[Amazon Textract]
+    D --&gt;|SNS Completion| E[SNS Topic\ntextract-jobs]
+    E --&gt;|Trigger| F[Lambda\nclaim-retrieve]
+    F --&gt;|Blocks → S3, Start SM| G[Step Functions\nclaims-pipeline]
+
+    G --&gt; H[Lambda\ndoc-segmenter\nNova Lite Boundary Detection]
+    H --&gt; I[Lambda\ndoc-classifier\nNova Lite Classification]
+
+    I --&gt;|Operative Report\nPathology Report\nDischarge Summary\nTherapy Notes| J[Lambda\nextract-clinical\nBedrock Claude Sonnet 4.6]
+    I --&gt;|EOB| K[Lambda\nextract-eob\nTextract Tables]
+    I --&gt;|Billing Statement| L[Lambda\nextract-billing\nTextract Tables]
+    I --&gt;|Other| M[Pass-through\nraw text only]
+
+    J --&gt;|LLM-extracted concepts| N[Comprehend Medical\nInferICD10CM\nCode Validation]
+    N --&gt; O[Lambda\nclaim-matcher\nClaude Sonnet 4.6 Reasoning]
+    K --&gt; O
+    L --&gt; O
+    M --&gt; O
+
+    O --&gt;|Structured record| P[DynamoDB\nclaims-attachment-records\nS3 Object Lock]
+    O --&gt;|Unmatched / Low-confidence| Q[SQS Review Queue\n→ Recipe 1.6]
+    O --&gt;|Matched line items| R[→ Auto-adjudication\nor Examiner Workstation]
+
+    style B fill:#f9f,stroke:#333
+    style D fill:#ff9,stroke:#333
+    style H fill:#e8d5f5,stroke:#6b46c1
+    style I fill:#e8d5f5,stroke:#6b46c1
+    style J fill:#e8d5f5,stroke:#6b46c1
+    style O fill:#e8d5f5,stroke:#6b46c1
+    style N fill:#f96,stroke:#333
+    style P fill:#9ff,stroke:#333
+    style G fill:#adf,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Everything from Recipes 1.2, 1.3, and 1.4 (Textract, S3, Lambda, SNS, DynamoDB, KMS, Comprehend Medical, Step Functions, Bedrock), plus S3 Object Lock for retention compliance</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>All permissions from Recipe 1.4, plus: <code>s3:PutObjectLegalHold</code> and <code>s3:PutObjectRetention</code> for S3 Object Lock on the claims records bucket. The assembler Lambda needs these to lock records after writing them. <code>bedrock:InvokeModel</code> on both Nova Lite and Claude Sonnet 4.6 model ARNs.</td>
+</tr>
+<tr>
+<td><strong>Bedrock Model Access</strong></td>
+<td>Nova Lite and Claude Sonnet 4.6 must be enabled in the Bedrock console. Cross-region inference profiles (<code>us.amazon.nova-lite-v1:0</code>, <code>us.anthropic.claude-sonnet-4-6-v1:0</code>) route to the best available region automatically. Enable both before deploying. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate using direct single-region model ARNs (without the <code>us.</code> prefix) rather than cross-region inference profiles.</td>
+</tr>
+<tr>
+<td><strong>Step Functions</strong></td>
+<td>Standard Workflows (not Express). Execution history retention is a claims processing compliance requirement. Visual execution graph is essential for debugging boundary detection failures on complex packages.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Claims attachments contain some of the most sensitive PHI categories: surgical operative notes, pathology results with cancer diagnoses, full-episode discharge summaries, and financial responsibility data. Bedrock, Textract, and Comprehend Medical are all HIPAA-eligible under the same BAA.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed key. S3 Object Lock in compliance mode on the claims-attachment-records bucket. DynamoDB: encryption at rest. All API calls over TLS. Step Functions execution history: SSE. Bedrock and Comprehend Medical do not retain or train on customer data sent via their APIs.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, SQS, Comprehend Medical, Step Functions, CloudWatch Logs, and KMS. Bedrock requires <strong>two separate interface endpoints</strong>: <code>com.amazonaws.REGION.bedrock-runtime</code> (Converse API, used by all Lambda functions in this recipe) and <code>com.amazonaws.REGION.bedrock</code> (model management API, needed only if Lambda programmatically enables or lists models). A VPC with only <code>com.amazonaws.REGION.bedrock</code> will fail to route Converse API calls through the private endpoint; in a HIPAA-compliant VPC with no internet egress, this is deployment-breaking. For this recipe, <code>bedrock-runtime</code> is the required endpoint. Claims data should not traverse the public internet.</td>
+</tr>
+<tr>
+<td><strong>Lambda Timeouts</strong></td>
+<td>Lambda's default 3-second timeout fails on the first Bedrock call. This recipe makes approximately 40 Bedrock calls per 30-page package (29 boundary pairs + 5 classifications + 3-4 clinical extractions + 3-4 claim matching calls), so timeout configuration matters more here than in Recipe 1.4. Minimum recommended timeouts per function: <code>doc-segmenter</code> 5-10 minutes (29 sequential Nova Lite calls at ~300ms each, plus retry margin), <code>doc-classifier</code> 3-5 minutes, <code>extract-clinical</code> 5 minutes (one Sonnet call per document, possible retry), <code>claim-matcher</code> 5 minutes per clinical document, <code>claim-assembler</code> 2 minutes. Step Functions also enforces a state-level timeout independently; configure both. Use provisioned concurrency for time-sensitive claims packages.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all services including Bedrock. Bedrock model invocations are logged with model ID, token counts, and latency. Every extraction, every Bedrock call, and every DynamoDB write needs to be in the audit trail.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>CMS publishes <a href="https://www.cms.gov/medicare/coding-billing/electronic-billing-edi/transaction-code-sets">sample 837 transactions</a> for claim line item reference. Build synthetic multi-document PDFs by concatenating an operative report template, a pathology report, a discharge summary, a payer EOB printout, and therapy notes. Never use real PHI in development.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Textract async (FORMS+TABLES+LAYOUT, 30 pages): ~$2.10. Nova Lite boundary detection (29 page pairs at ~500 tokens each): ~$0.003, negligible. Nova Lite document classification (5 documents at ~2,000 tokens each): ~$0.001, negligible. Claude Sonnet 4.6 claim matching (3 clinical documents × one call each with claim lines): ~$0.05-0.12. Comprehend Medical ICD-10 validation on extracted concepts: ~$0.02-0.08. Step Functions Standard Workflows: ~$0.002. Per-package total: roughly <strong>$2.20-2.40 for a typical 30-page package</strong>. At 300,000 packages per year: $660K-720K. At 500,000: $1.1M-1.2M. Compare to manual attachment review at 30-60 minutes per case at $35-55/hour loaded cost: at 500,000 packages, manual review runs $8.75M-27.5M per year. The LLM approach is actually <em>cheaper</em> than a comparable Comprehend Medical per-character billing pipeline while producing richer output.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Textract</strong></td>
+<td>Full document extraction on the entire PDF: FORMS, TABLES, and LAYOUT blocks across all pages. The default Textract <code>StartDocumentAnalysis</code> concurrent job quota is 25 in most regions. File an AWS Support quota increase request before go-live for high-volume deployments.</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock (Nova Lite)</strong></td>
+<td>Document boundary detection (binary page-pair comparison) and document-level classification</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock (Claude Sonnet 4.6)</strong></td>
+<td>Clinical document content extraction and claim line item reasoning</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical (InferICD10CM)</strong></td>
+<td>ICD-10 code validation on LLM-extracted clinical concepts from operative reports and discharge summaries. Comprehend Medical is available in a subset of AWS regions. Verify your target region supports it before selecting your deployment region.</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions (Standard Workflows)</strong></td>
+<td>Orchestrates the segment → classify → extract → match → assemble pipeline</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Stores incoming attachment PDFs, intermediate Textract output, per-document extraction results, and final attachment records</td>
+</tr>
+<tr>
+<td><strong>S3 Object Lock</strong></td>
+<td>Compliance-mode retention lock on final claims records to meet CMS and state retention mandates</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>claim-start, claim-retrieve, doc-segmenter, doc-classifier, extract-clinical, extract-eob, extract-billing, claim-matcher, claim-assembler</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Receives Textract async job completion notification; triggers the claim-retrieve Lambda</td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Dead letter queues on all Lambdas; review queue for unclassified documents and low-confidence segments</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores structured claims attachment records indexed by claim ID; PHI encrypted at rest</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for S3, DynamoDB, and Step Functions execution history</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Logs, metrics, and alarms for pipeline failures, Bedrock token usage, boundary detection accuracy, and cost per package</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> These AWS sample repos demonstrate the patterns used in this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws-samples/aws-ai-intelligent-document-processing"><code>aws-ai-intelligent-document-processing</code></a>: Comprehensive IDP solutions with multi-stage extraction pipelines, document classification, A2I human review integration, and generative AI enrichment</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example"><code>amazon-textract-and-amazon-comprehend-medical-claims-example</code></a>: Healthcare-specific extraction and validation with Textract and Comprehend Medical, with CloudFormation deployment templates</li>
+<li><a href="https://github.com/aws-samples/document-processing-pipeline-for-regulated-industries"><code>document-processing-pipeline-for-regulated-industries</code></a>: Document processing for regulated industries with lineage and pipeline metadata services</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing"><code>amazon-textract-and-comprehend-medical-document-processing</code></a>: Workshop-style repo for multi-stage medical document processing pipelines with Lambda orchestration</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Steps 1 and 2: Async Textract extraction and result retrieval.</strong> These steps are identical to Recipe 1.4. Include LAYOUT in the <code>FeatureTypes</code> list. The <code>claim-start</code> Lambda submits the async job and exits. The <code>claim-retrieve</code> Lambda fires on the SNS completion notification, retrieves all Textract result pages, writes the raw block list to S3, and starts the Step Functions state machine with the S3 key and the claim ID.</p>
+<pre class="code code-plain"><code>FUNCTION retrieve_and_handoff(textract_job_id, attachment_key, claim_id, state_machine_arn):
+    // Retrieve all Textract blocks (same paginated call as Recipe 1.4)
+    all_blocks = retrieve_all_textract_blocks(textract_job_id)
+
+    // Write raw blocks to S3. Step Functions has a 256 KB payload limit.
+    // A 40-page document&#x27;s Textract output can easily exceed that.
+    textract_output_key = &quot;textract-outputs/&quot; + textract_job_id + &quot;/blocks.json&quot;
+    write all_blocks to S3 at textract_output_key
+
+    // Start the pipeline state machine.
+    // Pass references only, not raw data, through Step Functions.
+    // The claim_id links this attachment to the claim line items for matching.
+    start Step Functions execution at state_machine_arn with input:
+        attachment_key       = attachment_key
+        textract_output_key  = textract_output_key
+        textract_job_id      = textract_job_id
+        claim_id             = claim_id
+</code></pre>
+<p><strong>Step 3: Group Textract blocks by page.</strong> Same grouping logic as Recipe 1.4: read blocks from S3, iterate, group by <code>Page</code> attribute, assemble page text from LINE blocks, note structural features per page. See Recipe 1.4 for the full pseudocode.</p>
+<p>The one addition: extract the <strong>header region</strong> for each page. The header is the top portion of the page (roughly the first 15% by vertical position) where facility name, document title, patient identifier, and date typically live. The boundary detection model uses this region as context.</p>
+<pre class="code code-plain"><code>FUNCTION extract_header_region(page_blocks):
+    // Textract bounding boxes are normalized: Top=0.0 is top of page, Top=1.0 is bottom.
+    // &quot;Header region&quot; = Top &lt; 0.15 (the top 15% of the page).
+    header_lines = empty list
+
+    FOR each block in page_blocks:
+        IF block.BlockType == &quot;LINE&quot;:
+            IF block.Geometry.BoundingBox.Top &lt; 0.15:
+                header_lines.append(block.Text)
+
+    RETURN join(header_lines, &quot;\n&quot;)
+
+// Add this to group_blocks_by_page() from Recipe 1.4:
+// pages[page_num].header_text = extract_header_region(page&#x27;s blocks)
+</code></pre>
+<p><strong>Step 4: LLM boundary detection.</strong> This is the novel step in this recipe, and it's where the LLM approach pays off most directly.</p>
+<p>The boundary detector sends consecutive page pairs to Nova Lite and asks: are these from the same document? The model evaluates all available signals simultaneously: header content, document title lines, page numbering patterns, date changes, and format shifts. No separate rules for each signal type. No threshold tuning per signal. The model reasons the way a human would: &quot;the header changed from 'Memorial Hospital OR' to 'Valley Pathology Lab,' and the text shifted from operative narrative to specimen gross description. These are from different documents.&quot;</p>
+<p>The output is a list of logical document segments, each defined by a start page, end page, and the model's reasoning for why a boundary was detected.</p>
+<pre class="code code-plain"><code>BOUNDARY_DETECTION_SYSTEM_PROMPT = &quot;&quot;&quot;
+You are a healthcare document analyst. Your job is to determine whether two consecutive
+pages from a claims attachment PDF belong to the same logical document.
+
+A claims attachment package contains multiple distinct documents faxed together:
+operative reports, pathology reports, discharge summaries, EOBs, therapy notes,
+billing statements, and others. Your job is to detect where one document ends
+and the next begins.
+
+Return ONLY a valid JSON object with these fields:
+{
+  &quot;same_document&quot;: &lt;true or false&gt;,
+  &quot;confidence&quot;: &lt;0.0 to 1.0&gt;,
+  &quot;reasoning&quot;: &quot;&lt;one to two sentences explaining your determination&gt;&quot;,
+  &quot;signals_detected&quot;: [&quot;&lt;list any signals you used: title_change, header_change,
+                        page_restart, date_discontinuity, format_shift, content_type_change&gt;&quot;]
+}
+
+Common boundary signals to evaluate:
+- Title lines: Does either page have a document title (OPERATIVE REPORT, PATHOLOGY REPORT,
+  DISCHARGE SUMMARY, EXPLANATION OF BENEFITS) near the top? A title at the top of page 2
+  almost always means a new document started.
+- Header changes: Does the facility name, department, or document template change between
+  pages? &quot;Memorial Hospital Surgery&quot; to &quot;Valley Pathology Lab&quot; is a boundary.
+- Page number restart: Does page 2 show &quot;Page 1 of N&quot;? That means a new document started.
+- Date discontinuity: Does the primary date change by more than a few days between pages?
+  (Allow multi-day spans for discharge summaries, which cover entire admissions.)
+- Content type shift: Does the text shift from clinical narrative to financial tables
+  or from one clinical specialty to a completely different one?
+
+Be conservative: when in doubt, return same_document: true. A missed boundary causes
+extraction errors. A false boundary causes a document to be split, which is less harmful
+(the two halves will both classify and extract, just separately).
+&quot;&quot;&quot;
+
+FUNCTION detect_boundary_at_page_pair(page_n, page_n_plus_1, model_id):
+    // Sanitize OCR text before passing to LLM. External documents (provider submissions)
+    // are untrusted input. Strip control characters, null bytes, and anomalous Unicode
+    // sequences that could be used for prompt injection.
+    page_n_text   = strip_control_characters(page_n.text)
+    page_n_text   = remove_null_bytes(page_n_text)
+    page_np1_text = strip_control_characters(page_n_plus_1.text)
+    page_np1_text = remove_null_bytes(page_np1_text)
+
+    // Build the user message with both pages&#x27; content.
+    // Include header text separately because it&#x27;s the strongest boundary signal.
+    user_message = &quot;Page &quot; + page_n.page_num + &quot;:\n&quot;
+    user_message += &quot;Header: &quot; + (page_n.header_text if page_n.header_text else &quot;(none)&quot;) + &quot;\n&quot;
+    user_message += &quot;Text:\n&quot; + first_1500_characters(page_n_text) + &quot;\n\n&quot;
+    user_message += &quot;---\n\n&quot;
+    user_message += &quot;Page &quot; + page_n_plus_1.page_num + &quot;:\n&quot;
+    user_message += &quot;Header: &quot; + (page_n_plus_1.header_text if page_n_plus_1.header_text else &quot;(none)&quot;) + &quot;\n&quot;
+    user_message += &quot;Text:\n&quot; + first_1500_characters(page_np1_text) + &quot;\n\n&quot;
+    user_message += &quot;Do these two pages belong to the same document?&quot;
+
+    response = call Bedrock Converse API with:
+        modelId         = model_id  // &quot;us.amazon.nova-lite-v1:0&quot;
+        system          = [{ text: BOUNDARY_DETECTION_SYSTEM_PROMPT }]
+        messages        = [{ role: &quot;user&quot;, content: [{ text: user_message }] }]
+        inferenceConfig = { maxTokens: 256, temperature: 0 }
+
+    response_text = response.output.message.content[0].text
+    result        = parse JSON from response_text
+
+    RETURN result
+
+FUNCTION detect_all_boundaries(pages, boundary_model_id):
+    // Walk the page stream in order, testing each consecutive pair.
+    // Result: list of { start_page, end_page, boundary_signals, confidence }
+    segments       = empty list
+    seg_start      = 1
+    sorted_page_nums = sort(keys of pages)
+
+    FOR i from 0 to len(sorted_page_nums) - 2:
+        page_n        = pages[sorted_page_nums[i]]
+        page_n_plus_1 = pages[sorted_page_nums[i + 1]]
+
+        result = detect_boundary_at_page_pair(page_n, page_n_plus_1, boundary_model_id)
+
+        log: &quot;Pages &quot; + page_n.page_num + &quot;/&quot; + page_n_plus_1.page_num
+             + &quot;: same=&quot; + result.same_document
+             + &quot; (conf=&quot; + result.confidence + &quot;)&quot;
+             // [EDITOR: review fix P1-5] Removed result.reasoning from log.
+             // Boundary reasoning for healthcare documents routinely echoes clinical content
+             // from the page text (facility names, document titles, clinical terms).
+             // In Lambda, stdout writes to CloudWatch Logs. Omit reasoning to prevent PHI exposure.
+
+        // If the model says these are from different documents, close the current segment
+        // and start a new one at page_n_plus_1.
+        IF NOT result.same_document:
+            segments.append({
+                start_page:       seg_start,
+                end_page:         page_n.page_num,
+                boundary_signals: result.signals_detected,
+                split_confidence: result.confidence,
+                split_reasoning:  result.reasoning
+            })
+            seg_start = page_n_plus_1.page_num
+
+    // Close the final segment
+    segments.append({
+        start_page:       seg_start,
+        end_page:         sorted_page_nums[-1],
+        boundary_signals: [&quot;end_of_document&quot;],
+        split_confidence: 1.0,
+        split_reasoning:  &quot;Final segment in package&quot;
+    })
+
+    log: &quot;Detected &quot; + len(segments) + &quot; document segments in &quot; + len(pages) + &quot; pages&quot;
+    FOR each segment in segments:
+        log: &quot;  Segment: pages &quot; + segment.start_page + &quot;-&quot; + segment.end_page
+
+    RETURN segments
+</code></pre>
+<p>A few notes on the design. We use 1,500 characters of each page's text (not the full page) to keep token costs low. The first 1,500 characters of a page almost always contain the signals that distinguish a new document from a continuation: title lines, headers, page numbers, and the opening sentence that establishes the document type. We ask the model to be conservative toward <code>same_document: true</code>. A missed boundary (two documents merged into one segment) causes extraction errors downstream, but those errors are detectable. A false boundary (one document split into two) causes the segment to classify and extract as a partial document, which is less harmful and usually still produces useful output.</p>
+<blockquote>
+<p><strong>Safe default for boundary detection failures:</strong> If a page pair comparison fails after retries, the safe default is <code>same_document: true</code> (treat the pages as part of the same document and continue). A missed boundary causes the downstream classifier to receive a larger-than-expected segment, which it can still process. A false boundary splits a document, which causes extraction to miss cross-page context. The conservative choice (same_document on failure) is less harmful than the aggressive choice (new_document on failure).</p>
+</blockquote>
+<p><strong>Step 5: LLM document classification.</strong> After boundary detection, we have a list of logical document segments. Each segment gets classified as a unit by sending its full aggregated text to Nova Lite.</p>
+<p>Recipe 1.4 introduced the classification prompt pattern for individual pages. Here we extend it to whole documents. The LLM has more context now: instead of classifying page 5 of an operative report in isolation (dense clinical prose with no title line), it classifies pages 3 through 7 together and has the full operative report vocabulary to work with.</p>
+<pre class="code code-plain"><code>DOCUMENT_CLASSIFICATION_SYSTEM_PROMPT = &quot;&quot;&quot;
+You are a healthcare document classifier. Your job is to identify what type of
+document is contained in a claims attachment segment.
+
+Return ONLY a valid JSON object with these fields:
+{
+  &quot;doc_type&quot;: &quot;&lt;one of: operative_report, pathology_report, eob, discharge_summary,
+               therapy_notes, billing_statement, other&gt;&quot;,
+  &quot;confidence&quot;: &lt;0.0 to 1.0&gt;,
+  &quot;primary_date&quot;: &quot;&lt;most prominent date in this document, in YYYY-MM-DD format,
+                   or null if not found&gt;&quot;,
+  &quot;reasoning&quot;: &quot;&lt;one sentence explaining your classification&gt;&quot;
+}
+
+Document types:
+- operative_report: surgical procedure narrative. Has sections: preoperative diagnosis,
+  postoperative diagnosis, procedure performed, anesthesia, findings, operative technique,
+  specimens. Written by a surgeon.
+- pathology_report: specimen analysis results. Has sections: gross description, microscopic
+  description, diagnosis. Written by a pathologist. Often references specimens from surgery.
+- eob: Explanation of Benefits from a payer. Financial document with service lines showing
+  billed amounts, allowed amounts, plan paid, and patient responsibility. Table-heavy layout.
+- discharge_summary: covers a full hospital episode. Has sections: admitting diagnosis,
+  hospital course, procedures performed, discharge diagnosis, discharge medications,
+  follow-up instructions.
+- therapy_notes: physical, occupational, or speech therapy visit documentation. Usually
+  shorter (1-2 pages per visit). May include multiple visit notes in sequence.
+- billing_statement: provider-generated itemized charges. Shows service dates, procedure
+  codes, charges, and account balance. Financial document from the provider side.
+- other: consent forms, referral letters, face sheets, administrative documents.
+
+Use confidence 0.9 or higher only when the classification is unambiguous (clear title,
+recognizable section structure, or both). Use 0.7-0.89 for likely classifications.
+Below 0.7 for genuinely uncertain documents.
+&quot;&quot;&quot;
+
+FUNCTION classify_segment_with_llm(segment, all_pages, classification_model_id):
+    // Aggregate text from all pages in this segment
+    segment_text = empty string
+    has_tables   = false
+
+    FOR each page_num from segment.start_page to segment.end_page:
+        segment_text += all_pages[page_num].text + &quot;\n&quot;
+        IF all_pages[page_num].has_tables:
+            has_tables = true
+
+    // Include a note about table presence; it&#x27;s a strong EOB and billing statement signal
+    table_note = &quot;&quot;
+    IF has_tables:
+        table_note = &quot;Note: This document contains one or more tables.\n\n&quot;
+
+    user_message = table_note + &quot;Document text (pages &quot;
+                 + segment.start_page + &quot; to &quot; + segment.end_page + &quot;):\n\n&quot;
+                 + first_4000_characters(segment_text)
+
+    response = call Bedrock Converse API with:
+        modelId         = classification_model_id  // &quot;us.amazon.nova-lite-v1:0&quot;
+        system          = [{ text: DOCUMENT_CLASSIFICATION_SYSTEM_PROMPT }]
+        messages        = [{ role: &quot;user&quot;, content: [{ text: user_message }] }]
+        inferenceConfig = { maxTokens: 256, temperature: 0 }
+
+    response_text = response.output.message.content[0].text
+    result        = parse JSON from response_text
+
+    log: &quot;Segment pages &quot; + segment.start_page + &quot;-&quot; + segment.end_page
+         + &quot; → &quot; + result.doc_type
+         + &quot; (conf=&quot; + result.confidence + &quot;)&quot;
+         // [EDITOR: review fix P1-5] Removed reasoning from log. Classification reasoning
+         // can include document title text that contains facility name or patient identifiers.
+         // Log doc_type and confidence only; omit reasoning to keep CloudWatch Logs PHI-free.
+
+    RETURN {
+        start_page:      segment.start_page,
+        end_page:        segment.end_page,
+        doc_type:        result.doc_type,
+        confidence:      result.confidence,
+        primary_date:    result.primary_date,
+        reasoning:       result.reasoning,
+        boundary_signals: segment.boundary_signals
+    }
+
+FUNCTION classify_all_segments(segments, all_pages, classification_model_id):
+    classified = empty list
+    FOR each segment in segments:
+        classified_segment = classify_segment_with_llm(
+            segment, all_pages, classification_model_id
+        )
+        classified.append(classified_segment)
+    RETURN classified
+</code></pre>
+<p><strong>Step 6: Fan out to type-specific extractors.</strong> Each classified document segment routes to the appropriate extractor. The routing follows two main paths, mirroring Recipe 1.4's two-path fan-out.</p>
+<p>Clinical documents (operative reports, pathology reports, discharge summaries, therapy notes) go through the Bedrock clinical extractor: a Claude Sonnet 4.6 call that extracts structured clinical content from the full segment text. This is the same pattern as Recipe 1.4's clinical page extractor, now operating on multi-page documents.</p>
+<p>Financial documents (EOBs and billing statements) go through Textract table parsing. These are table-heavy financial records; an LLM adds no value over well-tuned table extraction. This is the &quot;right tool for the job&quot; principle from Recipe 1.4 applied again: don't route a table to an LLM when Textract is purpose-built for exactly this.</p>
+<blockquote>
+<p><strong>Why not skip OCR and send everything to the LLM?</strong> Vision LLMs handle document understanding well but struggle with faithful numerical extraction from tables. Industry testing consistently shows that LLMs silently replace missing table values with plausible guesses, transpose digits, and rename headers: errors that look correct on review but corrupt downstream calculations. For financial documents like EOBs and billing statements, where dollar amounts and procedure codes must be exact, purpose-built OCR remains more reliable. This recipe uses OCR for extraction and LLMs for intelligence: the same hybrid architecture that the document processing industry is converging on as best practice [1][2][3].</p>
+</blockquote>
+<pre class="code code-plain"><code>CLINICAL_EXTRACTION_SYSTEM_PROMPT = &quot;&quot;&quot;
+You are a clinical documentation analyst reviewing a claims attachment document.
+Extract all clinically and administratively relevant information.
+
+Return ONLY a valid JSON object with this structure:
+{
+  &quot;document_summary&quot;: &quot;&lt;one to two sentences describing what this document is&gt;&quot;,
+  &quot;diagnoses&quot;: [&quot;&lt;primary and secondary diagnoses as documented&gt;&quot;],
+  &quot;procedures_performed&quot;: [&quot;&lt;procedures or treatments documented, with laterality if present&gt;&quot;],
+  &quot;explicit_cpt_codes&quot;: [&quot;&lt;any CPT codes explicitly written in the document&gt;&quot;],
+  &quot;service_dates&quot;: [&quot;&lt;all dates of service mentioned, in YYYY-MM-DD format&gt;&quot;],
+  &quot;provider_name&quot;: &quot;&lt;treating or performing provider name if present&gt;&quot;,
+  &quot;provider_npi&quot;: &quot;&lt;NPI number if present&gt;&quot;,
+  &quot;facility&quot;: &quot;&lt;facility or practice name if present&gt;&quot;,
+  &quot;specimens_sent&quot;: [&quot;&lt;any specimens sent to pathology, if operative report&gt;&quot;],
+  &quot;clinical_findings&quot;: &quot;&lt;key clinical findings, lab values, or imaging results&gt;&quot;,
+  &quot;confidence&quot;: &lt;0.0 to 1.0&gt;
+}
+
+Extract only what is explicitly stated. Do not infer or add information not present
+in the text. If a field has no content, use an empty list or empty string.
+For explicit_cpt_codes, include only codes explicitly written as numbers (e.g., &#x27;27447&#x27;),
+not procedure names.
+&quot;&quot;&quot;
+
+FUNCTION extract_clinical_document(segment, all_pages, clinical_model_id):
+    // Aggregate full text across all pages in the segment
+    segment_text = aggregate text from segment.start_page to segment.end_page in all_pages
+
+    response = call Bedrock Converse API with:
+        modelId         = clinical_model_id  // &quot;us.anthropic.claude-sonnet-4-6-v1:0&quot;
+        system          = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
+        messages        = [{
+            role:    &quot;user&quot;,
+            content: [{ text: &quot;Extract clinical information from this &quot;
+                              + segment.doc_type + &quot; document:\n\n&quot;
+                              + first_8000_characters(segment_text) }]
+        }]
+        inferenceConfig = { maxTokens: 1024, temperature: 0 }
+
+    response_text  = response.output.message.content[0].text
+    llm_extraction = parse JSON from response_text
+
+    // Validate ICD-10 codes on the extracted diagnoses
+    // LLMs extract the concept; Comprehend Medical maps the high-confidence code.
+    icd10_accepted = empty list
+    icd10_flagged  = empty list
+    IF llm_extraction.diagnoses is not empty:
+        diagnosis_text = join(llm_extraction.diagnoses, &quot;. &quot;)
+        icd10_accepted, icd10_flagged = infer_icd10_codes(diagnosis_text)
+        // See Recipe 1.3 for infer_icd10_codes implementation
+
+    RETURN {
+        doc_type:        segment.doc_type,
+        start_page:      segment.start_page,
+        end_page:        segment.end_page,
+        primary_date:    segment.primary_date,
+        llm_extraction:  llm_extraction,
+        icd10_codes:     icd10_accepted,
+        icd10_flagged:   icd10_flagged,
+        confidence:      llm_extraction.confidence * 100
+    }
+
+// EOB extraction uses Textract table parsing, not the LLM.
+// See the original Recipe 1.5 pseudocode for the full EOB column mapping
+// and table normalization logic. The EOB extractor is unchanged:
+// it&#x27;s financial tabular data that Textract handles better than an LLM.
+FUNCTION extract_financial_document(segment, all_pages, block_map):
+    // Aggregate table blocks from all pages in this segment
+    // Parse tables, normalize column headers, return structured service lines
+    // (Same pattern as before; financial tables don&#x27;t benefit from LLM reasoning)
+    ... (same Textract table parsing as original recipe&#x27;s extract_eob / extract_billing_statement)
+</code></pre>
+<p><strong>Step 7: Claim line item matching via LLM reasoning.</strong> This is the capstone of the recipe and where the LLM approach provides the most dramatic improvement over rule-based matching.</p>
+<p>The rule-based approach maintained a <code>CPT_PROCEDURE_DESCRIPTIONS</code> lookup table mapping codes to known description variants. That table needed manual maintenance, missed non-standard descriptions, and failed completely on unlisted procedure codes. We're replacing it with a single Claude Sonnet 4.6 call per clinical document: here are the claim lines; which ones does this document support?</p>
+<p>The model reasons from clinical knowledge. It knows that &quot;cemented total condylar knee replacement&quot; describes 27447. It knows that &quot;left total hip&quot; on an operative report with a CPT code of 27130 is a match. It can flag when a procedure description sounds like a related but distinct code (for example, a partial knee replacement versus a total). It surfaces the specific passage from the document that supports its conclusion.</p>
+<pre class="code code-plain"><code>CLAIM_MATCHING_SYSTEM_PROMPT = &quot;&quot;&quot;
+You are a medical claims analyst. Your job is to determine which claim line items
+are supported by the clinical documentation in a given document.
+
+A claim line item is &quot;supported&quot; by a document when:
+1. The document describes a procedure, service, or diagnosis consistent with the CPT code
+   on that claim line, AND
+2. The date of service in the document is consistent with the date on the claim line
+   (within 1 day for single-day services; within the admission span for inpatient services).
+
+Return ONLY a valid JSON object with this structure:
+{
+  &quot;line_assessments&quot;: [
+    {
+      &quot;line_number&quot;: &lt;integer&gt;,
+      &quot;cpt_code&quot;: &quot;&lt;CPT code from the claim&gt;&quot;,
+      &quot;supported&quot;: &lt;true or false&gt;,
+      &quot;confidence&quot;: &lt;0.0 to 1.0&gt;,
+      &quot;match_type&quot;: &quot;&lt;exact_cpt | procedure_match | date_only | no_match&gt;&quot;,
+      &quot;match_reasoning&quot;: &quot;&lt;your reasoning about why this document supports or does not
+                          support this line item, based on the extracted document summary&gt;&quot;,
+      &quot;evidence_type&quot;: &quot;llm_synthesis&quot;,
+      &quot;date_consistent&quot;: &lt;true, false, or null if date not determinable&gt;
+    }
+  ]
+} 
+
+match_type values:
+- exact_cpt: the CPT code number appears explicitly in the document
+- procedure_match: the document describes a procedure consistent with the CPT code
+  (based on clinical knowledge), even if the code number is not written
+- date_only: date matches but procedure link is uncertain
+- no_match: this document does not appear to support this claim line
+
+In match_reasoning, explain your assessment using the document summary provided.
+Do not use quotation marks as if citing verbatim text from the original document;
+the summary you received is an LLM extraction, not a direct transcript.
+If a claim line is not supported, state what documentation would be needed.
+&quot;&quot;&quot;
+
+FUNCTION match_clinical_document_to_claim_lines(
+    extraction, claim_lines, clinical_model_id
+):
+    // Build the prompt: the clinical document summary + all claim lines
+    doc_summary = &quot;Document type: &quot; + extraction.doc_type + &quot;\n&quot;
+    doc_summary += &quot;Pages: &quot; + extraction.start_page + &quot;-&quot; + extraction.end_page + &quot;\n&quot;
+    doc_summary += &quot;Primary date: &quot; + (extraction.primary_date or &quot;unknown&quot;) + &quot;\n\n&quot;
+    doc_summary += &quot;Document content summary:\n&quot;
+    doc_summary += &quot;- Diagnoses: &quot; + join(extraction.llm_extraction.diagnoses, &quot;; &quot;) + &quot;\n&quot;
+
+    doc_summary += &quot;- Procedures: &quot; + join(extraction.llm_extraction.procedures_performed, &quot;; &quot;) + &quot;\n&quot;
+    doc_summary += &quot;- Explicit CPT codes: &quot; + join(extraction.llm_extraction.explicit_cpt_codes, &quot;, &quot;) + &quot;\n&quot;
+    doc_summary += &quot;- Provider: &quot; + (extraction.llm_extraction.provider_name or &quot;unknown&quot;) + &quot;\n&quot;
+    doc_summary += &quot;- Service dates: &quot; + join(extraction.llm_extraction.service_dates, &quot;, &quot;) + &quot;\n&quot;
+    doc_summary += &quot;- Key findings: &quot; + extraction.llm_extraction.clinical_findings + &quot;\n&quot;
+
+    claim_lines_text = &quot;\nClaim line items to evaluate:\n&quot;
+    FOR each line in claim_lines:
+        claim_lines_text += &quot;Line &quot; + line.line_number + &quot;: CPT &quot; + line.cpt_code
+                          + &quot; (&quot; + line.procedure_desc + &quot;)&quot;
+                          + &quot; Date: &quot; + line.date_of_service
+                          + &quot; Provider NPI: &quot; + line.billing_npi + &quot;\n&quot;
+
+    user_message = doc_summary + claim_lines_text
+                 + &quot;\n\nFor each claim line, assess whether this document supports it.&quot;
+
+    response = call Bedrock Converse API with:
+        modelId         = clinical_model_id  // &quot;us.anthropic.claude-sonnet-4-6-v1:0&quot;
+        system          = [{ text: CLAIM_MATCHING_SYSTEM_PROMPT }]
+        messages        = [{ role: &quot;user&quot;, content: [{ text: user_message }] }]
+        inferenceConfig = { maxTokens: 1024, temperature: 0 }
+
+    response_text = response.output.message.content[0].text
+    result        = parse JSON from response_text
+
+    RETURN result.line_assessments
+
+FUNCTION match_all_documents_to_claim_lines(
+    classified_segments, extraction_results, claim_id, clinical_model_id
+):
+    // Retrieve claim line items from the claims database
+    claim_lines = get_claim_lines_from_database(claim_id)
+
+    // Accumulate support evidence per claim line across all clinical documents
+    line_support = empty map  // line_number -&gt; { assessments: [], final_status: &quot;&quot; }
+    FOR each line in claim_lines:
+        line_support[line.line_number] = { assessments: [], final_status: &quot;no_documentation&quot; }
+
+    FOR each extraction in extraction_results:
+        // Only run LLM matching on clinical documents.
+        // EOBs and billing statements are matched differently
+        // (they may contain CPT codes directly; check those without LLM).
+        IF extraction.doc_type in (&quot;operative_report&quot;, &quot;pathology_report&quot;,
+                                    &quot;discharge_summary&quot;, &quot;therapy_notes&quot;):
+            assessments = match_clinical_document_to_claim_lines(
+                extraction, claim_lines, clinical_model_id
+            )
+            FOR each assessment in assessments:
+                line_num = assessment.line_number
+                line_support[line_num].assessments.append({
+                    doc_type:           extraction.doc_type,
+                    pages:              extraction.start_page + &quot;-&quot; + extraction.end_page,
+                    supported:          assessment.supported,
+                    confidence:         to_decimal(assessment.confidence),
+                    // [EDITOR: review fix P0-1] Apply Decimal conversion at append time.
+                    // assessment.confidence is a float from LLM JSON output.
+                    // DynamoDB rejects float; convert via string (to_decimal uses str() internally).
+                    // _to_decimal() is defined in the Python companion; wrap all float fields here.
+                    match_type:         assessment.match_type,
+                    match_reasoning:    assessment.match_reasoning,
+                    evidence_type:      assessment.evidence_type,
+                    date_consistent:    assessment.date_consistent
+                })
+
+        ELSE IF extraction.doc_type in (&quot;eob&quot;, &quot;billing_statement&quot;):
+            // Financial documents: check for explicit CPT matches in service lines
+            FOR each service_line in extraction.get(&quot;service_lines&quot;, []):
+                IF service_line.get(&quot;procedure_code&quot;) is not null:
+                    FOR each claim_line in claim_lines:
+                        IF service_line.procedure_code == claim_line.cpt_code:
+                            line_support[claim_line.line_number].assessments.append({
+                                doc_type:           extraction.doc_type,
+                                pages:              extraction.start_page + &quot;-&quot; + extraction.end_page,
+                                supported:          true,
+                                confidence:         to_decimal(0.95),
+                                match_type:         &quot;exact_cpt&quot;,
+                                match_reasoning:    &quot;EOB service line shows CPT &quot;
+                                                     + service_line.procedure_code,
+                                evidence_type:      &quot;structured_data&quot;,
+                                date_consistent:    true
+                            })
+
+    // Determine final status for each claim line based on accumulated assessments
+    FOR each line_num, support_data in line_support:
+        assessments = support_data.assessments
+
+        high_confidence_support = [a for a in assessments where a.supported and a.confidence &gt;= 0.80]
+        medium_confidence_support = [a for a in assessments where a.supported and a.confidence &gt;= 0.60]
+
+        IF high_confidence_support is not empty:
+            support_data.final_status = &quot;supported&quot;
+        ELSE IF medium_confidence_support is not empty:
+            support_data.final_status = &quot;needs_review&quot;
+        ELSE IF assessments is not empty:
+            support_data.final_status = &quot;documentation_insufficient&quot;
+        ELSE:
+            support_data.final_status = &quot;no_documentation&quot;
+
+    RETURN line_support
+</code></pre>
+<p>Notice what changes compared to the lookup table approach. The LLM returns <code>match_reasoning</code> explaining its assessment: for example, it might describe a procedure as consistent with CPT 27447 because the document summary lists a right total knee arthroplasty with cemented components. That reasoning is what the claims examiner needs to see. The <code>evidence_type: &quot;llm_synthesis&quot;</code> field makes it explicit that this is the matching model's interpretation of the extracted document summary, not a verbatim quote from the original document. The matching step receives a structured extraction (diagnoses, procedures, dates), not raw page text; any evidence it surfaces is reconstructed from that summary. When the examiner reviews a &quot;needs_review&quot; line, they see the model's reasoning and can pull the original document if they need the source text.</p>
+<p><strong>Step 8: Assemble the unified claims attachment record.</strong> The assembler collects all extraction results and the claim line matching output, deduplicates clinical entities across documents, and writes the final record.</p>
+<pre class="code code-plain"><code>FUNCTION assemble_claims_attachment_record(
+    attachment_key, claim_id, page_count,
+    classified_segments, extraction_results, line_support
+):
+    record = {
+        attachment_key:     attachment_key,
+        claim_id:           claim_id,
+        extracted_at:       current UTC timestamp (ISO 8601),
+        page_count:         page_count,
+        needs_review:       false,
+
+        // Document inventory
+        documents_found:    count of classified_segments,
+        document_inventory: empty list,
+
+        // Aggregated clinical data
+        all_icd10_codes:    empty list,
+        all_conditions:     empty list,
+        all_procedures:     empty list,
+
+        // Financial data
+        eob_data:           empty list,
+
+        // Claim support (from LLM matching step)
+        claim_line_support: line_support,
+
+        // Review routing
+        unclassified_segments:    empty list,
+        low_confidence_segments:  empty list,
+        unsupported_lines:        empty list
+    }
+
+    seen_icd10_codes = empty map  // code -&gt; entry with highest confidence
+
+    FOR each classified_segment, extraction in zip(classified_segments, extraction_results):
+        // Populate document inventory
+        record.document_inventory.append({
+            doc_type:        classified_segment.doc_type,
+            pages:           classified_segment.start_page + &quot;-&quot; + classified_segment.end_page,
+            confidence:      classified_segment.confidence,
+            primary_date:    classified_segment.primary_date,
+            classification_reasoning: classified_segment.reasoning
+        })
+
+        // Aggregate ICD-10 codes (deduplicated; highest confidence per code)
+        IF extraction has icd10_codes:
+            FOR each code_entry in extraction.icd10_codes:
+                code = code_entry.icd10_code
+                IF code not in seen_icd10_codes OR
+                   code_entry.confidence &gt; seen_icd10_codes[code].confidence:
+                    seen_icd10_codes[code] = code_entry
+
+        // Aggregate clinical concepts
+        IF extraction has llm_extraction:
+            FOR each diagnosis in extraction.llm_extraction.diagnoses:
+                IF diagnosis not in record.all_conditions:
+                    record.all_conditions.append(diagnosis)
+            FOR each procedure in extraction.llm_extraction.procedures_performed:
+                IF procedure not in record.all_procedures:
+                    record.all_procedures.append(procedure)
+
+        // Collect EOB data
+        IF classified_segment.doc_type in (&quot;eob&quot;, &quot;billing_statement&quot;):
+            record.eob_data.append(extraction)
+
+        // Route low-confidence or unclassified segments to review
+        IF classified_segment.doc_type == &quot;other&quot;:
+            record.unclassified_segments.append({
+                pages:   classified_segment.start_page + &quot;-&quot; + classified_segment.end_page,
+                reason:  classified_segment.reasoning
+            })
+            record.needs_review = true
+
+        IF classified_segment.confidence &lt; 0.70:
+            record.low_confidence_segments.append({
+                pages:    classified_segment.start_page + &quot;-&quot; + classified_segment.end_page,
+                doc_type: classified_segment.doc_type,
+                confidence: classified_segment.confidence
+            })
+            record.needs_review = true
+
+    // Flag claim lines with insufficient documentation
+    FOR each line_num, support_data in line_support:
+        IF support_data.final_status in (&quot;no_documentation&quot;, &quot;documentation_insufficient&quot;):
+            record.unsupported_lines.append(line_num)
+            record.needs_review = true
+
+    record.all_icd10_codes = list of values in seen_icd10_codes, sorted by confidence desc
+
+    RETURN record
+
+FUNCTION store_attachment_record(record):
+    // Write to DynamoDB. Partition key: claim_id. Sort key: attachment_key.
+    write record to DynamoDB table &quot;claims-attachment-records&quot;:
+        partition_key = record.claim_id
+        sort_key      = record.attachment_key
+        item          = record
+
+    // Lock the S3 object (the original PDF) for retention compliance.
+    // CMS requires 10-year retention for Medicare claims records.
+    // GOVERNANCE mode during development; COMPLIANCE mode in production only.
+    set_s3_object_retention(
+        bucket      = &quot;claims-attachments&quot;,
+        key         = record.attachment_key,
+        mode        = &quot;COMPLIANCE&quot;,
+        retain_until = current date + 10 years
+    )
+
+    IF record.needs_review:
+        send message to SQS review queue:
+            claim_id       = record.claim_id
+            attachment_key = record.attachment_key
+            reason         = summarize review flags (unsupported lines, low-confidence segments, etc.)
+    ELSE:
+        publish to event bus:
+            event_type     = &quot;attachment_processed&quot;
+            claim_id       = record.claim_id
+            attachment_key = record.attachment_key
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter01.05-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample output for a 34-page claims attachment supporting an outpatient knee surgery claim:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;attachment_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claims-attachments/2026/03/15/CLM-2026-0847291-attach-001.pdf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;claim_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CLM-2026-0847291&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;extracted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-15T14:33:21Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;page_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">34</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;needs_review&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;documents_found&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;document_inventory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;operative_report&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1-6&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;primary_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-15&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.96</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document contains preoperative diagnosis, operative technique section, and surgeon attestation consistent with operative report format.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pathology_report&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;7-9&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;primary_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-15&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.93</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document contains gross description, microscopic findings, and pathologist signature consistent with pathology report.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;discharge_summary&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;10-17&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;primary_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-16&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document contains admitting diagnosis, hospital course, and discharge medications consistent with inpatient discharge summary.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eob&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;18-23&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;primary_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-28&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.97</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document contains explanation of benefits table with billed, allowed, and plan paid columns; consistent with payer EOB.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;billing_statement&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;24-34&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;primary_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-20&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.88</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document contains itemized service charges with revenue codes and account balance; consistent with provider billing statement.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;all_icd10_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;icd10_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;M17.11&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Primary osteoarthritis, right knee&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.956</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;icd10_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Z96.651&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Presence of right artificial knee joint&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.918</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;icd10_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Z79.1&quot;</span><span class="p">,</span><span class="w">   </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Long-term use of non-steroidal anti-inflammatories&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.871</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;claim_line_support&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;1&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;final_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supported&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assessments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;operative_report&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1-6&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;supported&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.97</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;match_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;procedure_match&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;match_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document summary describes right total knee arthroplasty with cemented tibial and femoral components, consistent with CPT 27447. Procedure date aligns with claim line date of service.&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;evidence_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;llm_synthesis&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;date_consistent&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eob&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;18-23&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;supported&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;match_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;exact_cpt&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;match_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EOB service line shows CPT 27447&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;evidence_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;structured_data&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;date_consistent&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;final_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supported&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assessments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;doc_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pathology_report&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;7-9&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;supported&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.89</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;match_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;procedure_match&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;match_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document summary includes specimen from right knee medial and lateral condyle and tibial plateau, consistent with surgical pathology at CPT 88305 (level IV). Specimen date aligns with operative date.&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;evidence_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;llm_synthesis&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;date_consistent&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;unclassified_segments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="nt">&quot;low_confidence_segments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="nt">&quot;unsupported_lines&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Notice the <code>match_reasoning</code> and <code>evidence_type</code> fields in the claim line assessments. <code>match_reasoning</code> is what the examiner sees when they open the claim in their workstation: not just &quot;supported&quot; or &quot;not supported,&quot; but the model's explanation of why this document supports or fails to support the claim line. <code>evidence_type: &quot;llm_synthesis&quot;</code> signals that this is the matching model's interpretation of the extracted document summary, not a verbatim quote from the source PDF. When a reviewer needs to audit the automated decision and wants the original language, they retrieve the source document pages listed in the <code>pages</code> field.</p>
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>End-to-end latency (30-page package)</td>
+<td>55-120 seconds (Textract async dominates; LLM steps add 5-15 seconds)</td>
+</tr>
+<tr>
+<td>End-to-end latency (50-page package)</td>
+<td>90-180 seconds</td>
+</tr>
+<tr>
+<td>Document boundary detection accuracy (LLM)</td>
+<td>86-94% (vs. 78-88% for rule-based)</td>
+</tr>
+<tr>
+<td>Document classification accuracy (LLM, full doc context)</td>
+<td>91-96% (vs. 83-91% keyword heuristics)</td>
+</tr>
+<tr>
+<td>Overall pipeline accuracy (boundary × classification)</td>
+<td>78-90% (vs. 68-80% rule-based)</td>
+</tr>
+<tr>
+<td>Claim line matching accuracy (CPT/procedure match)</td>
+<td>88-94% (vs. 75-85% lookup table)</td>
+</tr>
+<tr>
+<td>ICD-10 inference accuracy (typed clinical narrative)</td>
+<td>83-90%</td>
+</tr>
+<tr>
+<td>Cost per 30-page package</td>
+<td>~$2.20-2.40</td>
+</tr>
+<tr>
+<td>Cost per 50-page package</td>
+<td>~$3.50-4.00</td>
+</tr>
+</tbody>
+</table>
+<p>The 78-90% overall pipeline accuracy looks similar to the upper end of what rule-based systems achieved. The key difference is the failure mode distribution. Rule-based systems fail on predictable classes: non-standard headers, variant terminology, unusual payer templates. LLM systems fail on genuinely ambiguous content, which is harder to predict but often easier to route to review. The LLM misses are more surprising; the rule-based misses are more systematic.</p>
+<p><strong>Where it still struggles:</strong> Continuous EHR print jobs where a provider dumps everything (problem list, medication list, all visit notes) into a single PDF with no visual breaks between logical documents. The boundary detection model finds no strong signals and treats the entire run as one document. Classification then fails because the aggregated text contains vocabulary from multiple document types. Very short segments (1-2 pages) from faxed cover sheets or administrative pages that got stitched between clinical documents tend to classify as &quot;other&quot; and route to review. And the claim matching step can express high confidence on claims where the documentation language is superficially similar to the CPT description but the clinical content doesn't actually support it. Always set a human review path for unsupported lines.</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<blockquote>
+<p><strong>⚠️ Regulatory Caution: Claims Adjudication Requirements</strong></p>
+<p>The <code>final_status: &quot;supported&quot;</code> determination from claim line matching is a documentation adequacy signal, not an adjudication decision. CMS and state insurance regulations require that claims determinations be made by qualified personnel. An LLM assessment of whether an operative report supports a CPT code is a structured input to the adjudication process, not a substitute for it.</p>
+<p>Before deploying automated claim line support determinations:</p>
+<ul>
+<li>The claims adjudication system must apply its own business rules independently of LLM output</li>
+<li>State DOI examiners may challenge automated adjudication decisions based solely on LLM reasoning</li>
+<li>Human review paths must exist for all claim lines, not just low-confidence ones</li>
+</ul>
+<p>This pipeline accelerates claims processing by pre-matching documentation to claim lines. The adjudication decision remains with the claims organization.</p>
+</blockquote>
+<p><strong>Service Unavailability.</strong> This recipe makes approximately 40 Bedrock calls per 30-page package. A sustained Bedrock outage or throttling event will stall the entire package. Production deployments need: (1) Step Functions state-level timeouts on each processing stage (separate from Lambda timeouts), with Catch blocks routing to human review on timeout, (2) a DLQ on the submission queue with alarms, and (3) a periodic scan for packages older than a configurable SLA window in <code>status: &quot;processing&quot;</code> to re-queue or escalate them.</p>
+<p>The LLM-powered architecture and pseudocode above get you to a working claims attachment pipeline. Production requires addressing the gaps that will find you in month two.</p>
+<p><strong>Retry logic on every Bedrock and Comprehend Medical client.</strong> This pipeline makes approximately 40 Bedrock calls per package. At that volume, <code>ThrottlingException</code> is not a theoretical failure; it happens during burst processing. Configure <code>botocore.config.Config(retries={&quot;max_attempts&quot;: 3, &quot;mode&quot;: &quot;adaptive&quot;})</code> on every boto3 client initialization. <code>adaptive</code> mode implements exponential backoff with jitter automatically. Apply this to the <code>bedrock-runtime</code>, <code>comprehendmedical</code>, and any other clients. The Python companion shows the pattern.</p>
+<p><strong>PHI in logs.</strong> The <code>reasoning</code> fields from Bedrock responses can contain clinical content drawn from the input page text. Do not log them. In Lambda, stdout goes to CloudWatch Logs, and CloudWatch Logs is not PHI-safe by default. Log structural metadata only: page numbers, doc type, confidence values, error types. Encrypt all Lambda CloudWatch log groups with a customer-managed KMS key; Lambda does not encrypt log groups by default. Never log <code>response_text</code>, <code>reasoning</code>, or any extracted clinical field directly.</p>
+<p><strong>LLM output validation everywhere.</strong> Every Bedrock call in this pipeline returns structured JSON that we parse. Language models don't guarantee valid JSON. Wrap every JSON parse in exception handling. On parse failure, retry once with an explicit &quot;you must return only valid JSON&quot; suffix. On second failure, route the segment or page pair to human review. A malformed boundary detection response that crashes the segmenter takes down the entire package. Build defensive parsing from day one.</p>
+<p><strong>Boundary detection errors compound with classification errors.</strong> If boundary detection is 90% accurate and classification is 93% accurate on correctly segmented documents, overall accuracy is roughly 84%. At 300,000 packages per year, that's 48,000 packages with at least one error. Some errors are benign: a misclassified billing statement that routes to the generic extractor loses some structured data but doesn't affect claim line support. Some errors matter: a missed boundary that merges an operative report and a discharge summary causes both to classify incorrectly. Measure both error types separately. You cannot improve what you cannot measure.</p>
+<p><strong>Build the boundary detection feedback loop from day one.</strong> When a claims examiner corrects a segmentation error, that correction should be logged with the two page pairs involved and what the correct answer was. Over time, you want to know: which document type transitions cause the most missed boundaries? (Answer: therapy notes followed immediately by billing statements, because both can look like continuous text.) Are there specific payer workflows that produce systematic failures? Log the model's reasoning alongside the correction; it helps you understand why it made the wrong call.</p>
+<p><strong>Model versioning.</strong> Claude Sonnet 4.6 (<code>us.anthropic.claude-sonnet-4-6-v1:0</code>) and Nova Lite (<code>us.amazon.nova-lite-v1:0</code>) will be superseded. Pin to specific model version ARNs in production. Build a regression test suite on a set of labeled packages and run it against any model change before deploying. Claim line matching quality is particularly sensitive to model version; a subtle change in how the model handles clinical terminology can shift accuracy by several percentage points.</p>
+<p><strong>Prompt injection risks.</strong> Claims attachments are untrusted documents from external parties. A provider could include text designed to manipulate the classification or matching model. Apply Bedrock Guardrails to Converse API calls. Sanitize extracted page text before passing it to the model. Add output validation to flag structurally inconsistent responses (a boundary detection response that returns <code>supported: true</code> when the schema expects <code>same_document: boolean</code> tells you something went wrong).</p>
+<p><strong>S3 Object Lock in COMPLIANCE mode is irrevocable.</strong> Use GOVERNANCE mode during development so you can delete objects while testing. Switch to COMPLIANCE mode only in production, only on the correct bucket, and only after confirming your retention period configuration is correct. A 10-year COMPLIANCE lock set by mistake cannot be undone.</p>
+<p><strong>Comprehend Medical character limits.</strong> <code>InferICD10CM</code> has a 20,000 character limit per request. A multi-page clinical document may exceed this. The pseudocode uses <code>first_8000_characters()</code> as a ceiling for the Bedrock extraction call, which means the ICD-10 validation input is already constrained. If you need full-document ICD-10 coverage, split long documents into overlapping chunks, run each separately, and merge results.</p>
+<p><strong>Idempotency.</strong> S3 events and SNS notifications are at-least-once. The <code>claim-retrieve</code> Lambda can be invoked multiple times for the same document. Use conditional DynamoDB writes in the assembler to prevent duplicate records. Use the attachment key as the Step Functions execution name to prevent duplicate state machine runs.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Per-document confidence thresholds based on claim value.</strong> Not all claims are equal. A $500 therapy visit claim and a $45,000 orthopedic surgery claim both go through the same pipeline, but the cost of a wrong decision is very different. Configure the human review threshold based on claim value: high-value claims route to review at a lower confidence threshold than standard claims. The pipeline already produces per-document confidence scores and per-line support confidence from the LLM. Adding a claim-value-based routing rule is a configuration change, not a code change.</p>
+<p><strong>Bedrock Data Automation as a managed alternative.</strong> Amazon Bedrock Data Automation (BDA), generally available since March 2025, handles OCR, extraction, and classification in a single API call with custom &quot;blueprints&quot; per document type. If you want to minimize the pipeline you manage, BDA is worth evaluating. The trade-off: less control over the individual steps, and BDA is currently limited to us-east-1 and us-west-2. This recipe takes the longer route because it teaches the underlying architecture and gives you full control over model selection and tiering. BDA is the &quot;batteries included&quot; option; this recipe is the &quot;build it yourself&quot; option. Both are reasonable depending on your operational priorities.</p>
+<p><strong>Structured claims workstation integration.</strong> Surface the <code>claim_line_support</code> output directly in the claims examiner's workstation. The examiner opens a claim and sees: &quot;Line 1 (CPT 27447): Supported. Operative report pages 1-6: right total knee arthroplasty with cemented components, consistent with CPT 27447. Line 2 (CPT 88305): Supported. Pathology report pages 7-9: specimen consistent with CPT 88305. Line 3 (CPT 97010): No documentation found for date 03/14/2026.&quot; The examiner's job becomes verification rather than discovery. For unsupported lines, the specific gap is surfaced with enough context to know exactly what's missing. The <code>match_reasoning</code> field drives this view; for lines where the examiner wants to see the source text, <code>pages</code> in each assessment tells them exactly where to look in the attachment. This is where the evidence labeling pays off: the examiner knows they're reading a model summary, not a document quote, and can make a judgment accordingly.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html">Amazon Bedrock Converse API</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html">Amazon Bedrock Model IDs and Availability</a></li>
+<li><a href="https://aws.amazon.com/bedrock/pricing/">Amazon Bedrock Pricing</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">Amazon Bedrock HIPAA Eligibility</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/bda.html">Amazon Bedrock Data Automation</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html">Amazon Bedrock Prompt Caching</a></li>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/layoutresponse.html">Amazon Textract LAYOUT Feature Type</a></li>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/async.html">Amazon Textract Async Document Analysis</a></li>
+<li><a href="https://aws.amazon.com/textract/pricing/">Amazon Textract Pricing</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/API_InferICD10CM.html">Amazon Comprehend Medical: InferICD10CM API</a></li>
+<li><a href="https://aws.amazon.com/comprehend/medical/pricing/">Amazon Comprehend Medical Pricing</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-parallel-state.html">AWS Step Functions: Parallel State</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-standard-vs-express.html">AWS Step Functions Standard vs Express Workflows</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">Amazon S3 Object Lock</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>OCR vs LLM Extraction Research:</strong></p>
+<ul>
+<li>[1] MLAI Digital, &quot;Don't Use LLMs as OCR: Lessons from Complex Documents&quot; (Jan 2026): https://www.mlaidigital.com/blogs/dont-use-llms-as-ocr-lessons-from-complex-documents</li>
+<li>[2] Srivastava, &quot;Why LLMs Should Not Be Your OCR: A Practical Lesson in Document AI&quot; (Jan 2026): https://medium.com/@rsrivastava76/why-llms-should-not-be-your-ocr-a-practical-lesson-in-document-ai-2adbd6ef4436</li>
+<li>[3] Vellum, &quot;Document Data Extraction in 2026: LLMs vs OCRs&quot;: https://www.vellum.ai/blog/document-data-extraction-llms-vs-ocrs</li>
+</ul>
+<p><strong>Regulatory and Standards References:</strong></p>
+<ul>
+<li><a href="https://www.cms.gov/regulations-and-guidance/guidance/manuals/internet-only-manuals-ioms-items/cms018912">CMS Claims Processing Manual</a>: CMS guidance on claims attachment requirements and documentation standards</li>
+<li><a href="https://x12.org/products/transaction-sets">X12 837 Claim Transaction Overview</a>: The EDI transaction format that claims line items come from</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/minimum-necessary-requirement/index.html">HIPAA Minimum Necessary Standard</a>: Guidance on extracting only the data needed for the claims adjudication purpose</li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/aws-ai-intelligent-document-processing"><code>aws-ai-intelligent-document-processing</code></a>: Multi-stage IDP pipelines with document classification, A2I human review integration, and generative AI enrichment; demonstrates the fan-out extraction pattern at scale</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example"><code>amazon-textract-and-amazon-comprehend-medical-claims-example</code></a>: Healthcare claims processing with Textract and Comprehend Medical, with CloudFormation deployment templates</li>
+<li><a href="https://github.com/aws-samples/document-processing-pipeline-for-regulated-industries"><code>document-processing-pipeline-for-regulated-industries</code></a>: Document processing infrastructure for regulated industries including pipeline lineage tracking</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing"><code>amazon-textract-and-comprehend-medical-document-processing</code></a>: Multi-stage medical document processing workshop with Lambda orchestration</li>
+<li><a href="https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws"><code>guidance-for-low-code-intelligent-document-processing-on-aws</code></a>: Scalable IDP architecture covering ingestion, extraction, enrichment, and storage</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/guidance/intelligent-document-processing-on-aws">Guidance for Intelligent Document Processing on AWS</a>: Reference architecture for document classification, extraction, and enrichment at scale</li>
+<li><a href="https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws">Enhanced Document Understanding on AWS</a>: Deployable solution for document classification, extraction, and search in regulated industries</li>
+<li><a href="https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/">Building a Medical Claims Processing Solution with Textract and Comprehend Medical</a>: End-to-end claims automation architecture with AWS services</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock">Intelligent Healthcare Forms Analysis with Amazon Bedrock</a>: Generative AI approaches for complex or ambiguous healthcare document extraction</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Timeframe</th>
+<th>What You Get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Basic (proof of concept)</strong></td>
+<td>3-5 days</td>
+<td>S3 bucket, Step Functions skeleton, Textract extraction, Nova Lite boundary detection and classification for a single document type (operative reports), basic DynamoDB storage. Enough to ingest a 10-page attachment, segment it, classify one document, and see structured output. No claim line matching yet.</td>
+</tr>
+<tr>
+<td><strong>Production-ready</strong></td>
+<td>4-6 weeks</td>
+<td>Full multi-document classification taxonomy, claim line matching with Claude Sonnet, confidence gating, human review routing via A2I, dead letter queues, S3 Object Lock for retention, CloudWatch alarms, per-line support evidence surfacing, and integration with at least one claims workstation or adjudication system.</td>
+</tr>
+<tr>
+<td><strong>With variations</strong></td>
+<td>8-12 weeks</td>
+<td>Add claim-value-based routing thresholds, Bedrock Data Automation evaluation path, structured workstation integration with examiner UI, multi-payer taxonomy tuning, and end-to-end regression testing against a representative corpus of real claims packages across surgical, therapy, and diagnostic categories.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>← <a href="chapter01.05-claims-attachment-processing.html">Main Recipe 1.5</a> · <a href="chapter01.05-python-example.html">Python Example</a> · <a href="chapter01-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

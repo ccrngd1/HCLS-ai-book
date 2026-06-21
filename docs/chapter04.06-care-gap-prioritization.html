@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 4.6: Care Gap Prioritization ⭐⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-46-care-gap-prioritization-">Recipe 4.6: Care Gap Prioritization ⭐⭐</h1>
+<p><strong>Complexity:</strong> Medium · <strong>Phase:</strong> Production · <strong>Estimated Cost:</strong> ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>David is 64. He has been a patient at the same primary care practice for fifteen years. His chart, if you scroll through it, looks like the chart of a reasonably engaged middle-aged man who has accumulated the usual middle-aged things: type 2 diabetes (diagnosed nine years ago), well-controlled hypertension, a borderline LDL that's been managed by diet and a low-dose statin, and a family history that includes a father who died of colon cancer at 71 and a mother who is alive at 88 and has osteoporosis. His most recent A1c is 7.8 (up from 7.1 a year ago). His most recent blood pressure is 132/82. He has had a lot of visits over the years, and a lot of orders entered, and a lot of fields populated.</p>
+<p>If you ask David's plan's analytics team to pull his open care gaps, the report comes back with eleven of them.</p>
+<p>He is overdue for his diabetic retinal exam (last one was 26 months ago; the gap window for the HEDIS Eye Exam for Patients with Diabetes measure closed five months ago). He is overdue for his diabetic foot exam (last documented one was 19 months ago; the practice's quality dashboard shows it red). He is overdue for his colonoscopy (last one was at 54, ten years ago, when normal-result recommendations were every ten years; the current USPSTF guidance starts at 45 and his family history flags him for earlier and more frequent screening). He has not had a flu shot this season. He has not had the COVID booster the CDC recommended for adults over 50 with diabetes. He has not had the pneumococcal vaccine that became indicated when he turned 64 in February. He has not had the shingles vaccine. His statin regimen has not been re-titrated despite his rising A1c (his cardiovascular risk has gone up). His blood pressure was 132/82 at the last visit, which is on the line for hypertension control under the current measure spec, and his medication list hasn't been adjusted. His urine albumin-to-creatinine ratio (UACR) was last drawn 14 months ago, and given his diabetes plus the rising A1c, current ADA guidance would have it drawn annually. His eGFR has been trending down (from 78 two years ago, to 71 a year ago, to 64 last visit). His PCP has not had a documented conversation about chronic kidney disease (CKD) with him.</p>
+<p>Eleven gaps. David is at his PCP next Tuesday morning at 9:15 AM for his annual visit. The visit is scheduled for 25 minutes. The PCP, Dr. Patel, will spend the first five minutes reviewing the chart in the EHR, ten minutes on the visit itself, and ten minutes on documentation and orders. Best case, she addresses three gaps. More realistically, two.</p>
+<p>Which two?</p>
+<p>If David is unlucky, the practice's quality dashboard happens to be sorted by HEDIS measure status, with the bonus-bearing measures at the top, and the screen Dr. Patel sees is dominated by the diabetic retinal exam (Eye Exam for Patients with Diabetes is a HEDIS Stars bonus measure, the gap window closed five months ago, and the practice gets dinged on its quality bonus for every diabetic patient who didn't get one). She orders the retinal exam referral. He needs a flu shot, the medical assistant noted; she orders that. The visit ends. David walks out, and the things that didn't get addressed include: his eGFR trending into stage 3 CKD without a single documented CKD conversation, his colonoscopy that's six years overdue with a paternal history of colon cancer death, and his uncontrolled diabetes that is now driving the renal decline.</p>
+<p>If David is lucky, Dr. Patel knows him well, has been watching his eGFR slip for two years, walks into the visit already focused on the kidney conversation, and uses the limited time to talk about what's happening with his kidneys, order the UACR, refer him to nephrology for early co-management, and intensify his diabetes regimen. She does not get to the retinal exam, and the practice's HEDIS metric on diabetic retinal exam takes the hit. Six months later, when the plan's quality team is doing year-end push to close gaps, David's name appears on the chase list, and a non-clinical outreach team calls him to schedule the eye exam. He goes. The eye exam is normal. The HEDIS measure closes. Everyone's dashboard turns green.</p>
+<p>Which version of David's care is better?</p>
+<p>The clinically obvious answer (the second one, where the kidney decline gets named and acted on) and the operationally rewarded answer (the first one, where the visible HEDIS measure closes within the measurement window) are not the same answer. The dashboard, the bonus structure, the documentation incentives, and the way care gaps are presented to the PCP all push toward the first version. The patient's actual prognosis pushes toward the second.</p>
+<p>This is what care gap prioritization looks like in practice. The data identifies the <em>what</em>: which gaps, when they opened, when they close, what they're worth in quality measure terms. The hard work is identifying the <em>which</em>, and matching the <em>which</em> to the right closure pathway. A gap that closes itself when a patient walks past a flu shot kiosk in a pharmacy is structurally different from a gap that requires a referral, a scheduled procedure, a bowel prep, and a 12-month follow-up. A gap that's a HEDIS bonus measure with a closing window is structurally different from a gap that no quality program tracks but that's clinically the most important thing happening for the patient. A gap that the PCP can close in 90 seconds (order the flu shot at the visit) is different from a gap that requires a 20-minute conversation followed by a 6-month course of behavior change.</p>
+<p>A blanket &quot;close the most overdue HEDIS measure first&quot; policy will produce, for thousands of patients, a flow of completed-but-not-most-important gap closures, and will report a lift in HEDIS measures that's real and meaningful for the plan's quality bonus, while the patients with kidney disease, undiagnosed depression, escalating diabetic complications, or overdue colon cancer screenings continue to drift in the gaps the dashboard didn't put first.</p>
+<p>A second wrinkle that distinguishes care gap prioritization from medication adherence (Recipe 4.5) and wellness program targeting (Recipe 4.4): the <em>catalog of gaps</em> is enormous and heterogeneous, and gap eligibility, urgency, and closure pathways depend heavily on patient context. Adult preventive care alone has dozens of recommended screenings and immunizations across age, sex, condition, and risk-factor combinations. HEDIS has hundreds of measures across commercial, Medicaid, and Medicare populations, of which any given patient is in the denominator for somewhere between five and fifty. CMS Star Ratings has its own subset. ACO and value-based contract programs each have their own. State Medicaid programs each have their own. The patient's specific clinical picture (diabetes, CKD, recent stroke, pregnancy, transplant) opens additional condition-specific care gap categories that have their own measurement specifications, their own evidence base, and their own urgency. The recommender has to know all of those. It also has to know which closure pathway each gap supports: some can be closed by the patient (vaccination at a pharmacy, self-collected screening kits like FIT for colorectal cancer), some by the PCP at a visit (in-office foot exam, blood pressure measurement, vaccine administration), some by a specialist (retinal exam, colonoscopy, mammogram), some by labs that run anywhere (HbA1c, UACR), and some require a structured program (depression screening with PHQ-9 plus follow-up if positive). Different pathways have different friction, different time costs to the patient, and different probability of completion.</p>
+<p>A third wrinkle: visit-time scarcity is the binding constraint. Adherence interventions in 4.5 used staff capacity (pharmacists, care managers) as the scarce resource. Care gap closure during a visit uses <em>PCP visit time</em>, which is much more zero-sum than population-level outreach capacity. Twelve open gaps and 25 minutes is not a problem you solve with more parallelism. It's a problem you solve by picking the right two or three. The recommender's output is not a generic call list of patients to contact; it's a per-patient, per-encounter, ranked agenda item list that has to be useful to a specific clinician at a specific time, with the right gaps at the top, with explanations the clinician can read in three seconds, and with the right things suppressed because they're not the right thing for this visit.</p>
+<p>A fourth wrinkle: care gaps have closure windows. Many HEDIS and Star Ratings measures use lookback windows (the patient must have had X within the last 12 or 24 or 36 months for the measure to close in the current measurement year). The window expires at the end of each measurement year. A gap that has 90 days left in its window has different urgency than the same gap with eight months left, even though the clinical reasoning would treat them similarly. Gap windows also interact with the patient's enrollment status (Medicare measurement years are calendar; commercial varies; Medicaid varies; a patient who switches plans mid-year may have a gap that &quot;doesn't count&quot; for the new plan but still represents real clinical need). The recommender needs to model both clinical urgency (when does the patient actually need this care) and operational urgency (when does this gap stop counting for the plan or practice). They are not the same thing. Chasing only the operational urgency produces the David-with-the-rising-creatinine outcome. Chasing only the clinical urgency leaves measurable financial value on the table that pays for the program. Both pressures are real.</p>
+<p>A fifth wrinkle: gap data is messy in instructive ways. A gap can be open in the analytics warehouse and closed in reality (the patient had the colonoscopy at a non-network gastroenterologist; the result wasn't sent back to the PCP's EHR; the analytics team only sees what the PCP's EHR shows, so the gap is &quot;open&quot;). A gap can be closed in the analytics warehouse and open in reality (the EHR has a &quot;colonoscopy declined&quot; note from three years ago that the analytics import treated as a soft close; the patient has aged into a higher-risk category; the gap has reopened clinically but the data hasn't caught up). A gap can be unclear: the patient had a sigmoidoscopy in 2017 that closes some colorectal cancer screening measures but not others; the recommender's logic has to know the measure-specific qualifying procedures. Vaccination histories are notoriously fragmented across the PCP, the pharmacy, the public-health immunization registry, and the patient's other providers. Lab results from outside labs, retail clinics, and home test kits often don't reconcile cleanly with the PCP's chart. A care gap recommender that doesn't reason about gap data quality will, with confidence, list gaps that are actually closed, omit gaps that are actually open, and recommend chasing things that the patient will (rightly) report they already did.</p>
+<p>A sixth wrinkle, and this one is operationally specific: the closure event has multiple sources of truth. When David gets a flu shot at the pharmacy on Saturday, the closure shows up in the pharmacy's claim, in the immunization registry, eventually in the plan's claim system, and (if the pharmacy and the practice happen to share an interface) sometimes in the EHR. The lag between these is days to months. The recommender needs to be tolerant of partial data; the user-facing dashboards need to show provisional closures with confidence; and the chase teams need to not chase gaps that are technically open but were closed yesterday, because nothing erodes patient trust faster than a robocall asking them to schedule the colonoscopy they had last week.</p>
+<p>So the problem statement, again, is deceptively simple: given a patient's open care gaps (with full context: clinical, demographic, behavioral, social, and operational), the patient's likelihood to act on each, the closure pathway available for each, the visit context (if a visit is imminent), and the quality-measure landscape, decide which gaps to push to which actor (the patient, the PCP, the care team, a specialist) at which moment, allocate the system's various nudge and outreach capacities, and track whether each gap actually closed and stayed closed. Not the same red-yellow-green dashboard for everyone with a gap. The right gap, surfaced to the right actor, at the right moment, with honest uncertainty when the data is incomplete and honest acknowledgment when the operationally-attractive answer and the clinically-attractive answer diverge.</p>
+<p>We're going to build that. This recipe builds directly on Recipe 4.4's uplift-and-allocation pattern and Recipe 4.5's barrier-classification pattern (we will not re-derive them; go read those if you skipped them), and adds three pieces specific to care gap work: a per-(patient, gap) clinical urgency model that is independent of the quality-measure status, a visit-context-aware ranking that produces an agenda for an upcoming or ongoing encounter, and a multi-source closure-tracking pattern that handles the data-lag and partial-closure realities. The architecture is structurally similar to 4.5. The clinical and operational details are different enough that the recipe is worth its own treatment.</p>
+<p>Let's get into how you build it.</p>
+<hr />
+<h2 id="the-technology-gap-identification-clinical-urgency-modeling-visit-context-ranking-and-closure-tracking">The Technology: Gap Identification, Clinical Urgency Modeling, Visit-Context Ranking, and Closure Tracking</h2>
+<h3 id="what-a-care-gap-actually-is">What a Care Gap Actually Is</h3>
+<p>Before any modeling, the system has to know what counts as a gap. There are three reasonable definitions in common use, and a production recommender ends up using all three:</p>
+<ul>
+<li>
+<p><strong>Quality-measure-defined gaps.</strong> The patient is in the denominator of a HEDIS, Stars, ACO, or contracted quality measure, and the numerator condition (the qualifying event or procedure within the lookback window) is not satisfied. These are deterministically computable from claims, lab data, and EHR data given the measure specification. Examples: HEDIS Comprehensive Diabetes Care eye exam, BCS-E breast cancer screening, FUH (Follow-Up after Hospitalization for Mental Illness), CCS cervical cancer screening. The measure specifications are publicly published, are updated annually, and have well-defined denominator and numerator definitions.</p>
+</li>
+<li>
+<p><strong>Guideline-recommended gaps.</strong> The patient meets criteria from a clinical guideline (USPSTF, ADA, AHA/ACC, KDIGO, etc.) for a screening, immunization, or monitoring action that has not been performed within the recommended interval. These are similar to quality-measure gaps but broader: the guideline universe is bigger than the measure universe, and the urgency reasoning is clinical rather than operational. Example: a 50-year-old male with documented metabolic syndrome who hasn't had a fasting lipid panel in 18 months has a guideline-recommended gap that is not (necessarily) a HEDIS measure gap.</p>
+</li>
+<li>
+<p><strong>Patient-specific clinical gaps.</strong> Generated by clinical reasoning over the patient's specific picture: rising eGFR with diabetes and no documented CKD conversation; uncontrolled A1c with no medication titration in twelve months; a positive depression screen with no follow-up encounter. These are the gaps that quality measures are too coarse to capture but that good clinicians notice. They're also the hardest to compute: they require integrated clinical reasoning over multi-source data, not lookup against a measure spec. This is increasingly where care gap programs are investing, and it is where LLM-assisted generation has interesting potential as a <em>candidate-gap surfacer</em> that a clinician confirms.</p>
+</li>
+</ul>
+<p>A production care gap recommender pulls from all three sources, deduplicates (a gap that's both a HEDIS measure and a guideline recommendation should not appear twice), and reconciles (a gap surfaced by an LLM clinical-reasoning pass that overlaps a measure-defined gap should be merged).</p>
+<h3 id="gap-eligibility-logic">Gap Eligibility Logic</h3>
+<p>For each gap type, the eligibility logic answers two questions: is this patient in the denominator (the eligible population for this gap), and is the numerator unsatisfied (the gap is actually open)?</p>
+<p>Denominator logic involves age, sex, condition flags (diabetes diagnosis on the active problem list or recent ICD-10 codes), enrollment criteria (continuously enrolled for X months), and exclusion criteria (palliative care, hospice, dialysis-dependent for some measures, pregnancy for others). Many denominators have specific look-back periods. Many use procedure or diagnosis code value sets that NCQA, CMS, or specialty societies publish and revise annually.</p>
+<p>Numerator logic involves looking up the qualifying procedure, lab, or service codes within the measure's allowed look-back. The lookback windows vary: a flu shot is annual; a mammogram is 27 months for HEDIS BCS-E; a colonoscopy is 10 years if normal; an eGFR is 12 months for diabetic CKD monitoring. Some measures have multiple qualifying procedures (FIT-DNA for colorectal cancer screening qualifies, and so does flexible sigmoidoscopy with a different lookback). The numerator logic for some measures includes exclusions on top of the qualifying events (a positive screen with appropriate follow-up is the numerator condition for some depression and substance-use measures, not just the screen).</p>
+<p>Hard-coding all of this is a maintenance disaster. The right pattern is a <em>measure registry</em>: a structured catalog of measure definitions (denominator predicates, numerator predicates, exclusion predicates, lookback windows, value sets, version, effective dates) that the gap engine evaluates against patient data. The registry is curated by clinical informatics; the gap engine is a generic evaluator. New measures land in the registry without code changes. Annual measure revisions land as version bumps. The registry is the source of truth; the gap list is its output.</p>
+<h3 id="clinical-urgency-beyond-quality-measure-status">Clinical Urgency: Beyond Quality-Measure Status</h3>
+<p>Two patients, both with an open colonoscopy gap. Patient A is 50, no family history, average risk, prior screening declined &quot;for now&quot; three years ago. Patient B is 64, paternal first-degree history of colon cancer at age 71, prior colonoscopy ten years ago with a single tubular adenoma found and removed (so the surveillance interval is shorter than for normal-result patients, and the previous colonoscopy clinically qualifies as elevated-risk). Both patients have the same HEDIS measure status (open, in-window). The clinical urgency is materially different.</p>
+<p>Clinical urgency modeling is where care gap recommenders earn their keep. The model takes per-(patient, gap) features and predicts the <em>expected harm of delayed closure</em>: the expected clinical risk attributable to non-closure of this gap over the next 6 to 24 months, given the patient's full picture. Inputs:</p>
+<ul>
+<li>Patient demographics (age, sex, race or ethnicity if used appropriately for risk)</li>
+<li>Active condition list and severity markers</li>
+<li>Recent clinical trajectory (rising A1c, falling eGFR, escalating BP)</li>
+<li>Family history flags</li>
+<li>Prior screening history (declines, normal results, abnormal results, surveillance frequencies)</li>
+<li>Comorbidity load (which influences both clinical risk and patient capacity)</li>
+<li>Social determinants (transportation barriers may make a referral-based gap closure unrealistic for this patient)</li>
+</ul>
+<p>Outputs: a continuous urgency score per (patient, gap), with confidence interval, plus a brief structured rationale (the top-three feature contributions). The urgency score is <em>not</em> a quality-measure score; it's an estimate of clinical harm from non-closure. A flu shot for an immunocompetent 35-year-old is low urgency. A flu shot for an 80-year-old in a long-term care facility during peak flu season is high urgency. The HEDIS measure treats them identically. The clinician does not.</p>
+<p>How is this trained? Two reasonable approaches:</p>
+<p><strong>Curated risk-rule library.</strong> For each gap type, clinical informatics encodes a set of risk modifiers as rules: family history doubles the colorectal cancer urgency; rising eGFR triples the CKD-monitoring urgency; recent hospitalization for COPD raises the pneumococcal vaccine urgency. The output is a deterministic urgency adjustment on top of a baseline. Transparent, clinically auditable, and the right starting point. Misses subtle interactions.</p>
+<p><strong>Supervised regression on outcome data.</strong> Train a model to predict outcomes (incident events of the type the gap closure prevents) over a longitudinal window, with the gap-closure status as one feature. The expected harm of delay is the difference in predicted incident-event probability between &quot;closed&quot; and &quot;open&quot; status, holding other features fixed. Requires longitudinal data, requires careful handling of confounding (the patients who close their gaps differ systematically from those who don't), and is much more powerful when it works. In practice, this is a Chapter 7 (Risk Scoring) problem layered into the care gap recommender.</p>
+<p>A note: clinical urgency modeling is where bias creeps in if you're not careful. If the training data has systematically less follow-up data for some demographic groups, the model's urgency estimates for those groups will be miscalibrated. If the outcome event you're using as the prediction target is itself recorded with bias (some populations are under-diagnosed for the very conditions the gap is screening for), the model encodes that. The Obermeyer et al. 2019 finding for risk-stratification scores applies directly to clinical urgency models. Audit by cohort, calibrate by cohort, and monitor.</p>
+<h3 id="visit-context-ranking">Visit-Context Ranking</h3>
+<p>Most care gap recommenders make a population-level call list: for the upcoming month, which patients have which gaps, in what priority. That's useful for chase teams. It is <em>not</em> the right output for a clinician about to walk into a 9:15 AM visit.</p>
+<p>Visit-context ranking takes the patient's gap list and produces a <em>ranked agenda</em> for a specific encounter, conditioned on:</p>
+<ul>
+<li>The visit type (annual wellness visit has more time; sick visit for back pain has very little)</li>
+<li>The visit duration (typical for this provider, this practice, this visit type)</li>
+<li>The patient's history of gap closure at visits (some patients knock through three gaps in a focused visit; some patients arrive with a list of their own concerns and zero capacity for additional agenda items)</li>
+<li>The closure pathway compatibility with this visit (an in-office gap like a foot exam is high-fit for the visit; a screening colonoscopy is low-fit because the visit produces a referral, not a closure)</li>
+<li>The clinician's preference profile (some clinicians want the bonus measures surfaced first; some want the highest-clinical-impact items; many want both, in clearly-labeled categories)</li>
+<li>The recent acute clinical context (a patient with a new abnormal finding from last week has half the visit consumed before any preventive gap is on the table)</li>
+</ul>
+<p>The output is two ranked lists: &quot;top items to address at this visit&quot; (3 to 5 items, accounting for visit time and closure pathway fit) and &quot;items to flag for asynchronous closure outside the visit&quot; (everything else, queued to chase teams, patient-facing outreach, or asynchronous orders). This split is critical: the visit agenda has to be short and curated; the rest of the gap closure work happens outside the visit.</p>
+<p>Visit-context ranking is where LLMs have a useful, narrow role. A structured-output LLM call given the patient's gap list, the visit context, and the ranking policy can produce a one-paragraph briefing for the clinician: &quot;Mr. Chen is overdue for retinal exam, foot exam, and pneumococcal vaccine. His eGFR has dropped 12 points in the last 18 months without a documented CKD conversation. Suggested visit focus: kidney conversation and order UACR; foot exam in office; pneumococcal vaccine if patient agrees. Defer retinal exam to scheduling team for asynchronous referral.&quot; The LLM is composing the briefing, not picking the gaps. The picks are from the deterministic ranker. The LLM's only job is making the picks readable in three seconds.</p>
+<h3 id="engagement-and-closure-probability-prediction">Engagement and Closure-Probability Prediction</h3>
+<p>A gap on the visit agenda is a candidate. Whether the closure actually happens depends on whether the patient acts (for patient-driven closures) or the clinician acts (for in-visit closures) or the referral chain completes (for specialist-driven closures). Each pathway has its own probability profile.</p>
+<p>For patient-driven closures, the engagement-prediction pattern from 4.4 and 4.5 applies: per-patient, per-pathway probability of completing the closure given a recommendation. Features include prior closure history, channel responsiveness, transportation/scheduling proxies, language, and social determinants of health.</p>
+<p>For in-visit closures, the probability is dominated by visit time, visit type, and clinician closure habits (some clinicians close 80 percent of foot exam gaps when surfaced; some close 30 percent because the visit was already over capacity).</p>
+<p>For referral-driven closures, the probability decomposes into: the probability the patient schedules the referral (highly engagement-correlated), the probability the referral completes (specialty network capacity, prior auth friction, geographic access), and the probability the result returns to the PCP's chart (the data-completeness problem from above). Each subprobability is its own model in production.</p>
+<p>The product of these probabilities, multiplied by the clinical urgency score and weighted by the gap's quality-measure value (when applicable), forms the ranking signal.</p>
+<h3 id="closure-outcome-tracking">Closure-Outcome Tracking</h3>
+<p>Every gap that closes generates a closure event. Closure events come from many places: claims, EHR encounter notes, pharmacy data (for some immunizations), immunization registries, lab feeds, screening kit return data, and patient self-report. A production care gap pipeline accepts all of these, normalizes them, deduplicates them, and maintains a per-(patient, gap) state machine: open, provisionally closed (a candidate event arrived but hasn't been confirmed by the canonical source), confirmed closed (the qualifying event is documented in the source the quality measure uses), reopened (the patient aged out of the previous closure window and a new gap has opened), or excluded (the patient has aged out, become ineligible, or has a documented exclusion).</p>
+<p>The state machine has to be tolerant of late-arriving data. A patient who got a flu shot at the pharmacy on Saturday may show up in the immunization registry on Monday, in claims on Tuesday, and never in the EHR. The state machine should mark the gap provisionally closed on Monday and confirmed-closed when the canonical source confirms; chase teams should respect the provisional state to avoid the &quot;we just called you about the colonoscopy you had last week&quot; failure mode.</p>
+<p>This is messier than it sounds. The &quot;canonical source&quot; varies by measure: HEDIS uses claims-and-supplemental-data with strict source-of-truth rules; the practice's quality dashboard may treat the EHR as canonical; the public-health immunization registry is canonical in some states for vaccines and not in others. The recommender's state machine has to know each measure's canonical source.</p>
+<h3 id="where-llms-fit-and-dont">Where LLMs Fit (and Don't)</h3>
+<p>Same as 4.5 with care-gap-specific notes:</p>
+<ul>
+<li><strong>Gap-eligibility evaluation, urgency scoring, visit ranking, capacity allocation.</strong> Not the LLM's job. Deterministic logic, auditable models, and the measure registry.</li>
+<li><strong>Patient-specific clinical-gap surfacing as a candidate generator.</strong> Yes, with a structured-output prompt and a clinician-confirmation step. The LLM reads the patient's chart context and proposes &quot;gaps the deterministic engine missed&quot; as a <em>candidate</em> list, which is then reviewed by clinical informatics and added to the deterministic registry if the pattern is durable. The LLM is not the source of truth; it's a sourcer of patterns.</li>
+<li><strong>Visit briefing generation for clinicians.</strong> Yes. Structured input goes in, a one-paragraph briefing comes out, the briefing references the deterministic ranker's choices. The clinician reads it before walking into the room.</li>
+<li><strong>Patient-facing gap-closure messaging.</strong> Yes, same pattern as 4.4 and 4.5: structured intervention assignment in, tailored message out, message goes through a clinical-claims validator before send.</li>
+<li><strong>Care-team summary for outreach staff.</strong> Yes. The LLM packages structured outreach instructions in a readable form. The picks are from the recommender; the LLM packages.</li>
+</ul>
+<p>What the LLM does <em>not</em> do: pick the gaps, decide whether a gap is open, override the urgency model with its own clinical reasoning, or speak directly to a patient in an autonomous loop about screening recommendations. The recommender picks. The LLM packages.</p>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>The pipeline has six logical components: a measure-registry component that maintains the deterministic gap definitions, a gap-evaluation component that runs the registry against patient data to produce open-gap lists, an enrichment component that scores clinical urgency and engagement and closure probability per gap, a visit-context ranker that produces per-encounter agendas, an outreach-and-orchestration component that drives patient-facing messages, chase team queues, and clinician briefings, and a closure-tracking component that watches multiple data sources and updates gap state.</p>
+<pre class="code code-plain"><code>┌───────── MEASURE REGISTRY (governance-controlled) ─────────┐
+│                                                            │
+│  [Clinical informatics]   [Quality programs]   [Contracts] │
+│           │                       │                │       │
+│           └────────┬──────────────┴───────┬────────┘       │
+│                    ▼                      ▼                │
+│         [Measure spec: denominator, numerator, exclusions, │
+│          lookback, value sets, version, effective_dates,   │
+│          canonical_source, urgency_baseline]               │
+│                    │                                       │
+│                    ▼                                       │
+│         [Persist to measure-registry store; versioned]     │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+┌───────── GAP EVALUATION (daily) ──────────────────────────┐
+│                                                            │
+│  [Claims]   [EHR encounters]   [Lab feeds]   [Pharmacy]    │
+│  [Immunization registries]   [Patient self-report]         │
+│                          │                                 │
+│                          ▼                                 │
+│              [Normalize and reconcile to                   │
+│               (patient, qualifying_event) tuples           │
+│               with source provenance]                      │
+│                          │                                 │
+│                          ▼                                 │
+│              [Per-patient: evaluate each measure in        │
+│               registry. Compute denominator membership,    │
+│               numerator satisfaction, exclusion logic.     │
+│               Produce open-gap list with metadata]         │
+│                          │                                 │
+│                          ▼                                 │
+│              [Optional: LLM-assisted candidate-gap         │
+│               surfacer reads patient context, proposes     │
+│               additional gap candidates for clinical       │
+│               informatics review]                          │
+│                          │                                 │
+│                          ▼                                 │
+│              [Persist to per-(patient, gap) store with     │
+│               state machine: open, provisionally_closed,   │
+│               confirmed_closed, reopened, excluded]        │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+┌───────── GAP ENRICHMENT (daily/weekly) ───────────────────┐
+│                                                            │
+│  [Open gaps]   [Patient features]   [Barrier signals]      │
+│           │                │                │              │
+│           └────────┬───────┴────────┬───────┘              │
+│                    ▼                ▼                      │
+│         [Stage A: clinical urgency scoring                 │
+│          (curated risk-rule library, optional supervised   │
+│           outcome model layered on top)]                   │
+│                    │                                       │
+│                    ▼                                       │
+│         [Stage B: per-pathway engagement and               │
+│          closure-probability prediction                    │
+│          (patient-driven, in-visit, referral-driven)]      │
+│                    │                                       │
+│                    ▼                                       │
+│         [Stage C: per-(patient, gap) priority synthesis    │
+│          (clinical urgency × completion probability ×      │
+│          quality-measure value × window-urgency)]          │
+│                    │                                       │
+│                    ▼                                       │
+│         [Persist enriched gap list per (patient, gap)]     │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+┌───────── VISIT-CONTEXT RANKING (real-time, pre-visit) ────┐
+│                                                            │
+│  [Tomorrow&#x27;s schedule]   [Enriched gap list]   [Visit      │
+│                                                  context]  │
+│                          │                                 │
+│                          ▼                                 │
+│         [Per-encounter: filter to gaps with closure        │
+│          pathway compatible with visit type and time;      │
+│          rank by priority adjusted for visit fit]          │
+│                          │                                 │
+│                          ▼                                 │
+│         [Produce two lists per encounter:                  │
+│          - in-visit agenda (3-5 items)                     │
+│          - asynchronous closure queue (the rest)]          │
+│                          │                                 │
+│                          ▼                                 │
+│         [LLM-assisted briefing generation for clinician    │
+│          (structured prompt; structured output;            │
+│          one-paragraph clinician-readable text)]           │
+│                          │                                 │
+│                          ▼                                 │
+│         [Push to clinician dashboard / EHR inbox before    │
+│          visit start; persist briefing for audit]          │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+┌───────── ASYNCHRONOUS OUTREACH AND ORCHESTRATION ─────────┐
+│                                                            │
+│  [Asynchronous closure queue + per-pathway capacity]       │
+│                          │                                 │
+│                          ▼                                 │
+│         [Patient-facing closure paths:                     │
+│          - app/portal nudges                               │
+│          - retail clinic referral                          │
+│          - home test kit (FIT, HbA1c)                      │
+│          - pharmacy-based vaccinations]                    │
+│         [Care-team paths:                                  │
+│          - chase team call queues                          │
+│          - care-manager outreach for high-touch closures]  │
+│         [Specialist-referral paths:                        │
+│          - referral generation, scheduling assist,         │
+│            transportation assistance, prior auth]          │
+│                          │                                 │
+│                          ▼                                 │
+│         [Capacity-aware allocation (heterogeneous          │
+│          capacities, per-patient contact-frequency caps,   │
+│          equity floors, cross-recipe coordination)]        │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+┌───────── CLOSURE TRACKING + FEEDBACK ─────────────────────┐
+│                                                            │
+│  [Claims feed]  [EHR feed]  [Lab feed]  [Imm registry]     │
+│  [Pharmacy feed]  [Patient self-report]                    │
+│                          │                                 │
+│                          ▼                                 │
+│         [Normalize to (patient, candidate-closure-event)   │
+│          with source provenance and timestamp]             │
+│                          │                                 │
+│                          ▼                                 │
+│         [Match candidate event to open gap; if match,      │
+│          transition state machine to provisionally_closed; │
+│          if canonical source confirms, transition to       │
+│          confirmed_closed]                                 │
+│                          │                                 │
+│                          ▼                                 │
+│         [Notify chase team / suppress further outreach;    │
+│          emit closure event to engagement stream]          │
+│                          │                                 │
+│                          ▼                                 │
+│         [Aggregate closures by cohort, by gap type, by     │
+│          closure pathway, by clinician for dashboards;     │
+│          feed urgency-model retraining and engagement      │
+│          model retraining on appropriate horizons]         │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>The measure registry is governance, not engineering.</strong> It's a structured, versioned catalog of measures: denominator predicate, numerator predicate, exclusion predicate, value sets, lookback windows, canonical source, and an <code>urgency_baseline</code> reflecting how the program judges this measure's clinical importance independent of patient-specific factors. Clinical informatics owns it. Engineering owns the evaluator that consumes it. New measures, annual measure revisions, and program-specific measure variants land as registry entries; the engineering pipeline does not change.</p>
+<p><strong>Gap evaluation runs daily on the full population.</strong> It is a SQL-shaped problem at scale: for each measure, evaluate denominator membership, then numerator satisfaction, then exclusion criteria, joining to the relevant patient data slices. The output is a per-(patient, measure) record with state, evidence (which qualifying events were considered), and source provenance. The state-machine semantics (open vs. provisionally closed vs. confirmed closed vs. reopened) live here, with the canonical-source rules per measure encoded in the registry and applied by the evaluator.</p>
+<p><strong>The LLM-assisted candidate-gap surfacer is optional and gated.</strong> It runs over a subset of patients (high-risk, complex) and proposes patterns that the deterministic registry doesn't catch. Its outputs are <em>candidates</em> that go to clinical informatics for review, not directly to the patient or clinician. Patterns that prove durable get encoded into the registry as rule-based clinical gaps; the LLM is a discovery tool.</p>
+<p><strong>Gap enrichment is the modeling-heavy stage.</strong> Per-(patient, gap), produce a clinical urgency score, per-pathway engagement and closure-probability scores, and a synthesized priority. The model fan-out is similar to 4.5: the urgency model is per-gap-type (some shared parameters across related gaps), the engagement model is per-pathway, the closure-probability model has subcomponents for referral steps. The output is the per-(patient, gap) priority that drives both the visit-context ranker and the asynchronous outreach allocator.</p>
+<p><strong>Visit-context ranking is the most operationally distinctive piece.</strong> It consumes tomorrow's encounter schedule, looks up each scheduled patient's enriched gap list, applies visit-fit filters (closure pathway compatible with the visit type and visit time), and produces a per-encounter ranked agenda. The clinician's briefing is generated by an LLM call that summarizes the deterministic agenda in a paragraph the clinician can read in three seconds. Asynchronous closure (the gaps that didn't make the visit agenda) flows to the outreach orchestration layer.</p>
+<p><strong>Outreach orchestration is multi-pathway.</strong> Gaps with pathway &quot;patient-driven&quot; go to the channel optimizer from 4.1. Gaps with pathway &quot;in-visit&quot; stay on the agenda until the visit, then transition to &quot;needs followup&quot; if not addressed. Gaps with pathway &quot;specialist referral&quot; go to the referral-management workflow with prior-auth and scheduling assistance. The capacity-aware allocator from 4.5 handles the heterogeneous capacities across pathways. Equity floors apply at the pathway level.</p>
+<p><strong>Closure tracking is multi-source by design.</strong> Closure events arrive from claims (slow, canonical for HEDIS), EHR (fast, canonical for the practice), lab feeds (fast, canonical for lab-based gaps), pharmacy (fast, canonical for some immunizations), immunization registries (medium speed, canonical in some states), and patient self-report (fast, low confidence, valuable for suppression of unnecessary outreach). The tracker's state machine reconciles these and gates downstream consumers (chase teams, dashboards, billing) on the appropriate confidence level. The HEDIS measure won't credit a self-report; the chase team should still suppress outreach when one arrives.</p>
+<p><strong>Equity instrumentation runs across all components.</strong> Gap-identification rates by cohort (a measure that produces three times as many open gaps for one cohort versus another may reflect actual unmet need or may reflect data-completeness disparities; the dashboard surfaces both). Urgency-score distribution by cohort. In-visit closure rates by cohort and by clinician. Referral completion rates by cohort. Long-horizon closure rates by cohort. Each axis is a monitored dashboard.</p>
+<p><strong>Care-team integration is bidirectional.</strong> Clinician overrides (the clinician dismissed a high-priority gap with reason: <code>appropriate_decline</code>, <code>previously_addressed</code>, <code>clinical_judgment</code>, <code>patient_refusal</code>, <code>out_of_scope_for_visit</code>) flow back into the recommender as features for retraining and as suppression flags for future surfacing. A &quot;patient declined colonoscopy&quot; override should suppress repeated colonoscopy surfacing for some interval and on some pathways, while preserving the right to re-surface when the clinical context shifts (e.g., a new positive FIT result reopens the conversation regardless of prior decline).</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter04.06-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>Care gap prioritization is one of those problems where everybody on the operations side wants the dashboard to turn green and everybody on the clinical side wants the patient with the rising creatinine to be the priority, and the dashboard you build will quietly choose between those two ideologies whether you make the choice explicit or not. The architecture in this recipe makes the choice explicit (the policy weights between clinical urgency, closure probability, measure value, and window urgency are visible, version-controlled, and reviewable) which is the most important thing it does. Every alternative I've seen in the wild ends up with the operations-friendly answer winning by default, because the operations-friendly answer is the one that gets reported on the dashboard the executives look at, and the clinical answer is the one that doesn't appear on any dashboard at all.</p>
+<p>The trap that's most specific to this domain is the David scenario from the opening. A care gap recommender that surfaces by HEDIS measure status (sorted by bonus value, with operationally-attractive measures at the top) is the default state of every quality-team dashboard I've ever seen, and it is a fundamentally different recommender from the one I described in this recipe. That dashboard is doing population health by sorting on the dimension easiest to report. The recommender in this recipe is trying to do population health by sorting on what's most likely to actually improve the patient's prognosis. They overlap a lot (most clinically urgent things are also quality-measure things) and they diverge in important places. The divergences are where the work happens.</p>
+<p>The thing that surprises people coming from generic ML backgrounds is how much of the work is data engineering, not modeling. The measure registry is governance plus engineering. The multi-source closure tracker is engineering plus operational rigor. The visit-context features are scheduling-data quality work. The clinical urgency model is the part that feels like ML, and it's maybe 20 percent of the system's value. The other 80 percent is making sure the gap list is right (the right patients in the denominator, the right qualifying events in the numerator, the right closures recognized when they happen) and making sure the closure tracking doesn't produce false positives or false negatives that destroy clinician and patient trust.</p>
+<p>The thing I'd do differently the second time: invest in the closure tracker before the urgency model. The most common failure mode for these systems isn't that they pick the wrong gap; it's that they pick the right gap for a patient who already closed it last week and the closure data hadn't propagated yet. A program that calls patients about colonoscopies they had last week earns a level of operator-distrust that's hard to recover from, and it's all closure-tracking failure, not modeling failure. A program with a perfect urgency model and a poor closure tracker has worse outcomes than a program with a mediocre urgency model and a great closure tracker, because the latter at least doesn't actively burn relationships. Build the multi-source closure tracker first. Build the urgency model second. Build the visit ranker third.</p>
+<p>The thing about the LLM components: they earn their keep on packaging, not picking. The clinician briefing is the place where LLMs add the most operational value because the alternative is a clinician scanning a list of 11 gap items and trying to triage them in 30 seconds before walking into the room. A briefing that distills 11 items to &quot;rising creatinine deserves the conversation; foot exam in office; defer the rest&quot; is what makes the recommender's output usable. Without the briefing, even a perfectly ranked agenda is too much information for the visit window. The candidate-gap surfacer is the place where LLMs add modest value if there's a real review process behind them and zero value if there isn't, because the patterns the LLM proposes are hit-or-miss and the value comes from clinical informatics curating the durable patterns into the registry. Don't deploy the candidate-gap surfacer to a clinical informatics team that doesn't have time to review.</p>
+<p>The thing about overrides: the override rate is the most important metric for understanding whether the recommender is aligned with clinical reality. An override rate under 5 percent suggests either the recommender is exquisitely tuned (rare) or the clinicians aren't bothering to override and the briefings are being ignored (common). An override rate over 25 percent suggests the recommender is consistently misaligned and clinicians are working around it. The healthy range is 8 to 15 percent overall, varying by measure and clinician. The override reason distribution matters: a high rate of <code>clinical_judgment_defer</code> is healthy clinical pushback that should retrain the urgency model; a high rate of <code>previously_addressed_outside_record</code> is closure-tracker failure; a high rate of <code>out_of_scope_for_visit</code> is visit-fit-ranker failure. Each is fixable, in different parts of the system. Track the breakdown.</p>
+<p>A trap worth flagging: confusing gap closure with patient outcome. A program that drives the foot-exam closure rate from 60 percent to 85 percent and produces no measurable change in diabetic-complication trajectory either has a sample-size problem, a measurement problem, or a &quot;the model is recommending in-office foot exams to patients whose feet were already fine&quot; problem. The cost-effectiveness math has to compare clinical outcome change, not just closure-rate change, against the cost of intervention. Closure rate is the fast feedback you optimize against; clinical outcomes are the slow validation you use to check whether the optimization was pointing in the right direction. A program that hill-climbs against closure rates for two years without ever validating against outcomes has built a beautiful optimization for an intermediate metric.</p>
+<p>Another trap: the year-end push. Every quality program has a year-end period where chase activity ramps up and the dashboards turn green by sheer brute force. The math is real (HEDIS measure year-end performance has actual financial value to the plan and the practice), but the trap is treating year-end as the operating model rather than as a seasonal exception. Year-round gap closure produces better clinical outcomes than year-end pushes; year-end pushes produce dashboard performance that may not survive into the next measurement year. Build for year-round operation; allow the seasonality to flex the policy weights, but don't redesign the program around the chase. The chase should look like an intensification of the steady state, not a different program. Plans that have invested in year-round operation report measurably better year-over-year HEDIS sustainability than plans that lean on Q4 chases.</p>
+<p>One more trap: the &quot;we'll fix the urgency model later&quot; pattern. The MVP shipping pressure is real, and many programs ship with rule-based urgency only and a plan to layer in supervised modeling &quot;next quarter.&quot; Two years later they still have rule-based urgency. That's not necessarily wrong; rule-based urgency, if the rules are clinically sound, is auditable and defensible and often good enough for the bonus-bearing measures. The risk is that nobody is checking whether the rules are clinically sound. Schedule the clinical-rule audit on a quarterly cadence with rotating measure focus; without scheduled audit, the rules drift relative to evolving clinical evidence.</p>
+<p>Last point, because it's specific to this use case: care gaps are not the same as care needs, and the recommender should not pretend they are. A patient with no open care gaps in the registry can still have urgent unmet care needs that the registry doesn't capture (a recently-onset symptom that hasn't been worked up; a deteriorating clinical trajectory that hasn't crossed any threshold; a social problem that no measure tracks). A patient with eleven open care gaps can be in fine clinical shape (the gaps are operational artifacts, not clinical urgencies). The recommender's job is to triage what's in the registry and surface it well, not to claim it's seeing the whole patient. The PCP sees the whole patient. The recommender helps with one slice of the visit's preventive-and-quality work. Don't let the dashboard stand in for the clinician's judgment, and don't let the empty dashboard reassure you that everything is fine. The dashboard is the dashboard. The patient is the patient. They are not the same thing.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 4.1 (Appointment Reminder Channel Optimization):</strong> Provides the channel optimizer that the async orchestrator hands patient-facing nudges to. The contact-frequency cap is shared infrastructure. The channel-preference learning extends naturally to gap-closure messages.</li>
+<li><strong>Recipe 4.2 (Patient Education Content Matching):</strong> Patient-facing closure messages often pair with educational content (why is this screening important; what should I expect at the visit). The content-matching pipeline from 4.2 selects the right educational material per gap.</li>
+<li><strong>Recipe 4.3 (Provider Directory Search Optimization):</strong> When a gap closure requires a specialist referral, 4.3's ranking pattern helps select which specialist to refer to, accounting for patient preference, network status, and access.</li>
+<li><strong>Recipe 4.4 (Wellness Program Recommendations):</strong> Some care gaps are program-eligible (a diabetes-related gap might also signal eligibility for a diabetes-management program); the cross-recipe coordination ensures the patient gets the right next step rather than overlapping recommendations.</li>
+<li><strong>Recipe 4.5 (Medication Adherence Intervention Targeting):</strong> Adherence to chronic medications is a form of care gap (HEDIS PDC measures are care gaps in the registry); 4.5's barrier classifier and intervention catalog inform the closure-pathway selection here. The cross-recipe orchestration matters; do not double-message.</li>
+<li><strong>Recipe 4.7 (Care Management Program Enrollment):</strong> A patient with multiple high-urgency open gaps and a complex clinical picture is a candidate for care management; 4.6's enriched gap data feeds 4.7's enrollment-targeting logic.</li>
+<li><strong>Recipe 7.x (Predictive Analytics / Risk Scoring):</strong> The clinical urgency model in this recipe is a risk-scoring problem; Chapter 7's risk-scoring patterns and validation methodology apply directly.</li>
+<li><strong>Recipe 8.x (NLP Non-LLM):</strong> Clinician override notes can be parsed by NLP to extract structured override reasons more reliably than relying on dropdown selections; the structured labels feed urgency-model retraining.</li>
+<li><strong>Recipe 12.x (Time Series Analysis / Forecasting):</strong> Closure-rate forecasting and capacity planning across measures is a forecasting problem; Chapter 12 covers the techniques.</li>
+<li><strong>Recipe 13.x (Knowledge Graphs):</strong> The measure registry is a structured knowledge artifact; advanced implementations can model measure relationships (one measure subsumes another, one closure satisfies multiple measures, certain combinations of closures imply additional gaps) as a knowledge graph rather than as flat measure records.</li>
+<li><strong>Recipe 14.x (Optimization / Operations Research):</strong> The visit-context ranker and the async-allocator are heuristic versions of constrained-optimization problems; integer programming or column-generation can produce provably-optimal allocations when constraints multiply.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>personalization</code> · <code>recommendation</code> · <code>care-gap-prioritization</code> · <code>hedis</code> · <code>quality-measures</code> · <code>cms-stars</code> · <code>clinical-urgency-modeling</code> · <code>visit-context-ranking</code> · <code>closure-tracking</code> · <code>multi-source-reconciliation</code> · <code>equity</code> · <code>cohort-analysis</code> · <code>bedrock</code> · <code>sagemaker</code> · <code>feature-store</code> · <code>dynamodb</code> · <code>step-functions</code> · <code>lambda</code> · <code>healthlake</code> · <code>medium</code> · <code>production</code> · <code>hipaa</code></p>
+<hr />
+<p><em>← <a href="chapter04.05-medication-adherence-intervention-targeting.html">Recipe 4.5: Medication Adherence Intervention Targeting</a> · <a href="chapter04-preface.html">Chapter 4 Preface</a> · <a href="chapter04.07-care-management-program-enrollment.html">Next: Recipe 4.7 - Care Management Program Enrollment →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

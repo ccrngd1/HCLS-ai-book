@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 15.8: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-158-python-implementation-example">Recipe 15.8: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the concepts from Recipe 15.8. It demonstrates the shape of a chemotherapy dose optimization system using offline reinforcement learning. It is absolutely not production-ready, not clinically validated, and not something you would deploy anywhere near a patient. Think of it as a learning tool: code you can run to understand how the pieces fit together. A starting point for research, not a destination for clinical use.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need these packages:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy
+</pre></div>
+
+<p>For the RL training components, you'll also want:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>torch
+</pre></div>
+
+<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role needs: <code>sagemaker:CreateTrainingJob</code>, <code>sagemaker:CreateEndpoint</code>, <code>sagemaker:InvokeEndpoint</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>.</p>
+<p>This example runs locally for demonstration. In practice, the training step runs on SageMaker with GPU instances, and the inference step runs behind a SageMaker endpoint.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the logic, here's the configuration that drives the entire system. These constants encode clinical knowledge and value judgments. The reward weights in particular are not learned parameters; they're decisions made by oncologists about how to balance efficacy against toxicity. Different institutions might set them differently, and that's fine.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># --- Logging ---</span>
+<span class="c1"># Never log PHI (patient identifiers, lab values, diagnosis text).</span>
+<span class="c1"># Log operational metrics only: counts, latencies, error types.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># --- AWS Configuration ---</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+<span class="n">AWS_REGION</span> <span class="o">=</span> <span class="s2">&quot;us-east-1&quot;</span>
+
+<span class="c1"># --- Clinical Constants ---</span>
+<span class="c1"># These define the state space boundaries and safety thresholds.</span>
+<span class="c1"># They come from oncology guidelines (NCCN, ASCO) and institutional protocols.</span>
+
+<span class="c1"># Absolute neutrophil count thresholds (cells/microL)</span>
+<span class="n">ANC_HOLD_THRESHOLD</span> <span class="o">=</span> <span class="mi">1000</span>       <span class="c1"># Below this: hold treatment entirely</span>
+<span class="n">ANC_REDUCE_THRESHOLD</span> <span class="o">=</span> <span class="mi">1500</span>     <span class="c1"># Below this: consider dose reduction</span>
+
+<span class="c1"># Platelet thresholds (cells/microL)</span>
+<span class="n">PLT_HOLD_THRESHOLD</span> <span class="o">=</span> <span class="mi">50000</span>      <span class="c1"># Below this: hold treatment</span>
+<span class="n">PLT_REDUCE_THRESHOLD</span> <span class="o">=</span> <span class="mi">75000</span>    <span class="c1"># Below this: max 50% dose</span>
+
+<span class="c1"># Bilirubin threshold (mg/dL). Upper limit of normal is ~1.2.</span>
+<span class="n">BILIRUBIN_ULN</span> <span class="o">=</span> <span class="mf">1.2</span>
+
+<span class="c1"># ECOG Performance Status: 0 = fully active, 4 = completely disabled</span>
+<span class="n">MAX_ECOG_FOR_TREATMENT</span> <span class="o">=</span> <span class="mi">2</span>      <span class="c1"># ECOG 3+ generally too poor for cytotoxic chemo</span>
+
+<span class="c1"># --- Reward Function Weights ---</span>
+<span class="c1"># These encode the efficacy-toxicity tradeoff. They are clinical value judgments.</span>
+<span class="c1"># A more aggressive oncologist might increase TUMOR_WEIGHT.</span>
+<span class="c1"># A more conservative one might increase TOXICITY_PENALTIES.</span>
+<span class="n">TUMOR_WEIGHT</span> <span class="o">=</span> <span class="mf">10.0</span>
+<span class="n">MODERATE_TOXICITY_PENALTY</span> <span class="o">=</span> <span class="mf">3.0</span>     <span class="c1"># Grade 3 adverse event</span>
+<span class="n">SEVERE_TOXICITY_PENALTY</span> <span class="o">=</span> <span class="mf">15.0</span>      <span class="c1"># Grade 4 adverse event (life-threatening)</span>
+<span class="n">DISCONTINUATION_PENALTY</span> <span class="o">=</span> <span class="mf">25.0</span>      <span class="c1"># Treatment had to stop entirely</span>
+<span class="n">DOSE_INTENSITY_BONUS</span> <span class="o">=</span> <span class="mf">1.0</span>          <span class="c1"># Maintaining &gt;= 85% relative dose intensity</span>
+
+<span class="c1"># --- Action Space ---</span>
+<span class="c1"># Discrete dose levels as fractions of protocol dose.</span>
+<span class="c1"># In practice, oncologists think in these increments.</span>
+<span class="n">DOSE_LEVELS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.50</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+
+<span class="c1"># Delay options (days). 0 = on schedule.</span>
+<span class="n">DELAY_OPTIONS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">14</span><span class="p">]</span>
+
+<span class="c1"># G-CSF (growth factor support) options.</span>
+<span class="n">GCSF_OPTIONS</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">]</span>
+
+<span class="c1"># Total number of discrete actions:</span>
+<span class="c1"># 5 dose levels * 3 delay options * 2 G-CSF options = 30 actions</span>
+<span class="n">NUM_ACTIONS</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">DOSE_LEVELS</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">DELAY_OPTIONS</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">GCSF_OPTIONS</span><span class="p">)</span>
+
+<span class="c1"># --- State Space ---</span>
+<span class="c1"># 13 features representing what the clinician knows at decision time.</span>
+<span class="n">STATE_DIM</span> <span class="o">=</span> <span class="mi">13</span>
+
+<span class="c1"># --- Training Hyperparameters ---</span>
+<span class="n">GAMMA</span> <span class="o">=</span> <span class="mf">0.99</span>            <span class="c1"># Discount factor (value future rewards almost as much as immediate)</span>
+<span class="n">CQL_ALPHA</span> <span class="o">=</span> <span class="mf">1.0</span>         <span class="c1"># CQL conservatism weight (higher = more conservative)</span>
+<span class="n">LEARNING_RATE</span> <span class="o">=</span> <span class="mf">3e-4</span>
+<span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">NUM_EPOCHS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">EVAL_INTERVAL</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># --- DynamoDB Table Names ---</span>
+<span class="n">STATE_TABLE</span> <span class="o">=</span> <span class="s2">&quot;chemo-dose-patient-states&quot;</span>
+<span class="n">RECOMMENDATION_TABLE</span> <span class="o">=</span> <span class="s2">&quot;chemo-dose-recommendations&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-define-the-state-representation">Step 1: Define the State Representation</h2>
+<p><em>The main recipe describes a 13-feature state vector capturing labs, tumor status, toxicity, and patient characteristics. This step builds that vector from raw clinical data.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_state_vector</span><span class="p">(</span>
+    <span class="n">anc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">platelets</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">hemoglobin</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">creatinine</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">bilirubin</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">tumor_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">max_toxicity_grade</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">cycle_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">cumulative_dose_fraction</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">days_since_last_treatment</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">bsa</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">ecog_status</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a normalized state vector from raw clinical values.</span>
+
+<span class="sd">    Each feature is scaled to roughly [0, 1] range so the neural network</span>
+<span class="sd">    doesn&#39;t have to deal with wildly different magnitudes (ANC in thousands</span>
+<span class="sd">    vs. bilirubin in single digits).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        anc: Absolute neutrophil count (cells/microL, typical range 1500-8000)</span>
+<span class="sd">        platelets: Platelet count (cells/microL, typical range 150000-400000)</span>
+<span class="sd">        hemoglobin: Hemoglobin (g/dL, typical range 12-17)</span>
+<span class="sd">        creatinine: Serum creatinine (mg/dL, typical range 0.6-1.2)</span>
+<span class="sd">        bilirubin: Total bilirubin (mg/dL, typical range 0.1-1.2)</span>
+<span class="sd">        tumor_size: Longest diameter in mm (None if no recent imaging)</span>
+<span class="sd">        max_toxicity_grade: Worst CTCAE grade since last cycle (0-4)</span>
+<span class="sd">        cycle_number: Which treatment cycle (1-based)</span>
+<span class="sd">        cumulative_dose_fraction: Total dose given / total planned dose (0-1)</span>
+<span class="sd">        days_since_last_treatment: Days since last chemo administration</span>
+<span class="sd">        age: Patient age in years</span>
+<span class="sd">        bsa: Body surface area in m^2</span>
+<span class="sd">        ecog_status: ECOG performance status (0-4)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Numpy array of shape (13,) with normalized features.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Normalize each feature to approximately [0, 1].</span>
+    <span class="c1"># These normalization constants come from typical clinical ranges.</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">anc</span> <span class="o">/</span> <span class="mf">8000.0</span><span class="p">,</span>                           <span class="c1"># ANC: 0-8000 typical</span>
+        <span class="n">platelets</span> <span class="o">/</span> <span class="mf">400000.0</span><span class="p">,</span>                   <span class="c1"># Platelets: 0-400K typical</span>
+        <span class="n">hemoglobin</span> <span class="o">/</span> <span class="mf">17.0</span><span class="p">,</span>                      <span class="c1"># Hgb: 0-17 typical</span>
+        <span class="n">creatinine</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span>                       <span class="c1"># Creat: 0-3 covers most patients</span>
+        <span class="n">bilirubin</span> <span class="o">/</span> <span class="mf">5.0</span><span class="p">,</span>                        <span class="c1"># Bili: 0-5 covers most patients</span>
+        <span class="p">(</span><span class="n">tumor_size</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>            <span class="c1"># Tumor: 0-100mm typical</span>
+        <span class="n">max_toxicity_grade</span> <span class="o">/</span> <span class="mf">4.0</span><span class="p">,</span>               <span class="c1"># Toxicity: 0-4 scale</span>
+        <span class="nb">min</span><span class="p">(</span><span class="n">cycle_number</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span> <span class="o">/</span> <span class="mf">12.0</span><span class="p">,</span>           <span class="c1"># Cycle: cap at 12 for normalization</span>
+        <span class="n">cumulative_dose_fraction</span><span class="p">,</span>               <span class="c1"># Already 0-1</span>
+        <span class="nb">min</span><span class="p">(</span><span class="n">days_since_last_treatment</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span> <span class="o">/</span> <span class="mf">42.0</span><span class="p">,</span>  <span class="c1"># Days: cap at 6 weeks</span>
+        <span class="n">age</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>                            <span class="c1"># Age: 0-100</span>
+        <span class="n">bsa</span> <span class="o">/</span> <span class="mf">2.5</span><span class="p">,</span>                              <span class="c1"># BSA: 0-2.5 m^2 typical</span>
+        <span class="n">ecog_status</span> <span class="o">/</span> <span class="mf">4.0</span><span class="p">,</span>                      <span class="c1"># ECOG: 0-4</span>
+    <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">state</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-define-the-action-space-encoding">Step 2: Define the Action Space Encoding</h2>
+<p><em>The action space is discrete: combinations of dose level, delay, and G-CSF. This step maps between action indices (what the neural network outputs) and clinical actions (what the oncologist sees).</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">action_index_to_clinical</span><span class="p">(</span><span class="n">action_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a flat action index (0 to NUM_ACTIONS-1) into a clinical action.</span>
+
+<span class="sd">    The action space is the Cartesian product of:</span>
+<span class="sd">    - 5 dose levels: [0%, 25%, 50%, 75%, 100%]</span>
+<span class="sd">    - 3 delay options: [0, 7, 14 days]</span>
+<span class="sd">    - 2 G-CSF options: [no, yes]</span>
+
+<span class="sd">    We flatten this into a single integer for the Q-network.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        action_index: Integer in [0, 29]</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with dose_fraction, delay_days, and gcsf fields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Unflatten: action_index = dose_idx * 6 + delay_idx * 2 + gcsf_idx</span>
+    <span class="n">gcsf_idx</span> <span class="o">=</span> <span class="n">action_index</span> <span class="o">%</span> <span class="mi">2</span>
+    <span class="n">remaining</span> <span class="o">=</span> <span class="n">action_index</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">delay_idx</span> <span class="o">=</span> <span class="n">remaining</span> <span class="o">%</span> <span class="mi">3</span>
+    <span class="n">dose_idx</span> <span class="o">=</span> <span class="n">remaining</span> <span class="o">//</span> <span class="mi">3</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;dose_fraction&quot;</span><span class="p">:</span> <span class="n">DOSE_LEVELS</span><span class="p">[</span><span class="n">dose_idx</span><span class="p">],</span>
+        <span class="s2">&quot;delay_days&quot;</span><span class="p">:</span> <span class="n">DELAY_OPTIONS</span><span class="p">[</span><span class="n">delay_idx</span><span class="p">],</span>
+        <span class="s2">&quot;gcsf&quot;</span><span class="p">:</span> <span class="n">GCSF_OPTIONS</span><span class="p">[</span><span class="n">gcsf_idx</span><span class="p">],</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">clinical_to_action_index</span><span class="p">(</span><span class="n">dose_fraction</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">delay_days</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">gcsf</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a clinical action back to a flat index.</span>
+
+<span class="sd">    Finds the closest matching discrete action for continuous dose values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Find closest dose level.</span>
+    <span class="n">dose_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">([</span><span class="nb">abs</span><span class="p">(</span><span class="n">d</span> <span class="o">-</span> <span class="n">dose_fraction</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">DOSE_LEVELS</span><span class="p">]))</span>
+    <span class="c1"># Find closest delay.</span>
+    <span class="n">delay_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">([</span><span class="nb">abs</span><span class="p">(</span><span class="n">d</span> <span class="o">-</span> <span class="n">delay_days</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">DELAY_OPTIONS</span><span class="p">]))</span>
+    <span class="c1"># G-CSF is binary.</span>
+    <span class="n">gcsf_idx</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">gcsf</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">dose_idx</span> <span class="o">*</span> <span class="mi">6</span> <span class="o">+</span> <span class="n">delay_idx</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">gcsf_idx</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-compute-the-reward">Step 3: Compute the Reward</h2>
+<p><em>The reward function is where clinical judgment meets math. It balances tumor response against toxicity, with heavy penalties for treatment discontinuation. The weights are configurable because different oncologists have different risk tolerances.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_reward</span><span class="p">(</span>
+    <span class="n">current_state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">action</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">next_state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">treatment_discontinued</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the reward for a single transition.</span>
+
+<span class="sd">    This encodes the clinical tradeoff: we want tumor shrinkage (good),</span>
+<span class="sd">    we want to avoid toxicity (bad), and we really want to avoid forcing</span>
+<span class="sd">    treatment to stop entirely (very bad, because the tumor wins).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        current_state: State vector at decision time (normalized).</span>
+<span class="sd">        action: The clinical action taken.</span>
+<span class="sd">        next_state: State vector at the next cycle (normalized).</span>
+<span class="sd">        treatment_discontinued: Whether treatment had to stop after this cycle.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Scalar reward value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">reward</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># --- Tumor response component ---</span>
+    <span class="c1"># Compare tumor size between cycles (both normalized by /100.0).</span>
+    <span class="c1"># Shrinkage = positive reward. Growth = negative reward.</span>
+    <span class="n">current_tumor</span> <span class="o">=</span> <span class="n">current_state</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>  <span class="c1"># index 5 = tumor_size normalized</span>
+    <span class="n">next_tumor</span> <span class="o">=</span> <span class="n">next_state</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+    <span class="c1"># Only compute tumor reward if both measurements exist (non-zero).</span>
+    <span class="k">if</span> <span class="n">current_tumor</span> <span class="o">&gt;</span> <span class="mf">0.01</span> <span class="ow">and</span> <span class="n">next_tumor</span> <span class="o">&gt;</span> <span class="mf">0.01</span><span class="p">:</span>
+        <span class="c1"># Negative change means shrinkage. Flip sign so shrinkage is positive.</span>
+        <span class="n">tumor_change</span> <span class="o">=</span> <span class="p">(</span><span class="n">next_tumor</span> <span class="o">-</span> <span class="n">current_tumor</span><span class="p">)</span> <span class="o">/</span> <span class="n">current_tumor</span>
+        <span class="n">reward</span> <span class="o">+=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">tumor_change</span> <span class="o">*</span> <span class="n">TUMOR_WEIGHT</span>
+
+    <span class="c1"># --- Toxicity penalty ---</span>
+    <span class="c1"># next_state[6] is max_toxicity_grade / 4.0, so multiply back.</span>
+    <span class="n">next_toxicity</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">next_state</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">*</span> <span class="mf">4.0</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">next_toxicity</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">reward</span> <span class="o">-=</span> <span class="n">SEVERE_TOXICITY_PENALTY</span>
+    <span class="k">elif</span> <span class="n">next_toxicity</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">reward</span> <span class="o">-=</span> <span class="n">MODERATE_TOXICITY_PENALTY</span>
+
+    <span class="c1"># --- Treatment discontinuation penalty ---</span>
+    <span class="k">if</span> <span class="n">treatment_discontinued</span><span class="p">:</span>
+        <span class="n">reward</span> <span class="o">-=</span> <span class="n">DISCONTINUATION_PENALTY</span>
+
+    <span class="c1"># --- Dose intensity bonus ---</span>
+    <span class="c1"># Reward maintaining therapeutic dose levels (&gt;= 85% of protocol).</span>
+    <span class="k">if</span> <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.85</span><span class="p">:</span>
+        <span class="n">reward</span> <span class="o">+=</span> <span class="n">DOSE_INTENSITY_BONUS</span>
+
+    <span class="k">return</span> <span class="n">reward</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-safety-constraint-enforcement">Step 4: Safety Constraint Enforcement</h2>
+<p><em>Hard safety constraints that override any policy recommendation. These are non-negotiable clinical rules. The RL policy optimizes within these bounds; it never gets to violate them.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_safety_constraints</span><span class="p">(</span>
+    <span class="n">recommended_action</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">cumulative_dose_limit</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply hard safety constraints to a recommended action.</span>
+
+<span class="sd">    These constraints represent absolute clinical contraindications.</span>
+<span class="sd">    No matter what the RL policy says, these rules cannot be violated.</span>
+<span class="sd">    The policy learns to work within these bounds, not around them.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        recommended_action: The policy&#39;s raw recommendation.</span>
+<span class="sd">        state: Current normalized state vector.</span>
+<span class="sd">        cumulative_dose_limit: Maximum allowed cumulative dose fraction (default 1.0).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (possibly modified action, list of violation descriptions).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Work on a copy so we don&#39;t mutate the input.</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">recommended_action</span><span class="p">)</span>
+    <span class="n">violations</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Denormalize the state features we need for safety checks.</span>
+    <span class="n">anc</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">8000.0</span>
+    <span class="n">platelets</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">400000.0</span>
+    <span class="n">bilirubin</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="mf">5.0</span>
+    <span class="n">cumulative_dose</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># already 0-1</span>
+    <span class="n">ecog</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span> <span class="o">*</span> <span class="mf">4.0</span><span class="p">))</span>
+
+    <span class="c1"># Rule 1: ANC critically low. Hold treatment.</span>
+    <span class="k">if</span> <span class="n">anc</span> <span class="o">&lt;</span> <span class="n">ANC_HOLD_THRESHOLD</span> <span class="ow">and</span> <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ANC </span><span class="si">{</span><span class="n">anc</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">ANC_HOLD_THRESHOLD</span><span class="si">}</span><span class="s2">: must hold treatment&quot;</span>
+        <span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;delay_days&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+
+    <span class="c1"># Rule 2: ANC low but not critical. Cap at 75%.</span>
+    <span class="k">elif</span> <span class="n">anc</span> <span class="o">&lt;</span> <span class="n">ANC_REDUCE_THRESHOLD</span> <span class="ow">and</span> <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.75</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ANC </span><span class="si">{</span><span class="n">anc</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">ANC_REDUCE_THRESHOLD</span><span class="si">}</span><span class="s2">: max 75% dose&quot;</span>
+        <span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.75</span>
+
+    <span class="c1"># Rule 3: Platelets critically low. Hold treatment.</span>
+    <span class="k">if</span> <span class="n">platelets</span> <span class="o">&lt;</span> <span class="n">PLT_HOLD_THRESHOLD</span> <span class="ow">and</span> <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Platelets </span><span class="si">{</span><span class="n">platelets</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">PLT_HOLD_THRESHOLD</span><span class="si">}</span><span class="s2">: must hold treatment&quot;</span>
+        <span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;delay_days&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+
+    <span class="c1"># Rule 4: Platelets low. Cap at 50%.</span>
+    <span class="k">elif</span> <span class="n">platelets</span> <span class="o">&lt;</span> <span class="n">PLT_REDUCE_THRESHOLD</span> <span class="ow">and</span> <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Platelets </span><span class="si">{</span><span class="n">platelets</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">PLT_REDUCE_THRESHOLD</span><span class="si">}</span><span class="s2">: max 50% dose&quot;</span>
+        <span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+    <span class="c1"># Rule 5: Elevated bilirubin (hepatic impairment). Cap at 75%.</span>
+    <span class="k">if</span> <span class="n">bilirubin</span> <span class="o">&gt;</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">BILIRUBIN_ULN</span> <span class="ow">and</span> <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.75</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Bilirubin </span><span class="si">{</span><span class="n">bilirubin</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="mf">1.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">BILIRUBIN_ULN</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">: max 75% dose&quot;</span>
+        <span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.75</span>
+
+    <span class="c1"># Rule 6: Never exceed 100% of protocol dose.</span>
+    <span class="k">if</span> <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Cannot exceed protocol dose&quot;</span><span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="c1"># Rule 7: Cumulative dose limit reached.</span>
+    <span class="k">if</span> <span class="n">cumulative_dose</span> <span class="o">&gt;=</span> <span class="n">cumulative_dose_limit</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Cumulative dose limit reached: discontinue&quot;</span><span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Rule 8: Performance status too poor.</span>
+    <span class="k">if</span> <span class="n">ecog</span> <span class="o">&gt;</span> <span class="n">MAX_ECOG_FOR_TREATMENT</span><span class="p">:</span>
+        <span class="n">violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ECOG </span><span class="si">{</span><span class="n">ecog</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">MAX_ECOG_FOR_TREATMENT</span><span class="si">}</span><span class="s2">: hold, reassess goals of care&quot;</span>
+        <span class="p">)</span>
+        <span class="n">action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">action</span><span class="p">,</span> <span class="n">violations</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-the-q-network-conservative-q-learning">Step 5: The Q-Network (Conservative Q-Learning)</h2>
+<p><em>This is the core RL component. A neural network that estimates the expected cumulative reward for each state-action pair. CQL adds a penalty that pushes down Q-values for actions not seen in the training data, preventing overconfident recommendations for untested actions.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">QNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Q-network for chemotherapy dose optimization.</span>
+
+<span class="sd">    Takes a state vector as input, outputs Q-values for all possible actions.</span>
+<span class="sd">    The action with the highest Q-value is the policy&#39;s recommendation.</span>
+
+<span class="sd">    Architecture is intentionally simple: three hidden layers with ReLU.</span>
+<span class="sd">    For this problem size (13 state features, 30 actions), this is sufficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">STATE_DIM</span><span class="p">,</span> <span class="n">num_actions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">NUM_ACTIONS</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="n">num_actions</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass: state -&gt; Q-values for all actions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state: Tensor of shape (batch_size, state_dim)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor of shape (batch_size, num_actions) with Q-value estimates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Select the best action for a single state (greedy policy).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state: Numpy array of shape (state_dim,)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Action index with highest Q-value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">state_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">q_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_tensor</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">q_values</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_action_confidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">action_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute a confidence score for a specific action.</span>
+
+<span class="sd">        Uses softmax over Q-values as a proxy for confidence.</span>
+<span class="sd">        High confidence = the recommended action has much higher Q-value</span>
+<span class="sd">        than alternatives. Low confidence = multiple actions have similar Q-values.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state: Numpy array of shape (state_dim,)</span>
+<span class="sd">            action_index: The action to compute confidence for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Confidence score in [0, 1].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">state_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">q_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Temperature-scaled softmax. Lower temperature = sharper distribution.</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">q_values</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">action_index</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-cql-training-loop">Step 6: CQL Training Loop</h2>
+<p><em>Conservative Q-Learning training. The key addition over standard DQN is the CQL penalty term that discourages the policy from being overconfident about actions it hasn't seen in the historical data. This is what makes offline RL safe for healthcare: the policy stays close to what clinicians actually did.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">train_cql_policy</span><span class="p">(</span>
+    <span class="n">trajectories</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]],</span>
+    <span class="n">num_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">NUM_EPOCHS</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">BATCH_SIZE</span><span class="p">,</span>
+    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">GAMMA</span><span class="p">,</span>
+    <span class="n">cql_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CQL_ALPHA</span><span class="p">,</span>
+    <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">LEARNING_RATE</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QNetwork</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train a Conservative Q-Learning policy from historical trajectories.</span>
+
+<span class="sd">    Each trajectory is a list of dicts with keys:</span>
+<span class="sd">    state, action_index, reward, next_state, done.</span>
+
+<span class="sd">    CQL adds a regularization term that penalizes high Q-values for</span>
+<span class="sd">    actions not present in the dataset. This prevents the policy from</span>
+<span class="sd">    recommending actions that were never tried historically (and whose</span>
+<span class="sd">    outcomes are therefore unknown).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        trajectories: List of patient treatment trajectories.</span>
+<span class="sd">        num_epochs: Number of training epochs.</span>
+<span class="sd">        batch_size: Mini-batch size for SGD.</span>
+<span class="sd">        gamma: Discount factor for future rewards.</span>
+<span class="sd">        cql_alpha: Weight of the CQL conservatism penalty.</span>
+<span class="sd">        lr: Learning rate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Trained QNetwork.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Flatten trajectories into a replay buffer of (s, a, r, s&#39;, done) tuples.</span>
+    <span class="n">replay_buffer</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">transition</span> <span class="ow">in</span> <span class="n">traj</span><span class="p">:</span>
+            <span class="n">replay_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Training CQL policy: </span><span class="si">%d</span><span class="s2"> transitions from </span><span class="si">%d</span><span class="s2"> trajectories&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">batch_size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Need at least </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2"> transitions, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Initialize networks.</span>
+    <span class="n">q_network</span> <span class="o">=</span> <span class="n">QNetwork</span><span class="p">()</span>
+    <span class="n">target_network</span> <span class="o">=</span> <span class="n">QNetwork</span><span class="p">()</span>
+    <span class="n">target_network</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">q_network</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
+
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">q_network</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_epochs</span><span class="p">):</span>
+        <span class="c1"># Sample a random mini-batch.</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">replay_buffer</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span>
+
+        <span class="n">states</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">]))</span>
+        <span class="n">actions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;action_index&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">])</span>
+        <span class="n">rewards</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">([</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">])</span>
+        <span class="n">next_states</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;next_state&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">]))</span>
+        <span class="n">dones</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">])</span>
+
+        <span class="c1"># --- Standard DQN target ---</span>
+        <span class="c1"># Q_target = reward + gamma * max_a&#39; Q_target(s&#39;, a&#39;) * (1 - done)</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">next_q_values</span> <span class="o">=</span> <span class="n">target_network</span><span class="p">(</span><span class="n">next_states</span><span class="p">)</span>
+            <span class="n">max_next_q</span> <span class="o">=</span> <span class="n">next_q_values</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">max_next_q</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
+
+        <span class="c1"># Current Q-values for the actions that were actually taken.</span>
+        <span class="n">current_q_all</span> <span class="o">=</span> <span class="n">q_network</span><span class="p">(</span><span class="n">states</span><span class="p">)</span>
+        <span class="n">current_q</span> <span class="o">=</span> <span class="n">current_q_all</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">actions</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># --- CQL penalty ---</span>
+        <span class="c1"># Push down Q-values for ALL actions (logsumexp),</span>
+        <span class="c1"># then push UP Q-values for actions in the dataset.</span>
+        <span class="c1"># Net effect: out-of-distribution actions get lower Q-values.</span>
+        <span class="n">logsumexp_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">current_q_all</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">data_q</span> <span class="o">=</span> <span class="n">current_q</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">cql_loss</span> <span class="o">=</span> <span class="n">cql_alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">logsumexp_q</span> <span class="o">-</span> <span class="n">data_q</span><span class="p">)</span>
+
+        <span class="c1"># --- Combined loss ---</span>
+        <span class="n">td_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span><span class="n">current_q</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+        <span class="n">total_loss</span> <span class="o">=</span> <span class="n">td_loss</span> <span class="o">+</span> <span class="n">cql_loss</span>
+
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">total_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+        <span class="c1"># Update target network periodically (soft update).</span>
+        <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">target_param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">q_network</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">target_network</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+            <span class="p">):</span>
+                <span class="n">target_param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="mf">0.95</span> <span class="o">*</span> <span class="n">target_param</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Log progress.</span>
+        <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="n">EVAL_INTERVAL</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Epoch </span><span class="si">%d</span><span class="s2">: td_loss=</span><span class="si">%.4f</span><span class="s2">, cql_loss=</span><span class="si">%.4f</span><span class="s2">, total=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">epoch</span><span class="p">,</span> <span class="n">td_loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">cql_loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">total_loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">q_network</span>
+</pre></div>
+
+<hr />
+<h2 id="step-7-generate-a-recommendation">Step 7: Generate a Recommendation</h2>
+<p><em>Putting it all together: take a patient's current state, run it through the policy, apply safety constraints, and produce a structured recommendation for the oncologist.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_recommendation</span><span class="p">(</span>
+    <span class="n">patient_state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">policy</span><span class="p">:</span> <span class="n">QNetwork</span><span class="p">,</span>
+    <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a complete dosing recommendation for clinician review.</span>
+
+<span class="sd">    This is the function that would be called by the decision support UI.</span>
+<span class="sd">    It runs the policy, applies safety constraints, computes confidence,</span>
+<span class="sd">    and packages everything into a structured recommendation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_state: Normalized state vector (13 features).</span>
+<span class="sd">        policy: Trained QNetwork.</span>
+<span class="sd">        patient_id: Patient identifier (for audit trail, never logged).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Structured recommendation dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the policy&#39;s raw recommendation.</span>
+    <span class="n">action_index</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">patient_state</span><span class="p">)</span>
+    <span class="n">raw_action</span> <span class="o">=</span> <span class="n">action_index_to_clinical</span><span class="p">(</span><span class="n">action_index</span><span class="p">)</span>
+
+    <span class="c1"># Apply safety constraints (may modify the action).</span>
+    <span class="n">safe_action</span><span class="p">,</span> <span class="n">violations</span> <span class="o">=</span> <span class="n">apply_safety_constraints</span><span class="p">(</span><span class="n">raw_action</span><span class="p">,</span> <span class="n">patient_state</span><span class="p">)</span>
+
+    <span class="c1"># Recompute action index after safety modifications.</span>
+    <span class="n">safe_action_index</span> <span class="o">=</span> <span class="n">clinical_to_action_index</span><span class="p">(</span>
+        <span class="n">safe_action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">],</span>
+        <span class="n">safe_action</span><span class="p">[</span><span class="s2">&quot;delay_days&quot;</span><span class="p">],</span>
+        <span class="n">safe_action</span><span class="p">[</span><span class="s2">&quot;gcsf&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Compute confidence.</span>
+    <span class="n">confidence</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_action_confidence</span><span class="p">(</span><span class="n">patient_state</span><span class="p">,</span> <span class="n">safe_action_index</span><span class="p">)</span>
+
+    <span class="c1"># Build the protocol-based recommendation for comparison.</span>
+    <span class="n">protocol_action</span> <span class="o">=</span> <span class="n">get_protocol_recommendation</span><span class="p">(</span><span class="n">patient_state</span><span class="p">)</span>
+
+    <span class="c1"># Identify key state features driving the recommendation.</span>
+    <span class="n">key_drivers</span> <span class="o">=</span> <span class="n">identify_key_drivers</span><span class="p">(</span><span class="n">patient_state</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="n">safe_action_index</span><span class="p">)</span>
+
+    <span class="n">recommendation</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;recommendation_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;recommended_dose_fraction&quot;</span><span class="p">:</span> <span class="n">safe_action</span><span class="p">[</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;recommended_delay_days&quot;</span><span class="p">:</span> <span class="n">safe_action</span><span class="p">[</span><span class="s2">&quot;delay_days&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;recommended_gcsf&quot;</span><span class="p">:</span> <span class="n">safe_action</span><span class="p">[</span><span class="s2">&quot;gcsf&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;confidence_score&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">confidence</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;safety_violations&quot;</span><span class="p">:</span> <span class="n">violations</span><span class="p">,</span>
+        <span class="s2">&quot;safety_constrained&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">violations</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;protocol_recommendation&quot;</span><span class="p">:</span> <span class="n">protocol_action</span><span class="p">,</span>
+        <span class="s2">&quot;differs_from_protocol&quot;</span><span class="p">:</span> <span class="n">safe_action</span> <span class="o">!=</span> <span class="n">protocol_action</span><span class="p">,</span>
+        <span class="s2">&quot;key_drivers&quot;</span><span class="p">:</span> <span class="n">key_drivers</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">recommendation</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_protocol_recommendation</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standard protocol-based dosing recommendation.</span>
+
+<span class="sd">    This implements the simple rule-based approach that most oncologists</span>
+<span class="sd">    follow today. The RL policy&#39;s value is measured against this baseline.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">anc</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">8000.0</span>
+    <span class="n">platelets</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">400000.0</span>
+    <span class="n">max_tox</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">*</span> <span class="mf">4.0</span><span class="p">))</span>
+
+    <span class="n">dose</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">delay</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Standard dose modification rules (simplified NCCN-style).</span>
+    <span class="k">if</span> <span class="n">anc</span> <span class="o">&lt;</span> <span class="n">ANC_HOLD_THRESHOLD</span> <span class="ow">or</span> <span class="n">platelets</span> <span class="o">&lt;</span> <span class="n">PLT_HOLD_THRESHOLD</span><span class="p">:</span>
+        <span class="n">dose</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">delay</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="k">elif</span> <span class="n">anc</span> <span class="o">&lt;</span> <span class="n">ANC_REDUCE_THRESHOLD</span> <span class="ow">or</span> <span class="n">max_tox</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">dose</span> <span class="o">=</span> <span class="mf">0.75</span>
+    <span class="k">elif</span> <span class="n">platelets</span> <span class="o">&lt;</span> <span class="n">PLT_REDUCE_THRESHOLD</span><span class="p">:</span>
+        <span class="n">dose</span> <span class="o">=</span> <span class="mf">0.75</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;dose_fraction&quot;</span><span class="p">:</span> <span class="n">dose</span><span class="p">,</span>
+        <span class="s2">&quot;delay_days&quot;</span><span class="p">:</span> <span class="n">delay</span><span class="p">,</span>
+        <span class="s2">&quot;gcsf&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>  <span class="c1"># Protocol doesn&#39;t proactively recommend G-CSF</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">identify_key_drivers</span><span class="p">(</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">QNetwork</span><span class="p">,</span> <span class="n">action_index</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify which state features most influence the recommendation.</span>
+
+<span class="sd">    Uses a simple perturbation-based approach: for each feature, slightly</span>
+<span class="sd">    change it and see how much the Q-value changes. Larger changes mean</span>
+<span class="sd">    that feature is more important to the decision.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">feature_names</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;anc&quot;</span><span class="p">,</span> <span class="s2">&quot;platelets&quot;</span><span class="p">,</span> <span class="s2">&quot;hemoglobin&quot;</span><span class="p">,</span> <span class="s2">&quot;creatinine&quot;</span><span class="p">,</span> <span class="s2">&quot;bilirubin&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tumor_size&quot;</span><span class="p">,</span> <span class="s2">&quot;max_toxicity&quot;</span><span class="p">,</span> <span class="s2">&quot;cycle_number&quot;</span><span class="p">,</span> <span class="s2">&quot;cumulative_dose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;days_since_last&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="s2">&quot;bsa&quot;</span><span class="p">,</span> <span class="s2">&quot;ecog_status&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">base_q</span> <span class="o">=</span> <span class="n">_get_q_value</span><span class="p">(</span><span class="n">policy</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action_index</span><span class="p">)</span>
+    <span class="n">importances</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">feature_names</span><span class="p">):</span>
+        <span class="c1"># Perturb feature up by 10%.</span>
+        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">perturbed</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">perturbed</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">perturbed_q</span> <span class="o">=</span> <span class="n">_get_q_value</span><span class="p">(</span><span class="n">policy</span><span class="p">,</span> <span class="n">perturbed</span><span class="p">,</span> <span class="n">action_index</span><span class="p">)</span>
+        <span class="n">importance</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">perturbed_q</span> <span class="o">-</span> <span class="n">base_q</span><span class="p">)</span>
+        <span class="n">importances</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;feature&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;importance&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">importance</span><span class="p">,</span> <span class="mi">4</span><span class="p">)})</span>
+
+    <span class="c1"># Return top 3 most important features.</span>
+    <span class="n">importances</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;importance&quot;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">importances</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_q_value</span><span class="p">(</span><span class="n">policy</span><span class="p">:</span> <span class="n">QNetwork</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">action_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper: get Q-value for a specific state-action pair.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">state_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">q_values</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">state_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">q_values</span><span class="p">[</span><span class="n">action_index</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+</pre></div>
+
+<hr />
+<h2 id="step-8-store-recommendation-in-dynamodb">Step 8: Store Recommendation in DynamoDB</h2>
+<p><em>Every recommendation gets stored for audit trail purposes, regardless of whether the clinician accepts it. This is essential for HIPAA compliance and for building the feedback loop that improves the policy over time.</em></p>
+<div class="code"><pre><span></span><span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">AWS_REGION</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">store_recommendation</span><span class="p">(</span><span class="n">recommendation</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Store a recommendation in DynamoDB for audit trail.</span>
+
+<span class="sd">    Every recommendation is stored, whether accepted or rejected.</span>
+<span class="sd">    This creates the feedback loop: we can later analyze which</span>
+<span class="sd">    recommendations were followed and what outcomes resulted.</span>
+
+<span class="sd">    DynamoDB gotcha: floats must be stored as Decimal. boto3 will</span>
+<span class="sd">    raise TypeError on raw Python floats.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">RECOMMENDATION_TABLE</span><span class="p">)</span>
+
+    <span class="c1"># Convert floats to Decimal for DynamoDB.</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;recommendation_id&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;recommendation_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;dose_fraction&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;recommended_dose_fraction&quot;</span><span class="p">])),</span>
+        <span class="s2">&quot;delay_days&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;recommended_delay_days&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;gcsf&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;recommended_gcsf&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;confidence_score&quot;</span><span class="p">])),</span>
+        <span class="s2">&quot;safety_constrained&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;safety_constrained&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;safety_violations&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;safety_violations&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;differs_from_protocol&quot;</span><span class="p">:</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;differs_from_protocol&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;clinician_decision&quot;</span><span class="p">:</span> <span class="s2">&quot;PENDING&quot;</span><span class="p">,</span>  <span class="c1"># Updated when clinician responds</span>
+    <span class="p">}</span>
+
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stored recommendation </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;recommendation_id&quot;</span><span class="p">])</span>
+</pre></div>
+
+<hr />
+<h2 id="full-pipeline-training-and-inference">Full Pipeline: Training and Inference</h2>
+<p><em>This assembles all the pieces into a runnable demonstration. It generates synthetic trajectories (since we can't use real patient data in an example), trains a CQL policy, and generates a sample recommendation.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_synthetic_trajectories</span><span class="p">(</span><span class="n">num_patients</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span> <span class="n">cycles_per_patient</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate synthetic treatment trajectories for demonstration.</span>
+
+<span class="sd">    In a real system, these come from EHR data extraction (see Step 1 in the</span>
+<span class="sd">    main recipe). Here we simulate plausible clinical trajectories with</span>
+<span class="sd">    realistic dynamics: ANC drops after chemo, recovers over 2-3 weeks,</span>
+<span class="sd">    tumors respond gradually, toxicity accumulates.</span>
+
+<span class="sd">    This is NOT a validated pharmacokinetic model. It&#39;s a toy that produces</span>
+<span class="sd">    data in the right shape for the RL algorithm to train on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trajectories</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_patients</span><span class="p">):</span>
+        <span class="c1"># Initialize patient with random baseline characteristics.</span>
+        <span class="n">anc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">4000</span><span class="p">,</span> <span class="mi">8000</span><span class="p">)</span>
+        <span class="n">platelets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">200000</span><span class="p">,</span> <span class="mi">400000</span><span class="p">)</span>
+        <span class="n">hemoglobin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="n">creatinine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)</span>
+        <span class="n">bilirubin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">tumor_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="n">age</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">45</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="n">bsa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">)</span>
+        <span class="n">ecog</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cumulative_dose</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">for</span> <span class="n">cycle</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cycles_per_patient</span><span class="p">):</span>
+            <span class="c1"># Build state.</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">build_state_vector</span><span class="p">(</span>
+                <span class="n">anc</span><span class="o">=</span><span class="n">anc</span><span class="p">,</span> <span class="n">platelets</span><span class="o">=</span><span class="n">platelets</span><span class="p">,</span> <span class="n">hemoglobin</span><span class="o">=</span><span class="n">hemoglobin</span><span class="p">,</span>
+                <span class="n">creatinine</span><span class="o">=</span><span class="n">creatinine</span><span class="p">,</span> <span class="n">bilirubin</span><span class="o">=</span><span class="n">bilirubin</span><span class="p">,</span>
+                <span class="n">tumor_size</span><span class="o">=</span><span class="n">tumor_size</span><span class="p">,</span> <span class="n">max_toxicity_grade</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">cycle_number</span><span class="o">=</span><span class="n">cycle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">cumulative_dose_fraction</span><span class="o">=</span><span class="n">cumulative_dose</span><span class="p">,</span>
+                <span class="n">days_since_last_treatment</span><span class="o">=</span><span class="mi">14</span> <span class="k">if</span> <span class="n">cycle</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="n">age</span><span class="o">=</span><span class="n">age</span><span class="p">,</span> <span class="n">bsa</span><span class="o">=</span><span class="n">bsa</span><span class="p">,</span> <span class="n">ecog_status</span><span class="o">=</span><span class="n">ecog</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Simulate clinician decision (behavior policy).</span>
+            <span class="k">if</span> <span class="n">anc</span> <span class="o">&lt;</span> <span class="n">ANC_HOLD_THRESHOLD</span><span class="p">:</span>
+                <span class="n">dose</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">elif</span> <span class="n">anc</span> <span class="o">&lt;</span> <span class="n">ANC_REDUCE_THRESHOLD</span><span class="p">:</span>
+                <span class="n">dose</span> <span class="o">=</span> <span class="mf">0.75</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dose</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">])</span>
+
+            <span class="n">delay</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">anc</span> <span class="o">&gt;=</span> <span class="n">ANC_HOLD_THRESHOLD</span> <span class="k">else</span> <span class="mi">7</span>
+            <span class="n">gcsf</span> <span class="o">=</span> <span class="n">anc</span> <span class="o">&lt;</span> <span class="mi">2000</span>
+
+            <span class="n">action</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;dose_fraction&quot;</span><span class="p">:</span> <span class="n">dose</span><span class="p">,</span> <span class="s2">&quot;delay_days&quot;</span><span class="p">:</span> <span class="n">delay</span><span class="p">,</span> <span class="s2">&quot;gcsf&quot;</span><span class="p">:</span> <span class="n">gcsf</span><span class="p">}</span>
+            <span class="n">action_index</span> <span class="o">=</span> <span class="n">clinical_to_action_index</span><span class="p">(</span><span class="n">dose</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">gcsf</span><span class="p">)</span>
+
+            <span class="c1"># Simulate patient response (very simplified dynamics).</span>
+            <span class="c1"># ANC drops proportionally to dose, recovers partially by next cycle.</span>
+            <span class="n">anc_nadir</span> <span class="o">=</span> <span class="n">anc</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.6</span> <span class="o">*</span> <span class="n">dose</span><span class="p">)</span>
+            <span class="n">anc</span> <span class="o">=</span> <span class="n">anc_nadir</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">)</span>  <span class="c1"># recovery</span>
+            <span class="k">if</span> <span class="n">gcsf</span><span class="p">:</span>
+                <span class="n">anc</span> <span class="o">+=</span> <span class="mi">1500</span>  <span class="c1"># G-CSF boosts recovery</span>
+
+            <span class="n">platelets</span> <span class="o">=</span> <span class="n">platelets</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">dose</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">20000</span><span class="p">,</span> <span class="mi">50000</span><span class="p">)</span>
+            <span class="n">hemoglobin</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">8.0</span><span class="p">,</span> <span class="n">hemoglobin</span> <span class="o">-</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">dose</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">))</span>
+
+            <span class="c1"># Tumor responds to treatment (slowly).</span>
+            <span class="k">if</span> <span class="n">dose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">tumor_size</span> <span class="o">=</span> <span class="n">tumor_size</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">dose</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">tumor_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">tumor_size</span><span class="p">)</span>
+
+            <span class="n">cumulative_dose</span> <span class="o">+=</span> <span class="n">dose</span> <span class="o">/</span> <span class="n">cycles_per_patient</span>
+
+            <span class="c1"># Determine toxicity grade (simplified).</span>
+            <span class="n">max_tox</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">anc_nadir</span> <span class="o">&lt;</span> <span class="mi">500</span><span class="p">:</span>
+                <span class="n">max_tox</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="k">elif</span> <span class="n">anc_nadir</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">:</span>
+                <span class="n">max_tox</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="k">elif</span> <span class="n">anc_nadir</span> <span class="o">&lt;</span> <span class="mi">1500</span><span class="p">:</span>
+                <span class="n">max_tox</span> <span class="o">=</span> <span class="mi">2</span>
+
+            <span class="c1"># Build next state.</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">build_state_vector</span><span class="p">(</span>
+                <span class="n">anc</span><span class="o">=</span><span class="n">anc</span><span class="p">,</span> <span class="n">platelets</span><span class="o">=</span><span class="n">platelets</span><span class="p">,</span> <span class="n">hemoglobin</span><span class="o">=</span><span class="n">hemoglobin</span><span class="p">,</span>
+                <span class="n">creatinine</span><span class="o">=</span><span class="n">creatinine</span><span class="p">,</span> <span class="n">bilirubin</span><span class="o">=</span><span class="n">bilirubin</span><span class="p">,</span>
+                <span class="n">tumor_size</span><span class="o">=</span><span class="n">tumor_size</span><span class="p">,</span> <span class="n">max_toxicity_grade</span><span class="o">=</span><span class="n">max_tox</span><span class="p">,</span>
+                <span class="n">cycle_number</span><span class="o">=</span><span class="n">cycle</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cumulative_dose_fraction</span><span class="o">=</span><span class="n">cumulative_dose</span><span class="p">,</span>
+                <span class="n">days_since_last_treatment</span><span class="o">=</span><span class="mi">14</span> <span class="o">+</span> <span class="n">delay</span><span class="p">,</span>
+                <span class="n">age</span><span class="o">=</span><span class="n">age</span><span class="p">,</span> <span class="n">bsa</span><span class="o">=</span><span class="n">bsa</span><span class="p">,</span> <span class="n">ecog_status</span><span class="o">=</span><span class="n">ecog</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Compute reward.</span>
+            <span class="n">discontinued</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">reward</span> <span class="o">=</span> <span class="n">compute_reward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">discontinued</span><span class="p">)</span>
+
+            <span class="n">trajectory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="n">state</span><span class="p">,</span>
+                <span class="s2">&quot;action_index&quot;</span><span class="p">:</span> <span class="n">action_index</span><span class="p">,</span>
+                <span class="s2">&quot;reward&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">,</span>
+                <span class="s2">&quot;next_state&quot;</span><span class="p">:</span> <span class="n">next_state</span><span class="p">,</span>
+                <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">cycle</span> <span class="o">==</span> <span class="n">cycles_per_patient</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">})</span>
+
+        <span class="n">trajectories</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trajectory</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">trajectories</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_demo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Full demonstration: generate data, train policy, produce recommendation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Chemotherapy Dose Optimization: CQL Training Demo&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Generate synthetic training data.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[1/3] Generating synthetic treatment trajectories...&quot;</span><span class="p">)</span>
+    <span class="n">trajectories</span> <span class="o">=</span> <span class="n">generate_synthetic_trajectories</span><span class="p">(</span><span class="n">num_patients</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">cycles_per_patient</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">total_transitions</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span><span class="si">}</span><span class="s2"> trajectories (</span><span class="si">{</span><span class="n">total_transitions</span><span class="si">}</span><span class="s2"> transitions)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Train the CQL policy.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[2/3] Training CQL policy...&quot;</span><span class="p">)</span>
+    <span class="n">policy</span> <span class="o">=</span> <span class="n">train_cql_policy</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Training complete.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Generate a sample recommendation.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[3/3] Generating sample recommendation...&quot;</span><span class="p">)</span>
+    <span class="n">sample_state</span> <span class="o">=</span> <span class="n">build_state_vector</span><span class="p">(</span>
+        <span class="n">anc</span><span class="o">=</span><span class="mi">1800</span><span class="p">,</span> <span class="n">platelets</span><span class="o">=</span><span class="mi">145000</span><span class="p">,</span> <span class="n">hemoglobin</span><span class="o">=</span><span class="mf">11.2</span><span class="p">,</span>
+        <span class="n">creatinine</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">bilirubin</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">tumor_size</span><span class="o">=</span><span class="mf">45.0</span><span class="p">,</span>
+        <span class="n">max_toxicity_grade</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cycle_number</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">cumulative_dose_fraction</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">days_since_last_treatment</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+        <span class="n">age</span><span class="o">=</span><span class="mi">67</span><span class="p">,</span> <span class="n">bsa</span><span class="o">=</span><span class="mf">1.85</span><span class="p">,</span> <span class="n">ecog_status</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">recommendation</span> <span class="o">=</span> <span class="n">generate_recommendation</span><span class="p">(</span>
+        <span class="n">patient_state</span><span class="o">=</span><span class="n">sample_state</span><span class="p">,</span>
+        <span class="n">policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="o">=</span><span class="s2">&quot;DEMO-PATIENT-001&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RECOMMENDATION OUTPUT&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="c1"># Remove patient_id from display (PHI safety in logs).</span>
+    <span class="n">display_rec</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">recommendation</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;patient_id&quot;</span><span class="p">}</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">display_rec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+
+    <span class="c1"># Show what protocol would recommend for comparison.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Protocol-based recommendation (baseline) ---&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;protocol_recommendation&quot;</span><span class="p">],</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">recommendation</span><span class="p">[</span><span class="s2">&quot;differs_from_protocol&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  ^ Policy DIFFERS from protocol. Review key drivers above.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  ^ Policy AGREES with protocol for this patient state.&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">run_demo</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example runs. It trains a policy on synthetic data and produces a recommendation. But the distance between this demo and something you'd put in front of an oncologist is enormous. Here's where that gap lives:</p>
+<p><strong>Real data, not synthetic.</strong> The synthetic trajectories above are a toy. Real trajectories come from EHR extraction: joining medication administration records, lab results, imaging reports, and toxicity documentation across irregular time intervals. That ETL pipeline (AWS Glue in the main recipe) is 80% of the engineering effort. Missing data, inconsistent documentation, and temporal misalignment are the norm, not the exception.</p>
+<p><strong>Offline policy evaluation.</strong> Before deploying any policy, you need rigorous off-policy evaluation (OPE). This example skips it entirely. In practice, you'd implement importance-weighted evaluation and fitted Q-evaluation on held-out trajectories, and you'd require multiple OPE methods to agree before trusting the result. Disagreement between estimators is a red flag, not a tiebreaker.</p>
+<p><strong>Model validation with oncologists.</strong> The policy's recommendations need expert review on representative cases. Oncologists should see the recommendations, the reasoning, and the patient context, then flag cases where they disagree. Those disagreements are gold: they reveal either policy failures or opportunities to improve the reward function.</p>
+<p><strong>SageMaker deployment.</strong> In production, the trained model lives behind a SageMaker endpoint (not running locally). The inference path is: patient state from DynamoDB, invoke SageMaker endpoint, apply safety constraints, store recommendation, display to clinician. The endpoint needs auto-scaling, monitoring, and model versioning.</p>
+<p><strong>Error handling and retries.</strong> Every AWS API call in this example assumes success. Production code wraps each call in try/except with specific handling for throttling (exponential backoff), service errors (retry with circuit breaker), and validation failures (reject and log).</p>
+<p><strong>Input validation.</strong> This code trusts its inputs. Production validates that lab values are within physiologically plausible ranges (ANC of 50,000 is a data error, not a real patient), that required fields are present, and that the state vector doesn't contain NaN or infinity values.</p>
+<p><strong>Structured logging.</strong> The print statements here are placeholders. Production uses structured JSON logging (AWS Lambda Powertools or similar) with consistent fields: request_id, latency, model_version, action_taken, confidence. Never log PHI values (lab results, patient identifiers).</p>
+<p><strong>IAM least-privilege.</strong> The IAM role for the inference Lambda needs exactly: <code>sagemaker:InvokeEndpoint</code> on the specific endpoint ARN, <code>dynamodb:GetItem</code> on the state table, <code>dynamodb:PutItem</code> on the recommendation table. Not <code>sagemaker:*</code>. Not <code>dynamodb:*</code>.</p>
+<p><strong>VPC and encryption.</strong> All components run in a VPC with private subnets. VPC endpoints for SageMaker, DynamoDB, and S3 keep traffic off the public internet. KMS customer-managed keys encrypt all data at rest. TLS encrypts all data in transit.</p>
+<p><strong>Regulatory and clinical governance.</strong> This is the biggest gap. An RL-based dosing recommendation system likely requires FDA clearance (as clinical decision support or SaMD). It requires IRB approval for the research phase, institutional governance approval for deployment, and a prospective validation study before clinical use. None of that is a software engineering problem, but it's the actual bottleneck.</p>
+<p><strong>Reward function tuning.</strong> The reward weights in this example are arbitrary. In practice, they need to be set in collaboration with oncologists, validated against clinical intuition, and potentially varied across regimens. Two equally valid weight configurations produce meaningfully different policies. Making this tradeoff explicit and configurable (not hidden) is essential for clinical trust.</p>
+<p><strong>Continuous learning.</strong> Once deployed, the system should track outcomes for patients where recommendations were followed vs. not. Over time, this builds evidence for or against the policy and enables retraining on institution-specific data. The feedback loop from DynamoDB back to S3 (shown in the architecture diagram) enables this, but the retraining pipeline, model comparison, and safe rollout process are additional engineering.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter15.08-chemotherapy-dose-optimization.html">Recipe 15.8</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

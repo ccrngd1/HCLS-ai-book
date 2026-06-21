@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.9 Architecture and Implementation: Cybersecurity / Access Pattern Anomalies</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested nav-active" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-39-architecture-and-implementation-cybersecurity--access-pattern-anomalies">Recipe 3.9 Architecture and Implementation: Cybersecurity / Access Pattern Anomalies</h1>
+<p><em>Companion to <a href="chapter03.09-cybersecurity-access-pattern-anomalies.html">Recipe 3.9: Cybersecurity / Access Pattern Anomalies</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Kinesis Data Streams for the audit-event ingest backbone.</strong> EHR audit logs, application audit logs, and network logs flow into a Kinesis stream as they're produced. Kinesis handles the volume (a major health system's audit volume runs into tens of millions of events per day), provides ordered delivery for sequence-based analysis, supports replay for backfill and retraining, and integrates cleanly with the downstream Lambda and analytics components.</p>
+<p><strong>AWS Lambda for ingest, normalization, and enrichment.</strong> Each event source (Epic Audit Log API, Cerner Behavior Tracker, application audit feeds, IdP logs, VPN logs) has its own Lambda that pulls or receives the source-specific format and writes canonical events into the stream. Downstream Lambdas perform identity resolution, schedule enrichment, care-team enrichment, and sensitivity-flag enrichment.</p>
+<p><strong>Amazon DynamoDB for the user state and case state stores.</strong> Per-user state (current behavioral baseline summary, recent flag counts, recent case history) and per-case state (open investigations, suppression status, evidence pointers) live in DynamoDB. Single-digit-millisecond reads on user lookup; DynamoDB streams trigger downstream re-evaluation when state changes.</p>
+<p><strong>Amazon Neptune for the relationship graph.</strong> The graph of workforce members, patients, encounters, departments, and devices fits Neptune's property-graph model naturally. Gremlin queries support the relationship-based detection logic (&quot;does this user have a documented care relationship with this patient through any encounter, care team, on-call, or order signature path&quot;). Neptune is HIPAA-eligible.</p>
+<p><strong>Amazon Timestream for time-series behavioral baselines.</strong> Per-user time-series of access counts, session durations, and resource-type distributions are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-week baseline window cost-effectively.</p>
+<p><strong>Amazon OpenSearch Service for case management, hunt, and SIEM-style analytics.</strong> Privacy-office case data and the searchable archive of all access events live in OpenSearch. OpenSearch supports the kind of ad-hoc query the privacy office needs (&quot;show me every chart access by this user in the last 90 days,&quot; &quot;show me every access on this patient's record in the last week, sorted by user role&quot;). Many SIEM products either run on OpenSearch under the hood or integrate with it cleanly.</p>
+<p><strong>Amazon SageMaker for model training, hosting, and feature management.</strong> The unsupervised detectors (Isolation Forest, autoencoders), the sequence models, and the supervised re-rankers train as SageMaker Training Jobs against historical data in S3, deploy to SageMaker endpoints for inference, and use SageMaker Feature Store for online and offline feature consistency. SageMaker Clarify produces SHAP-based explanations for each scored case.</p>
+<p><strong>Amazon SageMaker Model Monitor.</strong> Continuously monitors data drift, prediction drift, and (with labels) model quality. Critical for catching baseline drift caused by EHR upgrades, role changes, organizational restructures, and the gradual shift in workforce behavior that affects every monitoring program.</p>
+<p><strong>Amazon Bedrock for case narrative generation.</strong> The case builder hands the structured evidence package to a Bedrock-hosted LLM that produces the investigator-facing narrative (&quot;This user accessed patient X's record at 11:47 p.m. The user shares a last name with the patient and lives on the same street according to HR records. The user is a step-down nurse and was not assigned to the patient's care team. The access included demographics, medications, and the most recent discharge plan, but no order entry or documentation was performed. The session ended after 90 seconds.&quot;). Decision support, not decision-making.</p>
+<p><strong>Amazon Comprehend Medical for note and search-text feature extraction.</strong> Some break-glass override reasons and search queries are free text. Comprehend Medical extracts structured information (medications, conditions, anatomy) that feeds into feature engineering. Optional but useful for break-glass-reason analysis.</p>
+<p><strong>AWS Step Functions for orchestration.</strong> The nightly user-graph rescoring, the case assembly pipeline, and the periodic retraining are multi-step workflows. Step Functions handles orchestration with retry and error handling.</p>
+<p><strong>Amazon EventBridge for routing.</strong> Detector outputs publish to EventBridge with user context and case-class metadata. Subscribers include the case builder, the SIEM connector, the audit logger, and the metrics collector. The decoupling supports adding new detector or consumer types without touching the existing components.</p>
+<p><strong>Amazon API Gateway and AWS AppSync for the privacy-office case management UI.</strong> The privacy office's case queue UI consumes data through AppSync (when GraphQL flexibility is needed for the case-detail views) or API Gateway (for simpler integrations). When the organization uses an existing privacy-monitoring vendor (Protenus, FairWarning, etc.), the integration is API-driven and the UI is the vendor's; the AWS-native components feed it through the integration layer.</p>
+<p><strong>AWS Glue and Amazon Athena for the data lake.</strong> Historical audit events, enrichment data, and case outcomes live in S3 partitioned by date. Glue catalogs the schema; Athena provides SQL access for ad-hoc analysis and retraining feature extraction.</p>
+<p><strong>Amazon QuickSight for governance dashboards.</strong> Subgroup-performance dashboards, alert volume by detector type, case throughput, breach notification timing, and program-level operational metrics. Privacy office leadership, infosec leadership, and the audit committee consume these.</p>
+<p><strong>Amazon S3 for the data lake and audit log archive.</strong> Partitioned by date and event source, encrypted with customer-managed KMS keys. Used by SageMaker for training, Athena for ad-hoc analysis, and as the long-term archive for compliance retention.</p>
+<p><strong>AWS IAM Identity Center (or external IdP integration).</strong> The monitoring system itself has multiple roles: privacy-office investigators (read access to case data, write access to outcomes), privacy-office leadership (read access plus reporting), data-science team (training-data access without identifying user data when possible), and operations team (pipeline monitoring without case-data access). Least-privilege per role. The system ironically has to apply the same access-monitoring discipline to itself that it monitors elsewhere.</p>
+<p><strong>Amazon CloudWatch and AWS X-Ray.</strong> Pipeline health, ingest latency (especially for the EHR audit log feed, where latency directly affects detection speed), and end-to-end traces. Latency budgets matter: the time from &quot;user takes the action&quot; to &quot;case appears in the privacy-office queue&quot; is part of the operational metric.</p>
+<p><strong>AWS CloudTrail.</strong> Audit logging on every PHI-bearing store and every API call against the case management system. The monitoring system's own access logs feed back into the pipeline as a self-monitoring input.</p>
+<p><strong>AWS KMS.</strong> Customer-managed keys on every PHI-bearing store: Kinesis, DynamoDB, Neptune, Timestream, S3, OpenSearch, SageMaker volumes and Feature Store. Key rotation per organizational requirements.</p>
+<p><strong>AWS Secrets Manager.</strong> EHR API credentials, IdP integration credentials, IdP service-account credentials, and SIEM integration credentials. Rotated per policy.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[EHR audit log&lt;br/&gt;Epic / Cerner /&lt;br/&gt;MEDITECH feeds] --&gt; B[AWS Lambda&lt;br/&gt;ehr-audit-ingest]
+    C[Application audit:&lt;br/&gt;PACS, lab, pharmacy,&lt;br/&gt;billing, portals] --&gt; D[AWS Lambda&lt;br/&gt;app-audit-ingest]
+    E[IdP / VPN /&lt;br/&gt;auth logs] --&gt; F[AWS Lambda&lt;br/&gt;identity-log-ingest]
+    G[Break-glass&lt;br/&gt;override events] --&gt; H[AWS Lambda&lt;br/&gt;break-glass-ingest]
+    I[HRIS / IAM /&lt;br/&gt;scheduling feeds] --&gt; J[AWS Lambda&lt;br/&gt;identity-context-loader]
+
+    B --&gt; K[Amazon Kinesis&lt;br/&gt;audit-events]
+    D --&gt; K
+    F --&gt; K
+    H --&gt; K
+
+    K --&gt; L[AWS Lambda&lt;br/&gt;event-normalizer]
+    L --&gt; M[AWS Lambda&lt;br/&gt;enrichment]
+    J --&gt; M
+
+    M --&gt; N[(Amazon DynamoDB&lt;br/&gt;user-state)]
+    M --&gt; O[(Amazon Neptune&lt;br/&gt;relationship-graph)]
+    M --&gt; P[(Amazon Timestream&lt;br/&gt;behavioral-baselines)]
+    M --&gt; Q[(Amazon S3&lt;br/&gt;raw-events lake)]
+    M --&gt; R[(Amazon OpenSearch&lt;br/&gt;access-search)]
+
+    M --&gt; S[AWS Lambda&lt;br/&gt;rules-engine]
+    M --&gt; T[AWS Lambda&lt;br/&gt;baseline-detector]
+    M --&gt; U[AWS Lambda&lt;br/&gt;graph-detector]
+    M --&gt; V[SageMaker Endpoint&lt;br/&gt;sequence-model]
+    M --&gt; W[SageMaker Endpoint&lt;br/&gt;composite-anomaly-model]
+
+    S --&gt; X[AWS Lambda&lt;br/&gt;composite-scoring]
+    T --&gt; X
+    U --&gt; X
+    V --&gt; X
+    W --&gt; X
+
+    X --&gt; Y[AWS Lambda&lt;br/&gt;calibration]
+    Y --&gt; Z[AWS Lambda&lt;br/&gt;case-builder]
+    Z --&gt; AA[Amazon Bedrock&lt;br/&gt;narrative-LLM]
+    Z --&gt; AB[SageMaker Clarify&lt;br/&gt;SHAP values]
+
+    Z --&gt; AC[(Amazon DynamoDB&lt;br/&gt;case-state)]
+    Z --&gt; AD[Amazon EventBridge&lt;br/&gt;case-bus]
+
+    AD --&gt; AE[Privacy Office&lt;br/&gt;Case Queue UI&lt;br/&gt;AppSync/API Gateway]
+    AD --&gt; AF[SIEM connector&lt;br/&gt;Splunk / Sentinel]
+    AD --&gt; AG[(OpenSearch&lt;br/&gt;case-index)]
+
+    AH[Investigator&lt;br/&gt;adjudication] --&gt; AI[AWS Lambda&lt;br/&gt;outcome-capture]
+    AI --&gt; AC
+    AI --&gt; AG
+    AI --&gt; AJ[(Amazon S3&lt;br/&gt;training-labels)]
+
+    AJ --&gt; AK[AWS Step Functions&lt;br/&gt;retraining-pipeline]
+    AK --&gt; AL[SageMaker Training&lt;br/&gt;Jobs]
+    AL --&gt; AM[(SageMaker Model&lt;br/&gt;Registry)]
+    AM --&gt; V
+    AM --&gt; W
+
+    W --&gt; AN[SageMaker Model&lt;br/&gt;Monitor]
+    AN --&gt; AO[CloudWatch alarms&lt;br/&gt;+ governance dashboards]
+
+    AG --&gt; AP[Amazon Athena]
+    Q --&gt; AP
+    AP --&gt; AQ[Amazon QuickSight&lt;br/&gt;governance dashboards]
+
+    AR[CloudTrail&lt;br/&gt;data events] -.-&gt; N
+    AR -.-&gt; O
+    AR -.-&gt; P
+    AR -.-&gt; Q
+    AR -.-&gt; R
+    AR -.-&gt; AC
+    AR -.-&gt; AG
+    AR -.-&gt; AJ
+
+    style N fill:#9ff,stroke:#333
+    style O fill:#9ff,stroke:#333
+    style P fill:#9ff,stroke:#333
+    style AC fill:#f9f,stroke:#333
+    style AG fill:#f9f,stroke:#333
+    style W fill:#ffc,stroke:#333
+    style V fill:#ffc,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon Neptune, Amazon Timestream, Amazon OpenSearch Service, Amazon S3, Amazon SageMaker (Training, Hosting, Feature Store, Clarify, Model Monitor, Model Registry), Amazon Comprehend Medical (optional), Amazon Bedrock, Amazon EventBridge, AWS Step Functions, AWS AppSync, Amazon API Gateway, AWS Glue, Amazon Athena, Amazon QuickSight, AWS IAM Identity Center, AWS Secrets Manager, AWS KMS, AWS CloudTrail, Amazon CloudWatch, AWS X-Ray.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Least-privilege per role. Ingest Lambdas write to the event stream and read from EHR/IdP/HRIS sources. Enrichment Lambdas read from identity stores and write enriched events downstream. Detectors read from state stores and write scores. Case builder reads scores and assembles cases. Privacy investigators read case data and write outcomes only. Data science roles can train and deploy but cannot read identifying user data without explicit elevation; training data sets are typically pseudonymized for development. No <code>*</code> permissions; every action scoped to specific resources.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>Signed AWS BAA. All services configured per BAA requirements. EHR vendor and any third-party patient-privacy-monitoring vendor must have their own BAAs. See the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a>.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Customer-managed KMS keys on every PHI-bearing store: Kinesis, DynamoDB, Neptune, Timestream, S3, OpenSearch, SageMaker (volumes, Feature Store, model artifacts). TLS 1.2 or higher in transit. Audit-event payloads include PHI (the patient identifier and often patient demographics) and user PII (the workforce member's identifier and HR-linked data); both categories must be protected.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production deployment in a VPC with VPC endpoints for S3, DynamoDB, KMS, Neptune, SageMaker runtime, Bedrock, Comprehend Medical, EventBridge, and Step Functions. Lambdas that touch PHI run in the VPC. EHR audit-feed integrations typically use site-to-site VPN or AWS Direct Connect, depending on the EHR's deployment topology.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail and Data Events</strong></td>
+<td>Enabled with data events on every PHI-bearing store, on the case management indexes, and on the model endpoints. Every score, every case generation, every adjudication, every export is logged. Log retention per organizational policy and applicable regulations (some jurisdictions and accreditation programs require multi-year retention).</td>
+</tr>
+<tr>
+<td><strong>Privacy Office and Infosec Governance</strong></td>
+<td>A privacy committee (typically including the Chief Privacy Officer, Chief Information Security Officer, General Counsel or HIPAA Privacy Officer designee, Compliance, HR, and clinical leadership) must own the program. Acceptable-use and monitoring policy must be in place and the workforce must be notified. Investigation procedures, appeals processes, and HR coordination protocols must be documented before deployment.</td>
+</tr>
+<tr>
+<td><strong>Workforce Notification and Acceptable Use Policy</strong></td>
+<td>Workforce members must be informed that monitoring exists and what it covers. The policy should align with HIPAA Security Rule audit-control requirements, applicable state privacy statutes, and any collective bargaining agreements. Counsel should review before publication.</td>
+</tr>
+<tr>
+<td><strong>EHR Audit Log Access</strong></td>
+<td>Coordinate with the EHR vendor and the EHR operations team to enable the audit-log feed at sufficient granularity and frequency. Epic, Cerner/Oracle Health, and MEDITECH each have specific mechanisms; the integration is typically a multi-quarter project. Latency from event to ingest matters; near-real-time is achievable with most modern EHRs but requires explicit configuration.</td>
+</tr>
+<tr>
+<td><strong>HRIS, IAM, and Scheduling Integration</strong></td>
+<td>The enrichment data is the project. HR data feeds (Workday, Oracle HCM, SAP SuccessFactors), IAM data (Active Directory, Okta, Microsoft Entra ID), and scheduling data (Kronos, UKG, API Healthcare) each require their own integration. Plan for parallel integration work; the enrichment quality determines the alert quality.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Internal historical audit logs are the only realistic training data; no public dataset captures the breadth needed. Synthetic audit-log generators exist in the security research community but produce data that's structurally different from real EHR audit logs. Pseudonymization for development is essential and non-trivial: the user-patient relationship structure must be preserved while identifiers are replaced.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>For a moderate-size health system (10,000 active workforce, 100,000 patients in the active panel, ~30 million audit events per day): Kinesis ingest: ~$300-700/month. Lambda for ingest, normalization, enrichment, detection: ~$1,500-3,500/month. DynamoDB user-state and case-state: ~$300-700/month. Neptune for the relationship graph: ~$1,500-4,000/month (Neptune instance class is typically the largest single line item). Timestream baselines: ~$200-500/month. OpenSearch case index and search archive: ~$1,500-4,500/month (scales with retention period; many programs hold 12-24 months online). SageMaker endpoints (modest instance class for daily-cadence scoring): ~$500-1,500/month. SageMaker training and Model Monitor: ~$200-500/month. Bedrock for case narratives: ~$200-700/month. S3, supporting services: ~$200-500/month. Total infrastructure: typically $6,500-17,000/month for a moderate-size deployment. Privacy-office staffing (investigators, privacy analysts, the CPO function) is the dominant program cost; one investigator at typical loaded cost can equal several months of infrastructure. The infrastructure pays for itself by avoiding a single OCR settlement; published OCR settlements involving inadequate audit controls have ranged from hundreds of thousands to several million dollars.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Canonical audit-event stream</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (ehr-audit-ingest)</strong></td>
+<td>EHR audit-log feed ingestion and source-format normalization</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (app-audit-ingest)</strong></td>
+<td>Application-system audit-log ingestion (PACS, lab, pharmacy, billing)</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (identity-log-ingest)</strong></td>
+<td>IdP, VPN, and authentication-log ingestion</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (break-glass-ingest)</strong></td>
+<td>Break-glass override event ingestion with override-reason text capture</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (identity-context-loader)</strong></td>
+<td>Periodic load of HRIS, IAM, and scheduling enrichment data</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (event-normalizer)</strong></td>
+<td>Canonical event format, identifier resolution, deduplication</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (enrichment)</strong></td>
+<td>Identity, role, schedule, care-team, sensitivity-flag enrichment per event</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (rules-engine)</strong></td>
+<td>Same-name, VIP, self-access, break-glass, off-hours rule evaluation</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (baseline-detector)</strong></td>
+<td>Per-user statistical deviation detection against rolling baseline</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (graph-detector)</strong></td>
+<td>Relationship-based detection using Neptune queries</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (composite-scoring)</strong></td>
+<td>Combines per-detector scores into composite case scores</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (calibration)</strong></td>
+<td>Subgroup-stratified calibration and tier assignment</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (case-builder)</strong></td>
+<td>Groups events into cases, assembles evidence, calls narrative LLM</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (outcome-capture)</strong></td>
+<td>Records investigator adjudications and feeds the label store</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB (user-state)</strong></td>
+<td>Per-user current state, baseline summary, recent flag history</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB (case-state)</strong></td>
+<td>Open and recently-closed case state, suppression rules</td>
+</tr>
+<tr>
+<td><strong>Amazon Neptune</strong></td>
+<td>Relationship graph: workforce, patients, encounters, devices, departments</td>
+</tr>
+<tr>
+<td><strong>Amazon Timestream</strong></td>
+<td>Time-series of behavioral metrics for baseline computation</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Service</strong></td>
+<td>Searchable archive of audit events and case data; SIEM-style queries</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Raw event lake, training data, retraining label store, audit archive</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Endpoint (sequence-model)</strong></td>
+<td>Sequence-based workflow-vs-curiosity scoring</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Endpoint (composite-anomaly-model)</strong></td>
+<td>Composite anomaly scoring on user-window feature vectors</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Training</strong></td>
+<td>Periodic retraining for sequence and composite models</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Online and offline feature consistency for training and scoring</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Clarify</strong></td>
+<td>SHAP-based per-case explanations</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Model Monitor</strong></td>
+<td>Data drift, prediction drift, and quality drift monitoring</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Model Registry</strong></td>
+<td>Versioning and approval workflow for model deployments</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Optional: structured extraction from break-glass override reasons</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Investigator-facing case-narrative generation</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Routes scoring and case events to subscribers (case queue, SIEM, archive)</td>
+</tr>
+<tr>
+<td><strong>AWS AppSync / API Gateway</strong></td>
+<td>Privacy-office case management UI back end</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Daily user-graph rescoring and retraining pipeline orchestration</td>
+</tr>
+<tr>
+<td><strong>AWS Glue + Amazon Athena</strong></td>
+<td>Data lake catalog and SQL-over-S3 for ad-hoc analysis</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Privacy-office, infosec, and governance dashboards</td>
+</tr>
+<tr>
+<td><strong>AWS IAM Identity Center</strong></td>
+<td>Workforce single sign-on for the case management UI</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>EHR, IdP, HRIS, and SIEM integration credentials</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed keys for every PHI- and PII-bearing store</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging on every store and every API operation</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch + AWS X-Ray</strong></td>
+<td>Pipeline health, ingest latency, end-to-end traces</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> These aws-samples repositories demonstrate patterns that apply here:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Anomaly detection notebooks (Isolation Forest, autoencoder, RNN sequence models), Feature Store with online and offline stores, Clarify SHAP examples, Model Monitor configurations.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: search for &quot;Neptune,&quot; &quot;FHIR,&quot; &quot;audit log analysis,&quot; and &quot;UEBA&quot; for adjacent integration and graph-analytics patterns.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest and normalize an audit event from the EHR.</strong> The EHR audit feed publishes events on a near-real-time cadence. The ingest Lambda parses the source-specific format (Epic, Cerner, MEDITECH each differ), validates the schema, and writes a canonical event to the stream.</p>
+<pre class="code code-plain"><code>FUNCTION on_ehr_audit_event(raw_event, source_format):
+    // Parse the source-specific payload. EHR audit log formats vary
+    // substantially by vendor; the parser is selected per source.
+    parsed = parse_audit_event(raw_event, source_format)
+
+    // Resolve workforce identifier. EHR user IDs are usually system-specific
+    // and need to be mapped to enterprise identity (Active Directory SID,
+    // Okta user ID, etc.).
+    workforce_id = resolve_workforce_id(parsed.user_id, source_format)
+    IF workforce_id is null:
+        send_to_quarantine(parsed, reason = &quot;unknown_workforce_user&quot;)
+        return 202
+
+    // Resolve patient identifier. Map EHR-internal patient ID to enterprise
+    // master patient identifier (EMPI) so cross-system correlation works.
+    patient_id = resolve_patient_id(parsed.patient_id, source_format)
+
+    // Build the canonical event. The schema is consistent across all
+    // event sources downstream.
+    canonical_event = {
+        event_id:           generate_event_id(parsed),
+        workforce_id:       workforce_id,
+        patient_id:         patient_id,
+        source_system:      source_format,
+        event_type:         normalize_event_type(parsed.action_type),  // view, edit, print, export, search, login
+        resource_type:      normalize_resource_type(parsed.resource),  // chart, lab, image, note, order, demographics
+        action:             parsed.action,
+        observed_at:        parsed.event_time,
+        received_at:        NOW(),
+        device_id:          parsed.workstation_id,
+        application_context: parsed.application_screen,
+        ip_address:         parsed.source_ip,
+        session_id:         parsed.session_id,
+        break_glass:        parsed.break_glass_override == true,
+        break_glass_reason: parsed.break_glass_reason,
+        raw_event_ref:      persist_raw(raw_event)
+    }
+
+    Kinesis.PutRecord(
+        stream_name   = &quot;audit-events&quot;,
+        data          = canonical_event,
+        partition_key = canonical_event.workforce_id   // partition by user for ordering within a session
+    )
+    return 200
+</code></pre>
+<p><strong>Step 2: Enrich the event with identity, schedule, care-team, and sensitivity context.</strong> The enrichment Lambda joins the canonical event against the identity, scheduling, care-team, and patient-flag stores. Enrichment quality drives detection quality.</p>
+<pre class="code code-plain"><code>FUNCTION enrich(event):
+    // Identity context. HRIS data refreshed nightly into a fast-lookup store.
+    identity = DynamoDB.GetItem(
+        table = &quot;workforce-identity&quot;,
+        key   = { workforce_id: event.workforce_id }
+    )
+    event.user_role         = identity.role
+    event.user_department   = identity.department
+    event.user_manager      = identity.manager_id
+    event.user_employment   = identity.employment_type   // employee, contractor, student, volunteer
+    event.user_address_zip  = identity.address_zip       // for same-neighborhood detection
+    event.user_last_name    = identity.last_name         // for same-name detection
+    event.user_hire_date    = identity.hire_date         // new-user ramp-up consideration
+
+    // Schedule context. Was the user supposed to be working at this time?
+    schedule = DynamoDB.GetItem(
+        table = &quot;workforce-schedule&quot;,
+        key   = {
+            workforce_id: event.workforce_id,
+            shift_date:   date(event.observed_at)
+        }
+    )
+    event.scheduled_to_work     = schedule != null
+    event.scheduled_unit         = schedule.unit IF schedule else null
+    event.is_off_shift           = is_off_shift(event.observed_at, schedule)
+    event.is_off_hours           = is_off_hours(event.observed_at, identity.role)
+
+    // Care-team context. Does the user have a documented relationship to
+    // this patient through the EHR? Care teams, on-call schedules, encounter
+    // assignments, and order signatures are the primary sources.
+    care_relationship = check_care_relationship(
+        workforce_id = event.workforce_id,
+        patient_id   = event.patient_id,
+        as_of        = event.observed_at,
+        include      = [&quot;assigned_attending&quot;, &quot;assigned_nurse&quot;, &quot;consult&quot;, &quot;on_call&quot;,
+                        &quot;scheduling&quot;, &quot;documentation_authorship&quot;, &quot;order_signature&quot;,
+                        &quot;transitions_team&quot;, &quot;case_management&quot;]
+    )
+    event.has_care_relationship       = care_relationship.has_any
+    event.care_relationship_types     = care_relationship.types
+    event.care_relationship_strength   = care_relationship.strength_score   // 0..1; weak vs strong evidence
+
+    // Patient context. Sensitivity flags, demographic data, employment relationship.
+    patient = DynamoDB.GetItem(
+        table = &quot;patient-context&quot;,
+        key   = { patient_id: event.patient_id }
+    )
+    event.patient_sensitivity_flags = patient.sensitivity_flags    // VIP, employee, foster, behavioral, victim, opt_out
+    event.patient_is_employee       = patient.is_workforce_member
+    event.patient_last_name         = patient.last_name
+    event.patient_address_zip       = patient.address_zip
+    event.patient_household_id      = patient.household_id          // for same-household detection (when available)
+    event.patient_is_deceased       = patient.is_deceased
+
+    // Network and device context.
+    event.geo_location              = geolocate_ip(event.ip_address)
+    event.is_off_network            = event.geo_location.network != &quot;corporate&quot;
+    event.is_unusual_geo            = is_unusual_for_user(event.workforce_id, event.geo_location)
+
+    // Persist enriched event for downstream detection.
+    write_enriched_event(event)
+    return event
+</code></pre>
+<p><strong>Step 3: Run the rules-engine detector.</strong> The rules engine evaluates the explicit policy rules. Each rule is versioned, has a precise definition, and produces a flag with an explanation.</p>
+<pre class="code code-plain"><code>FUNCTION run_rules_engine(event):
+    flags = []
+
+    // Same-last-name rule. Weighted by name uniqueness.
+    IF event.user_last_name == event.patient_last_name AND NOT event.has_care_relationship:
+        name_uniqueness = compute_name_uniqueness(event.user_last_name)   // higher for rare names
+        flags.append({
+            rule_id:    &quot;RULE-001-SAME-LAST-NAME-NO-CARE&quot;,
+            severity:   &quot;high&quot;,
+            confidence: name_uniqueness,
+            evidence:   {
+                user_last_name:    event.user_last_name,
+                patient_last_name: event.patient_last_name,
+                care_relationship: event.has_care_relationship
+            },
+            explanation: f&quot;User and patient share last name &#x27;{event.user_last_name}&#x27; (uniqueness {name_uniqueness:.2f}); no documented care relationship found at access time.&quot;
+        })
+
+    // Same household / same neighborhood rule.
+    IF event.user_address_zip == event.patient_address_zip:
+        IF event.patient_household_id and is_member(event.workforce_id, event.patient_household_id):
+            flags.append({
+                rule_id:    &quot;RULE-002-SAME-HOUSEHOLD-NO-CARE&quot;,
+                severity:   &quot;high&quot;,
+                confidence: 0.95,
+                evidence:   { household_id: event.patient_household_id }
+            })
+        ELSE IF zip_population_density(event.user_address_zip) &lt; SMALL_ZIP_THRESHOLD AND NOT event.has_care_relationship:
+            flags.append({
+                rule_id:    &quot;RULE-003-SAME-NEIGHBORHOOD-NO-CARE&quot;,
+                severity:   &quot;medium&quot;,
+                confidence: 0.65,
+                evidence:   { zip: event.user_address_zip }
+            })
+
+    // Self-access rule (organization policy dependent).
+    IF event.workforce_id == event.patient_id_workforce_link:
+        flags.append({
+            rule_id:    &quot;RULE-010-SELF-ACCESS&quot;,
+            severity:   &quot;policy_dependent&quot;,  // some orgs allow, some forbid
+            confidence: 1.0,
+            evidence:   { workforce_id: event.workforce_id, patient_id: event.patient_id }
+        })
+
+    // Sensitive-patient access without strong care relationship.
+    IF &quot;VIP&quot; in event.patient_sensitivity_flags AND event.care_relationship_strength &lt; 0.8:
+        flags.append({
+            rule_id:    &quot;RULE-020-VIP-WEAK-CARE&quot;,
+            severity:   &quot;high&quot;,
+            confidence: 0.85,
+            evidence:   {
+                sensitivity_flags:  event.patient_sensitivity_flags,
+                care_strength:      event.care_relationship_strength
+            }
+        })
+
+    // Co-worker access without strong care relationship.
+    IF event.patient_is_employee AND event.care_relationship_strength &lt; 0.8:
+        flags.append({
+            rule_id:    &quot;RULE-021-EMPLOYEE-PATIENT-WEAK-CARE&quot;,
+            severity:   &quot;high&quot;,
+            confidence: 0.80
+        })
+
+    // Break-glass override. Flagged for review by default; severity tuned by reason quality.
+    IF event.break_glass:
+        flags.append({
+            rule_id:    &quot;RULE-030-BREAK-GLASS-OVERRIDE&quot;,
+            severity:   severity_from_break_glass_reason(event.break_glass_reason),
+            confidence: 1.0,
+            evidence:   {
+                reason:             event.break_glass_reason,
+                care_relationship: event.has_care_relationship,
+                sensitivity_flags: event.patient_sensitivity_flags
+            }
+        })
+
+    // Off-hours access by users on standard daytime schedules without scheduled coverage.
+    IF event.is_off_hours AND NOT event.scheduled_to_work AND event.user_employment in [&quot;employee&quot;, &quot;contractor&quot;]:
+        flags.append({
+            rule_id:    &quot;RULE-040-OFF-HOURS-NO-SCHEDULE&quot;,
+            severity:   &quot;low&quot;,
+            confidence: 0.50,
+            evidence:   {
+                observed_at:        event.observed_at,
+                role_normal_hours:  normal_hours_for_role(event.user_role)
+            }
+        })
+
+    // Deceased-patient access.
+    IF event.patient_is_deceased AND NOT event.has_care_relationship:
+        flags.append({
+            rule_id:    &quot;RULE-050-DECEASED-PATIENT-NO-CARE&quot;,
+            severity:   &quot;medium&quot;,
+            confidence: 0.70
+        })
+
+    // Print and export, especially with sensitivity flags or weak care relationship.
+    IF event.event_type in [&quot;print&quot;, &quot;export&quot;] AND (
+        event.patient_sensitivity_flags or event.care_relationship_strength &lt; 0.5
+    ):
+        flags.append({
+            rule_id:    &quot;RULE-060-EXPORT-WEAK-CARE&quot;,
+            severity:   &quot;medium&quot;,
+            confidence: 0.70
+        })
+
+    return flags
+</code></pre>
+<p><strong>Step 4: Compute per-user behavioral baselines and detect deviations.</strong> Per-user rolling-window features are compared to the user's historical baseline and to peer-group distributions. A user whose behavior shifts substantially gets a deviation score.</p>
+<pre class="code code-plain"><code>FUNCTION run_baseline_detector(event):
+    workforce_id = event.workforce_id
+
+    // Aggregate the recent activity window. Multiple windows in parallel
+    // catch fast and slow shifts.
+    feature_vector = {}
+    FOR each window in [1_hour, 8_hour, 24_hour, 7_day, 30_day]:
+        agg = aggregate_user_activity(workforce_id, window, ending_at = event.observed_at)
+        feature_vector[f&quot;events_count_{window}&quot;]              = agg.event_count
+        feature_vector[f&quot;unique_patients_{window}&quot;]            = agg.unique_patients
+        feature_vector[f&quot;unique_resources_{window}&quot;]           = agg.unique_resource_types
+        feature_vector[f&quot;export_count_{window}&quot;]               = agg.export_count
+        feature_vector[f&quot;print_count_{window}&quot;]                = agg.print_count
+        feature_vector[f&quot;break_glass_count_{window}&quot;]          = agg.break_glass_count
+        feature_vector[f&quot;off_hours_fraction_{window}&quot;]         = agg.off_hours_fraction
+        feature_vector[f&quot;new_patient_fraction_{window}&quot;]       = agg.never_seen_before_fraction
+        feature_vector[f&quot;sensitive_patient_fraction_{window}&quot;]  = agg.sensitive_patient_fraction
+        feature_vector[f&quot;weak_care_fraction_{window}&quot;]         = agg.weak_care_relationship_fraction
+
+    // User&#x27;s own historical baseline. Stored in Timestream and refreshed nightly.
+    user_baseline = get_user_baseline(workforce_id)
+
+    // Per-feature z-score against the user&#x27;s own history.
+    per_feature_z = {}
+    FOR each feature_name in feature_vector:
+        baseline_mean = user_baseline.mean(feature_name)
+        baseline_std  = user_baseline.std(feature_name)
+        IF baseline_std &gt; 0:
+            per_feature_z[feature_name] = (feature_vector[feature_name] - baseline_mean) / baseline_std
+        ELSE:
+            per_feature_z[feature_name] = 0
+
+    // Peer-group baseline. Defined per (role, department, shift_pattern).
+    peer_group_id = derive_peer_group(event.user_role, event.user_department, user_baseline.shift_pattern)
+    peer_baseline = get_peer_baseline(peer_group_id)
+    per_feature_peer_z = {}
+    FOR each feature_name in feature_vector:
+        peer_mean = peer_baseline.mean(feature_name)
+        peer_std  = peer_baseline.std(feature_name)
+        IF peer_std &gt; 0:
+            per_feature_peer_z[feature_name] = (feature_vector[feature_name] - peer_mean) / peer_std
+        ELSE:
+            per_feature_peer_z[feature_name] = 0
+
+    // Composite deviation score: max-of-z across features, with feature
+    // weighting that emphasizes the highest-stakes features (export volume,
+    // sensitive-patient fraction).
+    composite_user_z = weighted_max_z(per_feature_z, FEATURE_WEIGHTS)
+    composite_peer_z = weighted_max_z(per_feature_peer_z, FEATURE_WEIGHTS)
+
+    // Cold-start handling: new users with insufficient baseline data fall
+    // back to peer-group comparison only.
+    user_baseline_age_days = days_since(user_baseline.first_observed)
+    IF user_baseline_age_days &lt; MIN_BASELINE_DAYS:
+        composite = composite_peer_z
+        baseline_source = &quot;peer_only_cold_start&quot;
+    ELSE:
+        composite = max(composite_user_z, composite_peer_z)
+        baseline_source = &quot;patient_specific_and_peer&quot;
+
+    deviation_score = sigmoid(composite / DEVIATION_SCALING_FACTOR)
+
+    return {
+        deviation_score:     deviation_score,
+        per_feature_z:       per_feature_z,
+        per_feature_peer_z:  per_feature_peer_z,
+        peer_group_id:       peer_group_id,
+        baseline_source:     baseline_source,
+        baseline_age_days:   user_baseline_age_days,
+        feature_snapshot:    feature_vector
+    }
+</code></pre>
+<p><strong>Step 5: Run the graph-based detector.</strong> The relationship graph captures the documented connections between workforce members and patients. The detector evaluates whether the access has any plausible relationship path through the graph. Patterns where a user accesses patients with no graph connection to their documented work are flagged.</p>
+<pre class="code code-plain"><code>FUNCTION run_graph_detector(event):
+    // Query Neptune for any documented care-relationship path.
+    paths = Neptune.Query(f&quot;&quot;&quot;
+        g.V().has(&#x27;workforce&#x27;, &#x27;workforce_id&#x27;, &#x27;{event.workforce_id}&#x27;)
+          .repeat(both(&#x27;care_team&#x27;, &#x27;on_call&#x27;, &#x27;consult&#x27;, &#x27;scheduling&#x27;,
+                       &#x27;order_signature&#x27;, &#x27;documentation_authorship&#x27;,
+                       &#x27;team_membership&#x27;, &#x27;cross_coverage&#x27;))
+          .times(3)
+          .has(&#x27;patient&#x27;, &#x27;patient_id&#x27;, &#x27;{event.patient_id}&#x27;)
+          .path()
+          .limit(5)
+    &quot;&quot;&quot;)
+
+    has_direct_relationship = any(p.length &lt;= 2 for p in paths)
+    has_indirect_relationship = any(p.length &lt;= 4 for p in paths)
+
+    // Department-level relationship: was the patient on a unit this user
+    // covers, even if the user wasn&#x27;t directly assigned?
+    user_dept = event.user_department
+    patient_recent_units = Neptune.Query(f&quot;&quot;&quot;
+        g.V().has(&#x27;patient&#x27;, &#x27;patient_id&#x27;, &#x27;{event.patient_id}&#x27;)
+          .out(&#x27;admitted_to_unit&#x27;)
+          .has(&#x27;unit&#x27;, &#x27;time&#x27;, between(&#x27;{event.observed_at - 7d}&#x27;, &#x27;{event.observed_at}&#x27;))
+          .values(&#x27;unit_id&#x27;)
+    &quot;&quot;&quot;)
+    department_overlap = user_dept in [unit_to_dept(u) for u in patient_recent_units]
+
+    // Cluster anomaly: in the last N hours, has the user accessed a
+    // suspicious cluster of patients with no shared care-team or workflow
+    // connection? This catches credential-compromise reconnaissance patterns.
+    recent_access = get_user_recent_patient_set(event.workforce_id, hours = 24)
+    IF len(recent_access) &gt;= CLUSTER_THRESHOLD:
+        cluster_cohesion = compute_graph_cohesion(recent_access)
+        // cluster_cohesion is high when patients share care teams, units, or
+        // diagnosis groups; low when they&#x27;re scattered.
+        cluster_anomaly = cluster_cohesion &lt; CLUSTER_COHESION_THRESHOLD
+    ELSE:
+        cluster_cohesion = null
+        cluster_anomaly = false
+
+    // Family-relationship through HR-linked household IDs (when available).
+    family_match = check_family_link(event.workforce_id, event.patient_id)
+
+    relationship_evidence = {
+        has_direct_relationship:    has_direct_relationship,
+        has_indirect_relationship:  has_indirect_relationship,
+        department_overlap:         department_overlap,
+        cluster_cohesion_score:     cluster_cohesion,
+        cluster_anomaly:            cluster_anomaly,
+        family_match:               family_match
+    }
+
+    // Composite graph-based score.
+    IF has_direct_relationship:
+        graph_score = 0.05
+    ELSE IF has_indirect_relationship or department_overlap:
+        graph_score = 0.30
+    ELSE IF family_match:
+        graph_score = 0.95
+    ELSE IF cluster_anomaly:
+        graph_score = 0.85
+    ELSE:
+        graph_score = 0.65    // no documented connection at all
+
+    return {
+        graph_score:           graph_score,
+        relationship_evidence: relationship_evidence
+    }
+</code></pre>
+<p><strong>Step 6: Combine detector outputs into a composite case score.</strong> Each detector produces a score (rules, baseline deviation, graph relationship, sequence model). The composite combines them with calibrated weights. Calibration ensures that a composite score of 0.8 corresponds to roughly the same probability of being a confirmed violation across cohorts.</p>
+<pre class="code code-plain"><code>FUNCTION composite_score(event, rules_flags, baseline_output, graph_output, sequence_output):
+    // Weight detectors. Weights are tuned per cohort using historical
+    // adjudicated cases.
+    weights = COHORT_WEIGHTS_FOR(event.user_role, event.user_department)
+
+    // Rules contribute a &quot;rules confidence&quot; derived from the maximum
+    // rule-level confidence across triggered rules, with severity weighting.
+    rules_confidence = max_severity_confidence(rules_flags) IF rules_flags else 0.0
+
+    raw_composite = (
+        weights.rules    * rules_confidence
+      + weights.baseline * baseline_output.deviation_score
+      + weights.graph    * graph_output.graph_score
+      + weights.sequence * sequence_output.sequence_score
+    )
+
+    // Calibration. Per-cohort calibration corrects for systematic over- or
+    // under-confidence in the raw score.
+    calibrated = apply_calibration(
+        raw_score    = raw_composite,
+        calibration  = CALIBRATION_FOR(event.user_role, event.user_department),
+        subgroup     = subgroup_for_calibration(event)
+    )
+
+    // Tier mapping. Tiers map to operational handling:
+    //   tier_1: privacy-office same-day review
+    //   tier_2: privacy-office within-72h review
+    //   tier_3: routine weekly review
+    //   below_threshold: archive only
+    tier = tier_from_score(
+        score:    calibrated,
+        cohort:   (event.user_role, event.user_department),
+        capacity: current_privacy_office_capacity()
+    )
+
+    return {
+        score_id:                 generate_score_id(),
+        event_id:                 event.event_id,
+        workforce_id:             event.workforce_id,
+        patient_id:               event.patient_id,
+        scored_at:                NOW(),
+        rules_flags:              rules_flags,
+        rules_confidence:          rules_confidence,
+        baseline_deviation_score:  baseline_output.deviation_score,
+        graph_score:               graph_output.graph_score,
+        sequence_score:            sequence_output.sequence_score,
+        composite_raw:             raw_composite,
+        composite_calibrated:      calibrated,
+        tier:                      tier,
+        per_feature_z:             baseline_output.per_feature_z,
+        relationship_evidence:     graph_output.relationship_evidence,
+        feature_snapshot_id:       persist_features(event, baseline_output, graph_output)
+    }
+</code></pre>
+<p><strong>Step 7: Build the investigator-facing case package.</strong> The case builder groups related scored events into a single case (the same user repeatedly accessing the same patient becomes one case, not many), assembles the supporting evidence, generates the LLM narrative, and applies suppression rules.</p>
+<pre class="code code-plain"><code>FUNCTION build_case(score_record):
+    // Group: does this score belong to an existing open case?
+    existing_case = find_existing_case(
+        workforce_id = score_record.workforce_id,
+        patient_id   = score_record.patient_id,
+        within_window_days = CASE_GROUPING_WINDOW
+    )
+
+    IF existing_case:
+        // Append the new score to the existing case and update its evidence.
+        update_existing_case(existing_case, score_record)
+        return existing_case.case_id
+
+    // Suppression: was this same pattern recently dismissed for this user?
+    IF check_recent_dismissal(score_record):
+        log_suppression(score_record, reason = &quot;recent_dismissal_same_pattern&quot;)
+        return null
+
+    // Suppression: is the user already under active investigation for related
+    // conduct, with the new pattern part of the existing investigation?
+    IF check_investigation_overlap(score_record):
+        attach_to_existing_investigation(score_record)
+        return null
+
+    // Build the evidence package.
+    evidence = {
+        // The scored event(s) that triggered the case.
+        triggering_events:    fetch_triggering_events(score_record),
+
+        // User context.
+        workforce_record:     {
+            workforce_id:     score_record.workforce_id,
+            role:             score_record.user_role,
+            department:       score_record.user_department,
+            manager:          score_record.user_manager,
+            employment_type:  score_record.user_employment,
+            hire_date:        score_record.user_hire_date,
+            recent_role_changes: fetch_recent_role_changes(score_record.workforce_id)
+        },
+
+        // Patient context. Be careful with PHI handling here; case data
+        // is itself PHI and is access-controlled in the case management UI.
+        patient_record:       {
+            patient_id:       score_record.patient_id,
+            sensitivity_flags: score_record.patient_sensitivity_flags,
+            recent_encounters: fetch_recent_encounters(score_record.patient_id, days=90),
+            care_team_history: fetch_care_team_history(score_record.patient_id, days=90)
+        },
+
+        // Care relationship status at access time.
+        care_relationship:    score_record.relationship_evidence,
+
+        // User&#x27;s recent activity context.
+        user_recent_activity: {
+            last_30_days_summary:   fetch_activity_summary(score_record.workforce_id, days=30),
+            sensitive_accesses_30d:  fetch_sensitive_access_summary(score_record.workforce_id, days=30),
+            prior_cases:              fetch_prior_cases(score_record.workforce_id)
+        },
+
+        // Detector-level evidence.
+        rules_flags:          score_record.rules_flags,
+        baseline_evidence:    {
+            deviation_score:    score_record.baseline_deviation_score,
+            top_z_features:     top_n_by_z(score_record.per_feature_z, n=5)
+        },
+        graph_evidence:       score_record.relationship_evidence,
+        sequence_evidence:    fetch_sequence_evidence(score_record.event_id),
+
+        // Composite and calibration metadata.
+        composite_score:      score_record.composite_calibrated,
+        tier:                 score_record.tier,
+        model_version:        score_record.model_version
+    }
+
+    // SHAP-based per-feature attribution for the composite model.
+    shap = SageMaker.Clarify.ExplainPrediction(
+        endpoint_name = &quot;access-anomaly-composite-model&quot;,
+        input_record  = fetch_features(score_record.feature_snapshot_id)
+    )
+    evidence.shap_top_drivers = top_n(shap, n=5, direction=&quot;positive&quot;)
+
+    // LLM-generated narrative. Constrained to summarize evidence; never
+    // makes adjudication recommendations or asserts intent.
+    prompt = build_case_narrative_prompt(evidence)
+    bedrock_response = Bedrock.InvokeModel(
+        model_id = &quot;anthropic.claude-XX&quot;,       // HIPAA-eligible per current eligibility
+        body     = { prompt: prompt, max_tokens: 600, temperature: 0.0 }
+    )
+    evidence.narrative = parse_bedrock_response(bedrock_response)
+
+    // Persist the case.
+    case = {
+        case_id:           generate_case_id(),
+        opened_at:         NOW(),
+        workforce_id:      score_record.workforce_id,
+        patient_id:        score_record.patient_id,
+        tier:              score_record.tier,
+        composite_score:   score_record.composite_calibrated,
+        evidence:          evidence,
+        status:            &quot;open_for_review&quot;,
+        assigned_to:       null,
+        outcome:           null,
+        outcome_notes:     null
+    }
+    DynamoDB.PutItem(table = &quot;case-state&quot;, item = case)
+    OpenSearch.Index(&quot;case-index&quot;, case)
+
+    EventBridge.PutEvent(
+        bus         = &quot;access-anomaly-events&quot;,
+        source      = &quot;case-builder&quot;,
+        detail_type = &quot;CaseOpened&quot;,
+        detail      = {
+            case_id:        case.case_id,
+            tier:           case.tier,
+            composite_score: case.composite_score
+        }
+    )
+
+    return case.case_id
+</code></pre>
+<p><strong>Step 8: Capture investigator outcomes and feed the learning loop.</strong> The privacy office investigator adjudicates the case. Outcomes flow back as labels for retraining, suppression rules, and threshold tuning.</p>
+<pre class="code code-plain"><code>FUNCTION on_investigator_action(action):
+    case = DynamoDB.GetItem(
+        table = &quot;case-state&quot;,
+        key   = { case_id: action.case_id }
+    )
+
+    case.outcome              = action.outcome
+    // outcome: confirmed_violation, dismissed_legitimate, dismissed_inconclusive,
+    //          escalated_to_hr, escalated_to_legal, escalated_to_law_enforcement
+    case.outcome_notes        = action.notes
+    case.outcome_at           = NOW()
+    case.assigned_to          = action.investigator_id
+    case.status                = &quot;closed&quot;
+
+    // Specific outcome types initiate downstream workflows.
+    IF action.outcome == &quot;confirmed_violation&quot;:
+        // Initiate the HIPAA breach notification clock.
+        initiate_breach_review(case)
+
+        // Refer to HR for employment action review.
+        refer_to_hr(case)
+
+        // Flag the user for elevated future scrutiny (subject to policy).
+        update_user_state(case.workforce_id, prior_violation = true)
+
+    IF action.outcome == &quot;dismissed_legitimate&quot;:
+        // Add to suppression rules so this pattern doesn&#x27;t re-flag.
+        add_suppression_rule(
+            workforce_id     = case.workforce_id,
+            patient_id       = case.patient_id,
+            reason           = action.dismissal_reason,
+            valid_until      = NOW() + DISMISSAL_VALIDITY_PERIOD
+        )
+
+    // Persist case update and write the label for retraining.
+    DynamoDB.PutItem(table = &quot;case-state&quot;, item = case)
+    OpenSearch.Index(&quot;case-index&quot;, case)
+
+    label_record = {
+        case_id:               case.case_id,
+        workforce_id:          case.workforce_id,
+        patient_id:            case.patient_id,
+        feature_snapshot_id:   case.evidence.feature_snapshot_id,
+        composite_score:       case.composite_score,
+        outcome:               case.outcome,
+        outcome_at:            case.outcome_at,
+        time_to_adjudication:  case.outcome_at - case.opened_at
+    }
+    S3.PutObject(
+        bucket = &quot;access-anomaly-training-labels&quot;,
+        key    = f&quot;labels/year={year(case.outcome_at)}/month={month(case.outcome_at)}/{case.case_id}.json&quot;,
+        body   = label_record
+    )
+
+    EventBridge.PutEvent(
+        bus         = &quot;access-anomaly-events&quot;,
+        source      = &quot;outcome-capture&quot;,
+        detail_type = &quot;CaseClosed&quot;,
+        detail      = label_record
+    )
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter03.09-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample case package (high-tier, family-relationship pattern):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;case_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CASE-2026-05-14-008219&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;opened_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-14T07:12:33Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;workforce_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WF-12849&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-3382091&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tier_1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;composite_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.87</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rules_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RULE-001-SAME-LAST-NAME-NO-CARE&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.81</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;User and patient share last name &#39;Wojnarowski&#39; (uniqueness 0.81); no documented care relationship found at access time.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RULE-003-SAME-NEIGHBORHOOD-NO-CARE&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;medium&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.65</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;User home ZIP and patient home ZIP both 14620 (small ZIP, ~9,400 residents); no documented care relationship.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;baseline_evidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;deviation_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.42</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;top_z_features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;off_hours_fraction_24_hour&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.6</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;weak_care_fraction_24_hour&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.3</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;new_patient_fraction_24_hour&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.9</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;graph_evidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;has_direct_relationship&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;has_indirect_relationship&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;department_overlap&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cluster_cohesion_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.78</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cluster_anomaly&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;family_match&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;candidate_via_address_zip_and_surname&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;narrative&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Workforce member WF-12849 (registered nurse, cardiology step-down unit) accessed the chart of patient PT-3382091 at 23:47 on May 13, outside the user&#39;s documented shift schedule (7 a.m. to 7 p.m. day shift). The user and patient share an uncommon last name (Wojnarowski, name uniqueness 0.81) and the same home ZIP (14620, a small ZIP with approximately 9,400 residents). No care team membership, on-call coverage, encounter assignment, or order signature linking the user to this patient was found. The patient was admitted earlier the same day to a unit other than the user&#39;s. The session lasted approximately 90 seconds and included views of demographics, the medication list, and the most recent discharge summary, with no documentation, order entry, or clinical action performed. The access pattern is inconsistent with documented care responsibilities and presents multiple deviation indicators (off-shift access, weak care relationship, household-level demographic match). This is decision support; investigator judgment governs.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;evidence_pointers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;triggering_event_ids&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;EVT-2026-05-13-3392111&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;EVT-2026-05-13-3392112&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;EVT-2026-05-13-3392113&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;feature_snapshot_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FEAT-2026-05-14-001821&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;model_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;access-anomaly-composite-v3.1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;calibration_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;calib-v3.1-2026-04&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;open_for_review&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;assigned_to&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample dismissed case (legitimate access, documented):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;case_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CASE-2026-05-14-008173&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dismissed_legitimate&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;User was floor-covering for a colleague on parental leave per documented coverage in the unit&#39;s coverage spreadsheet (verified with charge nurse). The patient was on the user&#39;s covered panel for the shift in question. Care relationship gap is a known data-quality issue: the EHR&#39;s care-team module does not capture floor-coverage relationships and the privacy office has an open enhancement request with the EHR team. Adding suppression rule for floor-coverage relationships within the user&#39;s home unit for the next 30 days.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;investigator_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PO-INVESTIGATOR-002&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-14T11:47:12Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;time_to_adjudication_minutes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">275</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;suppression_rule_added&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;WF-12849 -&gt; CARDIOLOGY_SD_UNIT_PATIENTS for 30 days&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative ranges from typical patient-privacy-monitoring program performance; specific figures vary substantially by population (academic medical center vs. community hospital, workforce composition), base rate of policy violations, EHR vendor and configuration, privacy-office staffing, and program maturity. Confirmed-violation rate at top tier and confirmed-violation precision are particularly population-dependent. Replace with measured numbers from local validation before formalizing program-level metrics or governance reporting):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Rules-only</th>
+<th>+ Per-user baselines</th>
+<th>+ Graph relationship</th>
+<th>+ Sequence model</th>
+<th>LLM-assisted triage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Daily candidate volume (per 10K active workforce)</td>
+<td>200-500</td>
+<td>800-2,000</td>
+<td>600-1,200 (with rules)</td>
+<td>similar</td>
+<td>similar</td>
+</tr>
+<tr>
+<td>Top-tier case volume per day (after composite filtering)</td>
+<td>30-80</td>
+<td>30-80</td>
+<td>20-50</td>
+<td>15-40</td>
+<td>10-30</td>
+</tr>
+<tr>
+<td>Privacy office throughput per investigator-day</td>
+<td>8-15</td>
+<td>8-15</td>
+<td>8-15</td>
+<td>8-15</td>
+<td>15-30 (with LLM triage time savings)</td>
+</tr>
+<tr>
+<td>Confirmed-violation rate at top tier</td>
+<td>8-15%</td>
+<td>5-12%</td>
+<td>12-25%</td>
+<td>15-28%</td>
+<td>18-32%</td>
+</tr>
+<tr>
+<td>Confirmed-violation precision over all surfaced cases</td>
+<td>1-3%</td>
+<td>0.5-2%</td>
+<td>3-8%</td>
+<td>4-10%</td>
+<td>5-12%</td>
+</tr>
+<tr>
+<td>False-positive review burden per confirmed violation</td>
+<td>30-100</td>
+<td>50-200</td>
+<td>12-30</td>
+<td>9-25</td>
+<td>6-20</td>
+</tr>
+<tr>
+<td>Time to detection (confirmed violation, retrospective measurement)</td>
+<td>&lt;24h</td>
+<td>&lt;24h</td>
+<td>&lt;24h</td>
+<td>&lt;24h</td>
+<td>&lt;24h</td>
+</tr>
+<tr>
+<td>Time from detection to adjudication (median)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>varies by tier; 4h to 72h typical</td>
+</tr>
+<tr>
+<td>Subgroup precision range across role categories</td>
+<td>±0.05-0.15</td>
+<td>±0.04-0.12</td>
+<td>±0.04-0.10</td>
+<td>±0.04-0.10</td>
+<td>±0.04-0.10</td>
+</tr>
+<tr>
+<td>End-to-end latency (audit event ingest to candidate score)</td>
+<td>&lt;5 minutes</td>
+<td>&lt;5 minutes</td>
+<td>&lt;10 minutes</td>
+<td>&lt;15 minutes</td>
+<td>&lt;15 minutes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Care-relationship data quality.</strong> Many EHRs capture explicit care-team membership inconsistently. Floor-coverage, cross-coverage, on-call relationships, and pre-admission preparation often aren't represented in the data the detector sees. The result is a steady stream of false positives where the access was legitimate but the relationship wasn't recorded. The privacy office spends substantial review time on these.</li>
+<li><strong>Sophisticated insiders.</strong> A workforce member who knows the system can structure access to stay below thresholds: small numbers of accesses spread over time, accesses initiated from workflow-plausible entry points, accesses to records of patients with name patterns that don't trigger same-name rules. The detector catches the unsophisticated cases (which are the majority) and has weaker performance on the sophisticated minority.</li>
+<li><strong>Privileged-user bulk access.</strong> Database administrators, integration engineers, IT analysts, and researchers have legitimate bulk-data access. Distinguishing legitimate bulk access from extraction is hard at the access-event level and often requires correlation with downstream events that the system doesn't see (data appearing for sale, patients reporting identity theft).</li>
+<li><strong>Service accounts and integration accounts.</strong> Automated processes, EHR-to-EHR integrations, and analytics pipelines log in as service accounts and access many records. Service-account behavior must be modeled separately from human-user behavior; conflating them either floods the queue with service-account &quot;anomalies&quot; or lets human anomalies hide in service-account noise.</li>
+<li><strong>New-user ramp-up.</strong> New employees, residents starting rotations, and contractors with new assignments produce unfamiliar access patterns that look anomalous against any baseline. The cold-start problem applies to every role change. Programs that flag every new-user week produce alert fatigue; programs that suppress all new-user activity miss real new-user incidents.</li>
+<li><strong>Cross-organizational care.</strong> Affiliated providers from external organizations who have privileged access (referral physicians at academic medical centers, telehealth providers, contracted hospitalists) often produce access patterns that look anomalous because the organization's identity data is incomplete for them.</li>
+<li><strong>Behavioral baselines decay during EHR upgrades.</strong> When the EHR vendor releases a major upgrade, click paths change, new features appear, and the audit-log event taxonomy may shift. Baselines computed before the upgrade don't fit the post-upgrade behavior, and the detector floods the queue until baselines re-establish.</li>
+<li><strong>VPN and remote-work patterns.</strong> Geographic anomaly detection assumes corporate-network access. Widespread VPN, BYOD, and remote-work patterns make raw IP geolocation noisy, especially after the structural shifts in clinical-administrative remote work that started in 2020.</li>
+<li><strong>Adversaries who use legitimate workflow paths.</strong> A snooping user who opens charts from the schedule view rather than the search bar, who navigates through documentation tabs in clinical order, and who keeps each access brief produces minimal sequence-anomaly signal. These cases require relationship-based and content-based features to catch.</li>
+<li><strong>The investigation lag.</strong> Even with same-day detection, investigations take hours to days. The breach notification clock is running. A more responsive investigation function (which is staffing, not technology) shortens the gap.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode shows the shape. A production access-monitoring program closes several gaps the recipe leaves intentionally light.</p>
+<p><strong>Privacy-office and infosec governance is the program.</strong> Same lesson as Recipes 3.6, 3.7, and 3.8. The detection pipeline is maybe 30% of the work; the workforce policy, the investigation procedures, the HR coordination, the legal coordination, the appeals process, and the ongoing program review are the other 70%. A pipeline without an active privacy committee, a defined investigation methodology, and a clear path from detection to adjudication will produce alerts that don't lead to outcomes. Build the governance before the technology.</p>
+<p><strong>Workforce notification and acceptable-use policy must precede deployment.</strong> Workforce members must be informed that monitoring exists. Quietly deploying a behavioral-monitoring system is a labor and legal disaster, regardless of the technology's quality. The acceptable-use policy must be reviewed by employment counsel, must comply with applicable state statutes, must align with collective bargaining agreements where relevant, and should be communicated through the same channels as other major policy updates.</p>
+<p><strong>EHR audit log access is a multi-quarter integration.</strong> Epic Audit Log API, Cerner Behavior Tracker, MEDITECH audit reports each have their own configuration, throughput, and latency characteristics. Plan for 3-6 months of integration work for each EHR vendor in scope, plus ongoing maintenance as the EHR upgrades. Test the integration's completeness: missing event types, sampled audit logs (some EHR configurations sample rather than log every event), and latency variability are common gotchas.</p>
+<p><strong>HRIS, IAM, and scheduling integrations are the enrichment project.</strong> The detection quality is gated by the enrichment quality. Plan for parallel integration work with each enrichment source. Workday, Oracle HCM, SAP SuccessFactors, UKG, Kronos, Active Directory, Okta, Microsoft Entra ID each have their own data models and integration mechanisms. Refresh cadence matters: an HR record refreshed monthly produces stale enrichment for users who changed roles last week.</p>
+<p><strong>Care-relationship data is the hardest enrichment.</strong> EHRs capture care relationships incompletely. The privacy-office program needs a defined process for capturing the relationships the EHR misses (floor coverage, cross-coverage, pre-admission, post-discharge, transitions): explicit override registration, suppression rules for known patterns, and ongoing data-quality work with the EHR team to improve native capture. This is multi-year work; plan for it.</p>
+<p><strong>Privileged-user monitoring is its own program.</strong> Database administrators, integration engineers, IT analysts, and researchers have access patterns fundamentally different from clinical workforce. Their monitoring should use different baselines, different feature sets, and different review processes. Some health systems run a separate privileged-access management (PAM) program with session recording, just-in-time access provisioning, and dedicated investigators. The detection patterns described in this recipe apply less directly to this population.</p>
+<p><strong>Service-account and integration-account inventory.</strong> Service accounts, integration accounts, and shared accounts must be inventoried and modeled separately from human users. Many programs discover unexpected service accounts during inventory, some with overly broad permissions. The inventory itself produces actionable findings before the detection pipeline does.</p>
+<p><strong>Calibration to capacity, not to abstract precision targets.</strong> The metric that matters most is &quot;the privacy office can review the surfaced cases without falling behind.&quot; Threshold tuning should match the privacy office's actual throughput. A precision improvement that produces a queue larger than the office can review is not an improvement. Plan to retune thresholds quarterly as the program evolves and as the team's capacity changes.</p>
+<p><strong>Equity and subgroup performance audits are not optional.</strong> The same operational rules from Recipe 3.7 apply, with extra attention to workforce-equity considerations. Track flag rates, case-confirmation rates, and adjudication time by role, department, demographic group, employment type, and shift. Wide variation warrants investigation. Consult with employment counsel on disparate-impact considerations before formalizing thresholds that produce different rates across protected categories.</p>
+<p><strong>The breach notification clock is operationally important.</strong> HIPAA's 60-day notification window starts at discovery; some states have shorter windows. The program should track time to detection, time to adjudication, and time to notification. Programs that detect quickly but adjudicate slowly still produce late notifications. Investigation-team capacity is part of the operational design.</p>
+<p><strong>HR coordination process must be documented and exercised.</strong> When a confirmed violation occurs, the handoff to HR for employment action review needs a defined process, defined documentation, and defined timelines. Inconsistent handoffs produce inconsistent outcomes, which produce labor and legal exposure. Tabletop the process before relying on it for real cases.</p>
+<p><strong>Legal coordination process must be documented.</strong> Cases that may involve criminal conduct (medical identity theft schemes, organized credential abuse, foreign-intelligence patterns) require coordination with general counsel, possibly with law enforcement. The process for legal coordination needs to be clear before it's needed in an active case.</p>
+<p><strong>SIEM integration carries its own scope.</strong> Cybersecurity teams want access anomalies in their case-management workflow, but the detection logic, the evidence requirements, and the investigation cadence are different from typical SOC alerts. Decide explicitly which case classes go to the privacy office, which go to the SOC, and which go to both. Integration with Splunk, Microsoft Sentinel, Chronicle, IBM QRadar each has its own engineering effort.</p>
+<p><strong>Vendor-tool considerations.</strong> Existing patient-privacy-monitoring vendors (Protenus, Imprivata FairWarning, MaizeAnalytics, Iatric, etc.) provide turnkey solutions with healthcare-specific rule libraries, established integration patterns, and built-in case management UIs. The decision to build versus buy depends on existing tooling investment, the organization's engineering capacity, and the specific patterns the program needs to support. Many health systems run a hybrid: a vendor product for the bulk of the policy-defined detection plus custom AWS-native components for organization-specific patterns and advanced analytics. Honest framing matters: this recipe describes the underlying patterns, not a competitor to mature commercial products.</p>
+<p><strong>Cold-start handling for new programs.</strong> A program in its first six months has no historical baseline data, limited adjudicated cases for retraining, and an unfamiliar review workflow. Expect a higher false-positive rate, a slower review tempo, and substantial manual tuning during this period. Plan for it in the rollout schedule rather than treating it as a problem to fix after go-live.</p>
+<p><strong>Decommissioning criteria.</strong> Same operational rule as the rest of the chapter. Pre-approved criteria for when specific detector classes get tuned, suppressed, or retired. Without pre-approved criteria, every tuning conversation becomes a political conversation; with them, it's a clinical-safety and program-effectiveness decision driven by data.</p>
+<p><strong>Disaster recovery and continuity.</strong> Multi-AZ deployment for the active components is the minimum. The fallback during system outage is the EHR vendor's native audit-log review (which is slow and manual) and the privacy office's pre-existing process. Both should be documented and exercised, because the system will be down sometime and the breach-notification clock doesn't stop.</p>
+<p><strong>Self-monitoring of the monitoring system.</strong> The monitoring system itself contains highly sensitive data: workforce identity, patient identity, behavioral baselines, case histories, investigation outcomes. Access to the monitoring system must be tightly controlled, fully audited, and regularly reviewed. The system should monitor itself: a privacy-office investigator's access to case data is itself an audit event, and access patterns within the monitoring system warrant the same scrutiny applied to the EHR.</p>
+<p><strong>Records retention and legal hold.</strong> Audit logs, case data, and investigation outcomes must be retained per applicable retention policies, and may be subject to legal hold during active investigations or litigation. Retention policies often require multi-year retention for audit data and longer for investigation records. Build retention and legal-hold capabilities into the storage layer from the start; retrofitting them later is painful.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Vendor-tool augmentation rather than replacement.</strong> Most mid-to-large health systems run a commercial patient-privacy-monitoring product (Protenus, Imprivata FairWarning, MaizeAnalytics, Iatric, etc.). The variation here is using AWS-native components to extend rather than replace the vendor product: custom detectors for organization-specific patterns, a richer enrichment layer that the vendor's data model doesn't support, advanced graph analytics, LLM-assisted triage. The vendor handles the bulk of the standard detection; the AWS-native layer handles the differentiated work.</p>
+<p><strong>SIEM-native deployment.</strong> Some organizations route access-anomaly events to their existing SIEM (Splunk, Microsoft Sentinel, Chronicle, IBM QRadar) and run the analytics inside the SIEM. The trade-off: integrate-with-existing-tooling versus build-best-of-breed. SIEM-native deployments are easier for cybersecurity teams to operate and harder to customize for healthcare-specific patterns. AWS-native deployments are the inverse.</p>
+<p><strong>Privileged-access management (PAM) integration.</strong> Tools like CyberArk, BeyondTrust, and HashiCorp Boundary provide just-in-time access provisioning, session recording, and credential rotation for privileged users. Integration with PAM tooling means access-anomaly detection can incorporate session-recording context (what queries did the DBA actually run during this access window) for higher-fidelity detection on privileged users. As The Honest Take's &quot;Privileged users are a different program&quot; lesson argues, treat this as a related but distinct program from the clinical-workforce monitoring described above (separate detectors, separate baselines, separate review workflows, separate governance); the PAM-integration extension is the architectural primitive that supports the separate-program design. Operational recommendation: build clinical-workforce monitoring first, validate it, then add privileged-user monitoring as a parallel program when the PAM tooling and infrastructure-security review function are in place.</p>
+<p><strong>Patient-portal access monitoring.</strong> The recipe focuses on workforce access. The patient-portal access pattern is a related but distinct problem: detecting compromised patient accounts, fraudulent account takeovers, and abusive patient-to-patient interactions in tethered messaging. Same architectural patterns, different feature engineering, different policy framework.</p>
+<p><strong>Identity-fabric integration.</strong> Modern identity platforms (Okta Identity Cloud, Microsoft Entra Identity Governance, SailPoint) provide rich behavioral signals from authentication and authorization events. Integration with these platforms expands the feature set beyond EHR audit logs and into the broader identity context.</p>
+<p><strong>External-organization monitoring.</strong> Affiliated providers, telehealth providers, and care partners often have access to records through cross-organizational arrangements. Monitoring their access requires data-sharing agreements, identity federation, and care-relationship data that crosses organizational boundaries. The TEFCA framework and emerging healthcare interoperability standards are starting to address some of this, but the operational integration is bespoke.</p>
+<p><strong>Compromised-credential detection focus.</strong> Some programs prioritize external-attacker patterns over insider-snooping patterns: impossible-travel detection, geo-velocity analysis, login-from-anonymous-VPN flags, credential-stuffing pattern detection. This variant integrates more closely with the IdP and the SOC and emphasizes faster response (minutes, not hours).</p>
+<p><strong>Insider-threat-program integration.</strong> Larger health systems with formal insider-threat programs combine access monitoring with behavioral indicators outside the data layer: HR-flagged retention risk, unusual benefits-access patterns, unusual badge-access patterns, unusual physical-access patterns. The combined signal catches patterns that no single data source surfaces. Operationally heavy and governance-heavy.</p>
+<p><strong>Federated and multi-site programs.</strong> Health system networks operating multiple hospitals or affiliated entities run federated monitoring with site-specific baselines, central case-management, and cross-site pattern detection (a workforce member who works at two affiliated sites, or a patient whose care spans sites). Architecturally similar to the single-site program but with extra integration complexity.</p>
+<p><strong>Privacy-by-design for the monitoring system itself.</strong> Apply minimum-necessary access controls, pseudonymization where possible (some research and tuning work can be done without identifying user information), differential privacy for aggregated reports, and explicit data-retention limits. The monitoring system contains some of the most sensitive data in the organization; treat it accordingly.</p>
+<p><strong>Conversational AI for case investigation.</strong> An LLM-driven investigator copilot that can answer questions about a case (&quot;show me every chart access by this user in the last 90 days,&quot; &quot;what's the distribution of break-glass override reasons for this department&quot;), retrieve evidence on demand, and assist with note drafting. Distinct from the case-narrative LLM, which compiles the initial summary. Emerging in 2026; substantial productivity potential.</p>
+<p><strong>Patient-facing transparency.</strong> Some health systems are starting to expose patients' access logs to them through the patient portal: &quot;here are the workforce members who have accessed your record in the last 30 days, with their roles and the date.&quot; Patients can flag accesses they don't recognize. Substantial UX considerations (most patients have no context for evaluating their access log) but the transparency aligns with a growing patient-rights movement and provides an additional detection signal (patients flagging accesses they don't recognize is itself a label source).</p>
+<p><strong>LLM-on-policy review.</strong> The privacy office's policy library (acceptable-use, monitoring policy, investigation procedures) can be loaded into an LLM RAG system that supports privacy-officer queries. &quot;Is this access pattern consistent with policy XYZ?&quot; &quot;What is our process for handling this kind of escalation?&quot; Reduces the friction of operating a complex policy framework.</p>
+<p><strong>Cross-detection with fraud and clinical anomalies.</strong> The same workforce members who appear in access-anomaly cases sometimes also appear in billing-anomaly cases (Recipe 3.6) or clinical-anomaly cases. Cross-detector linkage at the workforce-member level surfaces patterns that no single detector catches. Architecturally additive; governance-heavy because it crosses privacy, infosec, and SIU boundaries.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/neptune/latest/userguide/intro.html">Amazon Neptune User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/timestream/latest/developerguide/what-is-timestream.html">Amazon Timestream Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html">Amazon OpenSearch Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-configure-processing-jobs.html">Amazon SageMaker Clarify</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html">Amazon SageMaker Model Monitor</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/appsync/latest/devguide/welcome.html">AWS AppSync Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html">AWS CloudTrail User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Anomaly detection (Isolation Forest, autoencoder, RNN sequence models), Feature Store, Clarify SHAP examples, Model Monitor configurations.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: search for &quot;Neptune,&quot; &quot;graph analytics,&quot; &quot;audit log analysis,&quot; &quot;UEBA,&quot; and &quot;FHIR&quot; for adjacent integration and graph-analytics patterns.</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter by Security + Healthcare): security and healthcare reference architectures.</li>
+<li><a href="https://aws.amazon.com/blogs/security/">AWS Security Blog</a>: UEBA patterns, anomaly detection, and security architecture deep-dives.</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS Industries Blog (Healthcare)</a>: healthcare-specific AWS architectures and customer stories.</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search for &quot;anomaly detection,&quot; &quot;graph neural network,&quot; and &quot;insider threat&quot; for analytics deep-dives.</li>
+</ul>
+<p><strong>Regulatory and Compliance References:</strong></p>
+<ul>
+<li><a href="https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C">HIPAA Security Rule (45 CFR Part 164, Subpart C)</a>: the regulatory backbone for audit controls.</li>
+<li><a href="https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E">HIPAA Privacy Rule (45 CFR Part 164, Subpart E)</a>: minimum-necessary, accounting of disclosures, and other relevant provisions.</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/agreements/index.html">HHS Office for Civil Rights (OCR) Resolution Agreements</a>: published settlements; several involve inadequate audit controls.</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/compliance-enforcement/audit/index.html">HHS OCR HIPAA Audit Program</a>: the OCR audit framework and protocol.</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/security/guidance/cybersecurity-newsletter-archive/index.html">HHS OCR Cybersecurity Newsletter</a>: recurring guidance on monitoring, audit controls, and emerging threats.</li>
+<li><a href="https://csrc.nist.gov/pubs/sp/800/66/r2/final">NIST SP 800-66 Rev. 2: Implementing the HIPAA Security Rule</a>: NIST guidance on HIPAA Security Rule implementation including audit controls.</li>
+<li><a href="https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final">NIST SP 800-53 Rev. 5</a>: broader security control catalog with audit and accountability families that align with HIPAA Security Rule requirements.</li>
+<li><a href="https://hitrustalliance.net/product-tool/hitrust-csf/">HITRUST CSF</a>: widely-adopted control framework that includes audit logging and monitoring requirements aligned with HIPAA.</li>
+</ul>
+<p><strong>Industry Frameworks and Standards:</strong></p>
+<ul>
+<li><a href="https://405d.hhs.gov/Documents/HICP-Main-508.pdf">HHS 405(d) Health Industry Cybersecurity Practices</a>: voluntary cybersecurity practices for healthcare, including monitoring guidance.</li>
+<li><a href="https://www.cisa.gov/healthcare-cpgs">Healthcare and Public Health Sector-Specific Cybersecurity Performance Goals (CPGs)</a>: CISA guidance for healthcare cybersecurity baselines.</li>
+<li><a href="https://www.cisa.gov/topics/cyber-threats-and-advisories/federal-information-security-modernization-act">Federal Information Security Modernization Act (FISMA)</a>: federal requirements applicable to certain healthcare entities.</li>
+</ul>
+<p><strong>Academic and Industry Literature:</strong></p>
+<ul>
+<li><a href="https://github.com/shap/shap">SHAP (SHapley Additive exPlanations)</a>: per-prediction explanation library.</li>
+<li><a href="https://en.wikipedia.org/wiki/Statistical_process_control">Statistical Process Control (Wikipedia)</a>: CUSUM, EWMA, and control chart background for behavioral baseline monitoring.</li>
+</ul>
+<p><strong>Operational and Vendor References (informational; not endorsements):</strong></p>
+<ul>
+<li><a href="https://www.protenus.com/">Protenus Patient Privacy Monitoring</a>: commercial patient-privacy monitoring platform.</li>
+<li><a href="https://www.imprivata.com/products/fairwarning">Imprivata FairWarning</a>: commercial patient-privacy monitoring platform.</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/sentinel/">Microsoft Sentinel</a>: SIEM with healthcare-relevant analytics packs.</li>
+<li><a href="https://www.splunk.com/en_us/products/user-behavior-analytics.html">Splunk User Behavior Analytics</a>: general-purpose UEBA platform.</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Single EHR audit-log feed (one vendor), rules-engine detector for same-name, VIP, self-access, break-glass, and off-hours patterns, manual privacy-office case queue, basic governance, retrospective comparison against the existing privacy-monitoring process</td>
+<td>4-9 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Single EHR plus 2-3 application audit feeds, rules engine plus per-user and peer-group baselines, graph-based relationship detection on Neptune, composite scoring with calibration, LLM-assisted case narrative generation, integrated case management UI (custom or vendor-integrated), HRIS/IAM/scheduling enrichment fully connected, full privacy-office and infosec governance committee operating, subgroup performance monitoring, retraining pipeline, SIEM integration, breach-notification clock tracking</td>
+<td>12-24 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Additional EHRs and application systems, sequence-based workflow detection, GNN-based relationship detection, privileged-user monitoring program (typically as a separate program), patient-portal access monitoring, federated cross-site monitoring, conversational AI investigator copilot, advanced equity audits with formalized disparate-impact analysis, patient-facing transparency (access-log exposure to patients), insider-threat-program integration with HR and physical-access signals</td>
+<td>18-48 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter03.09-cybersecurity-access-pattern-anomalies.html">Main Recipe 3.9</a> · <a href="chapter03.09-python-example.html">Python Example</a> · <a href="chapter03-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

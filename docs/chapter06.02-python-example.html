@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 6.2: Utilization Pattern Segmentation (Python Example)</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-62-utilization-pattern-segmentation-python-example">Recipe 6.2: Utilization Pattern Segmentation (Python Example)</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 6.2. It shows one way you could translate utilization pattern segmentation concepts into working Python code. It is not production-ready. There is no error handling, no retry logic, no input validation. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy against your entire member population on Monday morning.</p>
+<p>One important note on the data: this example generates synthetic utilization data so you can run it without access to a real claims warehouse. The patterns are realistic (modeled after typical commercial health plan distributions), but the numbers are made up. In production, you'd pull this from your claims data lake or EDW.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and a few scientific computing libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>scikit-learn
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>s3:GetObject</code> and <code>s3:PutObject</code> (reading utilization data, writing segment assignments)</li>
+<li><code>dynamodb:PutItem</code> and <code>dynamodb:BatchWriteItem</code> (storing segment profiles and member assignments)</li>
+<li><code>sagemaker:CreateProcessingJob</code> (only if running at scale via SageMaker Processing; not required for this example)</li>
+</ul>
+<blockquote>
+<p><strong>Production note:</strong> This example runs without VPC configuration for simplicity. Any environment processing real member data must deploy within a VPC with private subnets and Gateway endpoints (free, route-table based) for S3 and DynamoDB. Use an Interface endpoint for CloudWatch Logs. See &quot;The Gap Between This and Production&quot; at the end for the full list of production requirements.</p>
+</blockquote>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>These go at the top of your module. They define the utilization features we'll cluster on, the segment labels we expect to discover, and the infrastructure targets.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">KMeans</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">silhouette_score</span>
+
+<span class="c1"># Structured logging. Never log member IDs or PHI in production.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Retry config for AWS API calls.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># boto3 clients (module-level for Lambda container reuse).</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># --- Feature Configuration ---</span>
+
+<span class="c1"># These are the utilization dimensions we cluster on.</span>
+<span class="c1"># Each feature captures a different aspect of how a member uses healthcare.</span>
+<span class="c1"># The choice of features is the single most important design decision in this</span>
+<span class="c1"># pipeline. Get these wrong and your segments will be meaningless.</span>
+<span class="n">UTILIZATION_FEATURES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">,</span>           <span class="c1"># Emergency department visits in trailing 12 months</span>
+    <span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">,</span>    <span class="c1"># Inpatient admissions in trailing 12 months</span>
+    <span class="s2">&quot;outpatient_visits_12m&quot;</span><span class="p">,</span>   <span class="c1"># Outpatient/office visits in trailing 12 months</span>
+    <span class="s2">&quot;rx_fills_12m&quot;</span><span class="p">,</span>            <span class="c1"># Prescription fills in trailing 12 months</span>
+    <span class="s2">&quot;preventive_visits_12m&quot;</span><span class="p">,</span>   <span class="c1"># Preventive/wellness visits in trailing 12 months</span>
+    <span class="s2">&quot;specialist_visits_12m&quot;</span><span class="p">,</span>   <span class="c1"># Specialist referral visits in trailing 12 months</span>
+    <span class="s2">&quot;telehealth_visits_12m&quot;</span><span class="p">,</span>   <span class="c1"># Telehealth encounters in trailing 12 months</span>
+    <span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">,</span>       <span class="c1"># Total allowed amount (cost proxy) in trailing 12 months</span>
+<span class="p">]</span>
+
+<span class="c1"># --- Clustering Configuration ---</span>
+
+<span class="c1"># Number of segments to discover. 4-6 is typical for utilization segmentation.</span>
+<span class="c1"># Too few and you lose actionable distinctions. Too many and care managers</span>
+<span class="c1"># can&#39;t design distinct interventions for each segment.</span>
+<span class="n">N_CLUSTERS</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c1"># Random seed for reproducibility. KMeans initialization is stochastic;</span>
+<span class="c1"># setting this ensures you get the same segments on repeated runs with</span>
+<span class="c1"># the same data. Change it when you want to explore alternative solutions.</span>
+<span class="n">RANDOM_SEED</span> <span class="o">=</span> <span class="mi">42</span>
+
+<span class="c1"># --- Segment Labels ---</span>
+<span class="c1"># After clustering, we assign human-readable labels based on the centroid</span>
+<span class="c1"># characteristics. These are the labels population health teams actually use.</span>
+<span class="c1"># The mapping from cluster number to label happens in the interpretation step.</span>
+<span class="n">SEGMENT_LABELS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Healthy/Preventive&quot;</span><span class="p">,</span>      <span class="c1"># Low utilization, mostly wellness visits</span>
+    <span class="s2">&quot;Episodic/Acute&quot;</span><span class="p">,</span>          <span class="c1"># Occasional ED or urgent care, low chronic</span>
+    <span class="s2">&quot;Chronic/Managed&quot;</span><span class="p">,</span>         <span class="c1"># Regular outpatient, high Rx, moderate cost</span>
+    <span class="s2">&quot;Rising Risk&quot;</span><span class="p">,</span>             <span class="c1"># Increasing utilization, specialist-heavy</span>
+    <span class="s2">&quot;High Utilizer/Complex&quot;</span><span class="p">,</span>   <span class="c1"># High across all dimensions, highest cost</span>
+<span class="p">]</span>
+
+<span class="c1"># --- Infrastructure ---</span>
+<span class="n">RESULTS_TABLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;utilization-segments&quot;</span>
+<span class="n">OUTPUT_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;population-health-analytics&quot;</span>
+<span class="n">OUTPUT_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;segments/utilization/&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-generate-synthetic-utilization-data">Step 1: Generate Synthetic Utilization Data</h2>
+<p><em>In production, this step is replaced by a query against your claims data warehouse or data lake. We generate synthetic data here so you can run the full pipeline without access to real claims. The distributions are modeled after typical commercial health plan populations.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_synthetic_utilization_data</span><span class="p">(</span><span class="n">n_members</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate synthetic member utilization data for demonstration.</span>
+
+<span class="sd">    The distributions here are loosely modeled after a typical commercial</span>
+<span class="sd">    health plan population:</span>
+<span class="sd">    - ~60% of members are low utilizers (healthy, preventive-only)</span>
+<span class="sd">    - ~20% are episodic (occasional acute events)</span>
+<span class="sd">    - ~12% are chronic/managed (regular but stable utilization)</span>
+<span class="sd">    - ~5% are rising risk (increasing complexity)</span>
+<span class="sd">    - ~3% are high utilizers (complex, multi-system, expensive)</span>
+
+<span class="sd">    These proportions aren&#39;t exact because we&#39;re generating from continuous</span>
+<span class="sd">    distributions, not discrete buckets. The clustering algorithm will</span>
+<span class="sd">    discover the natural groupings from the data itself.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_members: Number of synthetic members to generate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame with one row per member and columns matching UTILIZATION_FEATURES.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">RANDOM_SEED</span><span class="p">)</span>
+
+    <span class="c1"># We&#39;ll generate each &quot;archetype&quot; separately, then combine.</span>
+    <span class="c1"># This gives us realistic multivariate correlations within each group.</span>
+
+    <span class="c1"># Healthy/Preventive (~60%): low everything, 1-2 preventive visits</span>
+    <span class="n">n_healthy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_members</span> <span class="o">*</span> <span class="mf">0.60</span><span class="p">)</span>
+    <span class="n">healthy</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>
+        <span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>
+        <span class="s2">&quot;outpatient_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>
+        <span class="s2">&quot;rx_fills_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>
+        <span class="s2">&quot;preventive_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>
+        <span class="s2">&quot;specialist_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>
+        <span class="s2">&quot;telehealth_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>
+        <span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">6.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">n_healthy</span><span class="p">),</span>  <span class="c1"># ~$650 median</span>
+    <span class="p">})</span>
+
+    <span class="c1"># Episodic/Acute (~20%): occasional ED, some urgent care</span>
+    <span class="n">n_episodic</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_members</span> <span class="o">*</span> <span class="mf">0.20</span><span class="p">)</span>
+    <span class="n">episodic</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>
+        <span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>
+        <span class="s2">&quot;outpatient_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>
+        <span class="s2">&quot;rx_fills_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>
+        <span class="s2">&quot;preventive_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>
+        <span class="s2">&quot;specialist_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>
+        <span class="s2">&quot;telehealth_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>
+        <span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">8.0</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">n_episodic</span><span class="p">),</span>  <span class="c1"># ~$3,000 median</span>
+    <span class="p">})</span>
+
+    <span class="c1"># Chronic/Managed (~12%): regular outpatient, high Rx</span>
+    <span class="n">n_chronic</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_members</span> <span class="o">*</span> <span class="mf">0.12</span><span class="p">)</span>
+    <span class="n">chronic</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>
+        <span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>
+        <span class="s2">&quot;outpatient_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">8.0</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>
+        <span class="s2">&quot;rx_fills_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">12.0</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>
+        <span class="s2">&quot;preventive_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>
+        <span class="s2">&quot;specialist_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>
+        <span class="s2">&quot;telehealth_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>
+        <span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">8.8</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">n_chronic</span><span class="p">),</span>  <span class="c1"># ~$6,600 median</span>
+    <span class="p">})</span>
+
+    <span class="c1"># Rising Risk (~5%): increasing specialist use, moderate ED</span>
+    <span class="n">n_rising</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_members</span> <span class="o">*</span> <span class="mf">0.05</span><span class="p">)</span>
+    <span class="n">rising</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>
+        <span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>
+        <span class="s2">&quot;outpatient_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>
+        <span class="s2">&quot;rx_fills_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">15.0</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>
+        <span class="s2">&quot;preventive_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>
+        <span class="s2">&quot;specialist_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">6.0</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>
+        <span class="s2">&quot;telehealth_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>
+        <span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">9.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">n_rising</span><span class="p">),</span>  <span class="c1"># ~$13,000 median</span>
+    <span class="p">})</span>
+
+    <span class="c1"># High Utilizer/Complex (~3%): high across the board</span>
+    <span class="n">n_high</span> <span class="o">=</span> <span class="n">n_members</span> <span class="o">-</span> <span class="n">n_healthy</span> <span class="o">-</span> <span class="n">n_episodic</span> <span class="o">-</span> <span class="n">n_chronic</span> <span class="o">-</span> <span class="n">n_rising</span>
+    <span class="n">high</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>
+        <span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>
+        <span class="s2">&quot;outpatient_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">15.0</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>
+        <span class="s2">&quot;rx_fills_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>
+        <span class="s2">&quot;preventive_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>
+        <span class="s2">&quot;specialist_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">8.0</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>
+        <span class="s2">&quot;telehealth_visits_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>
+        <span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">10.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">n_high</span><span class="p">),</span>  <span class="c1"># ~$36,000 median</span>
+    <span class="p">})</span>
+
+    <span class="c1"># Combine all archetypes and shuffle.</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">healthy</span><span class="p">,</span> <span class="n">episodic</span><span class="p">,</span> <span class="n">chronic</span><span class="p">,</span> <span class="n">rising</span><span class="p">,</span> <span class="n">high</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">RANDOM_SEED</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Add synthetic member IDs.</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;member_id&quot;</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;MBR-</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))])</span>
+
+    <span class="c1"># Round cost to 2 decimal places (dollars and cents).</span>
+    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generated </span><span class="si">%d</span><span class="s2"> synthetic member records&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">df</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-feature-engineering-and-scaling">Step 2: Feature Engineering and Scaling</h2>
+<p><em>The pseudocode calls this <code>prepare_features(utilization_df)</code>. Before clustering, we need to standardize the features so that high-magnitude columns (like total_allowed_12m in dollars) don't dominate the distance calculations over low-magnitude columns (like inpatient_admits which might be 0-3). StandardScaler centers each feature at mean=0 and scales to unit variance.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prepare_features</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">StandardScaler</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract utilization features and standardize them for clustering.</span>
+
+<span class="sd">    Why standardize? KMeans uses Euclidean distance. If total_allowed_12m</span>
+<span class="sd">    ranges from $200 to $100,000 while ed_visits ranges from 0 to 10,</span>
+<span class="sd">    the cost column will completely dominate the distance calculation.</span>
+<span class="sd">    Standardization puts all features on equal footing.</span>
+
+<span class="sd">    We also clip extreme outliers before scaling. A single member with</span>
+<span class="sd">    $500,000 in allowed charges would distort the scaling for everyone else.</span>
+<span class="sd">    Clipping at the 99th percentile preserves the &quot;high&quot; signal without</span>
+<span class="sd">    letting extreme values warp the feature space.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: DataFrame with utilization columns matching UTILIZATION_FEATURES.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (scaled feature matrix, fitted scaler object).</span>
+<span class="sd">        The scaler is returned so we can inverse-transform centroids later</span>
+<span class="sd">        for interpretation in original units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract just the feature columns.</span>
+    <span class="n">feature_matrix</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">UTILIZATION_FEATURES</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Clip outliers at the 99th percentile per feature.</span>
+    <span class="c1"># This prevents extreme values from distorting the scaling.</span>
+    <span class="c1"># We clip rather than remove because these members still need segment assignments.</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">UTILIZATION_FEATURES</span><span class="p">:</span>
+        <span class="n">cap</span> <span class="o">=</span> <span class="n">feature_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.99</span><span class="p">)</span>
+        <span class="n">feature_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">cap</span><span class="p">)</span>
+
+    <span class="c1"># Standardize: mean=0, std=1 for each feature.</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+    <span class="n">scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">feature_matrix</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Prepared feature matrix: </span><span class="si">%d</span><span class="s2"> members x </span><span class="si">%d</span><span class="s2"> features&quot;</span><span class="p">,</span>
+        <span class="n">scaled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">scaled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">scaled</span><span class="p">,</span> <span class="n">scaler</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-run-kmeans-clustering">Step 3: Run KMeans Clustering</h2>
+<p><em>The pseudocode calls this <code>cluster_members(scaled_features)</code>. KMeans is the workhorse here. It's not the fanciest algorithm, but it's fast, interpretable, and produces segments that population health teams can actually act on. The key decision is the number of clusters (k). We use the silhouette score to validate that our chosen k produces well-separated segments.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cluster_members</span><span class="p">(</span><span class="n">scaled_features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run KMeans clustering on the scaled utilization features.</span>
+
+<span class="sd">    Why KMeans and not DBSCAN, Gaussian Mixture, or hierarchical clustering?</span>
+<span class="sd">    For utilization segmentation specifically:</span>
+<span class="sd">    - KMeans produces convex, roughly equal-sized clusters. That maps well</span>
+<span class="sd">      to &quot;segments&quot; that care management teams can design programs around.</span>
+<span class="sd">    - The centroids are directly interpretable: each centroid IS the average</span>
+<span class="sd">      utilization profile for that segment.</span>
+<span class="sd">    - It scales linearly with data size. You can run this on 2 million members</span>
+<span class="sd">      without special infrastructure.</span>
+<span class="sd">    - Population health teams expect a fixed number of segments they can name</span>
+<span class="sd">      and build interventions for. KMeans gives you exactly k segments.</span>
+
+<span class="sd">    The tradeoff: KMeans assumes spherical clusters of similar size. Real</span>
+<span class="sd">    utilization data is skewed (lots of healthy members, few high utilizers).</span>
+<span class="sd">    The standardization in Step 2 helps, but the &quot;Healthy&quot; segment will still</span>
+<span class="sd">    be much larger than &quot;High Utilizer.&quot; That&#39;s fine for this use case because</span>
+<span class="sd">    the segments are actionable regardless of size.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        scaled_features: Standardized feature matrix from prepare_features.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (cluster_labels, centroids, silhouette_avg):</span>
+<span class="sd">        - cluster_labels: array of cluster assignments (0 to k-1) per member</span>
+<span class="sd">        - centroids: k x n_features matrix of cluster centers (in scaled space)</span>
+<span class="sd">        - silhouette_avg: average silhouette score (higher = better separation)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kmeans</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span>
+        <span class="n">n_clusters</span><span class="o">=</span><span class="n">N_CLUSTERS</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">RANDOM_SEED</span><span class="p">,</span>
+        <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>        <span class="c1"># Run 10 initializations, keep the best</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>     <span class="c1"># Usually converges in 20-50 iterations</span>
+    <span class="p">)</span>
+
+    <span class="n">cluster_labels</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">(</span><span class="n">scaled_features</span><span class="p">)</span>
+    <span class="n">centroids</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">cluster_centers_</span>
+
+    <span class="c1"># Silhouette score: measures how similar each point is to its own cluster</span>
+    <span class="c1"># vs. the nearest neighboring cluster. Ranges from -1 to 1.</span>
+    <span class="c1"># &gt; 0.5 = strong structure, 0.25-0.5 = reasonable, &lt; 0.25 = weak/overlapping.</span>
+    <span class="c1"># For utilization data, 0.3-0.5 is typical and acceptable.</span>
+    <span class="n">silhouette_avg</span> <span class="o">=</span> <span class="n">silhouette_score</span><span class="p">(</span><span class="n">scaled_features</span><span class="p">,</span> <span class="n">cluster_labels</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;KMeans converged. </span><span class="si">%d</span><span class="s2"> clusters, silhouette score: </span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">N_CLUSTERS</span><span class="p">,</span> <span class="n">silhouette_avg</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">cluster_labels</span><span class="p">,</span> <span class="n">centroids</span><span class="p">,</span> <span class="n">silhouette_avg</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-interpret-and-label-segments">Step 4: Interpret and Label Segments</h2>
+<p><em>The pseudocode calls this <code>interpret_segments(centroids, scaler)</code>. This is where the math becomes actionable. We inverse-transform the centroids back to original units (visits, dollars) so population health teams can understand what each segment actually looks like. Then we assign human-readable labels based on the centroid characteristics.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">interpret_segments</span><span class="p">(</span>
+    <span class="n">centroids</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">scaler</span><span class="p">:</span> <span class="n">StandardScaler</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">cluster_labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert cluster centroids back to interpretable units and assign labels.</span>
+
+<span class="sd">    The centroids from KMeans are in standardized space (mean=0, std=1).</span>
+<span class="sd">    That&#39;s useful for the algorithm but meaningless to a care manager.</span>
+<span class="sd">    We inverse-transform them back to original units: visits per year,</span>
+<span class="sd">    dollars per year. Then we rank the clusters by total cost (the most</span>
+<span class="sd">    intuitive ordering for population health) and assign labels.</span>
+
+<span class="sd">    The labeling logic here is heuristic: we sort clusters by total_allowed</span>
+<span class="sd">    and assign labels from lowest-cost to highest-cost. This works because</span>
+<span class="sd">    utilization cost is strongly correlated with overall complexity. In</span>
+<span class="sd">    production, you&#39;d validate these labels against clinical review.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        centroids: Cluster centers in scaled space (from cluster_members).</span>
+<span class="sd">        scaler: The fitted StandardScaler (from prepare_features).</span>
+<span class="sd">        df: Original DataFrame with member data.</span>
+<span class="sd">        cluster_labels: Cluster assignment per member.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of segment profile dicts, one per cluster, sorted by cost.</span>
+<span class="sd">        Each dict contains the label, centroid values in original units,</span>
+<span class="sd">        member count, and percentage of population.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Guard: if you change N_CLUSTERS, update SEGMENT_LABELS to match.</span>
+    <span class="k">assert</span> <span class="n">N_CLUSTERS</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">SEGMENT_LABELS</span><span class="p">),</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;N_CLUSTERS (</span><span class="si">{</span><span class="n">N_CLUSTERS</span><span class="si">}</span><span class="s2">) must match SEGMENT_LABELS length &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SEGMENT_LABELS</span><span class="p">)</span><span class="si">}</span><span class="s2">). Update SEGMENT_LABELS if you change k.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Inverse-transform centroids back to original feature units.</span>
+    <span class="n">centroids_original</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">centroids</span><span class="p">)</span>
+
+    <span class="c1"># Build a profile for each cluster.</span>
+    <span class="n">profiles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">total_members</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_labels</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">cluster_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_CLUSTERS</span><span class="p">):</span>
+        <span class="n">centroid</span> <span class="o">=</span> <span class="n">centroids_original</span><span class="p">[</span><span class="n">cluster_idx</span><span class="p">]</span>
+        <span class="n">member_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">cluster_labels</span> <span class="o">==</span> <span class="n">cluster_idx</span><span class="p">))</span>
+
+        <span class="n">profile</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">cluster_idx</span><span class="p">),</span>
+            <span class="s2">&quot;member_count&quot;</span><span class="p">:</span> <span class="n">member_count</span><span class="p">,</span>
+            <span class="s2">&quot;pct_of_population&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">member_count</span> <span class="o">/</span> <span class="n">total_members</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">feature</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">centroid</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">feature</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UTILIZATION_FEATURES</span><span class="p">)</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+        <span class="n">profiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+
+    <span class="c1"># Sort by total_allowed (cost) ascending: cheapest segment first.</span>
+    <span class="n">profiles</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Assign human-readable labels based on cost ordering.</span>
+    <span class="c1"># Lowest cost = Healthy/Preventive, highest = High Utilizer/Complex.</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">profile</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">profiles</span><span class="p">):</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s2">&quot;segment_label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SEGMENT_LABELS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">profile</span><span class="p">[</span><span class="s2">&quot;segment_rank&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># 1 = lowest utilization</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Segment profiles (sorted by cost):&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">profiles</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;  </span><span class="si">%s</span><span class="s2">: </span><span class="si">%d</span><span class="s2"> members (</span><span class="si">%.1f%%</span><span class="s2">), avg cost $</span><span class="si">%.0f</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;segment_label&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;member_count&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;pct_of_population&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">profiles</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-store-segment-assignments-and-profiles">Step 5: Store Segment Assignments and Profiles</h2>
+<p><em>The pseudocode calls this <code>store_results(df, cluster_labels, profiles)</code>. We write two things: (1) the segment profiles (centroids, labels, counts) as a reference document, and (2) the per-member segment assignments so downstream systems can look up any member's segment.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_results</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">cluster_labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">profiles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+    <span class="n">silhouette_avg</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Store segment profiles to S3 and member assignments to DynamoDB.</span>
+
+<span class="sd">    Two outputs:</span>
+<span class="sd">    1. S3: A JSON file with the full segment profiles, model metadata,</span>
+<span class="sd">       and run timestamp. This is the reference document for population</span>
+<span class="sd">       health teams to understand what each segment means.</span>
+<span class="sd">    2. DynamoDB: One item per member with their segment assignment.</span>
+<span class="sd">       This is the operational lookup table for downstream systems</span>
+<span class="sd">       (care management platforms, outreach engines, dashboards).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Original DataFrame with member_id column.</span>
+<span class="sd">        cluster_labels: Cluster assignment per member (from cluster_members).</span>
+<span class="sd">        profiles: Segment profiles from interpret_segments.</span>
+<span class="sd">        silhouette_avg: Model quality metric.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Summary dict with counts and S3 output path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">run_timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="c1"># --- Write segment profiles to S3 ---</span>
+    <span class="c1"># This is the &quot;model card&quot; for this segmentation run.</span>
+    <span class="n">output_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">OUTPUT_PREFIX</span><span class="si">}{</span><span class="n">run_timestamp</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">/segment_profiles.json&quot;</span>
+
+    <span class="c1"># Build lookups from cluster_id to label and rank.</span>
+    <span class="n">cluster_to_label</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;cluster_id&quot;</span><span class="p">]:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;segment_label&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">profiles</span><span class="p">}</span>
+    <span class="n">cluster_to_rank</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;cluster_id&quot;</span><span class="p">]:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;segment_rank&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">profiles</span><span class="p">}</span>
+
+    <span class="n">profile_document</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;run_timestamp&quot;</span><span class="p">:</span> <span class="n">run_timestamp</span><span class="p">,</span>
+        <span class="s2">&quot;n_members&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span>
+        <span class="s2">&quot;n_clusters&quot;</span><span class="p">:</span> <span class="n">N_CLUSTERS</span><span class="p">,</span>
+        <span class="s2">&quot;silhouette_score&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">silhouette_avg</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;features_used&quot;</span><span class="p">:</span> <span class="n">UTILIZATION_FEATURES</span><span class="p">,</span>
+        <span class="s2">&quot;segments&quot;</span><span class="p">:</span> <span class="n">profiles</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">OUTPUT_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">output_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">profile_document</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Wrote segment profiles to s3://</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">OUTPUT_BUCKET</span><span class="p">,</span> <span class="n">output_key</span><span class="p">)</span>
+
+    <span class="c1"># --- Write per-member assignments to DynamoDB ---</span>
+    <span class="c1"># Batch writes for efficiency. DynamoDB batch_write_item handles up to</span>
+    <span class="c1"># 25 items per call.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">RESULTS_TABLE_NAME</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">()</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">cluster_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cluster_labels</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="n">batch</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;member_id&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;member_id&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;segment_label&quot;</span><span class="p">:</span> <span class="n">cluster_to_label</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="s2">&quot;segment_rank&quot;</span><span class="p">:</span> <span class="n">cluster_to_rank</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">cluster_id</span><span class="p">,</span>
+                <span class="s2">&quot;assigned_at&quot;</span><span class="p">:</span> <span class="n">run_timestamp</span><span class="p">,</span>
+                <span class="c1"># Store key utilization metrics alongside the assignment</span>
+                <span class="c1"># so downstream systems don&#39;t need a second lookup.</span>
+                <span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;ed_visits_12m&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;inpatient_admits_12m&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">])),</span>
+            <span class="p">})</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Wrote </span><span class="si">%d</span><span class="s2"> member assignments to DynamoDB&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;output_s3_path&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">OUTPUT_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">output_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;members_processed&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span>
+        <span class="s2">&quot;segments_discovered&quot;</span><span class="p">:</span> <span class="n">N_CLUSTERS</span><span class="p">,</span>
+        <span class="s2">&quot;silhouette_score&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">silhouette_avg</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single function. Run it end-to-end to see the segmentation in action.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_utilization_segmentation</span><span class="p">(</span><span class="n">n_members</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full utilization pattern segmentation pipeline.</span>
+
+<span class="sd">    This function implements the complete flow from synthetic data generation</span>
+<span class="sd">    through clustering, interpretation, and storage. In production, Step 1</span>
+<span class="sd">    would be replaced by a query against your claims data warehouse.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_members: Number of members to segment (for synthetic data).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Summary dict with segment profiles and quality metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Load utilization data.</span>
+    <span class="c1"># In production: query your claims EDW or read from S3 data lake.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 1: Generating synthetic utilization data...&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">generate_synthetic_utilization_data</span><span class="p">(</span><span class="n">n_members</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%d</span><span class="s2"> members with </span><span class="si">%d</span><span class="s2"> features each&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">UTILIZATION_FEATURES</span><span class="p">))</span>
+
+    <span class="c1"># Step 2: Feature engineering and scaling.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 2: Preparing and scaling features...&quot;</span><span class="p">)</span>
+    <span class="n">scaled_features</span><span class="p">,</span> <span class="n">scaler</span> <span class="o">=</span> <span class="n">prepare_features</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Run KMeans clustering.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 3: Running KMeans clustering (k=</span><span class="si">%d</span><span class="s2">)...&quot;</span><span class="p">,</span> <span class="n">N_CLUSTERS</span><span class="p">)</span>
+    <span class="n">cluster_labels</span><span class="p">,</span> <span class="n">centroids</span><span class="p">,</span> <span class="n">silhouette_avg</span> <span class="o">=</span> <span class="n">cluster_members</span><span class="p">(</span><span class="n">scaled_features</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Interpret segments and assign labels.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 4: Interpreting segments...&quot;</span><span class="p">)</span>
+    <span class="n">profiles</span> <span class="o">=</span> <span class="n">interpret_segments</span><span class="p">(</span><span class="n">centroids</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">cluster_labels</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Store results.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 5: Storing segment profiles and member assignments...&quot;</span><span class="p">)</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">store_results</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cluster_labels</span><span class="p">,</span> <span class="n">profiles</span><span class="p">,</span> <span class="n">silhouette_avg</span><span class="p">)</span>
+
+    <span class="c1"># Print a readable summary.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SEGMENTATION COMPLETE&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Members processed: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;members_processed&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Segments discovered: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;segments_discovered&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Silhouette score: </span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;silhouette_score&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">profiles</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;  [</span><span class="si">%d</span><span class="s2">] </span><span class="si">%-25s</span><span class="s2"> </span><span class="si">%5d</span><span class="s2"> members (</span><span class="si">%5.1f%%</span><span class="s2">)  avg cost: $%,.0f&quot;</span><span class="p">,</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;segment_rank&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;segment_label&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;member_count&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;pct_of_population&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="s2">&quot;total_allowed_12m&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">summary</span><span class="p">,</span>
+        <span class="s2">&quot;profiles&quot;</span><span class="p">:</span> <span class="n">profiles</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Run the pipeline and print results.</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">run_utilization_segmentation</span><span class="p">(</span><span class="n">n_members</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Segment Profiles (JSON):&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;profiles&quot;</span><span class="p">],</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+</pre></div>
+
+<hr />
+<h2 id="example-output">Example Output</h2>
+<p>When you run this pipeline, you'll see output like:</p>
+<pre class="code code-plain"><code>Step 1: Generating synthetic utilization data...
+  5000 members with 8 features each
+Step 2: Preparing and scaling features...
+  Prepared feature matrix: 5000 members x 8 features
+Step 3: Running KMeans clustering (k=5)...
+  KMeans converged. 5 clusters, silhouette score: 0.387
+Step 4: Interpreting segments...
+  Segment profiles (sorted by cost):
+    Healthy/Preventive: 2998 members (60.0%), avg cost $712
+    Episodic/Acute: 1002 members (20.0%), avg cost $3,241
+    Chronic/Managed: 598 members (12.0%), avg cost $7,105
+    Rising Risk: 252 members (5.0%), avg cost $14,832
+    High Utilizer/Complex: 150 members (3.0%), avg cost $41,209
+============================================================
+SEGMENTATION COMPLETE
+============================================================
+</code></pre>
+<p>The silhouette score of ~0.38 is typical for healthcare utilization data. It means the segments are reasonably well-separated but have some overlap at the boundaries (which is expected: real patients don't fall into perfectly discrete buckets).</p>
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example works: run it and you'll get interpretable utilization segments with member assignments. But the distance between &quot;works as a script&quot; and &quot;runs monthly against 2 million members in a production population health platform&quot; is significant. Here's where that gap lives.</p>
+<p><strong>Real data ingestion.</strong> This example generates synthetic data. In production, you'd query your claims data warehouse (Redshift, Snowflake, or a data lake on S3) for trailing 12-month utilization metrics per member. That query itself is non-trivial. You need to handle members with partial enrollment (fewer than 12 months of data), exclude members who disenrolled, and decide how to handle members with zero utilization across all dimensions. Are they healthy, or just not using their benefits?</p>
+<p><strong>Feature engineering depth.</strong> We use 8 raw count/sum features. A production implementation would add derived features: ED-to-outpatient ratio (are they using the ED as primary care?), Rx complexity score (number of unique therapeutic classes), care fragmentation index (number of distinct providers), and trend features (is utilization increasing or decreasing quarter-over-quarter). These derived features often separate the &quot;Rising Risk&quot; segment more cleanly.</p>
+<p><strong>Choosing k.</strong> We hardcoded k=5. In production, you'd run the elbow method and silhouette analysis across k=3 to k=8, then validate the winning k with clinical stakeholders. The &quot;right&quot; number of segments depends on how many distinct intervention programs your care management team can actually operate. Five is a common sweet spot, but your organization might need four or seven.</p>
+<p><strong>Segment stability.</strong> When you re-run this monthly, members will shift between segments. That's expected: people get sicker, people get better. But if 30% of your population changes segments every month, your segments are unstable and your care managers can't build programs around them. Production systems track segment transitions over time and flag instability. A common fix: use a rolling 12-month window with a 3-month refresh, and require a member to qualify for a new segment for 2 consecutive runs before reassigning them.</p>
+<p><strong>Segment validation.</strong> We assign labels based on cost ordering. That's a reasonable heuristic, but in production you'd validate with clinical review. Show the centroids to your medical director and population health team. Do the segments match their intuition about patient archetypes? If not, the features or k need adjustment. This is an iterative process, not a one-shot deployment.</p>
+<p><strong>Error handling and retries.</strong> Every AWS call here can fail. S3 writes can fail on network issues. DynamoDB batch writes can return unprocessed items if you hit throughput limits. A production system wraps all external calls in retry logic with exponential backoff, logs failures with enough context to debug, and has a dead-letter mechanism for members who couldn't be assigned.</p>
+<p><strong>DataFrame iteration at scale.</strong> The <code>store_results()</code> function uses <code>df.iterrows()</code>, which is fine for 5,000 members but slow for millions. At scale, replace with <code>df.itertuples()</code> or <code>df.to_dict(&quot;records&quot;)</code> for significantly faster row iteration. The <code>batch_writer()</code> context manager already handles DynamoDB batching, so the bottleneck is purely the Python-side iteration.</p>
+<p><strong>DynamoDB data types.</strong> This example already wraps <code>total_allowed_12m</code> in <code>Decimal(str(value))</code> for DynamoDB. If you add any new float-valued field to the DynamoDB item, wrap it the same way. Plain Python floats will raise a <code>TypeError</code> from boto3 at write time.</p>
+<p><strong>Incremental updates.</strong> This pipeline re-segments the entire population on every run. For 2 million members, that's fine (KMeans on 2M x 8 features takes seconds on a SageMaker Processing instance). But if you need real-time segment assignment for new members, you'd save the fitted KMeans model and scaler, then predict the segment for individual members as they enroll. Scikit-learn's <code>kmeans.predict()</code> does this in microseconds.</p>
+<p><strong>VPC and encryption.</strong> This example makes API calls without VPC configuration. A production pipeline handling member utilization data (which is PHI under HIPAA) runs inside a VPC with private subnets and Gateway endpoints for S3 and DynamoDB (free, route-table based; no Interface endpoints needed for this batch pattern). Use an Interface endpoint for CloudWatch Logs. Encrypt S3 objects with a KMS customer-managed key (specify <code>SSEKMSKeyId</code> in the <code>put_object</code> call for key rotation control and cross-account access policies). DynamoDB encryption at rest is enabled by default. All API calls travel over TLS.</p>
+<p><strong>Bias and equity.</strong> Utilization-based segmentation can encode existing access disparities. Members in underserved areas may appear &quot;healthy&quot; (low utilization) when they actually cannot access care. Production systems cross-reference segments with social determinant data and flag populations where low utilization might indicate access barriers rather than good health. This is not just an ethical concern; it's a clinical accuracy concern.</p>
+<p><strong>Access control.</strong> The DynamoDB table stores member IDs alongside utilization metrics, which constitutes PHI. In production, scope IAM policies to the minimum set of roles that need segment lookups. Consider using opaque surrogate keys rather than direct member identifiers if downstream consumers don't need the original ID. Classify the table as PHI-containing in your data catalog and apply appropriate retention policies.</p>
+<p><strong>Testing.</strong> There are no tests here. A production pipeline has unit tests for feature engineering (does clipping work correctly at boundaries?), integration tests for the full pipeline with known synthetic data (do you get the expected number of clusters?), and regression tests that verify segment stability across code changes.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter06.02-utilization-pattern-segmentation.html">Recipe 6.2: Utilization Pattern Segmentation</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

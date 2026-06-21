@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 2.10 Architecture and Implementation: Multi-Modal Clinical Reasoning</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested nav-active" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-210-architecture-and-implementation-multi-modal-clinical-reasoning">Recipe 2.10 Architecture and Implementation: Multi-Modal Clinical Reasoning</h1>
+<p><em>Companion to <a href="chapter02.10-multi-modal-clinical-reasoning.html">Recipe 2.10: Multi-Modal Clinical Reasoning</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Bedrock for the reasoning layer.</strong> A capable generation model (Claude Sonnet or equivalent) handles the multi-hypothesis reasoning and synthesis. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, modality inventory summarization, and retrieval planning. Bedrock is the right fit because the workload needs grounded generation with structured output and because it is HIPAA-eligible under AWS BAA.</p>
+<p><strong>Amazon Bedrock Guardrails for contextual grounding enforcement.</strong> Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.</p>
+<p><strong>Amazon HealthLake for the FHIR-native patient context.</strong> HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.</p>
+<p><strong>Amazon HealthImaging for DICOM management.</strong> HealthImaging is a HIPAA-eligible, purpose-built store for medical imaging. For a pipeline that needs to reference prior imaging, retrieve current imaging metadata, and link from the reasoning output back to the source study, HealthImaging is the right imaging-native layer. The reasoning pipeline itself typically does not perform direct pixel interpretation; it uses HealthImaging metadata and the radiology report for text-based reasoning, and deep-links back to the study in the PACS viewer for clinician review.</p>
+<p><strong>Amazon Transcribe Medical or Amazon HealthScribe when audio-derived content is in scope.</strong> For pipelines that include the conversational-context modality (the clinician's current encounter), Transcribe Medical or HealthScribe produces the transcript. This is less common in a point-of-care reasoning pipeline but applies in ambient-documentation-plus-reasoning architectures.</p>
+<p><strong>Amazon Comprehend Medical for entity extraction and ontology mapping.</strong> Notes, radiology reports, pathology reports, ECG reports all benefit from entity extraction with mapping to RxNorm, ICD-10, SNOMED, and RadLex where applicable. The resulting structured records are easier to reason over and easier to cite.</p>
+<p><strong>Amazon SageMaker for specialized modality models when needed.</strong> Cleared or institutional-custom models for imaging AI (if not using a cleared vendor's hosted service), ECG foundation models (if institutionally deployed rather than vendor-hosted), and pathology foundation models run on SageMaker Endpoints. These are optional; many deployments use vendor-hosted modality AI.</p>
+<p><strong>Amazon OpenSearch Service for guideline retrieval and the case-analog corpus.</strong> Hybrid search (vector plus BM25 plus metadata filters) works well for guideline retrieval, prior imaging reports, and institutional protocol content. For the case-analog corpus, where retrieval queries can include structured facets (similar lab patterns, similar demographic profile, similar imaging findings), OpenSearch's combination of dense retrieval and filter expressions is a good fit.</p>
+<p><strong>Amazon Aurora PostgreSQL with pgvector for structured drug data and derived features.</strong> Interactions, contraindications, renal dosing, drug-disease interactions: these stay in Aurora exactly as in Recipe 2.9.</p>
+<p><strong>Amazon S3 for modality artifacts, per-run archives, and corpus.</strong> Imaging report text, ECG report text, pathology report text, retrieval traces, the per-reasoning-run archive. Each modality's artifacts with source metadata. SSE-KMS with customer-managed keys. Lifecycle rules per institutional retention policy.</p>
+<p><strong>AWS Step Functions for orchestration.</strong> The reasoning pipeline has parallel modality ingestion, sequential reasoning-and-validation, branching for retry and human-review routing. Step Functions makes the flow visible, resumable, and debuggable.</p>
+<p><strong>AWS Lambda for per-stage logic.</strong> Each ingestion stage, the normalization layer, the modality inventory, the scope gate, the reasoning-layer call, the validation layer, the rendering layer, the archival stage. Lambda is the default compute; SageMaker Endpoints for long-running modality inference when applicable.</p>
+<p><strong>Amazon DynamoDB for per-run metadata and the clinician engagement log.</strong> Reasoning run identifier, patient identifier, encounter identifier, clinician identifier, status, links to S3 artifacts, links to the rendered output, clinician interaction log.</p>
+<p><strong>Amazon EventBridge for clinical triggers and scheduled retraining.</strong> New ED presentation, new admission, new imaging study finalized, new lab result crossing a clinical threshold, clinician-requested reasoning: all can route through EventBridge.</p>
+<p><strong>Amazon API Gateway with Amazon Cognito for the clinician-facing API.</strong> SMART on FHIR where the EHR supports it. CDS Hooks for specific workflow points. Standard REST for direct calls.</p>
+<p><strong>AWS Secrets Manager for external API credentials.</strong> Drug databases, FHIR endpoints, cleared imaging AI vendor APIs, ECG foundation model APIs, formulary services.</p>
+<p><strong>AWS CloudTrail, Amazon CloudWatch, and Amazon CloudWatch Logs for audit and monitoring.</strong> Every service call, every Bedrock invocation, every storage access, every validation outcome. Metrics on latency, validation pass rates, clinician engagement, cross-modality consistency failures, scope-gate denials, and the counts that matter for regulatory evidence.</p>
+<p><strong>AWS KMS for encryption.</strong> Customer-managed keys with per-modality policies where retention and access differ.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    subgraph Triggers[Triggering]
+        T1[Clinical Event&lt;br/&gt;Admission, Imaging, Lab] --&gt; T2[EventBridge]
+        T3[Clinician Request&lt;br/&gt;via EHR or UI] --&gt; T4[API Gateway + Cognito]
+        T2 --&gt; SF
+        T4 --&gt; SF
+    end
+
+    subgraph Ingest[Parallel Modality Ingestion]
+        SF[Step Functions&lt;br/&gt;Reasoning Pipeline] --&gt; I1[Lambda&lt;br/&gt;FHIR Patient Context]
+        SF --&gt; I2[Lambda&lt;br/&gt;Imaging Report + Cleared AI]
+        SF --&gt; I3[Lambda&lt;br/&gt;ECG Interpretation]
+        SF --&gt; I4[Lambda&lt;br/&gt;Pathology Report]
+        SF --&gt; I5[Lambda&lt;br/&gt;Lab Trends + Vitals]
+        SF --&gt; I6[Lambda&lt;br/&gt;Clinical Notes]
+        I1 --&gt; HL[HealthLake&lt;br/&gt;FHIR Store]
+        I2 --&gt; HI[HealthImaging&lt;br/&gt;DICOM + Metadata]
+        I2 --&gt; SM1[SageMaker Endpoint&lt;br/&gt;Cleared Imaging AI - optional]
+        I3 --&gt; SM2[SageMaker Endpoint&lt;br/&gt;ECG Model - optional]
+        I4 --&gt; PACS[Pathology System&lt;br/&gt;Reports]
+        I5 --&gt; HL
+        I6 --&gt; HL
+        I6 --&gt; CM[Comprehend Medical&lt;br/&gt;Entities + Ontologies]
+    end
+
+    subgraph Reason[Reasoning Flow]
+        I1 --&gt; N[Lambda&lt;br/&gt;Normalize + Annotate]
+        I2 --&gt; N
+        I3 --&gt; N
+        I4 --&gt; N
+        I5 --&gt; N
+        I6 --&gt; N
+        N --&gt; INV[Lambda&lt;br/&gt;Modality Inventory + Scope Gate]
+        INV --&gt; GATE{In&lt;br/&gt;Scope?}
+        GATE --&gt;|No| LX[Log and Exit]
+        GATE --&gt;|Yes| PAR[Parallel]
+        PAR --&gt; SAFE[Lambda&lt;br/&gt;Deterministic Safety Checks]
+        PAR --&gt; RET[Lambda&lt;br/&gt;Multi-Source Retrieval]
+        SAFE --&gt; AUR[Aurora&lt;br/&gt;Drug Interactions, Dosing]
+        RET --&gt; OS[OpenSearch&lt;br/&gt;Guidelines, Protocols,&lt;br/&gt;Case Analogs]
+        SAFE --&gt; PROMPT[Lambda&lt;br/&gt;Build Reasoning Prompt]
+        RET --&gt; PROMPT
+        PROMPT --&gt; GEN[Bedrock + Guardrails&lt;br/&gt;Reasoning Model]
+        GEN --&gt; VAL[Lambda&lt;br/&gt;Validation:&lt;br/&gt;Cites, Numbers, Consistency]
+        VAL --&gt; RCHK{Pass?}
+        RCHK --&gt;|Yes| TIER[Lambda&lt;br/&gt;Tiering + Suppression]
+        RCHK --&gt;|No, retries left| GEN
+        RCHK --&gt;|No, retries exhausted| HRQ[Human Review Queue]
+        HRQ --&gt; HRS[S3 + DynamoDB&lt;br/&gt;Review Queue Archive&lt;br/&gt;Not Delivered to Clinician UI]
+        TIER --&gt; DYN[DynamoDB&lt;br/&gt;Per-Patient History]
+        TIER --&gt; REND[Lambda&lt;br/&gt;Render]
+        REND --&gt; ARCH[S3 + DynamoDB&lt;br/&gt;Archive + Provenance]
+        REND --&gt; UI[Return to Clinician UI]
+    end
+
+    UI --&gt; E1[Clinician Engagement&lt;br/&gt;Viewed, Accepted, Rejected]
+    E1 --&gt; E2[DynamoDB Feedback Store]
+    E2 --&gt; E3[CloudWatch Metrics + Analytics]
+
+    style GEN fill:#ff9,stroke:#333
+    style VAL fill:#f99,stroke:#333
+    style SAFE fill:#9f9,stroke:#333
+    style INV fill:#ffb,stroke:#333
+    style ARCH fill:#f9f,stroke:#333
+    style HRQ fill:#f99,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Bedrock, Amazon Bedrock Guardrails, Amazon HealthLake, Amazon HealthImaging, Amazon Comprehend Medical, Amazon OpenSearch Service (or Serverless), Amazon Aurora PostgreSQL with pgvector, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon EventBridge, Amazon API Gateway, Amazon Cognito, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, AWS KMS. Amazon SageMaker for self-hosted modality models (imaging, ECG, pathology foundation models) where vendor-hosted options do not apply. Amazon Transcribe Medical or Amazon HealthScribe when conversational context is an input modality.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td><code>bedrock:InvokeModel</code>, <code>bedrock:ApplyGuardrail</code>, <code>healthlake:ReadResource</code>, <code>healthlake:SearchWithGet</code>, <code>medical-imaging:GetImageSetMetadata</code>, <code>medical-imaging:SearchImageSets</code>, <code>medical-imaging:GetDICOMImportJob</code>, <code>comprehendmedical:DetectEntitiesV2</code>, <code>comprehendmedical:InferRxNorm</code>, <code>comprehendmedical:InferICD10CM</code>, <code>comprehendmedical:InferSNOMEDCT</code>, <code>es:ESHttpPost</code> and <code>es:ESHttpGet</code> for OpenSearch, <code>rds-data:ExecuteStatement</code> for Aurora Data API (or credentials via Secrets Manager), <code>sagemaker:InvokeEndpoint</code> for hosted modality models, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:Query</code>, <code>states:StartExecution</code>, <code>events:PutEvents</code>, <code>secretsmanager:GetSecretValue</code>, <code>kms:Decrypt</code>, <code>kms:GenerateDataKey</code>. Scope each action to specific resource ARNs.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Every service in the pipeline must be HIPAA-eligible under the BAA. Patient context, imaging metadata, ECG interpretations, and the reasoning output itself all contain PHI.</td>
+</tr>
+<tr>
+<td><strong>Regulatory Determination</strong></td>
+<td>Required before pilot deployment. Document the intended scope of use, the FDA CDS exemption analysis (the four criteria), the design decisions that support clinician independent review, the source transparency posture, the clinician review workflow, the validation plan. If the determination concludes the product is a medical device, the development path changes materially (FDA submission, validation studies, labeling, post-market surveillance under the quality system regulation). Retain documentation for either outcome. Involve regulatory affairs and legal at design time.</td>
+</tr>
+<tr>
+<td><strong>Source Licensing</strong></td>
+<td>Guidelines, drug databases, and institutional protocol content each have their own licensing posture (per Recipe 2.9). Imaging-AI vendor outputs are typically covered under the vendor contract and have specific redistribution and retention terms. Cleared models must stay within the cleared use scope. Maintain a license registry and enforce constraints in the rendering and retention layers.</td>
+</tr>
+<tr>
+<td><strong>Bedrock Model Access</strong></td>
+<td>Request access to a strong generation model (Claude Sonnet or equivalent) for the reasoning layer and a cheaper model (Claude Haiku or Nova Lite) for auxiliary tasks. Evaluate the chosen generation model against representative reasoning scenarios with clinician-reviewed gold answers before pilot deployment.</td>
+</tr>
+<tr>
+<td><strong>Modality AI Vendor Decisions</strong></td>
+<td>Cleared imaging AI vendors produce structured outputs for specific imaging modalities and findings (Aidoc, Viz.ai, RapidAI, others for specific indications). Contracts usually include workflow integration, API access, and retention terms. Evaluate each before commitment; verify FDA clearance for the intended use; verify performance data in your patient population; confirm integration complexity. Non-cleared models (including many vision-language models) have a different regulatory posture and should not be used for diagnostic impression generation without explicit regulatory review.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3 (modality artifacts, per-run archives, corpus): SSE-KMS with customer-managed keys, distinct keys per modality if retention policies differ. DynamoDB: encryption at rest with CMK. OpenSearch: encryption at rest and in transit, fine-grained access control, no public endpoint. Aurora: encryption at rest, TLS in transit. HealthLake and HealthImaging: encryption at rest with CMK. Bedrock and Comprehend Medical: TLS in transit. Bedrock model-invocation logging (if enabled) contains PHI; log destinations must be encrypted to the same standard as the archive.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambda in private subnets with interface endpoints for Bedrock (Runtime and Guardrails), Comprehend Medical, HealthLake, HealthImaging, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch (monitoring), and EventBridge. Gateway endpoints for S3 and DynamoDB. If API Gateway is configured as a private REST API (recommended for EHR-internal clinician-facing endpoints), add the <code>execute-api</code> interface endpoint. Aurora and OpenSearch in VPC with security groups restricted to the Lambda execution role. SageMaker Endpoints in VPC if used. Factor interface endpoint costs into the cost estimate.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events for Bedrock invocations, S3 object access, DynamoDB access, HealthLake reads, HealthImaging reads, SageMaker endpoint invocations, and Secrets Manager retrievals. Correlate each reasoning run to the requesting clinician and the patient identifier via Cognito session claims.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Development: synthetic FHIR bundles (Synthea), open guideline content (USPSTF, CDC, HHS, open society guidelines), open imaging report corpora (MIMIC-CXR reports are a common starting point), open ECG data (PhysioNet datasets). Never use real PHI in dev. Evaluation: curated case-scenario-to-reasoning-output pairs reviewed by clinical domain experts; these are expensive to assemble and essential for meaningful validation.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Per-run cost varies substantially with scenario complexity and modalities in scope. Typical ranges: patient context fetch plus normalization $0.01-$0.03; modality ingestion $0.02-$0.15 (cleared imaging AI calls and foundation model calls dominate when enabled); deterministic safety checks $0.005-$0.02; retrieval $0.02-$0.08; reasoning layer $0.15-$2.50 (depends heavily on context size and model choice; multi-modal reasoning contexts can be large); validation $0.02-$0.10. End-to-end: $0.40-$4.00 per run for typical focused scenarios. Broad scenarios with multi-year longitudinal context plus validator retries can exceed the top of that range; budget $5-$8 per run for worst-case comprehensive reasoning. At 300 runs per day in a focused deployment, variable cost runs $120-$1,200/day. Fixed infrastructure (OpenSearch cluster, Aurora, HealthLake baseline, HealthImaging baseline, optional SageMaker Endpoints) adds $1,000-$5,000/month depending on scale and optional modality models.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Bedrock (reasoning)</strong></td>
+<td>Multi-hypothesis reasoning with a capable generation model; auxiliary tasks with a cheaper model</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock (embeddings)</strong></td>
+<td>Titan or Cohere embeddings for guideline and case-analog indexing</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Guardrails</strong></td>
+<td>Contextual grounding enforcement on the reasoning output; content filters; PII policies</td>
+</tr>
+<tr>
+<td><strong>Amazon HealthLake</strong></td>
+<td>FHIR-native store for structured patient context</td>
+</tr>
+<tr>
+<td><strong>Amazon HealthImaging</strong></td>
+<td>HIPAA-eligible DICOM store with imaging metadata access for reasoning pipelines</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Entity extraction and ontology mapping (RxNorm, ICD-10, SNOMED) for notes, radiology reports, pathology reports, ECG reports</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Service</strong></td>
+<td>Hybrid retrieval of guidelines, institutional protocols, and case analogs</td>
+</tr>
+<tr>
+<td><strong>Amazon Aurora PostgreSQL + pgvector</strong></td>
+<td>Structured drug data (interactions, dosing, contraindications) with vector search for associated prose</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Endpoints (optional)</strong></td>
+<td>Self-hosted modality models (imaging, ECG, pathology foundation models) when vendor-hosted options do not apply</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Modality artifacts, per-run archives, retrieval traces, corpus storage</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Per-stage pipeline logic for ingestion, reasoning, validation, rendering, archival</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Reasoning pipeline orchestration with parallel modality ingestion and sequential reasoning and validation</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Per-run metadata, per-patient reasoning history, clinician engagement tracking</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Clinical-event triggers and scheduled operations</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway + Cognito</strong></td>
+<td>Authenticated clinician-facing API (SMART on FHIR if EHR-launched; CDS Hooks for workflow integration)</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Credentials for FHIR endpoints, drug databases, cleared imaging AI vendors, ECG model APIs, formulary services</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Encryption key management with distinct keys per modality and per data class</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch + CloudTrail</strong></td>
+<td>Operational metrics, HIPAA audit logs, regulatory evidence trail</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Trigger and orchestrate.</strong> The pipeline starts from a clinical event or a clinician request. The first step creates the reasoning run record and prepares to kick off parallel modality ingestion.</p>
+<pre class="code code-plain"><code>FUNCTION start_reasoning_run(trigger):
+    // trigger.type: &quot;ed_presentation&quot;, &quot;admission&quot;, &quot;oncology_treatment_planning&quot;,
+    //               &quot;clinician_request&quot;, etc.
+    // trigger.patient_id: FHIR Patient ID
+    // trigger.encounter_id: FHIR Encounter ID (when applicable)
+    // trigger.scenario: scoped scenario name for the reasoning
+    // trigger.clinician_id: Cognito user ID for audit trail
+
+    run_id = generate UUID
+
+    // Write the run record early for traceability
+    write to DynamoDB table &quot;mm-reasoning-runs&quot;:
+        run_id         = run_id
+        trigger_type   = trigger.type
+        scenario       = trigger.scenario
+        patient_id     = trigger.patient_id
+        encounter_id   = trigger.encounter_id
+        clinician_id   = trigger.clinician_id
+        status         = &quot;INITIATED&quot;
+        initiated_at   = current UTC timestamp
+
+    // Kick off Step Functions execution; the state machine handles parallel ingestion
+    start Step Functions execution:
+        state_machine_arn = MM_REASONING_STATE_MACHINE_ARN
+        name              = run_id
+        input             = {
+            run_id: run_id,
+            trigger: trigger,
+            scenario: trigger.scenario
+        }
+
+    RETURN { run_id: run_id }
+</code></pre>
+<p><strong>Step 2: Parallel modality ingestion.</strong> Each modality's ingestion runs as an independent Lambda invocation. The inventory of what was successfully ingested and what failed flows into the next stage.</p>
+<pre class="code code-plain"><code>FUNCTION ingest_imaging(run_id, patient_id, scenario):
+
+    // Determine which imaging studies are relevant for this scenario and patient
+    imaging_studies = list_relevant_imaging(patient_id, scenario)
+    // For ED presentation: current encounter&#x27;s imaging plus most recent prior
+    // For oncology planning: staging studies plus most recent restaging
+
+    imaging_records = empty list
+
+    FOR each study in imaging_studies:
+        // Pull the imaging metadata from HealthImaging
+        metadata = call HealthImaging.GetImageSetMetadata:
+            datastore_id = HEALTHIMAGING_DATASTORE_ID
+            image_set_id = study.image_set_id
+
+        // Pull the radiology report from HealthLake or the report system
+        // Reports are typically DocumentReference resources in FHIR
+        report = call HealthLake.SearchResources:
+            resource_type = &quot;DocumentReference&quot;
+            filter        = { subject: patient_id,
+                              study_instance_uid: metadata.study_instance_uid,
+                              category: &quot;radiology-report&quot; }
+
+        // Extract structured content from the report
+        report_entities = call ComprehendMedical.DetectEntitiesV2(report.content)
+        radlex_mapped   = map_radlex(report_entities) if applicable
+
+        // If a cleared imaging AI vendor has output for this study, retrieve it
+        cleared_ai_outputs = empty list
+        IF scenario_requires_cleared_ai(scenario, metadata.modality):
+            vendor_output = call imaging_ai_vendor.get_result:
+                study_uid = metadata.study_instance_uid
+            // vendor_output is a structured result: e.g., PE probability + localization
+            IF vendor_output is present:
+                append {
+                    finding_type: vendor_output.finding_type,
+                    probability: vendor_output.probability,
+                    localization: vendor_output.localization,
+                    vendor_name: vendor_output.vendor_name,
+                    clearance_info: vendor_output.clearance,
+                    study_uid: metadata.study_instance_uid,
+                    timestamp: vendor_output.produced_at
+                } to cleared_ai_outputs
+
+        append {
+            modality_type: &quot;imaging&quot;,
+            study_modality: metadata.modality,        // CT, MR, CR, etc.
+            study_description: metadata.study_description,
+            study_date: metadata.study_date,
+            study_uid: metadata.study_instance_uid,
+            report_text: report.content,
+            report_entities: report_entities,
+            radlex_mapped: radlex_mapped,
+            cleared_ai_outputs: cleared_ai_outputs,
+            pacs_deep_link: build_pacs_deep_link(metadata),
+            source_id: f&quot;imaging:{metadata.study_instance_uid}&quot;
+        } to imaging_records
+
+    RETURN imaging_records
+</code></pre>
+<pre class="code code-plain"><code>FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
+
+    // ECGs are typically referenced as Observation or DocumentReference in FHIR
+    ecg_records_fhir = call HealthLake.SearchResources:
+        resource_type = &quot;Observation&quot;
+        filter        = { subject: patient_id,
+                          code: LOINC_ECG_STUDY_REPORT,
+                          date: recent_window_for_scenario(scenario) }
+
+    ecg_records = empty list
+    FOR each ecg in ecg_records_fhir:
+        // Extract the machine interpretation
+        machine_interp = extract_ecg_machine_interpretation(ecg)
+
+        // Extract the human over-read if available
+        overread = extract_ecg_overread(ecg)
+
+        // Extract key numeric parameters
+        hr   = extract_component(ecg, &quot;heart-rate&quot;)
+        qtc  = extract_component(ecg, &quot;qtc-interval&quot;)
+        qrs  = extract_component(ecg, &quot;qrs-duration&quot;)
+        axis = extract_component(ecg, &quot;qrs-axis&quot;)
+
+        // Optional: call ECG foundation model for additional interpretation
+        foundation_model_output = empty dict
+        IF scenario_requires_ecg_foundation_model(scenario):
+            // Assumes the waveform is accessible via some reference;
+            // real deployment pulls the waveform from an ECG management system
+            // and calls a cleared or research-grade endpoint
+            foundation_model_output = call SageMaker.InvokeEndpoint:
+                endpoint_name = ECG_FOUNDATION_MODEL_ENDPOINT
+                body          = { waveform_reference: ecg.derived_from_reference }
+
+        append {
+            modality_type: &quot;ecg&quot;,
+            ecg_date: ecg.effective_date_time,
+            machine_interpretation: machine_interp,
+            clinician_overread: overread,
+            hr: hr,
+            qtc: qtc,
+            qrs: qrs,
+            axis: axis,
+            foundation_model_output: foundation_model_output,
+            source_id: f&quot;ecg:{ecg.id}&quot;,
+            deep_link: build_ecg_deep_link(ecg)
+        } to ecg_records
+
+    RETURN ecg_records
+</code></pre>
+<pre class="code code-plain"><code>FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
+
+    // The scenario determines which labs matter; pull a generous set to start
+    scenario_loincs = lab_loincs_for_scenario(scenario)
+
+    labs_by_loinc = dict
+    FOR each loinc in scenario_loincs:
+        observations = call HealthLake.SearchResources:
+            resource_type = &quot;Observation&quot;
+            filter        = { subject: patient_id,
+                              code: loinc,
+                              date: &quot;ge&quot; + months_ago(24) }
+        // Sort by effective datetime ascending
+        sorted_obs = sort_asc(observations, by=&quot;effective_date_time&quot;)
+        labs_by_loinc[loinc] = sorted_obs
+
+    // Compute derived trend features per scenario-relevant lab
+    lab_trends = dict
+    FOR each loinc, obs_list in labs_by_loinc:
+        IF length(obs_list) &gt;= 2:
+            lab_trends[loinc] = {
+                current_value: obs_list[-1].value,
+                current_date: obs_list[-1].effective_date_time,
+                prior_value: obs_list[-2].value,
+                prior_date: obs_list[-2].effective_date_time,
+                delta_value: obs_list[-1].value - obs_list[-2].value,
+                delta_percent: percent_change(obs_list[-2].value, obs_list[-1].value),
+                trend_slope: compute_slope(obs_list),   // over last 90 days
+                classification: classify_trend(obs_list),  // stable, rising, falling, volatile
+                baseline_if_known: derive_baseline(obs_list)
+            }
+        ELSE IF length(obs_list) == 1:
+            lab_trends[loinc] = {
+                current_value: obs_list[0].value,
+                current_date: obs_list[0].effective_date_time,
+                prior_value: null,
+                classification: &quot;single_value&quot;
+            }
+
+    // Vitals summary
+    vitals_loincs = {
+        hr: &quot;8867-4&quot;,
+        sbp: &quot;8480-6&quot;,
+        dbp: &quot;8462-4&quot;,
+        rr: &quot;9279-1&quot;,
+        temp: &quot;8310-5&quot;,
+        spo2: &quot;59408-5&quot;
+    }
+    vitals_summary = dict
+    FOR each name, loinc in vitals_loincs:
+        recent_vitals = call HealthLake.SearchResources:
+            resource_type = &quot;Observation&quot;
+            filter        = { subject: patient_id, code: loinc,
+                              date: &quot;ge&quot; + hours_ago(24) }
+        vitals_summary[name] = {
+            most_recent: most_recent(recent_vitals),
+            min: minimum(recent_vitals),
+            max: maximum(recent_vitals),
+            flagged_events: abnormal_events(recent_vitals)
+        }
+
+    RETURN { lab_trends: lab_trends, vitals_summary: vitals_summary,
+             source_id: f&quot;labs_vitals:{patient_id}&quot; }
+</code></pre>
+<pre class="code code-plain"><code>FUNCTION ingest_notes(run_id, patient_id, scenario):
+
+    // Pull recent notes relevant to the scenario
+    notes_fhir = call HealthLake.SearchResources:
+        resource_type = &quot;DocumentReference&quot;
+        filter        = { subject: patient_id,
+                          category: note_categories_for_scenario(scenario),
+                          date: &quot;ge&quot; + note_recency_for_scenario(scenario) }
+
+    notes = empty list
+    FOR each note in notes_fhir:
+        // Extract entities and map to ontologies
+        entities = call ComprehendMedical.DetectEntitiesV2(note.content)
+        rxnorm   = call ComprehendMedical.InferRxNorm(note.content) if note has meds
+        icd10    = call ComprehendMedical.InferICD10CM(note.content)
+        snomed   = call ComprehendMedical.InferSNOMEDCT(note.content)
+
+        // Identify key passages the reasoning may cite
+        key_passages = extract_key_passages(note, entities)
+        // e.g., assessment and plan sections, reason-for-visit, notable findings
+
+        append {
+            modality_type: &quot;note&quot;,
+            note_type: note.category,           // progress, consult, discharge, etc.
+            specialty: note.author_specialty if available,
+            note_date: note.date,
+            content: note.content,
+            entities: entities,
+            ontology_mapped: { rxnorm: rxnorm, icd10: icd10, snomed: snomed },
+            key_passages: key_passages,
+            source_id: f&quot;note:{note.id}&quot;
+        } to notes
+
+    RETURN notes
+</code></pre>
+<pre class="code code-plain"><code>FUNCTION ingest_structured_context(run_id, patient_id):
+
+    // Reuse the pattern from Recipe 2.9 for normalized patient facts
+    bundle = call HealthLake.SearchResources:
+        resource_types = [&quot;Patient&quot;, &quot;Condition&quot;, &quot;MedicationRequest&quot;,
+                          &quot;AllergyIntolerance&quot;, &quot;Procedure&quot;]
+        patient_id     = patient_id
+
+    structured = normalize_patient_context(bundle)
+    // demographics, active_conditions, current_medications, allergies,
+    // derived (eGFR, BMI, Child-Pugh as applicable)
+
+    RETURN structured
+</code></pre>
+<p><strong>Step 3: Normalize, annotate, and build the modality inventory.</strong> Each modality's ingestion produces its own representation. This step assembles them into a unified patient state with consistent timestamps, source identifiers, and a modality inventory that the reasoning layer will consult.</p>
+<pre class="code code-plain"><code>FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
+
+    // Build the unified patient state
+    patient_state = {
+        structured_context: structured,
+        imaging_records: imaging,
+        ecg_records: ecg,
+        lab_trends: labs_vitals.lab_trends,
+        vitals_summary: labs_vitals.vitals_summary,
+        notes: notes
+    }
+
+    // Build the modality inventory describing what is present and its recency
+    modality_inventory = {
+        structured_context: {
+            present: true,
+            recency: &quot;current&quot;,
+            confidence: &quot;high&quot;
+        },
+        imaging: {
+            present: length(imaging) &gt; 0,
+            count: length(imaging),
+            most_recent: most_recent_date(imaging),
+            modalities: unique(imaging map to .study_modality),
+            cleared_ai_present: any(imaging, has cleared_ai_outputs)
+        },
+        ecg: {
+            present: length(ecg) &gt; 0,
+            count: length(ecg),
+            most_recent: most_recent_date(ecg)
+        },
+        labs: {
+            present: length(labs_vitals.lab_trends) &gt; 0,
+            current_and_trended: count_where(labs_vitals.lab_trends,
+                                                 classification in [&quot;rising&quot;,&quot;falling&quot;,&quot;stable&quot;]),
+            single_values_only: count_where(labs_vitals.lab_trends,
+                                                 classification == &quot;single_value&quot;)
+        },
+        vitals: {
+            present: length(labs_vitals.vitals_summary) &gt; 0,
+            recency: &quot;current_encounter&quot;
+        },
+        notes: {
+            present: length(notes) &gt; 0,
+            count: length(notes),
+            types: unique(notes map to .note_type),
+            most_recent: most_recent_date(notes)
+        }
+    }
+
+    // Annotate each item with a source_id for citation
+    // Source IDs are stable within a run and used in the reasoning output
+
+    RETURN { patient_state: patient_state, modality_inventory: modality_inventory }
+</code></pre>
+<p><strong>Step 4: Scope gate.</strong> Given the scenario and the modality inventory, decide whether the reasoning run should proceed. If a recent run covered the same scenario without material changes, suppress. If critical modalities are missing for the scenario, either scope down or defer with an explanatory output.</p>
+<pre class="code code-plain"><code>FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
+
+    // recent_runs is a DynamoDB query on the mm-reasoning-runs table by
+    // (patient_id, initiated_at) over the SUPPRESSION_WINDOW_HOURS (typically
+    // 24 hours). A GSI on patient_id is required; a composite partition key
+    // of (patient_id + date) is a reasonable optimization at high-volume
+    // facilities.
+    //
+    // no_material_change_since compares the current modality inventory&#x27;s
+    // content hash to the prior run&#x27;s stored inventory hash. Material
+    // changes include: new imaging study, new ECG, lab value crossing a
+    // clinical threshold, new note of a relevant type, medication change.
+    decision = {
+        proceed: false,
+        reason: &quot;&quot;,
+        scoped_to: null,
+        defer_reason: null
+    }
+
+    // Suppression: recent run on the same scenario without material changes
+    FOR each recent in recent_runs:
+        IF recent.scenario == scenario
+           AND recent.age_minutes &lt; SUPPRESSION_WINDOW_FOR(scenario)
+           AND no_material_change_since(recent, modality_inventory):
+            decision.reason = &quot;recently_reasoned_same_scenario&quot;
+            RETURN decision
+
+    // Required modalities per scenario
+    required = required_modalities_for_scenario(scenario)
+    // e.g., for &quot;ed_dyspnea_workup&quot;:
+    //   required = [&quot;structured_context&quot;, &quot;labs&quot;, &quot;vitals&quot;, &quot;imaging:chest&quot;]
+    //   recommended = [&quot;ecg&quot;, &quot;notes:recent&quot;]
+
+    missing_required = empty list
+    FOR each req in required:
+        IF not modality_available(modality_inventory, req):
+            append req to missing_required
+
+    IF length(missing_required) &gt; 0:
+        decision.proceed = false
+        decision.defer_reason = &quot;missing_required_modalities&quot;
+        decision.missing = missing_required
+        RETURN decision
+
+    // If the scope is &quot;full reasoning&quot; but critical data is missing,
+    // the pipeline may scope down to a narrower scenario
+    IF scenario == &quot;comprehensive_reasoning&quot; AND any_recommended_missing:
+        decision.scoped_to = derive_narrower_scope(scenario, modality_inventory)
+        decision.proceed = true
+        decision.reason = &quot;scoped_down_due_to_missing_recommended_modalities&quot;
+        RETURN decision
+
+    decision.proceed = true
+    decision.scoped_to = scenario
+    decision.reason = &quot;all_required_modalities_present&quot;
+    RETURN decision
+</code></pre>
+<p><strong>Step 5: Deterministic safety checks.</strong> Same pattern as Recipe 2.9. Drug interactions, allergies, contraindications, renal and hepatic dose flags. The outputs are hard inputs to the reasoning prompt.</p>
+<pre class="code code-plain"><code>FUNCTION run_safety_checks(structured_context, proposed_medications_if_any):
+
+    // See Recipe 2.9 Step 4 for the full expansion; the same function applies here
+    safety_findings = run_deterministic_safety_checks(structured_context,
+                                                        proposed_medications_if_any)
+
+    RETURN safety_findings
+</code></pre>
+<p><strong>Step 6: Retrieval.</strong> Pull the relevant guidelines, institutional protocols, and (optionally) case analogs. Retrieval is scoped by the scenario, the patient's characteristics, and the modality inventory.</p>
+<pre class="code code-plain"><code>FUNCTION retrieve_supporting_content(scenario, patient_state, modality_inventory):
+
+    queries = derive_retrieval_queries(scenario, patient_state, modality_inventory)
+
+    guideline_results = empty list
+    FOR each q in queries.guideline_queries:
+        q_embedding = call Bedrock.InvokeModel:
+            model_id = EMBEDDING_MODEL_ID
+            input    = q.text
+
+        results = call OpenSearch.search:
+            index        = &quot;guidelines&quot;
+            query_vector = q_embedding
+            keyword_query = build_bm25_from_entities(q.key_entities)
+            filters      = q.metadata_filters    // specialty, population, recency
+            size         = 20
+
+        append results to guideline_results
+
+    protocol_results = empty list
+    FOR each q in queries.protocol_queries:
+        results = call OpenSearch.search:
+            index = &quot;institutional-protocols&quot;
+            query = q.text
+            size  = 10
+        append results to protocol_results
+
+    case_analog_results = empty list
+    IF case_analog_corpus_enabled_for_scenario(scenario):
+        // Case analogs are optional; use only when a well-curated corpus exists
+        FOR each q in queries.case_analog_queries:
+            results = call OpenSearch.search:
+                index        = &quot;case-analogs&quot;
+                query_vector = embed_patient_profile(patient_state, scenario)
+                filters      = q.metadata_filters
+                size         = 5
+            append results to case_analog_results
+
+    RETURN {
+        guidelines: guideline_results,
+        protocols: protocol_results,
+        case_analogs: case_analog_results
+    }
+</code></pre>
+<p><strong>Step 7: The reasoning layer.</strong> Build the prompt with the modality inventory, patient state, retrieved content, and safety findings. The prompt enforces multi-hypothesis reasoning, evidence-for-and-against per hypothesis, explicit handling of missing modalities, verbatim preservation, cross-modality consistency, and citation discipline.</p>
+<pre class="code code-plain"><code>FUNCTION invoke_reasoning_layer(scenario, patient_state, modality_inventory,
+                                  retrieved, safety_findings, scope_decision):
+
+    // Format each source for inclusion in the prompt with a stable source_id
+    sources_block = &quot;&quot;
+    id_to_source = dict
+
+    // Imaging sources
+    FOR each img in patient_state.imaging_records:
+        sources_block += f&quot;[{img.source_id}] Imaging: {img.study_description}, &quot;
+                       + f&quot;modality {img.study_modality}, date {img.study_date}\n&quot;
+                       + f&quot;Report text: {img.report_text}\n&quot;
+        FOR each ai_output in img.cleared_ai_outputs:
+            sources_block += f&quot;  Cleared AI output: {ai_output.finding_type} &quot;
+                           + f&quot;(probability {ai_output.probability}, &quot;
+                           + f&quot;vendor {ai_output.vendor_name}, &quot;
+                           + f&quot;clearance {ai_output.clearance_info})\n&quot;
+        sources_block += &quot;\n&quot;
+        id_to_source[img.source_id] = img
+
+    // ECG sources
+    FOR each ecg in patient_state.ecg_records:
+        sources_block += f&quot;[{ecg.source_id}] ECG: date {ecg.ecg_date}, &quot;
+                       + f&quot;HR {ecg.hr}, QTc {ecg.qtc}, QRS {ecg.qrs}\n&quot;
+                       + f&quot;Machine interpretation: {ecg.machine_interpretation}\n&quot;
+        IF ecg.clinician_overread is present:
+            sources_block += f&quot;Overread: {ecg.clinician_overread}\n&quot;
+        IF ecg.foundation_model_output is present:
+            sources_block += f&quot;Foundation model output: {ecg.foundation_model_output}\n&quot;
+        sources_block += &quot;\n&quot;
+        id_to_source[ecg.source_id] = ecg
+
+    // Labs (as trended summaries)
+    FOR each loinc, trend in patient_state.lab_trends:
+        source_id = f&quot;lab:{loinc}&quot;
+        sources_block += f&quot;[{source_id}] Lab {loinc} ({trend.display_name}): &quot;
+                       + f&quot;current {trend.current_value} {trend.unit} on {trend.current_date}; &quot;
+                       + f&quot;prior {trend.prior_value} on {trend.prior_date}; &quot;
+                       + f&quot;trend {trend.classification}; &quot;
+                       + f&quot;delta {trend.delta_percent}%; &quot;
+                       + f&quot;baseline {trend.baseline_if_known}\n\n&quot;
+        id_to_source[source_id] = trend
+
+    // Vitals summary
+    sources_block += f&quot;[vitals] Vitals in the current encounter: {patient_state.vitals_summary}\n\n&quot;
+    id_to_source[&quot;vitals&quot;] = patient_state.vitals_summary
+
+    // Notes (include key passages, not full text, for context efficiency)
+    FOR each note in patient_state.notes:
+        sources_block += f&quot;[{note.source_id}] Note: {note.note_type}, &quot;
+                       + f&quot;specialty {note.specialty}, date {note.note_date}\n&quot;
+                       + f&quot;Key passages: {format_key_passages(note.key_passages)}\n\n&quot;
+        id_to_source[note.source_id] = note
+
+    // Retrieved guidelines, protocols, case analogs
+    FOR each guideline in retrieved.guidelines:
+        src_id = f&quot;guideline:{guideline.id}&quot;
+        sources_block += f&quot;[{src_id}] Guideline: {guideline.title}, &quot;
+                       + f&quot;section {guideline.section}, &quot;
+                       + f&quot;issuer {guideline.issuing_body}, year {guideline.year}\n&quot;
+                       + f&quot;Content: {guideline.text}\n\n&quot;
+        id_to_source[src_id] = guideline
+
+    FOR each protocol in retrieved.protocols:
+        src_id = f&quot;protocol:{protocol.id}&quot;
+        sources_block += f&quot;[{src_id}] Institutional Protocol: {protocol.name}, &quot;
+                       + f&quot;version {protocol.version}\n&quot;
+                       + f&quot;Content: {protocol.text}\n\n&quot;
+        id_to_source[src_id] = protocol
+
+    // Deterministic safety findings (must be represented in output)
+    safety_block = format_safety_findings(safety_findings)
+
+    // Modality inventory block (the reasoning layer must consult this)
+    inventory_block = format_modality_inventory(modality_inventory, scope_decision)
+
+    reasoning_prompt = &quot;&quot;&quot;
+    You are a clinical reasoning assistant. The output will be reviewed by the clinician
+    caring for this patient. The clinician is the decision-maker; your role is to
+    synthesize the available multi-modal evidence and present options with transparent
+    reasoning. You do not diagnose. You do not prescribe. You describe options and the
+    evidence for each.
+
+    SCOPE: {scope_decision.scoped_to}. Do not reason outside this scope.
+
+    HARD REQUIREMENTS:
+    - Every factual claim must cite at least one source by its source_id in square
+      brackets (e.g., [imaging:1.2.3.4] or [lab:2160-0] or [guideline:abc123]).
+    - Preserve exact wording for quantitative values, graded terms (mild, moderate,
+      severe), and drug names and doses. If a source says &quot;mild LV dysfunction,&quot; do not
+      upgrade to &quot;moderate&quot; or downgrade to &quot;minimal.&quot; Quote verbatim.
+    - For each differential or recommendation, enumerate evidence FOR and evidence
+      AGAINST, each with source citations.
+    - Include every item from the SAFETY FINDINGS block in the output. None may be
+      omitted; surface each item where it is relevant.
+    - Acknowledge missing modalities. If the MODALITY INVENTORY indicates that a
+      modality relevant to the scenario is absent, name the absence explicitly in the
+      output. Do not reason as if that modality were present.
+    - Evaluate cross-modality consistency. If two modalities disagree, surface the
+      disagreement; do not collapse into a false consensus.
+    - Evaluate recency. If a modality source is substantially older than the current
+      encounter (e.g., an echo from three years ago), note the staleness and how it
+      affects confidence.
+    - Frame recommendations as options, not directives. Use phrasing like &quot;Consider...&quot;,
+      &quot;Option A is...&quot;, &quot;The guideline supports...&quot;. Do not use &quot;Administer...&quot;,
+      &quot;Give...&quot;, &quot;Prescribe...&quot; in your own voice. Verbatim quoted guideline language
+      may contain directive wording; preserve it as a quote.
+    - Confidence statements must distinguish between &quot;confidence given the available
+      data&quot; and &quot;completeness of the available data.&quot; Do not conflate them.
+    - If the available evidence does not support a confident assessment, say so. Do
+      not manufacture a conclusion to satisfy the request.
+
+    STRUCTURE: Return a JSON object with:
+    {
+      &quot;scenario&quot;: &quot;{scope_decision.scoped_to}&quot;,
+      &quot;overall_assessment&quot;: &quot;2-4 sentence summary of the clinical situation&quot;,
+      &quot;modalities_used&quot;: [ list of source_ids used in reasoning ],
+      &quot;modalities_absent_and_relevant&quot;: [ list of modalities that are absent but
+                                          relevant to the scenario, with notes on
+                                          how the absence affects confidence ],
+      &quot;differential_or_recommendations&quot;: [
+        {
+          &quot;title&quot;: &quot;Hypothesis or recommendation title&quot;,
+          &quot;description&quot;: &quot;Description&quot;,
+          &quot;evidence_for&quot;: [
+            { &quot;text&quot;: &quot;description of evidence&quot;, &quot;source_citations&quot;: [...] }
+          ],
+          &quot;evidence_against&quot;: [
+            { &quot;text&quot;: &quot;description of evidence&quot;, &quot;source_citations&quot;: [...] }
+          ],
+          &quot;cross_modality_notes&quot;: &quot;observations about consistency or disagreement across modalities&quot;,
+          &quot;recency_notes&quot;: &quot;notes on staleness of supporting sources&quot;,
+          &quot;confidence_given_data&quot;: &quot;low&quot; | &quot;moderate&quot; | &quot;high&quot;,
+          &quot;completeness_of_data&quot;: &quot;low&quot; | &quot;moderate&quot; | &quot;high&quot;,
+          &quot;suggested_next_steps&quot;: [ &quot;specific actionable next steps&quot; ],
+          &quot;tier&quot;: &quot;critical&quot; | &quot;important&quot; | &quot;informational&quot;
+        }
+      ],
+      &quot;cross_modality_contradictions&quot;: [
+        { &quot;description&quot;: &quot;contradiction between two modalities&quot;,
+          &quot;source_a&quot;: &quot;source_id&quot;, &quot;source_b&quot;: &quot;source_id&quot;,
+          &quot;implication&quot;: &quot;what this means for reasoning&quot; }
+      ],
+      &quot;safety_findings_included&quot;: [
+        { &quot;finding&quot;: &quot;...&quot;, &quot;source_citations&quot;: [...], &quot;where_in_output&quot;: &quot;...&quot; }
+      ],
+      &quot;what_is_insufficient_to_answer&quot;: [ &quot;specific questions the available data cannot address&quot; ],
+      &quot;overall_uncertainty&quot;: &quot;low&quot; | &quot;moderate&quot; | &quot;high&quot;,
+      &quot;uncertainty_rationale&quot;: &quot;brief explanation&quot;
+    }
+
+    PATIENT STRUCTURED CONTEXT:
+    {patient_state.structured_context}
+
+    MODALITY INVENTORY AND SCOPE:
+    {inventory_block}
+
+    SAFETY FINDINGS (must all be included in the output):
+    {safety_block}
+
+    AVAILABLE SOURCES (cite by source_id in square brackets):
+    {sources_block}
+    &quot;&quot;&quot;
+
+    response = call Bedrock.InvokeModel:
+        model_id       = REASONING_MODEL_ID       // e.g., Claude Sonnet
+        prompt         = reasoning_prompt
+        max_tokens     = 6000
+        temperature    = 0.15
+        guardrail_id   = MM_REASONING_GUARDRAIL_ID
+        // Guardrails configured with:
+        //   - Contextual grounding: source context = inventory_block + safety_block
+        //     + sources_block, tagged via the Guardrails API so grounding runs against
+        //     the authoritative content, not the prompt instructions. Threshold 0.85+.
+        //   - Content filters enabled.
+        //   - PII policy appropriate for clinical content.
+        //   - Denied-topics list including directive prescriptive phrasing outside
+        //     of verbatim quoted guideline text.
+        //   - Input-side prompt-attack filters enabled on the Guardrail policy
+        //     itself (not the invocation). Modality inputs (reports, notes,
+        //     retrieved guidelines, protocols, vendor AI outputs) are untrusted
+        //     input surfaces that can carry instruction-shaped content.
+
+    IF response.guardrail_action == &quot;INTERVENED&quot;:
+        RETURN { status: &quot;GROUNDING_REJECTED&quot;,
+                 guardrail_trace: response.guardrail_trace }
+
+    reasoning_json = parse JSON from response
+    RETURN { status: &quot;GENERATED&quot;,
+             reasoning: reasoning_json,
+             id_to_source: id_to_source }
+</code></pre>
+<p><strong>Step 8: Post-generation validation.</strong> Belt-and-suspenders on Guardrails. Every citation resolves; every number appears verbatim in a source; every graded term appears verbatim; every safety finding is represented; no claim contradicts another modality; no recommendation falls outside scope.</p>
+<pre class="code code-plain"><code>FUNCTION validate_reasoning(reasoning, id_to_source, safety_findings,
+                              modality_inventory, scope_decision, retry_count):
+
+    unverified = empty list
+
+    // 1. Citation resolution: every cited source_id must be in id_to_source
+    FOR each item in reasoning.differential_or_recommendations:
+        citations_used = collect_all_citations(item)
+        FOR each cit in citations_used:
+            IF cit not in id_to_source:
+                append { item: item.title, reason: &quot;citation_not_found&quot;, cit: cit } to unverified
+        IF length(citations_used) == 0:
+            append { item: item.title, reason: &quot;no_citations&quot; } to unverified
+
+    // 2. Verbatim quantity check: numeric values and units must appear verbatim
+    //    in at least one cited source
+    FOR each item in reasoning.differential_or_recommendations:
+        quantities = extract_quantities(item.description + item.evidence_for_text
+                                          + item.evidence_against_text)
+        FOR each q in quantities:
+            cited_sources = [id_to_source[c] for c in collect_all_citations(item)]
+            IF NOT quantity_appears_verbatim_in(q, cited_sources):
+                append { item: item.title, reason: &quot;quantity_not_verbatim&quot;,
+                         quantity: q } to unverified
+
+    // 3. Verbatim graded-term check (mild, moderate, severe, minimal, marked, etc.)
+    graded_terms = [&quot;mild&quot;, &quot;moderate&quot;, &quot;severe&quot;, &quot;minimal&quot;, &quot;marked&quot;, &quot;trace&quot;,
+                    &quot;mildly&quot;, &quot;moderately&quot;, &quot;severely&quot;, &quot;markedly&quot;]
+    FOR each item in reasoning.differential_or_recommendations:
+        for term in graded_terms:
+            IF term appears in item.description:
+                cited_sources = [id_to_source[c] for c in collect_all_citations(item)]
+                IF NOT graded_term_appears_verbatim_in(term_with_context, cited_sources):
+                    append { item: item.title,
+                             reason: &quot;graded_term_not_verbatim_in_source&quot;,
+                             term: term } to unverified
+
+    // 4. Safety findings represented
+    all_safety_items = aggregate_safety_items(safety_findings)
+    FOR each s in all_safety_items:
+        IF not safety_finding_in_reasoning(s, reasoning):
+            append { reason: &quot;safety_finding_missing&quot;,
+                     item: s } to unverified
+
+    // 5. Missing-modality acknowledgment
+    relevant_missing = modalities_that_are_missing_and_relevant(modality_inventory,
+                                                                  scope_decision.scoped_to)
+    FOR each m in relevant_missing:
+        IF not acknowledged_in_reasoning(m, reasoning):
+            append { reason: &quot;missing_modality_not_acknowledged&quot;,
+                     modality: m } to unverified
+
+    // 6. Cross-modality consistency scan: if reasoning claims X, do other modalities
+    //    in the input contradict X without acknowledgment?
+    claims = extract_claims_with_sources(reasoning)
+    FOR each claim in claims:
+        contradictions = find_contradicting_sources(claim, id_to_source,
+                                                      excluded_sources=claim.sources)
+        IF length(contradictions) &gt; 0
+           AND not already_acknowledged_as_cross_modality_contradiction(claim,
+                                                                         reasoning):
+            append { reason: &quot;unacknowledged_cross_modality_contradiction&quot;,
+                     claim: claim, contradictions: contradictions } to unverified
+
+    // 7. Scope compliance
+    FOR each item in reasoning.differential_or_recommendations:
+        IF item_is_out_of_scope(item, scope_decision.scoped_to):
+            append { reason: &quot;out_of_scope&quot;, item: item.title } to unverified
+
+    // 8. Directive-language check (model&#x27;s voice must be non-prescriptive)
+    directive_phrases = [&quot;you should&quot;, &quot;administer&quot;, &quot;give&quot;, &quot;prescribe&quot;, &quot;start&quot;,
+                         &quot;stop&quot;, &quot;switch to&quot;]
+    FOR each item in reasoning.differential_or_recommendations:
+        model_voice = extract_unquoted_text(item.description
+                                              + item.suggested_next_steps_text)
+        FOR each phrase in directive_phrases:
+            IF phrase in model_voice AND phrase not in_quoted_guideline:
+                append { item: item.title,
+                         reason: &quot;directive_language_in_model_voice&quot;,
+                         phrase: phrase } to unverified
+
+    IF length(unverified) == 0:
+        RETURN { status: &quot;VALIDATED&quot; }
+
+    IF retry_count &lt; 2:
+        augmentation = build_prompt_augmentation_from(unverified)
+        RETURN { status: &quot;RETRY_NEEDED&quot;,
+                 unverified: unverified,
+                 augmentation: augmentation }
+
+    RETURN { status: &quot;ROUTED_TO_HUMAN_REVIEW&quot;, unverified: unverified }
+</code></pre>
+<p><strong>Orchestration gate between Step 8 and Step 9.</strong> Validation status is the last safety gate before the clinician UI. The orchestrator must distinguish <code>VALIDATED</code> from <code>ROUTED_TO_HUMAN_REVIEW</code>. Only <code>VALIDATED</code> proceeds to Step 9 and becomes a delivered reasoning output. <code>ROUTED_TO_HUMAN_REVIEW</code> is a terminal state: the trace is archived for audit, the run is recorded as pending clinical review, and the reasoning does not render to the clinician.</p>
+<pre class="code code-plain"><code>FUNCTION orchestrate_post_validation(validation_result, run_id, trace):
+    IF validation_result.status == &quot;VALIDATED&quot;:
+        // Fall through to Step 9: tier, render, archive, deliver.
+        RETURN { next_step: &quot;tier_render_archive&quot; }
+
+    IF validation_result.status == &quot;ROUTED_TO_HUMAN_REVIEW&quot;:
+        // Write the trace to S3 (KMS-encrypted) for audit.
+        write to S3: f&quot;mm-reasoning-runs/{run_id}/review-queue-trace.json&quot; = trace
+
+        // Record the run state distinct from DELIVERED.
+        update DynamoDB: run_id with
+            status             = &quot;ROUTED_TO_REVIEW&quot;
+            validation_issues  = validation_result.unverified
+
+        // Enqueue for a clinical reviewer (SQS, DynamoDB stream, or
+        // equivalent). Reviewer triage is out of scope for this pseudocode.
+        enqueue_to_review_queue(run_id, validation_result.unverified)
+
+        emit CloudWatch metric: ReasoningRoutedToReview
+
+        // Do NOT call tier_render_archive. Do NOT return rendered reasoning
+        // to the clinician UI.
+        RETURN { next_step: &quot;terminal_review_queue&quot; }
+</code></pre>
+<p><strong>Step 9: Tier, render, and archive.</strong> Score against prior runs for suppression. Render with deep links to every modality source. Archive the full provenance.</p>
+<pre class="code code-plain"><code>FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
+                               run_id, scope_decision):
+
+    // Tier based on recency of prior runs and change materiality
+    prior_runs = query_dynamo(table=&quot;mm-reasoning-runs&quot;,
+                               filter={ patient_id, encounter_id })
+    tiered = tier_recommendations(reasoning, prior_runs)
+
+    IF all_recommendations_suppressed(tiered):
+        update DynamoDB: run_id with status = &quot;SUPPRESSED_MINOR_UPDATE&quot;
+        RETURN { status: &quot;SUPPRESSED&quot; }
+
+    // Build the rendered output with source links
+    bibliography = empty list
+    numbered = dict
+    next_num = 1
+
+    FOR each item in tiered.differential_or_recommendations:
+        FOR each cit in collect_all_citations(item):
+            IF cit not in numbered:
+                numbered[cit] = next_num
+                source = id_to_source[cit]
+                entry = {
+                    number: next_num,
+                    source_id: cit,
+                    modality: source.modality_type,
+                    formatted: format_source_for_display(source),
+                    deep_link: deep_link_for_source(source),
+                    recency: recency_label(source),
+                    source_type: source.source_type_if_literature
+                }
+                append entry to bibliography
+                next_num += 1
+
+    // Substitute source_ids with [N] numeric citations in rendered text
+    rendered_recs = substitute_citations(tiered, numbered)
+
+    rendered = {
+        run_id: run_id,
+        patient_id: patient_id,
+        encounter_id: encounter_id,
+        scenario: scope_decision.scoped_to,
+        overall_assessment: reasoning.overall_assessment,
+        recommendations: rendered_recs,
+        cross_modality_contradictions: reasoning.cross_modality_contradictions,
+        safety_findings_included: reasoning.safety_findings_included,
+        insufficient_to_answer: reasoning.what_is_insufficient_to_answer,
+        modalities_used: reasoning.modalities_used,
+        modalities_absent_and_relevant: reasoning.modalities_absent_and_relevant,
+        overall_uncertainty: reasoning.overall_uncertainty,
+        uncertainty_rationale: reasoning.uncertainty_rationale,
+        bibliography: bibliography,
+        disclaimer: &quot;This output is decision support synthesizing &quot;
+                                         + &quot;available multi-modal evidence. Review each &quot;
+                                         + &quot;cited source before acting. The clinician is &quot;
+                                         + &quot;the decision-maker.&quot;
+    }
+
+    // Archive the full provenance
+    write to S3: f&quot;mm-reasoning-runs/{run_id}/rendered.json&quot; = rendered
+    write to S3: f&quot;mm-reasoning-runs/{run_id}/trace.json&quot; = {
+        trigger: trace.trigger,
+        scope_decision: scope_decision,
+        modality_inventory: trace.modality_inventory,
+        retrieval_trace: trace.retrieval_trace,
+        safety_findings: trace.safety_findings,
+        prompt_version: trace.prompt_version,
+        model_id: trace.model_id,
+        raw_model_output: trace.raw_model_output,
+        validation_result: trace.validation_result,
+        generated_at: current UTC timestamp
+    }
+
+    update DynamoDB: run_id with status = &quot;DELIVERED&quot;
+
+    emit CloudWatch metrics:
+        - ReasoningRunsDelivered
+        - ModalitiesUsedPerRun
+        - CrossModalityContradictionsSurfaced
+        - OverallUncertaintyDistribution
+
+    RETURN { status: &quot;DELIVERED&quot;, rendered: rendered }
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter02.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample output for the ED dyspnea case from the opening vignette:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;run_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MMR-2026-05-12-00342&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pt_abc123&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;encounter_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;enc_xyz789&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scenario&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ed_dyspnea_workup_with_cardiac_history&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;overall_assessment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;62-year-old woman with history of anthracycline-treated breast cancer (2020), CKD (eGFR 44), type 2 diabetes, and rheumatoid arthritis on methotrexate, presenting with progressive dyspnea over 3 days. Vital signs show tachycardia, tachypnea, mild hypoxemia. Laboratory abnormalities include mildly elevated troponin, elevated BNP, elevated D-dimer, and acute rise in creatinine from baseline. Chest radiograph shows bibasilar opacities with broad differential. Multiple plausible etiologies; imaging and cardiac workup may help distinguish.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;modalities_used&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;structured_context&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;imaging:cxr_current&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;lab:10834-0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;lab:42637-9&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;lab:2160-0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;lab:33762-6&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;vitals&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;note:pcp_2026_04&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;note:oncology_2020&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;imaging:echo_2024&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;modalities_absent_and_relevant&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ecg&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relevance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Critical for acute coronary syndrome evaluation given mildly elevated troponin. Absence limits confidence on ACS workup.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recommendation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Obtain 12-lead ECG before further reasoning on cardiac etiologies.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;imaging:ct_chest&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relevance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT pulmonary angiography would clarify PE vs parenchymal etiology for the bibasilar opacities. Prior chest CT is from 2023 and does not reflect current state.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;differential_or_recommendations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Acute heart failure exacerbation with possible underlying anthracycline cardiotoxicity&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The elevated BNP [lab:42637-9], prior echocardiogram showing borderline LV function [imaging:echo_2024], and remote anthracycline exposure [note:oncology_2020] together support a heart failure hypothesis. The bibasilar opacities on CXR [imaging:cxr_current] are compatible with pulmonary edema.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_for&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BNP is elevated at the current value reported in labs&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lab:42637-9&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Prior echocardiogram from 2024 showed borderline LV function&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;imaging:echo_2024&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;History of anthracycline chemotherapy for breast cancer in 2020&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;note:oncology_2020&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Chest radiograph shows bibasilar opacities compatible with pulmonary edema&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;imaging:cxr_current&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ACC/AHA heart failure guideline supports anthracycline exposure as a contributing factor to later HFrEF&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;guideline:aha_hf_2022&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;evidence_against&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Troponin elevation is more consistent with ACS; heart failure alone does not typically raise troponin to this degree in ambulatory presentations&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lab:10834-0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;guideline:aha_hf_2022&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECG has not been obtained; cannot exclude ischemic contribution&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;modality_inventory&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;cross_modality_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BNP [lab:42637-9] and prior imaging [imaging:echo_2024] are consistent with the hypothesis; the prior echo is 2 years old and LV function may have changed.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recency_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The echocardiogram is from 2024, approximately 2 years old. Interval cardiotoxicity progression cannot be excluded.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence_given_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completeness_of_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;low&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;suggested_next_steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;Obtain 12-lead ECG&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;Consider repeat echocardiogram to assess current LV function&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;If confirmed, treatment per institutional heart failure protocol with attention to renal dosing&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Pulmonary embolism&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Elevated D-dimer [lab:33762-6], tachycardia [vitals], and hypoxemia [vitals] raise concern for PE. Rheumatoid arthritis [structured_context] is a mild pro-thrombotic state. However, D-dimer can be elevated in multiple settings and is not specific.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_for&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;D-dimer is elevated at the current value&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lab:33762-6&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Heart rate 108 and respiratory rate 22 on vitals&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;vitals&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Active rheumatoid arthritis noted as a pro-thrombotic state in some literature&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;structured_context&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;guideline:chest_vte_2021&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;evidence_against&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;D-dimer elevation is nonspecific; can be raised by inflammation, malignancy, recent surgery&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;guideline:chest_vte_2021&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Chest radiograph findings [imaging:cxr_current] are more prominent bibasilar opacities than is typical for PE alone&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;cross_modality_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;D-dimer elevation, tachycardia, hypoxemia form a suggestive cluster but lack confirmatory imaging. CT pulmonary angiography is the standard next step per [guideline:chest_vte_2021] when Wells score supports imaging.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recency_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;All relevant data is current.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence_given_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;low&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completeness_of_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;low&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;suggested_next_steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;Calculate Wells score; if moderate-to-high probability or unable to exclude, obtain CT pulmonary angiography&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;Note contrast dose and creatinine trend [lab:2160-0] before CT&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Atypical pneumonia, including opportunistic etiology given immunosuppression&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Methotrexate [structured_context] is immunosuppressive. Bibasilar opacities [imaging:cxr_current] are compatible with several infectious etiologies including atypical bacterial and opportunistic organisms. Mild leukocytosis [lab:6690-2] fits.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_for&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Methotrexate listed as current medication&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;structured_context&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Chest radiograph: bibasilar opacities, cannot exclude atypical infection&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;imaging:cxr_current&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Mild leukocytosis noted&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lab:6690-2&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;evidence_against&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;No fever documented on vitals&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;vitals&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BNP elevation [lab:42637-9] fits heart failure better than primary infection&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;cross_modality_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Infection cannot be excluded; a CT chest would clarify parenchymal pattern and help distinguish infectious vs cardiogenic opacities.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recency_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;All relevant data is current.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence_given_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;low&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completeness_of_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;suggested_next_steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;Obtain blood cultures, respiratory viral panel as appropriate&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;Consider CT chest for pattern characterization&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;Empiric antibiotics decision should be staged against PE and heart failure workup results; avoid reflexive broad-spectrum therapy until clearer picture emerges&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;important&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Acute coronary syndrome&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Troponin [lab:10834-0] is mildly elevated above the reference. Diabetes is a risk factor. However, ECG is not available; without it, acute coronary syndrome evaluation cannot proceed fully.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_for&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Troponin value mildly above reference&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lab:10834-0&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Diabetes mellitus listed as active condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;structured_context&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;evidence_against&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Low-grade troponin elevation can occur in many settings including heart failure, renal dysfunction, and PE&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;guideline:acc_nstemi_2021&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Creatinine rise [lab:2160-0] reduces specificity of troponin elevation in this setting&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;cross_modality_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECG absence [modality_inventory] is the primary limitation; any specific ACS assessment depends on ECG.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recency_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Current.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence_given_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;low&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completeness_of_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;low&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;suggested_next_steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;Obtain 12-lead ECG&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;Serial troponins per institutional protocol&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;Consider cardiology consultation if ECG abnormal or troponin trends upward&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;cross_modality_contradictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;D-dimer elevation [lab:33762-6] points toward PE; BNP elevation [lab:42637-9] and CXR pattern [imaging:cxr_current] lean toward heart failure with pulmonary edema. Both conditions can coexist and are not exclusive.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_a&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab:33762-6&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_b&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab:42637-9&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;implication&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Rather than selecting one hypothesis, consider that both may apply; the workup should pursue both until one is clearly excluded.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;safety_findings_included&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;finding&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Renal function: current creatinine up from baseline [lab:2160-0]; eGFR estimated at 36 is a decrease from prior baseline of 44 (CKD-EPI 2021). Iodinated contrast for CT pulmonary angiography should consider this decrement per institutional contrast protocol.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lab:2160-0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;protocol:contrast_nephropathy&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;where_in_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Suggested next steps of Hypothesis 2 (PE)&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;finding&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Methotrexate plus contrast: no significant drug-contrast interaction; however, decreased renal clearance of methotrexate in the setting of worsening renal function is a general consideration. No new medication is being proposed, so no current action is required beyond monitoring.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_citations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;drug_db:methotrexate&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;where_in_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Standalone note at end of recommendations&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;what_is_insufficient_to_answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Whether acute coronary syndrome is present (requires ECG)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Whether acute pulmonary embolism is present (requires CT pulmonary angiography or equivalent imaging)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Current left ventricular function (requires repeat echocardiogram)&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;overall_uncertainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;uncertainty_rationale&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Multiple plausible etiologies; available modalities do not yet permit confident ranking. ECG and CT pulmonary angiography are the next-step imaging modalities most likely to discriminate between hypotheses. The data completeness is low relative to the scenario requirements.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;bibliography&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;imaging&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Chest radiograph, PA and lateral, 2026-05-12. Report impression preserved verbatim.&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pacs://studies/1.2.3.4.5&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;imaging&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Transthoracic echocardiogram, 2024-04-11. Borderline LV function noted per report.&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pacs://studies/1.2.3.4.5.6&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2 years old&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Troponin I, 0.08 ng/mL (reference &lt;0.04), 2026-05-12.&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;internal://labs/10834-0&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BNP, 840 pg/mL, 2026-05-12.&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;internal://labs/42637-9&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Creatinine, 1.6 mg/dL (baseline 1.3), 2026-05-12.&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;internal://labs/2160-0&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;D-dimer, 1200 ng/mL FEU, 2026-05-12.&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;internal://labs/33762-6&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;note&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Oncology consultation note, 2020. Anthracycline exposure documented.&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;internal://notes/oncology_2020&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;historical&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guideline&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AHA/ACC Heart Failure Guideline, 2022 update. [Society Guideline]&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://illustrative/aha-hf-2022&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current guideline&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;number&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guideline&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CHEST Venous Thromboembolism Guideline, 2021. [Society Guideline]&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deep_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://illustrative/chest-vte-2021&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;recency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current guideline&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;disclaimer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;This output is decision support synthesizing available multi-modal evidence. Review each cited source before acting. The clinician is the decision-maker.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;validation_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;VALIDATED&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;processing_time_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">18200</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>End-to-end latency, trigger to delivered reasoning</td>
+<td>10-30 seconds for focused scenarios with moderate modality count; 30-90 seconds for broader reasoning with many modalities</td>
+</tr>
+<tr>
+<td>Modality ingestion success rate</td>
+<td>92-99% per modality in healthy environments; significantly lower on systems with flaky EHR FHIR or imaging report retrieval</td>
+</tr>
+<tr>
+<td>Grounding pass rate (contextual grounding check)</td>
+<td>88-96% first attempt; 95-99% after one retry</td>
+</tr>
+<tr>
+<td>Post-generation validation pass rate</td>
+<td>80-93% first attempt; 92-98% after one retry</td>
+</tr>
+<tr>
+<td>Cross-modality contradiction detection (rate of contradictions surfaced that expert reviewers also identify)</td>
+<td>70-85% in focused scenarios; lower for scenarios with many modalities and subtle contradictions</td>
+</tr>
+<tr>
+<td>Clinician-rated usefulness in pilot deployments</td>
+<td>50-70% of reasoning outputs rated as &quot;useful&quot; or &quot;very useful&quot; in curated scenarios; broader deployments tend to score lower until scope is narrowed</td>
+</tr>
+<tr>
+<td>Hallucination rate (claims not supported by input evidence, per expert audit)</td>
+<td>0.5-3% with strict prompting, validation, and guardrails; rises substantially without them</td>
+</tr>
+<tr>
+<td>Cost per reasoning run</td>
+<td>$0.40-$4.00 depending on scenario complexity, modalities included, and retrieval breadth</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Broad undefined reasoning.</strong> &quot;Reason about this patient&quot; with no scenario scope produces outputs that are unfocused and uneven. The pattern works when anchored to a scenario; it falters when applied as general-purpose thinking.</li>
+<li><strong>Novel presentations.</strong> Patients whose presentations do not match patterns in the corpus or in the reasoning model's training may receive reasoning outputs that paper over the novelty. The fix is not within the reasoning pipeline; it is clinician judgment plus specialist consultation.</li>
+<li><strong>Rare diseases.</strong> Disease entities with low prevalence are underrepresented in guidelines, corpora, and training data. The reasoning may plausibly miss or downweight rare diagnoses that an experienced specialist would pursue.</li>
+<li><strong>Contested or evolving guidance.</strong> When guidelines are actively updating (new oncology biomarkers, new treatment regimens), the corpus lags and the reasoning may present outdated information as current. Freshness monitoring of the corpus mitigates but does not eliminate this.</li>
+<li><strong>Modality availability gaps.</strong> A scenario that requires CT and echocardiogram but has only one of the two will produce reasoning of limited value. The scope gate can defer, but that does not help the patient waiting for the missing study.</li>
+<li><strong>Cross-specialty tension.</strong> Oncology-cardiology scenarios (cardiotoxicity, cardioprotection during chemotherapy), rheumatology-pulmonology scenarios (connective tissue disease lung involvement), neurology-psychiatry scenarios: the reasoning layer does not always surface the tensions between specialty viewpoints unless explicitly prompted to.</li>
+<li><strong>Workflow integration failures.</strong> A reasoning output that appears in a place the clinician does not look, or at a time they cannot engage with it, may as well not exist. UX design and workflow integration matter at least as much as the reasoning quality.</li>
+<li><strong>Patients at the edges of evidence.</strong> Very old patients, pregnant patients, patients with rare comorbidity combinations, and patients underrepresented in training data all receive reasoning that should flag its limitations; the pipeline tries but does not always succeed.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon research-to-product effort. The architecture here provides a realistic scaffold; the concerns below are the ones that decide whether a deployment succeeds or becomes a cautionary tale.</p>
+<p><strong>Regulatory determination and documented scope.</strong> Before any pilot, establish a written determination of the product's regulatory status for its specific scope. Narrow, well-scoped reasoning modules are more defensible than generic reasoners. The determination should include how the design supports the four-part CDS exemption: source transparency, independent review, framing as options, and absence of primary reliance on the software. Review the determination whenever the scope expands or the UX materially changes.</p>
+<p><strong>Clinical validation per scope.</strong> For every reasoning scenario, assemble a curated validation set: patient cases with gold-standard reasoning outputs reviewed by clinical domain experts. Run the pipeline against the set. Measure agreement. Quantify error types. Iterate. Do not deploy a scenario that has not been validated. This is slow (weeks per scenario) and expensive (expert time) and the single most important prerequisite for patient safety.</p>
+<p><strong>Post-market outcomes monitoring.</strong> Instrument every reasoning run to trace to downstream clinical events. Did the recommendation get accepted? Did the patient outcome match the reasoning's implicit prediction? Over time, are there patterns of error that correlate with specific scenario types or patient subgroups? Without this feedback loop, the reasoning pipeline plateaus at its launch quality.</p>
+<p><strong>Modality pipeline quality assurance.</strong> Each modality ingestion is its own pipeline with its own failure modes: radiology reports not yet finalized, ECG interpretations missing, lab results with wrong units, notes with problematic formatting. Build QA checks at each ingestion stage; monitor ingestion success rates per modality; alert on anomalies.</p>
+<p><strong>Cleared imaging AI integration correctness.</strong> If the pipeline uses cleared imaging AI outputs, the integration needs to be correct: the right study going to the right model, the output attached to the right patient and encounter, the clearance scope respected in how the output is used. Integration testing should verify these at a level that would satisfy the vendor's labeling expectations.</p>
+<p><strong>Source freshness and ingestion.</strong> Guidelines update. Drug databases update. Institutional protocols update. A reasoning pipeline that reasons off stale corpus is worse than one that admits the gap. Build an ingestion pipeline that tracks source publication dates, alerts on updates, and prioritizes high-impact changes.</p>
+<p><strong>Bias, equity, and subgroup performance.</strong> Multi-modal reasoning inherits the biases of every input modality and every retrieval source. Imaging AI has documented subgroup performance gaps. Guidelines reflect trial populations. Reasoning outputs should not be assumed to perform equivalently across demographic subgroups without evidence. Instrument subgroup performance; monitor; report; mitigate.</p>
+<p><strong>Prompt and model versioning.</strong> Each prompt iteration is a clinical change. Tie every delivered reasoning output to the exact prompt version and model version that produced it. Replay capability for assessing the impact of a change. Governance process for prompt or model changes that includes clinical review.</p>
+<p><strong>Fallback and degradation.</strong> What does the pipeline do when a modality is unavailable? When a retrieval store is slow? When Bedrock is rate-limited? Design for graceful degradation: partial reasoning with explicit labeling of missing inputs is more valuable than a failed run.</p>
+<p><strong>Audit logs and retention.</strong> For regulatory, patient-safety review, and institutional QA: trigger, modality inventory, retrieval trace, safety findings, prompt version, model version, raw output, validation result, rendered output, clinician engagement, downstream outcomes where capturable. Retain per policy.</p>
+<p><strong>Liability and licensing posture.</strong> Many academic and commercial imaging AI products have specific liability and licensing terms. Multi-modal products that compose cleared and non-cleared components sit in a novel liability space; insurance carriers have evolving views. Engage risk management and malpractice teams early.</p>
+<p><strong>Integration with clinician workflow.</strong> A reasoning output that lives in a separate window, in a separate tab, in a separate system from where the clinician works is underused. SMART on FHIR launches embedded in the EHR, CDS Hooks at specific workflow points, and EHR-integrated review surfaces are the integration patterns that earn engagement.</p>
+<p><strong>Patient consent and communication.</strong> Some institutions require explicit consent for AI-augmented care; some require patient-facing disclosures; some require logging of AI contribution to care decisions. These decisions shape product design; they are not afterthoughts.</p>
+<p><strong>Cost control at scale.</strong> At $0.40-$4.00 per reasoning run, a pipeline invoked many times per day per facility can run significant cost. Build scenario-aware generation-model tiering (smaller model for simpler scenarios, full model for complex ones). Aggressive caching where safe. Per-patient daily caps. Continuous monitoring of cost-per-clinician, cost-per-scenario, cost-per-facility.</p>
+<p><strong>Specialty and institutional adaptation.</strong> A pipeline that works for hospital medicine may need meaningful adjustment to work for emergency medicine, primary care, or subspecialty clinics. Each adaptation is its own validation. Plan incremental rollout rather than big-bang deployment.</p>
+<p><strong>Security and access control.</strong> Reasoning outputs contain PHI, including inferred PHI (a combination of lab values and imaging findings may reveal more than any single item). Authorization must ensure that the reasoning output is delivered only to authorized clinicians with a legitimate care relationship. Integrate with the EHR authorization model; do not maintain a parallel system.</p>
+<p><strong>PHI minimization in prompts.</strong> Bedrock is HIPAA-eligible and appropriate for PHI under BAA, but minimum-necessary applies inside the BAA boundary as well. The reasoning layer does not need MRN, date of birth, name, address, phone, or payer identifiers to produce a differential; it needs age band, sex where clinically relevant, active problems, current medications, derived values (eGFR, weight), lab trends, and the clinical content of the notes. Strip identifiers before serializing patient state into the reasoning prompt, and re-associate the rendered output to the patient via the run record rather than round-tripping identifiers through the model.</p>
+<p><strong>Trigger idempotency.</strong> EventBridge is at-least-once delivery. Duplicate clinical triggers (the same new-admission event delivered twice, the same lab-threshold-crossed event fired by two rules) will produce duplicate reasoning runs if the orchestration layer does not enforce idempotency. Derive the run identifier from a deterministic event-key hash, use a DynamoDB conditional write to reject duplicates, and set the Step Functions execution name to the same deterministic value so a second start fails cleanly.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Scenario-specific reasoning modules.</strong> The narrowest, safest pattern. Build one scenario at a time: dyspnea workup in the ED, heart failure management for cardiology clinic, oncology treatment decision for a specific cancer and stage, antibiotic selection for hospitalized patients with renal dysfunction. Each module has its own modality requirements, its own curated sources, its own prompts, its own validation. Rollout is per-module. Trust earns per-module.</p>
+<p><strong>Specialty tumor board preparation.</strong> Multi-modal reasoning produces a case summary and a set of questions for multidisciplinary review. Input: the patient's imaging, pathology, labs, clinical notes. Output: a structured summary plus the issues the tumor board should consider. This is high-value because tumor board preparation is labor-intensive and currently ad hoc; the reasoning system can compose the summary consistently.</p>
+<p><strong>Comparative imaging with prior studies.</strong> A reasoning module focused on change detection: comparing the current imaging study to prior studies of the same anatomy, surfacing whether findings are new, resolved, stable, or progressed. Lower-stakes than full diagnostic reasoning and directly useful for longitudinal care.</p>
+<p><strong>Risk-score integration and explanation.</strong> Take a risk score (sepsis early-warning, readmission risk, deterioration score) and build a reasoning module that explains why the score is where it is for this patient, what the key drivers are, and what the clinician can act on. This converts opaque scores into actionable synthesis.</p>
+<p><strong>Lab trend and medication adjustment synthesis.</strong> For chronic disease management: integrate lab trends, medication changes, weight, and vitals into a synthesis that suggests whether current therapy is achieving goals and what adjustments the evidence supports. Narrower than general reasoning, workflow-integrated, well-scoped for ambulatory primary care.</p>
+<p><strong>Second-opinion synthesis.</strong> The clinician submits their proposed plan plus patient context; the reasoning module reviews for missed considerations, contradictory evidence, or alternative interpretations. The posture shifts from recommender to critic, which is often more useful for experienced clinicians than a from-scratch recommendation.</p>
+<p><strong>Genomic-informed reasoning for oncology.</strong> Integrate tumor molecular data with imaging and clinical context for oncology treatment selection. High clinical value; high regulatory complexity; requires tight integration with molecular pathology workflows and precision medicine boards.</p>
+<p><strong>Continuous-monitoring integration.</strong> In the ICU or step-down unit, integrate continuous physiologic data (monitors, ventilator, infusions) with labs, notes, and imaging for ongoing reasoning on patient trajectory. Requires streaming architectures and higher-frequency triggers; restricts scope to appropriate critical-care scenarios.</p>
+<p><strong>Patient-facing reasoning summaries.</strong> After the clinician has used the reasoning output to make a decision, generate a patient-facing explanation of the decision with the evidence that informed it. Closes the loop between clinician-facing and patient-facing synthesis. Shared decision-making support rather than diagnosis.</p>
+<p><strong>Retrospective case review for quality improvement.</strong> Use the same pipeline to analyze historical cases where outcomes were unexpected. The reasoning output becomes a structured review artifact for quality improvement committees and for institutional learning. Lower regulatory exposure than prospective use; institutional value.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-contextual-grounding-check.html">Bedrock Guardrails Contextual Grounding Check</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">Amazon HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/healthimaging/latest/devguide/what-is.html">Amazon HealthImaging Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/knn.html">Amazon OpenSearch Service k-NN</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/neural-search.html">Amazon OpenSearch Service Hybrid Search</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraPostgreSQL.VectorDB.html">Amazon Aurora PostgreSQL pgvector</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html">Amazon SageMaker Real-Time Inference</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-parallel-state.html">AWS Step Functions Parallel and Map States</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-samples"><code>amazon-bedrock-samples</code></a>: Grounded generation, Knowledge Bases, Guardrails patterns</li>
+<li><a href="https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks"><code>aws-healthcare-lifescience-ai-ml-sample-notebooks</code></a>: Healthcare ML patterns on AWS</li>
+<li><a href="https://github.com/aws-samples/amazon-healthlake-samples"><code>amazon-healthlake-samples</code></a>: HealthLake FHIR integration examples</li>
+<li><a href="https://github.com/aws-samples/amazon-healthimaging-samples"><code>amazon-healthimaging-samples</code></a>: HealthImaging DICOM workflow samples</li>
+<li><a href="https://github.com/aws-samples/amazon-opensearch-service-samples"><code>amazon-opensearch-service-samples</code></a>: Hybrid search and retrieval patterns</li>
+<li><a href="https://github.com/awslabs/generative-ai-cdk-constructs"><code>generative-ai-cdk-constructs</code></a>: CDK constructs for RAG and generative AI infrastructure</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/health/generative-ai/">Generative AI on AWS for Healthcare</a>: Overview of healthcare LLM applications on AWS</li>
+<li><a href="https://aws.amazon.com/architecture/reference-architecture-diagrams/?solutions-all.sort-by=item.additionalFields.sortDate&amp;solutions-all.sort-order=desc&amp;awsf.content-type=*all&amp;awsf.methodology=*all&amp;awsf.tech-category=tech-category%23ai-ml&amp;awsf.industries=industries%23healthcare">AWS for Healthcare Reference Architectures</a>: AI/ML and Healthcare reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: Search for &quot;multi-modal,&quot; &quot;retrieval augmented generation,&quot; &quot;HealthLake,&quot; and &quot;HealthImaging&quot;</li>
+</ul>
+<p><strong>Regulatory Guidance:</strong></p>
+<ul>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software">FDA Clinical Decision Support Software Guidance (September 2022)</a>: CDS software exemption criteria</li>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device">FDA Artificial Intelligence and Machine Learning in Software as a Medical Device</a>: AI/ML-SaMD policy and action plan</li>
+<li><a href="https://www.fda.gov/medical-devices/digital-health-center-excellence/software-medical-device-samd">FDA Software as a Medical Device Guidance</a>: Software-as-a-medical-device framework</li>
+<li><a href="https://aicentral.acrdsi.org/">ACR Data Science Institute AI Central</a>: Catalog of FDA-cleared imaging AI; useful for evaluating cleared imaging AI options</li>
+<li><a href="https://www.congress.gov/bill/114th-congress/house-bill/34">21st Century Cures Act Section 3060</a>: Legislative basis for the CDS exemption</li>
+</ul>
+<p><strong>Clinical Source References (primary inputs to a multi-modal reasoning corpus):</strong></p>
+<ul>
+<li><a href="https://www.uspreventiveservicestaskforce.org/uspstf/topic_search_results?topic_status=P">USPSTF Recommendation Statements</a>: Freely available preventive care recommendations</li>
+<li><a href="https://www.cdc.gov/library/index.html">CDC Guidelines Library</a>: Public health and infectious disease guidance</li>
+<li><a href="https://professional.heart.org/en/guidelines-and-statements">AHA/ACC Statements and Guidelines</a>: Cardiovascular society guidance (access varies)</li>
+<li><a href="https://www.nccn.org/guidelines/category_1">NCCN Guidelines</a>: Oncology society guidelines (free registration required)</li>
+<li><a href="https://diabetesjournals.org/care/issue/48/Supplement_1">ADA Standards of Care</a>: Diabetes society guidelines</li>
+<li><a href="https://kdigo.org/guidelines/">KDIGO Guidelines</a>: Nephrology society guidelines</li>
+<li><a href="https://www.idsociety.org/practice-guideline/alphabetical-guidelines/">IDSA Practice Guidelines</a>: Infectious disease guidelines</li>
+<li><a href="https://dailymed.nlm.nih.gov/dailymed/">FDA Structured Product Labels (DailyMed)</a>: FDA-approved drug labeling</li>
+<li><a href="https://www.nlm.nih.gov/research/umls/rxnorm/index.html">RxNorm</a>: Standardized drug terminology</li>
+<li><a href="https://www.snomed.org/snomed-ct">SNOMED CT</a>: Standardized clinical terminology</li>
+<li><a href="https://loinc.org/">LOINC</a>: Standardized lab and observation terminology</li>
+<li><a href="https://www.rsna.org/practice-tools/data-tools-and-standards/radlex-radiology-lexicon">RadLex</a>: Radiology lexicon</li>
+</ul>
+<p><strong>Interoperability Standards:</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/fhir/">HL7 FHIR</a>: Clinical data model for patient context integration</li>
+<li><a href="https://smarthealthit.org/">SMART on FHIR</a>: Standard for EHR-launched applications</li>
+<li><a href="https://cds-hooks.org/">CDS Hooks</a>: HL7 standard for EHR-triggered CDS invocations</li>
+<li><a href="https://www.dicomstandard.org/">DICOM</a>: Medical imaging standard</li>
+<li><a href="https://www.dicomstandard.org/using/dicomweb">DICOMweb</a>: Web services for DICOM</li>
+</ul>
+<p><strong>Imaging AI and Medical Foundation Models (background):</strong></p>
+<ul>
+<li><a href="https://www.acrdsi.org/DSI-Services/Define-AI">ACR Data Science Institute AI Use Cases</a>: Structured descriptions of imaging AI use cases</li>
+<li><a href="https://stanfordmlgroup.github.io/competitions/chexpert/">CheXpert and MIMIC-CXR Datasets</a>: Public chest radiograph datasets for research and benchmark</li>
+<li><a href="https://physionet.org/">PhysioNet</a>: Open physiologic data including ECG datasets</li>
+<li><a href="https://www.cancer.gov/about-nci/organization/ccg/research/structural-genomics/tcga">TCGA (The Cancer Genome Atlas)</a>: Multi-modal cancer dataset including pathology images</li>
+</ul>
+<p><strong>Research and Benchmarks:</strong></p>
+<ul>
+<li><a href="https://github.com/jind11/MedQA">MedQA</a>: Medical licensing exam QA pairs</li>
+<li><a href="https://openai.com/index/healthbench/">HealthBench</a>: OpenAI benchmark for healthcare-relevant LLM evaluations</li>
+<li><a href="https://crfm.stanford.edu/helm/medical/latest/">MedHELM</a>: Stanford HELM benchmark for medical LLMs</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Timeline</th>
+<th>What You Get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Basic (POC for one scenario)</strong></td>
+<td>16-24 weeks</td>
+<td>A single narrowly-scoped reasoning scenario (e.g., ED dyspnea workup) with structured patient context, radiology report ingestion, lab trend computation, note ingestion, and reasoning layer with grounded generation and validation. HealthLake plus HealthImaging integration. Deterministic safety checks. Basic UI for clinician review. Curated evaluation set with clinician-reviewed gold answers. Documented regulatory determination.</td>
+</tr>
+<tr>
+<td><strong>Production-ready (one scenario)</strong></td>
+<td>52-78 weeks</td>
+<td>Full modality ingestion with cleared imaging AI integration where applicable. ECG interpretation with optional foundation model output. Robust FHIR integration with the target EHR. Comprehensive validation (citation, verbatim quantity, graded term, cross-modality consistency, scope). SMART on FHIR or CDS Hooks integration. Alert-fatigue-aware tiering. Clinical validation studies with domain experts. Clinician feedback pipeline with clinical reviewer triage. Documented regulatory posture, FDA exemption or device path. Operational dashboards and audit trail. Subgroup performance monitoring.</td>
+</tr>
+<tr>
+<td><strong>With variations (multiple scenarios and extensions)</strong></td>
+<td>104-156 weeks</td>
+<td>Multiple scenario modules across specialties. Tumor board preparation and comparative imaging variants. Risk-score integration and explanation modules. Second-opinion synthesis. Genomic-informed reasoning for oncology. Continuous monitoring integration for critical care. Patient-facing reasoning summaries. Post-market surveillance instrumentation across scenarios. Ongoing clinical evaluation program with versioned benchmarks per scenario.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter02.10-multi-modal-clinical-reasoning.html">Main Recipe 2.10</a> · <a href="chapter02.10-python-example.html">Python Example</a> · <a href="chapter02-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

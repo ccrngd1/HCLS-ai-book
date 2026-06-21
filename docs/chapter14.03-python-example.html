@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 14.3: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-143-python-implementation-example">Recipe 14.3: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the inventory reorder optimization from Recipe 14.3. It demonstrates the core concepts (problem formulation, constraint definition, solver invocation, solution interpretation) using an open-source MIP solver. It is not production-ready. The item catalog is tiny, the demand model is static, and there's no ERP integration. Think of it as the whiteboard sketch that helps you understand the shape of the real system. A starting point, not a destination.</p>
+<p>The main recipe uses ECS Fargate for the solver and SageMaker for demand forecasting. This example runs everything locally with the HiGHS solver (via the <code>highspy</code> Python bindings) and hardcoded demand parameters. The optimization math is identical; the infrastructure is stripped away so you can focus on the model.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the optimization solver and AWS SDK installed:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>highspy
+</pre></div>
+
+<p><code>highspy</code> is the Python interface to HiGHS, an open-source linear and mixed-integer programming solver. It's fast, well-maintained, and handles the problem sizes typical of hospital inventory optimization (thousands of items) without a commercial license.</p>
+<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>dynamodb:PutItem</code></li>
+<li><code>dynamodb:GetItem</code></li>
+<li><code>dynamodb:Query</code></li>
+<li><code>s3:PutObject</code></li>
+<li><code>s3:GetObject</code></li>
+</ul>
+<p>For the full pipeline (with demand forecasting), you'd also need <code>sagemaker:InvokeEndpoint</code>, but this example uses hardcoded demand parameters to keep the focus on the optimization itself.</p>
+<hr />
+<h2 id="configuration-and-constants">Configuration and Constants</h2>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">highspy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># Service level targets by criticality tier.</span>
+<span class="c1"># These represent the probability of NOT stocking out during a replenishment cycle.</span>
+<span class="c1"># Critical items (crash cart meds, blood products): 99.5% fill rate.</span>
+<span class="c1"># Essential items (surgical supplies, common meds): 98%.</span>
+<span class="c1"># Standard items (office supplies, non-urgent consumables): 95%.</span>
+<span class="n">SERVICE_LEVELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;critical&quot;</span><span class="p">:</span> <span class="mf">0.995</span><span class="p">,</span>
+    <span class="s2">&quot;essential&quot;</span><span class="p">:</span> <span class="mf">0.98</span><span class="p">,</span>
+    <span class="s2">&quot;standard&quot;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Z-scores from the standard normal distribution corresponding to each service level.</span>
+<span class="c1"># safety_stock = z * standard_deviation_of_demand_during_lead_time</span>
+<span class="n">Z_SCORES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mf">0.995</span><span class="p">:</span> <span class="mf">2.576</span><span class="p">,</span>
+    <span class="mf">0.98</span><span class="p">:</span> <span class="mf">2.054</span><span class="p">,</span>
+    <span class="mf">0.95</span><span class="p">:</span> <span class="mf">1.645</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Annual holding cost rate: percentage of unit cost per year to hold one unit in inventory.</span>
+<span class="c1"># 25% is typical for healthcare (capital cost + storage + insurance + obsolescence).</span>
+<span class="n">ANNUAL_HOLDING_RATE</span> <span class="o">=</span> <span class="mf">0.25</span>
+
+<span class="c1"># Fixed cost per purchase order (administrative processing, receiving, etc.).</span>
+<span class="n">ORDERING_COST_PER_ORDER</span> <span class="o">=</span> <span class="mf">50.00</span>
+
+<span class="c1"># Solver time limit in seconds. For large catalogs, the solver may not prove</span>
+<span class="c1"># optimality within this window but will return the best solution found.</span>
+<span class="n">SOLVER_TIME_LIMIT_SECONDS</span> <span class="o">=</span> <span class="mi">300</span>
+
+<span class="c1"># Policy change threshold: flag items where the reorder point changes by more than this ratio.</span>
+<span class="n">CHANGE_THRESHOLD</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+<span class="c1"># DynamoDB table name for storing reorder policies.</span>
+<span class="n">POLICIES_TABLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;reorder-policies&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-build-the-item-catalog-simulated-inventory-snapshot">Step 1: Build the Item Catalog (Simulated Inventory Snapshot)</h2>
+<p><em>In production, this data comes from your ERP or materials management system via API. Here we hardcode a representative set of items spanning different criticality tiers, lead times, and shelf lives to demonstrate how the optimizer handles heterogeneous constraints.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_sample_catalog</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a sample item catalog representing a hospital supply subset.</span>
+
+<span class="sd">    Each item has the parameters the optimizer needs:</span>
+<span class="sd">    - demand characteristics (mean daily demand, standard deviation)</span>
+<span class="sd">    - supply characteristics (lead time, lead time variability)</span>
+<span class="sd">    - cost parameters (unit cost, minimum order quantity)</span>
+<span class="sd">    - constraints (criticality tier, shelf life, storage volume)</span>
+
+<span class="sd">    In production, these come from your ERP snapshot + demand forecasting model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">catalog</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;SKU-04821-CATH-KIT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Central Line Catheter Kit, 7Fr Triple Lumen&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">:</span> <span class="mf">6.0</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_stddev&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_days&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_stddev&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">&quot;unit_cost&quot;</span><span class="p">:</span> <span class="mf">45.00</span><span class="p">,</span>
+            <span class="s2">&quot;min_order_qty&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="s2">&quot;critical&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shelf_life_days&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># non-perishable</span>
+            <span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;SKU-11002-IV-NS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Normal Saline 1000mL IV Bag&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_stddev&quot;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_days&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_stddev&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s2">&quot;unit_cost&quot;</span><span class="p">:</span> <span class="mf">3.50</span><span class="p">,</span>
+            <span class="s2">&quot;min_order_qty&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="s2">&quot;critical&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shelf_life_days&quot;</span><span class="p">:</span> <span class="mi">730</span><span class="p">,</span>  <span class="c1"># 2 years</span>
+            <span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;SKU-07330-SURG-GLOVE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Sterile Surgical Gloves, Size 7.5 (box/50)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_stddev&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_days&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_stddev&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+            <span class="s2">&quot;unit_cost&quot;</span><span class="p">:</span> <span class="mf">28.00</span><span class="p">,</span>
+            <span class="s2">&quot;min_order_qty&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="s2">&quot;essential&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shelf_life_days&quot;</span><span class="p">:</span> <span class="mi">1825</span><span class="p">,</span>  <span class="c1"># 5 years</span>
+            <span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;SKU-09100-REAGENT-A&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Chemistry Analyzer Reagent Pack A&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_stddev&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_days&quot;</span><span class="p">:</span> <span class="mf">7.0</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_stddev&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+            <span class="s2">&quot;unit_cost&quot;</span><span class="p">:</span> <span class="mf">120.00</span><span class="p">,</span>
+            <span class="s2">&quot;min_order_qty&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="s2">&quot;essential&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shelf_life_days&quot;</span><span class="p">:</span> <span class="mi">90</span><span class="p">,</span>  <span class="c1"># short shelf life</span>
+            <span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;SKU-15500-PAPER-TOWEL&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Paper Towel Roll, Industrial (case/12)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+            <span class="s2">&quot;daily_demand_stddev&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_days&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+            <span class="s2">&quot;lead_time_stddev&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">&quot;unit_cost&quot;</span><span class="p">:</span> <span class="mf">8.00</span><span class="p">,</span>
+            <span class="s2">&quot;min_order_qty&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shelf_life_days&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">catalog</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-estimate-optimization-parameters">Step 2: Estimate Optimization Parameters</h2>
+<p><em>This step transforms raw item data into the specific parameters the MIP solver needs. The key calculation is safety stock: how much buffer to hold based on demand uncertainty, lead time uncertainty, and the service level target for each item's criticality tier.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">estimate_parameters</span><span class="p">(</span><span class="n">catalog</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate solver-ready parameters for each item.</span>
+
+<span class="sd">    The critical formula here is safety stock:</span>
+<span class="sd">        safety_stock = z * sqrt(LT * sigma_d^2 + d^2 * sigma_LT^2)</span>
+
+<span class="sd">    Where:</span>
+<span class="sd">        z = z-score for the target service level</span>
+<span class="sd">        LT = average lead time (days)</span>
+<span class="sd">        sigma_d = standard deviation of daily demand</span>
+<span class="sd">        d = mean daily demand</span>
+<span class="sd">        sigma_LT = standard deviation of lead time (days)</span>
+
+<span class="sd">    This accounts for BOTH demand variability and lead time variability.</span>
+<span class="sd">    If you only use demand variability (ignoring lead time uncertainty),</span>
+<span class="sd">    you&#39;ll underestimate safety stock for items with unreliable suppliers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">catalog</span><span class="p">:</span>
+        <span class="n">service_level</span> <span class="o">=</span> <span class="n">SERVICE_LEVELS</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;criticality&quot;</span><span class="p">]]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">Z_SCORES</span><span class="p">[</span><span class="n">service_level</span><span class="p">]</span>
+
+        <span class="c1"># Demand during lead time: expected consumption while waiting for delivery.</span>
+        <span class="n">demand_during_lt_mean</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;lead_time_days&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Combined uncertainty: demand variability + lead time variability.</span>
+        <span class="c1"># This is the standard formula for the standard deviation of demand</span>
+        <span class="c1"># during a stochastic lead time with stochastic demand.</span>
+        <span class="n">demand_during_lt_stddev</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;lead_time_days&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_demand_stddev&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;lead_time_stddev&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">safety_stock</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="n">demand_during_lt_stddev</span>
+
+        <span class="c1"># Daily holding cost per unit.</span>
+        <span class="n">daily_holding_cost</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;unit_cost&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ANNUAL_HOLDING_RATE</span> <span class="o">/</span> <span class="mf">365.0</span>
+
+        <span class="c1"># Annual demand estimate (for ordering cost calculation).</span>
+        <span class="n">annual_demand</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">365.0</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;item_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;demand_during_lt_mean&quot;</span><span class="p">:</span> <span class="n">demand_during_lt_mean</span><span class="p">,</span>
+            <span class="s2">&quot;demand_during_lt_stddev&quot;</span><span class="p">:</span> <span class="n">demand_during_lt_stddev</span><span class="p">,</span>
+            <span class="s2">&quot;safety_stock&quot;</span><span class="p">:</span> <span class="n">safety_stock</span><span class="p">,</span>
+            <span class="s2">&quot;daily_holding_cost&quot;</span><span class="p">:</span> <span class="n">daily_holding_cost</span><span class="p">,</span>
+            <span class="s2">&quot;annual_demand&quot;</span><span class="p">:</span> <span class="n">annual_demand</span><span class="p">,</span>
+            <span class="s2">&quot;unit_cost&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;unit_cost&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;min_order_qty&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;min_order_qty&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;shelf_life_days&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;shelf_life_days&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;criticality&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;service_level&quot;</span><span class="p">:</span> <span class="n">service_level</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;  </span><span class="si">%s</span><span class="s2">: demand_during_LT=</span><span class="si">%.1f</span><span class="s2">, safety_stock=</span><span class="si">%.1f</span><span class="s2">, service_level=</span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;item_id&quot;</span><span class="p">],</span>
+            <span class="n">demand_during_lt_mean</span><span class="p">,</span>
+            <span class="n">safety_stock</span><span class="p">,</span>
+            <span class="n">service_level</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parameters</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-formulate-and-solve-the-mip">Step 3: Formulate and Solve the MIP</h2>
+<p><em>This is the core of the recipe. We build a Mixed-Integer Program with HiGHS: define decision variables (reorder point and order quantity per item), set the objective (minimize total cost), and add constraints (budget, storage, shelf life). The solver finds the globally optimal solution (or the best it can within the time limit).</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve_inventory_optimization</span><span class="p">(</span>
+    <span class="n">parameters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+    <span class="n">total_budget</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">500_000.0</span><span class="p">,</span>
+    <span class="n">total_storage_cuft</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2000.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solve the constrained inventory optimization using HiGHS MIP solver.</span>
+
+<span class="sd">    Decision variables per item:</span>
+<span class="sd">        r_i = reorder point (integer, units)</span>
+<span class="sd">        Q_i = order quantity (integer, units)</span>
+
+<span class="sd">    Objective: minimize sum over all items of:</span>
+<span class="sd">        holding_cost_i = (Q_i / 2 + safety_stock_i) * daily_holding_cost_i * 365</span>
+<span class="sd">        ordering_cost_i = (annual_demand_i / Q_i) * ordering_cost_per_order</span>
+
+<span class="sd">    Constraints:</span>
+<span class="sd">        1. Budget: sum(r_i * unit_cost_i) &lt;= total_budget</span>
+<span class="sd">        2. Storage: sum(r_i * storage_volume_i) &lt;= total_storage_cuft</span>
+<span class="sd">        3. Shelf life: Q_i &lt;= daily_demand_i * shelf_life_days * 0.8 (perishables only)</span>
+<span class="sd">        4. Minimum order: Q_i &gt;= min_order_qty_i</span>
+<span class="sd">        5. Minimum reorder point: r_i &gt;= safety_stock_i</span>
+
+<span class="sd">    Note on linearization: The ordering cost term (annual_demand / Q) is non-linear.</span>
+<span class="sd">    For this example, we approximate it by fixing Q at the EOQ estimate and only</span>
+<span class="sd">    optimizing reorder points under the shared constraints. This is a common</span>
+<span class="sd">    practical simplification. A full non-linear formulation would use piecewise</span>
+<span class="sd">    linearization or a non-linear solver.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parameters: list of item parameter dicts from estimate_parameters</span>
+<span class="sd">        total_budget: maximum total inventory value in dollars</span>
+<span class="sd">        total_storage_cuft: maximum storage capacity in cubic feet</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with solver status, objective value, and per-item policies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="c1"># Pre-compute EOQ for each item to use as the order quantity.</span>
+    <span class="c1"># EOQ = sqrt(2 * annual_demand * ordering_cost / (daily_holding_cost * 365))</span>
+    <span class="c1"># We then enforce min_order_qty and shelf life constraints on top.</span>
+    <span class="n">eoq_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+        <span class="n">annual_holding</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_holding_cost&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">365.0</span>
+        <span class="k">if</span> <span class="n">annual_holding</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">eoq</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+                <span class="mf">2.0</span> <span class="o">*</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;annual_demand&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ORDERING_COST_PER_ORDER</span> <span class="o">/</span> <span class="n">annual_holding</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">eoq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;min_order_qty&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Enforce minimum order quantity.</span>
+        <span class="n">eoq</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">eoq</span><span class="p">,</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;min_order_qty&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Enforce shelf life constraint for perishable items.</span>
+        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;shelf_life_days&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_before_expiry</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_demand_mean&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;shelf_life_days&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.8</span>
+            <span class="n">eoq</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">eoq</span><span class="p">,</span> <span class="n">max_before_expiry</span><span class="p">)</span>
+
+        <span class="n">eoq_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">eoq</span><span class="p">)))</span>
+
+    <span class="c1"># Build the HiGHS model.</span>
+    <span class="c1"># We optimize reorder points (r_i) subject to budget and storage constraints.</span>
+    <span class="c1"># The reorder point must be at least safety_stock (to maintain service level).</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">highspy</span><span class="o">.</span><span class="n">Highs</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">setOptionValue</span><span class="p">(</span><span class="s2">&quot;output_flag&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>  <span class="c1"># suppress solver output</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">setOptionValue</span><span class="p">(</span><span class="s2">&quot;time_limit&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">SOLVER_TIME_LIMIT_SECONDS</span><span class="p">))</span>
+
+    <span class="c1"># Add one integer variable per item: the reorder point.</span>
+    <span class="c1"># Lower bound = ceiling of safety stock (minimum to maintain service level).</span>
+    <span class="c1"># Upper bound = generous upper limit (10x safety stock; solver will find optimal).</span>
+    <span class="n">col_indices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameters</span><span class="p">):</span>
+        <span class="n">lb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;safety_stock&quot;</span><span class="p">]))</span>
+        <span class="n">ub</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lb</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>  <span class="c1"># generous upper bound; floor of 100 prevents zero-range for low-variability items</span>
+        <span class="c1"># Objective coefficient: holding cost for the reorder point portion.</span>
+        <span class="c1"># Total holding cost = (Q/2 + r) * daily_holding * 365, but Q is fixed,</span>
+        <span class="c1"># so the variable part is r * daily_holding * 365.</span>
+        <span class="n">obj_coeff</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_holding_cost&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">365.0</span>
+
+        <span class="n">h</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+        <span class="n">col_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="c1"># Set variable types to integer.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">changeColIntegrality</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">highspy</span><span class="o">.</span><span class="n">HighsIntegrality</span><span class="o">.</span><span class="n">kInteger</span><span class="p">)</span>
+
+    <span class="c1"># Set objective (minimize).</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">changeObjectiveSense</span><span class="p">(</span><span class="n">highspy</span><span class="o">.</span><span class="n">ObjSense</span><span class="o">.</span><span class="n">kMinimize</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameters</span><span class="p">):</span>
+        <span class="n">obj_coeff</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_holding_cost&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">365.0</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">changeColCost</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">obj_coeff</span><span class="p">)</span>
+
+    <span class="c1"># Constraint 1: Budget. sum(r_i * unit_cost_i) &lt;= total_budget.</span>
+    <span class="n">budget_indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="n">budget_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;unit_cost&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">]</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span>
+        <span class="o">-</span><span class="n">highspy</span><span class="o">.</span><span class="n">kHighsInf</span><span class="p">,</span>  <span class="c1"># no lower bound</span>
+        <span class="n">total_budget</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">budget_indices</span><span class="p">),</span>
+        <span class="n">budget_indices</span><span class="p">,</span>
+        <span class="n">budget_coeffs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Constraint 2: Storage. sum(r_i * storage_volume_i) &lt;= total_storage_cuft.</span>
+    <span class="n">storage_indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="n">storage_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;storage_volume_cuft&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">]</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span>
+        <span class="o">-</span><span class="n">highspy</span><span class="o">.</span><span class="n">kHighsInf</span><span class="p">,</span>
+        <span class="n">total_storage_cuft</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">storage_indices</span><span class="p">),</span>
+        <span class="n">storage_indices</span><span class="p">,</span>
+        <span class="n">storage_coeffs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Solve.</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+    <span class="n">status</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">getModelStatus</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">highspy</span><span class="o">.</span><span class="n">HighsModelStatus</span><span class="o">.</span><span class="n">kInfeasible</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Model is infeasible. Constraints are too tight.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;infeasible&quot;</span><span class="p">,</span> <span class="s2">&quot;policies&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+
+    <span class="c1"># Guard against non-solution states (solver errors, unbounded, etc.).</span>
+    <span class="k">if</span> <span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="n">highspy</span><span class="o">.</span><span class="n">HighsModelStatus</span><span class="o">.</span><span class="n">kOptimal</span><span class="p">,</span>
+        <span class="n">highspy</span><span class="o">.</span><span class="n">HighsModelStatus</span><span class="o">.</span><span class="n">kObjectiveBound</span><span class="p">,</span>
+        <span class="n">highspy</span><span class="o">.</span><span class="n">HighsModelStatus</span><span class="o">.</span><span class="n">kTimeLimit</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Solver failed: status=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;solver_status&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">status</span><span class="p">),</span> <span class="s2">&quot;policies&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+
+    <span class="c1"># Extract solution.</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">getSolution</span><span class="p">()</span>
+    <span class="n">col_values</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">col_value</span>
+
+    <span class="n">policies</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">total_holding_cost</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">total_ordering_cost</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameters</span><span class="p">):</span>
+        <span class="n">reorder_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">col_values</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="n">order_quantity</span> <span class="o">=</span> <span class="n">eoq_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c1"># Calculate costs for reporting.</span>
+        <span class="n">avg_inventory</span> <span class="o">=</span> <span class="n">order_quantity</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;safety_stock&quot;</span><span class="p">]</span>
+        <span class="n">annual_holding</span> <span class="o">=</span> <span class="n">avg_inventory</span> <span class="o">*</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;daily_holding_cost&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">365.0</span>
+        <span class="n">annual_ordering</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;annual_demand&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">order_quantity</span><span class="p">)</span> <span class="o">*</span> <span class="n">ORDERING_COST_PER_ORDER</span>
+            <span class="k">if</span> <span class="n">order_quantity</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="p">)</span>
+
+        <span class="n">total_holding_cost</span> <span class="o">+=</span> <span class="n">annual_holding</span>
+        <span class="n">total_ordering_cost</span> <span class="o">+=</span> <span class="n">annual_ordering</span>
+
+        <span class="n">policy</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;item_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;reorder_point&quot;</span><span class="p">:</span> <span class="n">reorder_point</span><span class="p">,</span>
+            <span class="s2">&quot;order_quantity&quot;</span><span class="p">:</span> <span class="n">order_quantity</span><span class="p">,</span>
+            <span class="s2">&quot;safety_stock&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;safety_stock&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;service_level&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;service_level&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;criticality&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;expected_annual_holding_cost&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">annual_holding</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;expected_annual_ordering_cost&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">annual_ordering</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">policies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
+
+    <span class="n">solver_status</span> <span class="o">=</span> <span class="s2">&quot;optimal&quot;</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">highspy</span><span class="o">.</span><span class="n">HighsModelStatus</span><span class="o">.</span><span class="n">kOptimal</span> <span class="k">else</span> <span class="s2">&quot;time_limit&quot;</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">solver_status</span><span class="p">,</span>
+        <span class="s2">&quot;total_annual_cost&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_holding_cost</span> <span class="o">+</span> <span class="n">total_ordering_cost</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;total_holding_cost&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_holding_cost</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;total_ordering_cost&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_ordering_cost</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;item_count&quot;</span><span class="p">:</span> <span class="n">n</span><span class="p">,</span>
+        <span class="s2">&quot;policies&quot;</span><span class="p">:</span> <span class="n">policies</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Solver finished: status=</span><span class="si">%s</span><span class="s2">, total_cost=$</span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">solver_status</span><span class="p">,</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;total_annual_cost&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-validate-policies-against-current-state">Step 4: Validate Policies Against Current State</h2>
+<p><em>Before pushing new policies to the operational store, compare them against existing policies and flag dramatic changes. A reorder point that doubled overnight usually means a data issue, not a genuine demand shift.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">validate_policies</span><span class="p">(</span>
+    <span class="n">new_policies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+    <span class="n">current_policies</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate new policies against current ones and flag dramatic changes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        new_policies: list of policy dicts from the solver</span>
+<span class="sd">        current_policies: dict of item_id -&gt; current policy (None if first run)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (validated_policies, flagged_for_review).</span>
+<span class="sd">        Flagged items still get the new policy; the flag is informational.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">current_policies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">current_policies</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">validated</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">flagged</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">policy</span> <span class="ow">in</span> <span class="n">new_policies</span><span class="p">:</span>
+        <span class="n">item_id</span> <span class="o">=</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;item_id&quot;</span><span class="p">]</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">current_policies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">current</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">old_rp</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reorder_point&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">new_rp</span> <span class="o">=</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;reorder_point&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">old_rp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">change_ratio</span> <span class="o">=</span> <span class="n">new_rp</span> <span class="o">/</span> <span class="n">old_rp</span>
+                <span class="k">if</span> <span class="n">change_ratio</span> <span class="o">&gt;</span> <span class="n">CHANGE_THRESHOLD</span> <span class="ow">or</span> <span class="n">change_ratio</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">CHANGE_THRESHOLD</span><span class="p">):</span>
+                    <span class="n">flagged</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="n">item_id</span><span class="p">,</span>
+                        <span class="s2">&quot;old_reorder_point&quot;</span><span class="p">:</span> <span class="n">old_rp</span><span class="p">,</span>
+                        <span class="s2">&quot;new_reorder_point&quot;</span><span class="p">:</span> <span class="n">new_rp</span><span class="p">,</span>
+                        <span class="s2">&quot;change_ratio&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">change_ratio</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;reorder point changed by more than 100%&quot;</span><span class="p">,</span>
+                    <span class="p">})</span>
+
+        <span class="n">validated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">flagged</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%d</span><span class="s2"> item(s) flagged for review due to large policy changes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">flagged</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">validated</span><span class="p">,</span> <span class="n">flagged</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-store-policies-in-dynamodb">Step 5: Store Policies in DynamoDB</h2>
+<p><em>The policy store is the bridge between the batch optimization (runs nightly) and the real-time execution engine (checks inventory levels continuously). DynamoDB gives us low-latency point lookups by item ID.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_policies</span><span class="p">(</span><span class="n">policies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">solver_run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write validated policies to DynamoDB with version tracking.</span>
+
+<span class="sd">    Each policy is stored with the solver run ID so you can trace any</span>
+<span class="sd">    operational decision back to the specific optimization run that produced it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        policies: validated policy list from validate_policies</span>
+<span class="sd">        solver_run_id: unique identifier for this optimization run</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Number of policies stored.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">POLICIES_TABLE_NAME</span><span class="p">)</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">policy</span> <span class="ow">in</span> <span class="n">policies</span><span class="p">:</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;item_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">&quot;reorder_point&quot;</span><span class="p">:</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;reorder_point&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;order_quantity&quot;</span><span class="p">:</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;order_quantity&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;safety_stock&quot;</span><span class="p">:</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;safety_stock&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;service_level&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s2">&quot;service_level&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;criticality&quot;</span><span class="p">:</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;criticality&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;expected_annual_holding_cost&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s2">&quot;expected_annual_holding_cost&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;expected_annual_ordering_cost&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s2">&quot;expected_annual_ordering_cost&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;solver_run_id&quot;</span><span class="p">:</span> <span class="n">solver_run_id</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;active&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Stored </span><span class="si">%d</span><span class="s2"> policies to DynamoDB&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">policies</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">policies</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-execute-reorder-decisions">Step 6: Execute Reorder Decisions</h2>
+<p><em>The execution engine is deliberately simple. All the intelligence lives in the policy calculation. This function just compares current inventory against the reorder point and generates an order if needed.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">check_and_reorder</span><span class="p">(</span>
+    <span class="n">item_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_on_hand</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">current_on_order</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">policy</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether an item needs reordering based on its active policy.</span>
+
+<span class="sd">    Effective inventory = on_hand + on_order. If this drops to or below</span>
+<span class="sd">    the reorder point, generate a purchase order for the policy&#39;s order quantity.</span>
+
+<span class="sd">    For critical items that have dropped below safety stock, escalate to urgent.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        item_id: SKU identifier</span>
+<span class="sd">        current_on_hand: units physically in stock</span>
+<span class="sd">        current_on_order: units ordered but not yet received</span>
+<span class="sd">        policy: active policy dict for this item</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict describing the action taken (order_placed or none).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">effective_inventory</span> <span class="o">=</span> <span class="n">current_on_hand</span> <span class="o">+</span> <span class="n">current_on_order</span>
+
+    <span class="k">if</span> <span class="n">effective_inventory</span> <span class="o">&lt;=</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;reorder_point&quot;</span><span class="p">]:</span>
+        <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span>
+
+        <span class="c1"># Escalate if we&#39;re below safety stock on a critical item.</span>
+        <span class="k">if</span> <span class="n">current_on_hand</span> <span class="o">&lt;</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;safety_stock&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;service_level&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.99</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;urgent&quot;</span>
+
+        <span class="n">order</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;order_placed&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="n">item_id</span><span class="p">,</span>
+            <span class="s2">&quot;quantity&quot;</span><span class="p">:</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;order_quantity&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;priority&quot;</span><span class="p">:</span> <span class="n">priority</span><span class="p">,</span>
+            <span class="s2">&quot;triggered_by&quot;</span><span class="p">:</span> <span class="s2">&quot;automated_reorder&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;effective_inventory_at_trigger&quot;</span><span class="p">:</span> <span class="n">effective_inventory</span><span class="p">,</span>
+            <span class="s2">&quot;reorder_point&quot;</span><span class="p">:</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;reorder_point&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;  ORDER: </span><span class="si">%s</span><span class="s2"> qty=</span><span class="si">%d</span><span class="s2"> priority=</span><span class="si">%s</span><span class="s2"> (effective_inv=</span><span class="si">%d</span><span class="s2"> &lt;= reorder_point=</span><span class="si">%d</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="n">item_id</span><span class="p">,</span>
+            <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;order_quantity&quot;</span><span class="p">],</span>
+            <span class="n">priority</span><span class="p">,</span>
+            <span class="n">effective_inventory</span><span class="p">,</span>
+            <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;reorder_point&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">order</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="n">item_id</span><span class="p">,</span>
+        <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;effective_inventory (</span><span class="si">{</span><span class="n">effective_inventory</span><span class="si">}</span><span class="s2">) &gt; reorder_point (</span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;reorder_point&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_optimization_pipeline</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full inventory reorder optimization pipeline.</span>
+
+<span class="sd">    Steps:</span>
+<span class="sd">      1. Build item catalog (simulated ERP snapshot)</span>
+<span class="sd">      2. Estimate optimization parameters (safety stock, holding costs)</span>
+<span class="sd">      3. Solve the constrained MIP</span>
+<span class="sd">      4. Validate policies</span>
+<span class="sd">      5. Store to DynamoDB (commented out for local testing)</span>
+<span class="sd">      6. Demonstrate execution logic with sample inventory levels</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The solver result with policies and cost breakdown.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">solver_run_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;opt-</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%SZ&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=== Inventory Reorder Optimization Run: </span><span class="si">{</span><span class="n">solver_run_id</span><span class="si">}</span><span class="s2"> ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Get item catalog.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 1: Building item catalog...&quot;</span><span class="p">)</span>
+    <span class="n">catalog</span> <span class="o">=</span> <span class="n">build_sample_catalog</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span><span class="si">}</span><span class="s2"> items in catalog</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Estimate parameters.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 2: Estimating optimization parameters...&quot;</span><span class="p">)</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="n">estimate_parameters</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+
+    <span class="c1"># Step 3: Solve.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 3: Solving constrained optimization...&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">solve_inventory_optimization</span><span class="p">(</span>
+        <span class="n">parameters</span><span class="p">,</span>
+        <span class="n">total_budget</span><span class="o">=</span><span class="mf">200_000.0</span><span class="p">,</span>   <span class="c1"># $200K max inventory value</span>
+        <span class="n">total_storage_cuft</span><span class="o">=</span><span class="mf">500.0</span><span class="p">,</span>  <span class="c1"># 500 cubic feet storage</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Status: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Total annual cost: $</span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;total_annual_cost&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Holding: $</span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;total_holding_cost&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Ordering: $</span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;total_ordering_cost&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+
+    <span class="c1"># Step 4: Validate.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 4: Validating policies...&quot;</span><span class="p">)</span>
+    <span class="n">validated</span><span class="p">,</span> <span class="n">flagged</span> <span class="o">=</span> <span class="n">validate_policies</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;policies&quot;</span><span class="p">],</span> <span class="n">current_policies</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">validated</span><span class="p">)</span><span class="si">}</span><span class="s2"> validated, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">flagged</span><span class="p">)</span><span class="si">}</span><span class="s2"> flagged</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Store (uncomment for real DynamoDB writes).</span>
+    <span class="c1"># print(&quot;Step 5: Storing policies to DynamoDB...&quot;)</span>
+    <span class="c1"># store_policies(validated, solver_run_id)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 5: [Skipped] Would store policies to DynamoDB</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Print the policies.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Optimized Reorder Policies ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">policy</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;policies&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;item_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Reorder point: </span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;reorder_point&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> units&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Order quantity: </span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;order_quantity&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> units&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Safety stock: </span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;safety_stock&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> units&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Service level: </span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;service_level&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Annual cost: $</span><span class="si">{</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;expected_annual_holding_cost&#39;</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;expected_annual_ordering_cost&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+
+    <span class="c1"># Step 6: Demonstrate execution logic.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Step 6: Execution Engine Demo ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Simulate some inventory levels to show the reorder logic in action.</span>
+    <span class="n">test_scenarios</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;SKU-04821-CATH-KIT&quot;</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>   <span class="c1"># below reorder point, nothing on order</span>
+        <span class="p">(</span><span class="s2">&quot;SKU-11002-IV-NS&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>    <span class="c1"># above reorder point with pending order</span>
+        <span class="p">(</span><span class="s2">&quot;SKU-09100-REAGENT-A&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>    <span class="c1"># critical low, below safety stock</span>
+    <span class="p">]</span>
+
+    <span class="n">policy_lookup</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;item_id&quot;</span><span class="p">]:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;policies&quot;</span><span class="p">]}</span>
+
+    <span class="k">for</span> <span class="n">item_id</span><span class="p">,</span> <span class="n">on_hand</span><span class="p">,</span> <span class="n">on_order</span> <span class="ow">in</span> <span class="n">test_scenarios</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">item_id</span> <span class="ow">in</span> <span class="n">policy_lookup</span><span class="p">:</span>
+            <span class="n">decision</span> <span class="o">=</span> <span class="n">check_and_reorder</span><span class="p">(</span><span class="n">item_id</span><span class="p">,</span> <span class="n">on_hand</span><span class="p">,</span> <span class="n">on_order</span><span class="p">,</span> <span class="n">policy_lookup</span><span class="p">[</span><span class="n">item_id</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">item_id</span><span class="si">}</span><span class="s2">: on_hand=</span><span class="si">{</span><span class="n">on_hand</span><span class="si">}</span><span class="s2">, on_order=</span><span class="si">{</span><span class="n">on_order</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    -&gt; </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;order_placed&quot;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;       qty=</span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;quantity&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, priority=</span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;priority&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">run_optimization_pipeline</span><span class="p">()</span>
+
+    <span class="c1"># Dump full result as JSON for inspection.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Full Result (JSON) ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example solves a real optimization problem with a real solver. The math is correct. The distance to production is in the surrounding infrastructure and data quality.</p>
+<p><strong>Demand forecasting is hardcoded.</strong> The example uses static <code>daily_demand_mean</code> and <code>daily_demand_stddev</code> values. A production system feeds these from a trained time series model (SageMaker DeepAR, Prophet, or similar) that updates daily with fresh consumption data. The forecast quality directly determines safety stock accuracy: overestimate variance and you hold too much inventory; underestimate it and you get stockouts. Recipe 12.2 covers the forecasting component in detail.</p>
+<p><strong>The linearization simplification.</strong> The true objective function has a <code>1/Q</code> term (ordering cost = annual_demand / Q * cost_per_order) which is non-linear. This example fixes Q at the EOQ value and only optimizes reorder points under shared constraints. A production system either uses piecewise linearization to approximate the non-linear term within the MIP, or solves iteratively (optimize Q given r, then optimize r given Q, repeat until convergence). The simplification is reasonable for a first implementation but leaves money on the table for items where the EOQ doesn't account for cross-item budget competition.</p>
+<p><strong>No ERP integration.</strong> The execution engine here is a standalone function. In production, it's triggered by inventory-level-change events from your ERP (via EventBridge or a polling integration). The purchase order submission goes back to the ERP's procurement module. This bidirectional integration is typically the longest implementation phase because ERP APIs are... what they are.</p>
+<p><strong>No order consolidation.</strong> Items from the same distributor should be grouped into a single purchase order to reduce per-order costs and potentially hit volume discount breakpoints. This example optimizes each item independently. Adding order consolidation (grouping items by vendor, timing orders to align) can double cost savings but requires a second optimization layer on top of the per-item policies.</p>
+<p><strong>No multi-location logic.</strong> A health system with multiple facilities could redistribute excess inventory from one site to another instead of ordering new stock. This adds transfer costs and inter-facility logistics but reduces system-wide inventory investment. The solver becomes a network flow problem.</p>
+<p><strong>Solver scalability.</strong> HiGHS handles thousands of items well for this problem structure. If you're optimizing 10,000+ items with complex cross-item constraints (volume discounts, vendor minimums across item groups), you may need a commercial solver (Gurobi, CPLEX) or problem decomposition (solve by department, then reconcile at the system level).</p>
+<p><strong>DynamoDB Decimal handling.</strong> Every numeric value written to DynamoDB uses <code>Decimal(str(value))</code>. This example does it correctly in <code>store_policies</code>. If you add new numeric fields later, they need the same treatment. A raw Python float in a <code>put_item</code> call raises <code>TypeError</code> at runtime.</p>
+<p><strong>Audit trail and rollback.</strong> The example stores policies with a version timestamp, which enables history queries. A production system also stores the full solver input (parameters, constraints) alongside the output so you can reproduce any historical optimization run. When a new policy produces unexpected ordering behavior, you need to trace back to the inputs that produced it.</p>
+<p><strong>Monitoring and alerting.</strong> No CloudWatch metrics here. A production system tracks: solver status per run, solve time, optimality gap, number of items where constraints are binding, stockout events post-deployment, and actual vs. predicted demand accuracy. The last one is your feedback loop: if actual demand consistently exceeds forecasts, your safety stock calculations are systematically too low.</p>
+<p><strong>VPC and encryption.</strong> Production Lambda and ECS tasks run in a VPC with private subnets. DynamoDB encryption at rest. S3 SSE-KMS for the data lake. All API calls over TLS. If inventory data links to patient procedures (surgical supply consumption tied to case records), it's PHI-adjacent and needs the full HIPAA treatment.</p>
+<p><strong>Testing.</strong> Build unit tests for the parameter estimation (known inputs should produce known safety stock values). Build integration tests with a small catalog that has a known optimal solution (verify the solver finds it). Build regression tests that compare new solver versions against baseline results. The optimization math is deterministic given fixed inputs, so reproducibility testing is straightforward.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter14.03-inventory-reorder-optimization.html">Recipe 14.3: Inventory Reorder Optimization</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

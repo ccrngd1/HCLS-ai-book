@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 12.10 Architecture and Implementation: Physiological Waveform Analysis</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested nav-active" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-1210-architecture-and-implementation-physiological-waveform-analysis">Recipe 12.10 Architecture and Implementation: Physiological Waveform Analysis</h1>
+<p><em>Companion to <a href="chapter12.10-physiological-waveform-analysis.html">Recipe 12.10: Physiological Waveform Analysis</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Kinesis Data Streams for waveform ingestion.</strong> Physiological waveforms are the definition of high-throughput streaming data. Kinesis handles the continuous ingestion of millions of data points per second with guaranteed ordering within each shard. Each session (patient-device combination) maps to a partition key, ensuring all data from one source stays in order. The 7-day retention window provides a buffer for reprocessing if your downstream analysis needs to be re-run.</p>
+<p><strong>AWS Lambda (or Amazon ECS/Fargate for sustained workloads) for preprocessing.</strong> The preprocessing step (filtering, artifact detection, quality scoring) is computationally moderate but must run continuously. For lower-volume deployments, Lambda with Kinesis triggers works. For sustained high-throughput (dozens of beds, multiple waveform types), ECS/Fargate containers provide consistent compute without cold-start latency. Configure ECS Service Auto Scaling based on Kinesis iterator age (the lag between record arrival and processing). Target an iterator age under 5 seconds. Pre-provision a minimum task count that handles your typical census plus 20% headroom for burst scenarios like mass casualty events or shift-change admissions.</p>
+<p><strong>Amazon SageMaker for model hosting.</strong> Waveform classification models (typically CNNs or transformers) need GPU inference for real-time performance at scale. SageMaker real-time endpoints with auto-scaling provide managed GPU inference with predictable latency. Deploy separate endpoints per waveform type (ecg-rhythm-classifier, eeg-seizure-detector, abp-hemodynamic-analyzer). This enables independent model updates, independent scaling (ECG inference volume is typically 5-10x higher than EEG), and fault isolation. A multi-model endpoint is acceptable for cost optimization in smaller deployments but introduces deployment coupling. Store model artifacts in a versioned S3 bucket with Object Lock (compliance mode) after validation. Use SageMaker Model Registry to track approved model versions. The endpoint deployment pipeline should verify the model artifact's SHA-256 hash against the registry before deployment, supporting FDA QMS requirements for software configuration management.</p>
+<p><strong>Amazon Timestream for waveform storage and analytics.</strong> Timestream is purpose-built for time series data at scale. It handles the write throughput of continuous waveform ingestion, provides built-in time-based queries (give me the last 4 hours of this patient's ECG features), and automatically manages data lifecycle (hot storage for recent data, cold storage for historical). The magnetic store tier keeps months of historical data queryable at low cost. Batch Timestream writes using the WriteRecords API (up to 100 records per call). Buffer classification results for 1-2 seconds before flushing to maximize batch efficiency and reduce cost by 10-50x versus individual writes.</p>
+<p><strong>Amazon SNS/SQS for clinical alerting.</strong> Alerts need to reach clinicians through multiple channels (pager, mobile app, nurse station display) with guaranteed delivery and acknowledgment tracking. SNS fan-out to multiple subscribers handles the multi-channel requirement. The clinical-waveform-alerts SNS topic uses SSE-KMS encryption. Subscribers are restricted via SNS access policies to authorized clinical notification endpoints. Mobile push notifications use the opaque session ID (not the MRN), with the receiving app resolving the patient identity locally. SQS provides buffering and retry for downstream systems that might be temporarily unavailable.</p>
+<p><strong>Amazon S3 for raw waveform archival.</strong> Raw waveform data (pre-processing) goes to S3 for long-term retention. This supports model retraining, clinical research, and regulatory audit requirements. Lifecycle policies move data to Glacier after the active analysis window.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TD
+    A[🏥 Bedside Monitors\nHL7/IEEE 11073] --&gt;|Device Integration\nEngine| B[Kinesis Data Streams\nWaveform Ingestion]
+    B --&gt;|Trigger| C[ECS/Fargate\nPreprocessing]
+    C --&gt;|Clean Segments| D[SageMaker Endpoints\nPer-Waveform-Type\nClassification]
+    C --&gt;|Signal Quality\nMetrics| E[Timestream\nQuality Metrics]
+    C --&gt;|Raw Archive| F[S3\nWaveform Archive]
+    D --&gt;|Classifications| G[SQS → Lambda\nPost-Processing &amp;\nAlert Logic]
+    G --&gt;|Actionable Alerts| H[SNS\nClinical Notifications]
+    G --&gt;|All Results| E
+    H --&gt;|Pager/App| I[👩⚕️ Clinical Staff]
+    H --&gt;|Display| J[🖥️ Nurse Station]
+    C -.-&gt;|Failures| K[DLQ\nFailed Records]
+    D -.-&gt;|Failures| K
+    G -.-&gt;|Failures| K
+
+    style B fill:#f9f,stroke:#333
+    style D fill:#ff9,stroke:#333
+    style E fill:#9ff,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Kinesis Data Streams, Amazon ECS/Fargate, Amazon SageMaker, Amazon Timestream, Amazon S3, Amazon SNS, Amazon SQS, AWS Lambda</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-component least-privilege roles: (1) Device integration: <code>kinesis:PutRecord</code>, <code>s3:PutObject</code> (archive bucket); (2) Preprocessing: <code>kinesis:GetRecords</code>, <code>timestream:WriteRecords</code>, <code>s3:PutObject</code>; (3) Inference: <code>sagemaker:InvokeEndpoint</code>; (4) Post-processing: <code>timestream:WriteRecords</code>, <code>sns:Publish</code>, <code>sqs:ReceiveMessage</code>; (5) Monitoring: <code>timestream:Select</code>, <code>cloudwatch:GetMetricData</code></td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed (required: waveform data is PHI linked to patient identifiers)</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Kinesis: server-side encryption with KMS; S3: SSE-KMS; Timestream: encryption at rest (default); SageMaker endpoint: encrypted inter-container traffic; SNS: SSE-KMS; all transit over TLS</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: all compute in VPC with VPC endpoints for Kinesis, S3, SageMaker (API and Runtime), Timestream (Write and Query), SNS, SQS, CloudWatch Logs, ECR (api and dkr), STS, and KMS. Device integration engine in same VPC or connected via Direct Connect (preferred for &lt;5ms latency) or site-to-site VPN. No internet path for waveform data. Deploy ECS tasks and SageMaker endpoints in the same AZ to minimize cross-component latency.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all API calls. SageMaker endpoint invocations logged for audit trail of clinical decisions.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>PhysioNet MIMIC-III Waveform Database (publicly available, de-identified ICU waveforms). PhysioNet MIT-BIH Arrhythmia Database for ECG classification development. Never use identifiable patient waveforms in dev.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Kinesis: ~$0.015/million records. SageMaker GPU endpoint (ml.g4dn.xlarge): ~$0.74/hour. Timestream writes: ~$0.50/million records. At 30 beds continuous monitoring: ~$800-1200/month compute + storage.</td>
+</tr>
+<tr>
+<td><strong>Regulatory</strong></td>
+<td>FDA SaMD classification required for diagnostic claims. 510(k) or De Novo pathway depending on intended use and predicate devices. Quality Management System (QMS) required.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Ingests high-frequency waveform streams with per-session ordering</td>
+</tr>
+<tr>
+<td><strong>Amazon ECS/Fargate</strong></td>
+<td>Runs continuous preprocessing (filtering, artifact detection, quality scoring)</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Hosts trained waveform classification models on GPU endpoints (one per waveform type)</td>
+</tr>
+<tr>
+<td><strong>Amazon Timestream</strong></td>
+<td>Stores classification results, quality metrics, and derived features for time-based queries</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Archives raw waveform data for retraining and research</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Delivers clinical alerts to multiple notification channels (SSE-KMS encrypted)</td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Buffers classification results for post-processing with built-in retry and DLQ</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Applies post-processing logic, alert suppression, and clinical context rules</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Manages encryption keys for all data stores and streams</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Monitors pipeline latency, model inference time, alert rates, and system health</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pseudocode-walkthrough">Pseudocode Walkthrough</h3>
+<p><strong>Step 1: Waveform ingestion.</strong> Bedside monitors produce continuous streams of physiological data. A device integration engine (running on-premises or in the VPC) translates proprietary device protocols into a standardized format and pushes individual samples or small batches into Kinesis. Each record includes an opaque session identifier (not the patient's MRN), waveform type, timestamp, and the sample values. The partition key is this session ID combined with the waveform type, ensuring all data from one source arrives in order. Using an opaque session ID rather than a direct patient identifier prevents PHI leakage into stream metadata, S3 key paths, and CloudWatch dimensions. A separate identity service with restricted access maps session IDs to MRNs. Without ordered ingestion, downstream analysis would see scrambled waveforms and produce garbage classifications.</p>
+<pre class="code code-plain"><code>FUNCTION ingest_waveform_sample(session_id, waveform_type, timestamp, samples):
+    // Package the waveform data into a structured record.
+    // &quot;samples&quot; is an array of numerical values from the ADC (analog-to-digital converter).
+    // For ECG at 500 Hz, a 1-second batch would contain 500 values.
+    // NOTE: session_id is an opaque UUID mapped to the patient MRN in a separate
+    // identity service. Never use MRN directly as a partition key or S3 path component.
+    record = {
+        session_id:    session_id,        // opaque encounter-session UUID
+        waveform_type: waveform_type,     // e.g., &quot;ecg_lead_ii&quot;, &quot;art_bp&quot;, &quot;eeg_fp1&quot;
+        timestamp:     timestamp,         // precise timestamp of first sample in this batch (ISO 8601)
+        sample_rate:   250,               // samples per second (varies by waveform type)
+        values:        samples            // array of numerical sample values
+    }
+
+    // Push to Kinesis with session+device as partition key.
+    // This guarantees ordering: all samples from this patient&#x27;s ECG arrive in sequence.
+    put_record to Kinesis stream &quot;waveform-ingestion&quot;:
+        data          = serialize(record)
+        partition_key = session_id + &quot;:&quot; + waveform_type
+
+    // Also archive the raw data to S3 for long-term retention.
+    // Use a time-partitioned key structure for efficient retrieval.
+    put_object to S3 bucket &quot;waveform-archive&quot;:
+        key  = &quot;{session_id}/{waveform_type}/{date}/{hour}/{timestamp}.json&quot;
+        body = serialize(record)
+</code></pre>
+<p><strong>Step 2: Preprocessing and quality control.</strong> Raw waveform data is noisy. Before any ML model sees it, you need to filter out non-physiological noise, detect segments corrupted by artifact, and score the overall signal quality. This step runs continuously as data arrives. Segments that fail quality checks are logged (you need to know your data loss rate) but excluded from classification. Passing artifact-contaminated data to the classifier is worse than skipping it: you'll get confident wrong answers that trigger false alarms.</p>
+<pre class="code code-plain"><code>FUNCTION preprocess_waveform(raw_record):
+    // Extract the raw sample values from the ingested record.
+    samples     = raw_record.values
+    sample_rate = raw_record.sample_rate
+    waveform_type = raw_record.waveform_type
+
+    // Step 2a: Bandpass filter to remove out-of-band noise.
+    // Filter parameters depend on waveform type:
+    //   ECG: 0.5 - 40 Hz (morphology analysis) or 0.5 - 150 Hz (full bandwidth)
+    //   EEG: 0.5 - 50 Hz
+    //   Arterial BP: 0.1 - 20 Hz
+    filter_params = get_filter_params(waveform_type)
+    filtered = apply_bandpass_filter(samples, filter_params.low_hz, filter_params.high_hz, sample_rate)
+
+    // Step 2b: Notch filter for powerline interference (50 or 60 Hz depending on region).
+    filtered = apply_notch_filter(filtered, powerline_frequency=60, sample_rate)
+
+    // Step 2c: Compute signal quality index (SQI).
+    // SQI combines multiple quality metrics into a single 0-1 score:
+    //   - Amplitude range (is the signal within physiological bounds?)
+    //   - Baseline wander (is there excessive low-frequency drift?)
+    //   - High-frequency noise power (is there excessive EMG contamination?)
+    //   - Flatline detection (is the signal suspiciously constant? Electrode off?)
+    //   - Saturation detection (is the signal clipping at ADC limits?)
+    sqi_score = compute_signal_quality_index(filtered, waveform_type, sample_rate)
+
+    // Step 2d: Quality gate. Reject segments below threshold.
+    IF sqi_score &lt; QUALITY_THRESHOLD:  // typically 0.6 - 0.8 depending on application
+        log_quality_rejection(raw_record, sqi_score)
+        write_quality_metric to Timestream:
+            session_id = raw_record.session_id
+            metric     = &quot;sqi_rejection&quot;
+            value      = sqi_score
+            timestamp  = raw_record.timestamp
+        RETURN null  // do not pass to classifier
+
+    // Step 2e: Segment into analysis windows.
+    // The classifier expects fixed-length input windows.
+    // Window size depends on what you&#x27;re detecting:
+    //   Arrhythmia: 10-30 seconds
+    //   Seizure: 30-60 seconds
+    //   Hemodynamic instability: 60-300 seconds
+    window_size = get_window_size(waveform_type)  // in samples
+    windows = segment_into_windows(filtered, window_size, overlap=0.5)
+
+    RETURN {
+        session_id:    raw_record.session_id,
+        waveform_type: raw_record.waveform_type,
+        timestamp:     raw_record.timestamp,
+        windows:       windows,       // list of fixed-length clean signal segments
+        sqi_score:     sqi_score      // quality score for downstream confidence weighting
+    }
+</code></pre>
+<p><strong>Step 3: Model inference.</strong> Clean, segmented waveform windows are sent to the classification model hosted on SageMaker. The model returns a classification (or set of classifications) with confidence scores for each window. For ECG, this might be rhythm classification (normal sinus, atrial fibrillation, ventricular tachycardia, etc.). For EEG, it might be seizure vs. non-seizure. The model is the core intelligence of the system, but it's only as good as the preprocessing that feeds it and the post-processing that interprets its output.</p>
+<pre class="code code-plain"><code>FUNCTION classify_waveform(preprocessed):
+    // Send each analysis window to the SageMaker endpoint for classification.
+    // The endpoint hosts a trained deep learning model (CNN or transformer).
+    results = empty list
+
+    FOR each window in preprocessed.windows:
+        // Invoke the appropriate model endpoint based on waveform type.
+        // Each waveform type has its own dedicated endpoint for independent
+        // scaling, updates, and fault isolation.
+        endpoint_name = get_endpoint_for_waveform(preprocessed.waveform_type)
+
+        response = invoke SageMaker endpoint:
+            endpoint = endpoint_name
+            payload  = {
+                waveform_type: preprocessed.waveform_type,
+                sample_rate:   get_sample_rate(preprocessed.waveform_type),
+                values:        window,
+                // Include SQI so the model can weight its confidence accordingly
+                signal_quality: preprocessed.sqi_score
+            }
+
+        // Response contains classification label(s) and confidence scores.
+        // Example for ECG: { &quot;rhythm&quot;: &quot;atrial_fibrillation&quot;, &quot;confidence&quot;: 0.94,
+        //                     &quot;secondary&quot;: [{&quot;label&quot;: &quot;pvc&quot;, &quot;confidence&quot;: 0.12}] }
+        append to results: {
+            classification: response.classification,
+            confidence:     response.confidence,
+            window_start:   compute_window_timestamp(preprocessed.timestamp, window_index),
+            signal_quality: preprocessed.sqi_score
+        }
+
+    // On inference failure (timeout, throttling), retry up to 3 times with
+    // exponential backoff. If still failing, route the preprocessed segment
+    // to a DLQ for manual review. Never silently drop waveform data.
+
+    RETURN {
+        session_id:    preprocessed.session_id,
+        waveform_type: preprocessed.waveform_type,
+        results:       results
+    }
+</code></pre>
+<p><strong>Step 4: Post-processing and alert logic.</strong> Raw model outputs are not clinical alerts. A single window classified as &quot;atrial fibrillation&quot; with 70% confidence is not actionable. This step applies clinical logic: requiring sustained detections (multiple consecutive windows agreeing), applying confidence thresholds, checking patient context (known conditions that should not re-alert), and enforcing cooldown periods. This is where you control your false alarm rate, and it's the difference between a system clinicians trust and one they disable. This Lambda function is triggered via SQS (not direct invocation), which provides built-in retry semantics and a DLQ for failed processing attempts.</p>
+<pre class="code code-plain"><code>FUNCTION apply_alert_logic(classification_results):
+    session_id = classification_results.session_id
+    results    = classification_results.results
+
+    // Load patient context: known conditions, active alerts, alert history.
+    // A patient with documented chronic atrial fibrillation should not get
+    // repeated AFib alerts. A patient post-cardiac surgery may have expected PVCs.
+    patient_context = load_patient_context(session_id)
+
+    // Count trailing consecutive windows with the same high-confidence classification.
+    // We count from the most recent window backward because that represents the
+    // current patient state. A historical run that has since resolved is not actionable.
+    FOR each unique classification in results:
+        consecutive_count = count_trailing_consecutive(results, classification, 
+                                                       min_confidence=ALERT_CONFIDENCE_THRESHOLD)
+
+        // Check if this classification meets the sustained detection requirement.
+        // Different conditions have different persistence thresholds:
+        //   Ventricular tachycardia: 3 consecutive windows (urgent, short threshold)
+        //   Atrial fibrillation: 6 consecutive windows (less urgent, need more certainty)
+        //   Seizure: 4 consecutive windows
+        persistence_threshold = get_persistence_threshold(classification)
+
+        IF consecutive_count &gt;= persistence_threshold:
+            // Check suppression rules before alerting.
+            IF classification in patient_context.known_conditions:
+                log_suppressed_alert(session_id, classification, &quot;known_condition&quot;)
+                CONTINUE  // do not alert for known, documented conditions
+
+            IF is_in_cooldown(session_id, classification):
+                log_suppressed_alert(session_id, classification, &quot;cooldown_active&quot;)
+                CONTINUE  // recently alerted for this; don&#x27;t re-alert yet
+
+            // This is a genuine, actionable alert. Generate it.
+            alert = {
+                session_id:     session_id,
+                classification: classification,
+                confidence:     average_confidence(results, classification),
+                onset_time:     first_detection_timestamp(results, classification),
+                severity:       get_clinical_severity(classification),
+                evidence_window: get_evidence_samples(results, classification)
+            }
+
+            // Publish alert to clinical notification system.
+            // SNS topic uses SSE-KMS encryption. Alert contains session_id (opaque),
+            // not MRN. The receiving clinical app resolves patient identity locally.
+            publish to SNS topic &quot;clinical-waveform-alerts&quot;:
+                message  = serialize(alert)
+                attributes = {
+                    severity:  alert.severity,    // enables filtering by urgency
+                    session:   session_id,
+                    condition: classification
+                }
+
+            // Set cooldown to prevent alert storms.
+            set_cooldown(session_id, classification, duration=COOLDOWN_MINUTES)
+
+    // Store ALL classification results (alerting and non-alerting) for audit and research.
+    write_batch to Timestream:
+        FOR each result in results:
+            record = {
+                session_id:     session_id,
+                waveform_type:  classification_results.waveform_type,
+                classification: result.classification,
+                confidence:     result.confidence,
+                signal_quality: result.signal_quality,
+                timestamp:      result.window_start,
+                alerted:        was_alert_generated(result)
+            }
+</code></pre>
+<p><strong>Step 5: Store and expose results.</strong> Every classification, whether it triggered an alert or not, is stored in Timestream for retrospective analysis. This enables clinicians to review a patient's waveform analysis history (&quot;show me all rhythm classifications for this patient over the last 24 hours&quot;), supports model performance monitoring (tracking false positive rates over time), and provides the training data for model improvement. The storage layer also feeds dashboards that show unit-level alert rates, signal quality trends, and system health metrics.</p>
+<pre class="code code-plain"><code>FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
+    // Write detailed results to Timestream for time-based queries.
+    // Timestream&#x27;s time-partitioned storage makes &quot;last N hours&quot; queries fast.
+    // Batch writes: up to 100 records per WriteRecords call for cost efficiency.
+    FOR each batch of 100 records in classification_results:
+        write_records to Timestream table &quot;waveform-classifications&quot;:
+            records = [
+                {
+                    dimensions = {
+                        session_id:     session_id,
+                        waveform_type:  result.waveform_type,
+                        classification: result.classification
+                    },
+                    measures = {
+                        confidence:     result.confidence,
+                        signal_quality: result.signal_quality,
+                        alerted:        1 if result in alerts_generated else 0
+                    },
+                    timestamp = result.window_start
+                }
+                FOR each result in batch
+            ]
+
+    // Write summary metrics for operational dashboards.
+    write to Timestream table &quot;waveform-system-metrics&quot;:
+        dimensions = { unit: get_patient_unit(session_id) }
+        measures = {
+            classifications_per_minute: count(classification_results) / window_duration_minutes,
+            alert_rate:                 count(alerts_generated) / count(classification_results),
+            mean_signal_quality:        average(result.signal_quality for result in classification_results)
+        }
+        timestamp = current_time()
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter12.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample output for a 30-second ECG analysis window:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;session_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a3f7c291-4e82-4b1a-9d03-7f8e2c1b5a94&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;waveform_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ecg_lead_ii&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;analysis_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-01T14:22:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;end&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-01T14:22:30Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;signal_quality&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;classifications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;window_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;normal_sinus_rhythm&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.96</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;heart_rate_bpm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">78</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;window_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;normal_sinus_rhythm&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;heart_rate_bpm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;window_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;premature_ventricular_complex&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.82</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;heart_rate_bpm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">81</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;alert_generated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;suppression_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;isolated_pvc_below_persistence_threshold&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ingestion-to-classification latency</td>
+<td>2-5 seconds</td>
+</tr>
+<tr>
+<td>Model inference time (per window)</td>
+<td>50-150 ms on GPU</td>
+</tr>
+<tr>
+<td>ECG rhythm classification accuracy</td>
+<td>90-97% (varies by rhythm type)</td>
+</tr>
+<tr>
+<td>Signal quality rejection rate</td>
+<td>15-30% in real ICU data</td>
+</tr>
+<tr>
+<td>False alert rate (after post-processing)</td>
+<td>Target &lt; 5 per patient per day</td>
+</tr>
+<tr>
+<td>Data throughput (30-bed ICU)</td>
+<td>~500 MB/hour raw waveform</td>
+</tr>
+<tr>
+<td>Storage cost (raw archive, 30 days)</td>
+<td>~$15-25/month in S3</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong> Patients with pacemakers (pacing spikes confuse morphology analysis). Overlapping conditions (atrial fibrillation with frequent PVCs). Pediatric patients (different normal ranges, different waveform morphology). Periods of high artifact (patient transport, procedures, bathing). And the cold start problem: a new patient with no baseline requires conservative thresholds until the system learns their normal.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Multi-modal fusion.</strong> Combine waveform analysis across modalities: ECG rhythm classification plus arterial BP waveform analysis plus respiratory pattern detection. Fused models that consider multiple physiological signals simultaneously can detect complex deterioration patterns (like early sepsis) that no single waveform reveals alone. The architecture adds a fusion layer that takes embeddings from each modality-specific model and produces a combined risk score.</p>
+<p><strong>Adaptive patient-specific baselines.</strong> Instead of fixed thresholds, learn each patient's normal patterns over the first few hours of monitoring and alert on deviations from their personal baseline. This dramatically reduces false alerts for patients with unusual but stable physiology (e.g., athletes with low resting heart rates, patients with chronic arrhythmias). Requires a per-patient model adaptation step that runs during the initial monitoring period.</p>
+<p><strong>Retrospective waveform mining for research.</strong> Use the archived raw waveform data in S3 to train new models or validate clinical hypotheses. For example: &quot;In patients who developed sepsis, were there detectable changes in heart rate variability 6 hours before clinical recognition?&quot; This turns your monitoring infrastructure into a research platform. Add AWS Glue for ETL and SageMaker Processing for batch analysis of historical waveforms.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html">Amazon SageMaker Real-Time Inference</a></li>
+<li><a href="https://docs.aws.amazon.com/timestream/latest/developerguide/what-is-timestream.html">Amazon Timestream Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/timestream/latest/developerguide/API_Operations_Amazon_Timestream_Write.html">Amazon Timestream Write API</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS</a></li>
+</ul>
+<p><strong>Public Datasets for Development:</strong></p>
+<ul>
+<li><a href="https://physionet.org/content/mimic3wdb/1.0/">PhysioNet MIMIC-III Waveform Database</a>: De-identified ICU waveform recordings from Beth Israel Deaconess Medical Center. Includes ECG, ABP, SpO2, and respiratory waveforms.</li>
+<li><a href="https://physionet.org/content/mitdb/1.0.0/">PhysioNet MIT-BIH Arrhythmia Database</a>: Annotated ECG recordings for arrhythmia detection algorithm development and benchmarking.</li>
+<li><a href="https://physionet.org/content/chbmit/1.0.0/">PhysioNet CHB-MIT Scalp EEG Database</a>: Pediatric EEG recordings with seizure annotations for seizure detection research.</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/implementations/real-time-analytics-spark-streaming/">Real-Time Streaming Data Analysis on AWS</a>: Reference architecture for real-time streaming analytics pipelines</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">Machine Learning Inference at the Edge</a>: Search for IoT and edge inference patterns applicable to bedside device processing</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Basic</strong> (single waveform type, batch processing, no alerting)</td>
+<td>8-12 weeks</td>
+</tr>
+<tr>
+<td><strong>Production-ready</strong> (real-time streaming, multi-waveform, clinical alerting, FDA considerations)</td>
+<td>6-12 months</td>
+</tr>
+<tr>
+<td><strong>With variations</strong> (multi-modal fusion, adaptive baselines, research platform)</td>
+<td>12-18 months</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter12.10-physiological-waveform-analysis.html">Main Recipe 12.10</a> · <a href="chapter12.10-python-example.html">Python Example</a> · <a href="chapter12-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

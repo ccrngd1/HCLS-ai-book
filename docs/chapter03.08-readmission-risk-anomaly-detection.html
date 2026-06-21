@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.8: Readmission Risk Anomaly Detection ⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-38-readmission-risk-anomaly-detection-">Recipe 3.8: Readmission Risk Anomaly Detection ⭐</h1>
+<p><strong>Complexity:</strong> Complex · <strong>Phase:</strong> Production (with care management governance) · <strong>Estimated Cost:</strong> ~$0.0005 to $0.003 per patient-day monitored (mostly compute, feature joins, and RPM ingest; outreach staff time dwarfs infrastructure cost)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>Mr. Alvarez is 71. He was admitted ten days ago with a heart failure exacerbation, ejection fraction 30%, two days in the step-down unit, six days on the cardiology floor, diuresed gently, optimized on guideline-directed medical therapy, taught how to weigh himself daily, given a pillbox with the new med list, scheduled for cardiology follow-up in seven days, and discharged home Thursday afternoon. The discharge summary is solid. The medication reconciliation is clean. The post-discharge plan looks good on paper.</p>
+<p>Friday: he weighs himself. 198 lbs. Same as discharge. He logs it on the patient portal because the discharge nurse showed him how. He feels okay, takes his meds, eats some chicken and rice his daughter brought.</p>
+<p>Saturday: 199. He notices his ankles are a little puffier than yesterday. He logs the weight, doesn't mention the swelling because nobody asked about ankles.</p>
+<p>Sunday: 201. He's a little short of breath walking up the stairs. He sleeps on two pillows because lying flat feels weird. Doesn't call anybody because it's Sunday and he doesn't want to bother anyone.</p>
+<p>Monday: 204. He's up most of the night propped on three pillows, wakes up wheezing. His daughter takes him to the emergency department in the morning. He gets readmitted with acute decompensated heart failure, IV diuretics, three more days in the hospital, another twelve thousand dollars of inpatient cost, and a meaningful hit to his quality of life and his trust in the system.</p>
+<p>Look at the data trail. The weights were going up. From 198 to 199 to 201 to 204 in four days. That's three pounds in three days, which is the textbook trigger for &quot;call your doctor&quot; in heart failure self-management materials. He logged every weight on the patient portal. The portal stored them. Nobody acted on them. The cardiologist's office had thirty new patient messages that morning. The hospital's care management team was understaffed and prioritizing patients who'd just been discharged in the last 48 hours, not day-three or day-four post-discharge. The data was there. The signal was clear in retrospect. It just didn't reach a human who could act on it in time.</p>
+<p>That's readmission risk anomaly detection. Not the well-studied &quot;score this patient at discharge for likelihood of 30-day readmission&quot; problem (though that matters too, and it's mostly Chapter 7 territory). The harder, more operational question is: of all the patients we discharged in the last 30 days, whose post-discharge trajectory right now is deviating from what successful recovery looks like, and where can a phone call, a home visit, or a same-day clinic slot keep them out of the ED?</p>
+<p>The Hospital Readmissions Reduction Program (HRRP), which CMS started in 2012, made this expensive. Hospitals with higher-than-expected 30-day readmission rates for specific conditions (heart failure, AMI, pneumonia, COPD, CABG, total hip/knee arthroplasty) get their Medicare payments reduced.  The financial pressure put readmission reduction on the C-suite agenda, which means the project gets funded, which means there's a real market for tools that help. The clinical pressure is older and arguably more important: readmissions are bad for patients. They're expensive, they're disruptive, they're often preventable, and they signal that something about the discharge transition didn't work.</p>
+<p>The reason this problem lands at the complex end of the chapter, despite years of academic work on readmission prediction, comes down to a few intertwined things.</p>
+<p><strong>The signal is diffuse and slow.</strong> Patient deterioration on an inpatient floor (Recipe 3.7) shows up in vitals and labs over hours. Post-discharge deterioration shows up in patient-reported weights, blood pressures, glucose readings, symptom check-ins, medication adherence, and missed appointments, often over days. Some of those signals are continuous (a Bluetooth scale that uploads daily). Some are intermittent (a patient who fills out a symptom survey twice a week). Some are absent for entirely benign reasons (the scale's battery died) and entirely concerning reasons (the patient is too short of breath to get on the scale). The pipeline has to handle missing-data ambiguity gracefully, because missing data is itself the most common signal.</p>
+<p><strong>Baselines are deeply personal and the post-discharge baseline isn't the inpatient baseline.</strong> A patient discharged at 198 lbs is at their target dry weight. A weight of 200 a week later is fine. A weight of 200 in a patient discharged at 175 is a four-alarm fire. Population thresholds are nearly useless; patient-specific baselines are essential. The baseline has to be established quickly (the first few post-discharge days are the highest-risk window) and adjusted as the patient stabilizes (their dry weight may drift over time as their heart failure regimen optimizes).</p>
+<p><strong>Intervention capacity is the binding constraint.</strong> Unlike inpatient deterioration where the rapid response team is on shift 24/7, post-discharge intervention requires care managers, transition-of-care nurses, pharmacists, social workers, and community health workers, almost always operating during business hours, almost always understaffed, and almost always managing a queue. A model that says &quot;five hundred of your discharged patients are at elevated risk this week&quot; is operationally useless unless it ranks them sharply enough that the care management team can work the top of the list and trust that the bottom is genuinely lower-priority. Precision at the top of the ranking matters more than overall AUROC.</p>
+<p><strong>Causality and correlation are tangled.</strong> A patient whose weight went up and got readmitted shows the model that weight gain predicts readmission. A patient whose weight went up, got a phone call, got a same-day diuretic adjustment, and didn't get readmitted shows the model that weight gain doesn't predict readmission. The intervention itself disrupts the prediction problem. This is the fundamental &quot;treatment effect on prediction&quot; issue, and naive supervised learning on observational data produces models that quietly absorb the historical intervention pattern. You end up predicting &quot;patient who would have been readmitted in the absence of an intervention&quot; using a model that was trained on a world where interventions happened.</p>
+<p><strong>The outcome label is operationally messy.</strong> &quot;Readmission within 30 days&quot; sounds clean. In practice: readmission to which hospital (your hospital, any hospital, any acute care facility)? Planned readmissions for staged procedures (CABG followed by valve replacement) that CMS excludes? Observation stays that aren't technically admissions but are clinically the same event? ED visits that almost-but-didn't-quite become admissions? Skilled nursing facility transfers that are technically discharges-to-SNF? Each definition produces a different label, and the choice shapes what your model learns.</p>
+<p><strong>Patient-reported data is messy, sparse, and biased.</strong> A patient who's well enough to weigh themselves every morning is healthier in expectation than a patient who skips three days. A patient who's tech-savvy enough to use the patient portal differs from one who isn't. A patient with a supportive family member helping with logging differs from one who lives alone. Models trained on patient-reported data can encode digital-engagement bias in ways that map onto socioeconomic and demographic disparities. Subgroup performance audits are not optional.</p>
+<p><strong>Workflow integration is, again, the actual product.</strong> A risk score in a dashboard that nobody opens is worse than no score. The output has to flow into the care management team's daily worklist, the transition-of-care nurse's outreach queue, the pharmacist's medication-reconciliation review list, and (for the highest-risk patients) the cardiologist's same-day add-on list. Each of those integrations is its own project. The pipeline is half the system; the workflow is the other half. Sound familiar? It should. This is the same lesson as Recipe 3.7, applied to a different timescale.</p>
+<p><strong>Equity is a first-order concern, not a side note.</strong> Readmission rates differ across demographic and socioeconomic groups for reasons that are mostly not about clinical risk: housing stability, food security, transportation, social support, English-language proficiency, prior healthcare experiences. Models that predict readmission well in aggregate can perform meaningfully worse on subgroups, and the operational response (more outreach to predicted-higher-risk patients) can either reduce or amplify existing disparities depending on how it's deployed. The CMS HRRP program added Medicaid stratification in 2019 partly in response to evidence that the original methodology penalized safety-net hospitals serving more vulnerable populations.</p>
+<p>What you actually want to build is a continuously-running monitoring service that tracks every recently-discharged patient, ingests patient-reported outcomes and remote monitoring data alongside the EHR feed, computes a per-patient deviation-from-expected-recovery score on a daily (or more frequent) cadence, surfaces the patients whose trajectories are deviating most concerningly to the care management team in priority order with enough explanation to act on, and feeds the outcomes back so the model and the operational thresholds keep improving. Underneath sit a cold-start strategy for patients who just discharged, a missing-data-aware feature pipeline, a calibration and subgroup-monitoring framework, and a tight integration with whatever care management workflow tool the organization actually uses (Salesforce Health Cloud, Epic Healthy Planet, Cerner HealtheRegistries, custom-built worklists, or the spreadsheet a care manager built and refuses to give up).</p>
+<p>Let's get into how.</p>
+<hr />
+<h2 id="the-technology">The Technology</h2>
+<h3 id="why-anomaly-detection-instead-of-just-predict-readmission">Why &quot;Anomaly Detection&quot; Instead of &quot;Just Predict Readmission&quot;</h3>
+<p>A first-time builder might reasonably ask: isn't this just a 30-day readmission prediction model? Why are we calling it anomaly detection?</p>
+<p>The answer is that this chapter is about <em>operational, ongoing</em> anomaly detection, not <em>one-shot</em> discharge-time risk scoring. Both exist, both are useful, and they answer different questions.</p>
+<p><strong>Discharge-time readmission risk scoring</strong> asks: at the moment of discharge, given everything we know about this patient, what's their probability of readmission in the next 30 days? The output goes into discharge planning: which patients get the standard transition of care, which get the enhanced bundle (home health, transitions clinic, pharmacist follow-up), which get the high-touch program (daily outreach, RPM enrollment, expedited specialist follow-up). The classic published models in this space (LACE, LACE+, HOSPITAL, the Epic readmission risk model, various commercial models) live here. This is mostly a Chapter 7 problem; we'll cover it there.</p>
+<p><strong>Post-discharge anomaly detection</strong> asks: of all the patients we discharged in the last 30 days, whose trajectory right now is deviating from what their expected recovery should look like? This is what you need when the day-three weight is up, when the patient stopped checking in, when the new medication regimen produced a side effect that's not yet a readmission but is heading there. The output goes into the care management team's daily worklist. This is what Recipe 3.8 covers.</p>
+<p>The two are complementary. Discharge-time scoring sets up the monitoring intensity (high-risk patients get RPM, daily outreach, and tight feedback loops; lower-risk patients get the standard touchpoints). Post-discharge anomaly detection consumes the monitoring data and surfaces the patients whose actual trajectories are diverging from the expected ones. A well-designed program does both. A program that only does discharge-time scoring tells you who to worry about at the moment of discharge and then loses the thread; a program that only does post-discharge anomaly detection has nothing to do with patients who don't generate post-discharge data at all.</p>
+<p>The framing as &quot;anomaly detection&quot; is deliberate because the question is fundamentally <em>deviation from expected</em>, not <em>absolute level of risk</em>. A patient discharged at 198 lbs whose weight is 200 on day three is normal. The same patient at 204 on day three is anomalous. The signal isn't the weight. It's the deviation from the expected weight trajectory for this patient given their condition, their discharge status, and their personal baseline.</p>
+<h3 id="the-operational-anatomy-of-a-post-discharge-episode">The Operational Anatomy of a Post-Discharge Episode</h3>
+<p>Before getting into models, a builder should know the rough shape of what happens after a patient is discharged from a typical inpatient stay, because the data sources and intervention windows shape everything that follows.</p>
+<p><strong>Day 0: Discharge.</strong> The patient leaves the hospital with a discharge summary, a medication list, follow-up appointments, education materials, and (if they're enrolled in a transitions program) an introduction to the care management team. Pharmacy reconciliation should have happened. The patient may or may not understand any of it; teach-back is the right tool, often skipped.</p>
+<p><strong>Day 1-3: The highest-risk window.</strong> Most preventable readmissions trace back to issues that were detectable in the first 72 hours: medication errors (the patient took the old list plus the new list, didn't pick up the prescription, can't afford the new medication), symptom changes that warranted a check-in, missed first follow-up, transportation issues, post-op complications (wound infection, post-op pain), social issues (no caregiver at home, food insecurity).</p>
+<p><strong>Day 4-7: The integration window.</strong> The patient settles into the new routine, picks up prescriptions, attends the first follow-up appointment, and either stabilizes or doesn't. RPM data, if it's flowing, starts producing useful trajectory information. The first symptom check-in (usually on day 3-5) provides patient-reported information.</p>
+<p><strong>Day 8-21: The drift window.</strong> Patients who were doing fine can deteriorate slowly. Heart failure patients can creep into volume overload over a couple of weeks. COPD patients can develop a brewing exacerbation. Post-surgical patients can develop late wound complications. This window is the one where existing programs do less well, because the highest-touch outreach is concentrated in the first week.</p>
+<p><strong>Day 22-30: The end-of-window risk.</strong> Some readmissions cluster late in the 30-day window. These are often related to medication non-adherence, gradual decompensation, or social issues that took weeks to surface.</p>
+<p><strong>Day 30+: The post-window observation.</strong> The 30-day cutoff is a CMS construct. From a clinical perspective, readmissions on day 31, 35, 60 still represent transition-of-care failures. Some hospital programs track 60- and 90-day windows for internal quality metrics even though CMS only penalizes the 30-day metric.</p>
+<p>The pipeline has to produce useful output at every point in this timeline, not just at the moment of discharge. That's the operational requirement that makes this a streaming problem, not a batch one.</p>
+<h3 id="data-sources-that-actually-drive-signal">Data Sources That Actually Drive Signal</h3>
+<p>The signal-to-noise ratio depends entirely on what data you can pull and at what cadence. Some categories matter a lot more than the literature on discharge-time scoring suggests.</p>
+<p><strong>Patient-reported outcomes (PROs).</strong> Symptom check-ins, pain scores, energy/wellbeing assessments, medication adherence self-reports. Usually delivered through a patient-facing app, an SMS-based check-in, or an IVR phone call. Cadence varies by program (daily for high-risk patients, weekly for moderate-risk). When the patient stops responding, that's also a signal.</p>
+<p><strong>Remote patient monitoring (RPM) device data.</strong> Bluetooth-enabled scales, blood pressure cuffs, pulse oximeters, glucose monitors, peak flow meters. The device transmits to a vendor cloud (BodyTrace, A&amp;D Medical, iHealth, Withings, Roche, Abbott, several others), which transmits to your aggregation platform. Cadence is per-measurement; a daily-weight cohort produces a measurement per day per patient.</p>
+<p><strong>Continuous glucose monitor (CGM) data.</strong> A specific sub-category of RPM that produces high-cadence data (5-15 minute readings). Mostly relevant for diabetes-focused readmission prevention.</p>
+<p><strong>Wearable data.</strong> Apple Watch, Fitbit, Garmin, Oura, etc. Heart rate, activity counts, sleep patterns, blood oxygen (when available), atrial fibrillation detection (Apple Watch). Lower data quality and harder integration than dedicated medical devices, but increasingly common because patients already wear them.</p>
+<p><strong>EHR feeds.</strong> ED visits at your facility, lab orders that came through, medication refill history (when integrated with the pharmacy), care team messages, post-discharge clinic visits. These are the most accurate signals when they happen, but they're often delayed (a refill might happen days before it's reflected in your data) and incomplete (a patient who fills a prescription at a community pharmacy not connected to your network is invisible).</p>
+<p><strong>Health Information Exchange (HIE) data.</strong> ED visits and admissions at other facilities. Critical for &quot;did this patient get readmitted somewhere else&quot; questions and for early-warning when your patient is at another ED right now. HIE coverage varies enormously by region; some states have robust HIEs, others have nothing usable.</p>
+<p><strong>Claims feed.</strong> When the hospital is part of an ACO or risk-sharing arrangement, near-real-time claims data flows through (ACO REACH, MSSP, commercial value-based contracts). This is the highest-quality &quot;did this patient get care anywhere&quot; signal but lags by days to weeks depending on the payer.</p>
+<p><strong>Pharmacy data.</strong> Prescription fills, especially of new medications. Surescripts, RxHistory, pharmacy benefit manager feeds. A patient who didn't fill their new heart failure medication on day three is a high-priority case.</p>
+<p><strong>Social determinants of health (SDOH) data.</strong> Housing stability, food security, transportation barriers, social support, language preferences. Captured through screening tools (PRAPARE, AHC HRSN, Z-codes), through community resource referrals, or inferred from address-level data (food deserts, transit access). Often the most predictive features that nobody is measuring.</p>
+<p><strong>Care management notes.</strong> When the care manager has spoken to the patient, what came up. Free-text, often in a different system than the EHR (Salesforce Health Cloud, custom CMS tools, Epic Healthy Planet). Substantial signal locked in unstructured text; NLP feature extraction can surface it.</p>
+<p><strong>Caregiver-reported data.</strong> Especially for elderly patients with cognitive impairment. The caregiver is the actual reporter of weights, symptoms, and concerns. The caregiver's responsiveness and accuracy is its own variable.</p>
+<p>A useful program doesn't need all of these. It does need to be honest about which it has, which it can act on, and which it's not getting and therefore not modeling. Some of the highest-value data (SDOH, caregiver-reported) is the hardest to operationalize.</p>
+<h3 id="statistical-and-ml-methods-that-fit">Statistical and ML Methods That Fit</h3>
+<p>Post-discharge anomaly detection has a different methodological palette than discharge-time risk scoring because the data structure is fundamentally different: you're looking at ongoing time-series with sparse, irregular observations across multiple modalities, rather than a single feature vector at a single point in time.</p>
+<p><strong>Patient-specific control charts.</strong> The simplest and often surprisingly effective approach. For each tracked metric (weight, blood pressure, symptom score), compute the patient's baseline (mean, median, or trimmed mean of the first several days post-discharge), set control limits (often a hybrid of population-derived limits and patient-specific variability), and flag deviations that exceed the limits. Variants include CUSUM (cumulative sum) for catching gradual drift, EWMA (exponentially weighted moving average) for smoothing noisy series, and Shewhart charts for point anomalies. These are the techniques that the heart failure self-management literature operationalizes as &quot;weigh yourself daily, call if up 3 lbs in 3 days.&quot; Easy to explain, easy to deploy, easy to audit. Hard to make sensitive enough on multi-modal data.</p>
+<p><strong>Forecasting plus residual analysis.</strong> Build a per-patient forecast of the expected trajectory (a smooth recovery curve, a flat steady state, or whatever the recovery pattern for that condition looks like) and flag observations whose residual from the forecast exceeds a threshold. ARIMA, exponential smoothing, state-space models, or simple linear regression with patient-specific slopes. Works well when the recovery trajectory has predictable shape; struggles when there's no signal in the early data and the patient just discharged.</p>
+<p><strong>Multivariate change-point detection.</strong> PELT, Bayesian online change-point detection, and related methods identify points in a time series where the underlying distribution shifts. Useful for detecting &quot;the patient was on a stable trajectory, and then something changed.&quot; Requires enough pre-change data to establish the baseline, which is hard for newly-discharged patients.</p>
+<p><strong>Recurrent neural networks (LSTM, GRU) on multi-modal time series.</strong> Train on patient sequences with multiple modalities (vitals, symptoms, medication adherence) and predict the probability of readmission in the next N days. The model implicitly learns the trajectory shape and the deviations that matter. Strong performance when training data is abundant; data-hungry, less interpretable, and sensitive to data quality issues. Used in academic research more than production deployments as of 2026.</p>
+<p><strong>Transformer-based clinical time series models.</strong> Foundation models for clinical data (BEHRT, Med-BERT, the various clinical time-series transformers) are starting to show strong results on readmission and post-discharge tasks. Production deployment is still rare. Worth experimenting with on retrospective data; probably not the right choice for a first production deployment.</p>
+<p><strong>Survival analysis.</strong> Frame the problem as time-to-event (readmission). Cox proportional hazards models, accelerated failure time models, deep survival networks (DeepSurv, DeepHit). The output is a hazard function or a survival curve, which conveys information about both whether and when readmission is likely. Aligns better with operational use than binary classification (the 60% likelihood of readmission tomorrow drives different action than 60% likelihood of readmission in three weeks).</p>
+<p><strong>Gradient-boosted trees on engineered time-window features.</strong> The workhorse approach. Compute features over rolling windows (last 3 days, last 7 days, last 14 days), feed them into XGBoost or LightGBM, score every patient daily. SHAP values produce per-prediction explanations. Most production-grade post-discharge programs are some flavor of this; the sophistication is in the feature engineering, not the model.</p>
+<p><strong>Hybrid scoring.</strong> A practical pattern: combine a discharge-time risk score (the patient's intrinsic risk at the moment of discharge), a per-modality control-chart deviation score (weight is up, BP is unstable), and an engagement score (the patient stopped checking in). The composite ranks the worklist; the per-component scores drive the explanation. Easy to deploy, easy to explain, easy to tune.</p>
+<p><strong>Causal-inference-aware models.</strong> A growing body of work tries to handle the treatment-effect-on-prediction problem by modeling the intervention explicitly: counterfactual estimators, target-trial-emulation, instrumental variables, propensity-matched controls. These are research-grade as of 2026; most production deployments accept the bias and validate prospectively.</p>
+<p>A reasonable progression: start with patient-specific control charts on the high-signal modalities (weight for heart failure, blood pressure for hypertension, glucose for diabetes), augmented by an engagement-decay flag (the patient stopped checking in) and the discharge-time risk score as a tier modifier. Validate that the worklist generated by this simple system matches care management judgment about which patients to call. Add a gradient-boosted model on top once you have outcome labels from the simple system. Add LSTM or transformer layers only if the marginal gain justifies the operational complexity.</p>
+<h3 id="outcome-definition-is-again-surprisingly-hard">Outcome Definition Is, Again, Surprisingly Hard</h3>
+<p>The same lesson from Recipe 3.7 applies: the choice of outcome shapes what your model learns, and &quot;30-day readmission&quot; is not a single label.</p>
+<p><strong>All-cause readmission within 30 days, all-facilities.</strong> The HRRP-relevant definition. Requires HIE or claims data to capture readmissions to other facilities. Without that, you're modeling &quot;readmission to our hospital,&quot; which biases toward patients who would have come back here anyway.</p>
+<p><strong>Condition-specific readmission within 30 days.</strong> A heart failure patient readmitted with heart failure vs. readmitted with anything. CMS uses condition-specific definitions for the HRRP penalty calculation.</p>
+<p><strong>ED visits without admission.</strong> Often clinically equivalent to readmission (same trip, the difference was whether the ED admitted) but doesn't trigger HRRP penalties. Some programs include ED visits in their internal outcome metric for clinical relevance, even if they're excluded from the formal HRRP calculation.</p>
+<p><strong>Observation stays.</strong> A patient kept in observation for 23 hours and discharged is technically not a readmission. Clinically often equivalent. Definitions vary.</p>
+<p><strong>Intermediate clinical events.</strong> New diuretic dose, new oxygen prescription, new clinic visit, all-system message volume changes. These are pre-readmission events that the model can predict, and that the care management team can act on. Some programs use these as proxies for readmission risk in a tighter feedback loop. They're not the formal outcome but they're operationally useful.</p>
+<p><strong>Mortality.</strong> Some patients die at home in the post-discharge window, or get re-admitted and die. Mortality is a competing risk for readmission and the analysis has to handle that. Survival analysis with competing risks (Fine-Gray, multi-state models) is the technically clean approach; many production models simply censor at death and accept the mild bias.</p>
+<p>The teams that ship working post-discharge programs typically use a composite outcome: 30-day all-cause readmission OR ED visit OR death OR observation stay, with secondary analyses on the condition-specific HRRP-relevant subset. Pick something defensible, validate it, deploy it, refine.</p>
+<h3 id="features-that-actually-matter">Features That Actually Matter</h3>
+<p>The features cluster into several categories that map onto the data sources.</p>
+<p><strong>Discharge-time features (snapshot).</strong> Age, sex, primary diagnosis, comorbidities, prior admissions, length of stay, ICU stay during admission, discharge disposition (home, home with services, SNF), polypharmacy count, new medications added during admission, discharge medications including high-risk classes (anticoagulants, insulin, opioids), social work flags, language, insurance type, distance from home to hospital, payor.</p>
+<p><strong>RPM trajectory features (per modality).</strong> Latest value, trend over last 3/7/14 days, deviation from patient-specific baseline (which is established in the first several days), variability, missing-data indicator (when was the last reading), engagement decay (number of days with at least one reading, recent vs. baseline).</p>
+<p><strong>PRO-derived features.</strong> Latest symptom score, symptom score trend, response rate to check-ins, free-text concerns extracted via NLP, medication adherence self-report, caregiver concerns documented.</p>
+<p><strong>EHR-derived features.</strong> ED visits since discharge, post-discharge clinic visits attended vs. scheduled, medication refills (filled, not filled, partial fill), new orders, new lab results in the post-discharge window.</p>
+<p><strong>Care management interaction features.</strong> Number of outreach attempts since discharge, successful contact rate, escalations made, interventions delivered (medication titration, same-day appointment scheduling, home health activation, transportation arranged).</p>
+<p><strong>Social and behavioral features.</strong> SDOH screening results, caregiver presence, language, transportation flags, food security flags, housing stability flags. Where SDOH data is unavailable, area-level proxies (Area Deprivation Index, Census-tract-level features) are sometimes used as approximations, though they're noisy and contain their own equity considerations.</p>
+<p><strong>Time-since-discharge features.</strong> Day in the post-discharge window. Patient-specific timeline relative to scheduled follow-up appointments. Whether the patient has reached the day-3, day-7, day-14 milestones.</p>
+<p><strong>Engagement features.</strong> Patient portal log-in frequency, message read receipts, check-in completion rate. Engagement decay is one of the strongest signals; a previously-engaged patient who suddenly stops checking in often warrants outreach.</p>
+<p><strong>Patient-specific baselines and deviations.</strong> For every numeric metric, the patient's own baseline and the current deviation. The single most important feature class for separating &quot;this number is normal for them&quot; from &quot;this number is concerning.&quot;</p>
+<p>A useful model has 50-200 features, similar to Recipe 3.7. The complexity budget needs to leave headroom for ongoing tuning and feature retirement; not every feature pays for itself in maintenance cost.</p>
+<h3 id="cold-start-is-the-default-state">Cold-Start Is the Default State</h3>
+<p>Patients enter the monitoring program at discharge. They have zero post-discharge data points. The model has to produce a useful score from day zero, when the only available features are discharge-time features and population priors. This is the classic cold-start problem, and it's the default state for at least the first several days.</p>
+<p>Common approaches:</p>
+<ul>
+<li><strong>Tier-based monitoring.</strong> Discharge-time risk score sets the initial tier; the tier defines monitoring intensity and outreach cadence. The post-discharge anomaly detection layer activates as data flows in.</li>
+<li><strong>Cohort-based priors.</strong> For patients in the same condition cohort, the expected trajectory in the first few days has known shape; deviations from the cohort-typical trajectory can be flagged even with only a couple of data points.</li>
+<li><strong>Engagement-first triage.</strong> A patient who hasn't logged a single weight by day 3 is escalated to the care management team for outreach, regardless of any other signal. The absence of data is treated as a signal.</li>
+<li><strong>Hybrid scoring with backoff.</strong> When patient-specific baseline data is insufficient, fall back to population baselines with appropriate uncertainty inflation. As the patient generates more data, smoothly transition to patient-specific baselines.</li>
+</ul>
+<h3 id="calibration-subgroup-performance-and-the-equity-question">Calibration, Subgroup Performance, and the Equity Question</h3>
+<p>The same operational rules from Recipe 3.7 apply, with an additional twist: post-discharge programs operate in a setting where intervention capacity is the binding constraint, and the question of &quot;who gets the limited intervention capacity&quot; is fundamentally an equity question.</p>
+<p><strong>Calibration.</strong> A score of 0.4 should mean &quot;40% chance of readmission in the prediction window.&quot; Operational thresholds for outreach intensity depend on calibration. Recalibrate per subgroup if subgroup-stratified calibration differs.</p>
+<p><strong>Subgroup performance audits.</strong> Age band, sex, race and ethnicity (where structurally captured), insurance status, language, neighborhood SES, primary diagnosis, discharge disposition. Track AUROC, PRAUC, calibration ECE, alert rate, intervention rate, and (when measurable) the change in readmission rate per subgroup attributable to the program.</p>
+<p><strong>Equity-aware deployment.</strong> A program that surfaces predicted-higher-risk patients for more intervention can either reduce disparities (by directing resources to underserved patients) or amplify them (by directing resources to patients who are easier to engage). The deployment design matters as much as the model design. Some programs explicitly weight intervention prioritization by social vulnerability indices to counter bias in the underlying data; others use subgroup-stratified thresholds; others use post-hoc fairness-aware allocation. Pick one approach deliberately and document the rationale.</p>
+<h3 id="workflow-integration-is-again-the-actual-product">Workflow Integration Is, Again, the Actual Product</h3>
+<p>Same lesson, different chapter. The score is one component. The worklist UI, the outreach call scripts, the escalation pathways, and the documentation back into the EHR are the other components. A program that gets the workflow right with a mediocre model outperforms a program that gets the model right with a mediocre workflow. The teams that ship working systems do both.</p>
+<p>The specific workflows that matter:</p>
+<ul>
+<li><strong>Daily care management worklist.</strong> Sorted by composite score, with the explanation visible inline. Filtering by team, by condition, by recent contact status. Click-through to the patient's RPM trends, recent encounters, and discharge plan.</li>
+<li><strong>Outreach scripts and decision support.</strong> When the care manager calls, what should they ask? What interventions are they empowered to deliver (medication titration via standing orders, same-day appointment slots, home health activation)?</li>
+<li><strong>Escalation pathways.</strong> When the call surfaces a clinical concern that exceeds the care manager's scope, who do they escalate to? On-call provider, transitions clinic, ED if urgent? The pathway needs to exist in writing and be tested in practice.</li>
+<li><strong>Documentation back into the EHR.</strong> The intervention delivered, the patient's response, the clinical assessment, the next-step plan. Without round-trip documentation, the model loses the labels it needs to learn from.</li>
+<li><strong>Closed-loop with discharge planning.</strong> Patterns of post-discharge anomaly that persist across multiple patients should feed back into discharge planning: which patient education materials are insufficient, which medication-reconciliation gaps recur, which transitions consistently produce problems.</li>
+</ul>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>At a conceptual level, the post-discharge anomaly detection pipeline ingests RPM device data, patient-reported outcomes, EHR events, and care management interactions for every recently-discharged patient, computes per-patient features (current values, trajectories, deviations from expected), scores every patient on a daily (or more frequent) cadence, ranks the resulting risk-stratified worklist, and delivers it to the care management team with explanations and suggested next actions. Underneath sit the discharge-time risk scoring layer (which sets the monitoring tier), the cold-start cohort priors, the calibration and subgroup-monitoring infrastructure, the outcome capture loop, and the audit logging required for clinical safety review.</p>
+<pre class="code code-plain"><code>┌────────── POST-DISCHARGE ANOMALY DETECTION PIPELINE ─────────────┐
+│                                                                  │
+│   [Discharge event       [RPM device feeds:    [Patient-         │
+│    + risk score]          weight, BP, SpO2,     reported          │
+│                           glucose, peak flow]   outcomes]         │
+│   [EHR feed: ED visits,  [HIE / claims:        [Pharmacy         │
+│    clinic visits, orders]  external admissions]  refill data]    │
+│   [Care management       [Caregiver-reported   [Engagement       │
+│    interaction logs]      data]                  signals]         │
+│                                                                  │
+│           │                                                      │
+│           ▼                                                      │
+│   [Streaming Ingest and Normalization]                           │
+│   (canonical patient event format, unit conversions,             │
+│    timestamp reconciliation, deduplication)                      │
+│           │                                                      │
+│           ▼                                                      │
+│   [Post-Discharge Patient State Store]                           │
+│   (current snapshot of every patient in the post-discharge       │
+│    window; enrollment status; condition cohort; tier)            │
+│           │                                                      │
+│           ▼                                                      │
+│   [Trajectory History Store]                                     │
+│   (time-series of weights, BPs, glucoses, symptoms, etc.;        │
+│    multi-week retention for baseline computation)                │
+│           │                                                      │
+│           ▼                                                      │
+│   [Feature Engine]                                               │
+│   (current values, trajectory features, patient-specific         │
+│    baselines, deviation scores, engagement features,             │
+│    cohort priors for cold-start)                                 │
+│           │                                                      │
+│           ▼                                                      │
+│   [Scoring Service]                                              │
+│   (anomaly score per modality + composite score; calibration     │
+│    layer; subgroup-stratified thresholds)                        │
+│           │                                                      │
+│           ▼                                                      │
+│   [Worklist Builder]                                             │
+│   (rank patients by composite score; apply suppression and       │
+│    de-duplication; attach explanations and suggested actions)    │
+│           │                                                      │
+│           ▼                                                      │
+│   [Care Management Workflow Tools]                               │
+│   (daily worklist UI; outreach call queue; pharmacist review     │
+│    list; provider escalation list; transitions-clinic queue)     │
+│           │                                                      │
+│           ▼                                                      │
+│   [Intervention Capture]                                         │
+│   (outreach attempted, contact succeeded, intervention           │
+│    delivered, patient response, escalations made)                │
+│           │                                                      │
+│           ▼                                                      │
+│   [Outcome Capture]                                              │
+│   (readmission events, ED visits, post-discharge mortality,      │
+│    program graduation; linked to upstream alerts)                │
+│           │                                                      │
+│           ▼                                                      │
+│   [Monitoring + Governance]                                      │
+│   (subgroup performance, calibration drift, alert volume vs.     │
+│    capacity, intervention success rates, equity audits)          │
+│           │                                                      │
+│           ▼                                                      │
+│   [Periodic Retraining + Threshold Review]                       │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>Ingest and normalization.</strong> RPM data flows from device-vendor APIs (BodyTrace, A&amp;D Medical, iHealth, Withings, etc.) usually via webhook or pull. PRO data flows from the patient-facing app or SMS/IVR vendor. EHR events flow from the EHR integration platform (HL7, FHIR). Care management interactions flow from the care management tool. The normalizer produces a canonical patient event with a small number of event types (measurement, symptom report, ED visit, refill, outreach, escalation, etc.).</p>
+<p><strong>Post-discharge patient state store.</strong> Every patient currently in the post-discharge monitoring program has a state record: enrollment date, condition cohort, discharge-time tier, current monitoring tier, last contact date, intervention history, and pointers to the trajectory history. The state store is the substrate the worklist UI reads.</p>
+<p><strong>Trajectory history store.</strong> Time-series of weights, blood pressures, glucoses, symptom scores, and the like. Retention covers multiple weeks for baseline computation. Per-patient indices for fast retrieval.</p>
+<p><strong>Feature engine.</strong> Computes per-modality features (current value, last 3-day slope, last 7-day slope, deviation from baseline, missing-data indicator) and patient-level features (engagement decay, time since last contact, days post-discharge, condition cohort, discharge-time tier). For cold-start patients, feature values fall back to cohort priors.</p>
+<p><strong>Scoring service.</strong> Hosts the per-modality anomaly detectors (control charts, residual-based detectors) and the composite scoring model (gradient-boosted trees on the engineered features). Produces calibrated scores and per-feature SHAP contributions for the explanation layer.</p>
+<p><strong>Worklist builder.</strong> Ranks patients by composite score, applies suppression rules (recently-contacted patients are de-prioritized; patients who are already in active intervention are tracked separately), de-duplicates across overlapping cohorts, and attaches the explanation and suggested next action to each row.</p>
+<p><strong>Care management workflow tools.</strong> The product. The actual UI the care managers, transitions nurses, pharmacists, and providers interact with. Often a separate vendor system (Salesforce Health Cloud, Epic Healthy Planet, Innovaccer, Lumeris, custom-built) consuming the worklist data via API.</p>
+<p><strong>Intervention capture.</strong> Every outreach attempt, every contact, every intervention is recorded with timestamps. The capture data flows back to the scoring service for tier adjustment (a patient who just got a same-day visit is lower priority for the next 24 hours) and to the retraining pipeline as features.</p>
+<p><strong>Outcome capture.</strong> Readmissions, ED visits, deaths, and program graduations are captured from the EHR feed, the HIE, and (for ACO/risk-bearing arrangements) the claims feed. Outcomes are linked to alerts and interventions for label assembly.</p>
+<p><strong>Monitoring and governance.</strong> Subgroup performance dashboards, alert volume by team and tier, intervention success rates (call connected, intervention delivered, downstream outcome avoided), equity audits across demographic groups. The governance committee reviews these dashboards on a defined cadence (often monthly for clinical leadership, quarterly for executive review).</p>
+<p><strong>Retraining and threshold review.</strong> Quarterly is typical. Use accumulated outcome labels. Compare candidate models against current production. Subgroup performance check. Calibration check. Shadow deployment for a defined period before promotion. Threshold review independent of retraining: alert volume targets shift as care management capacity shifts.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter03.08-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>The model is the small part. Same lesson as Recipe 3.7, said again because it's the lesson that bites every team. In post-discharge programs, the workflow piece is even more important, because the intervention capacity is more constrained and the intervention specifics matter more than they do for inpatient deterioration. A great model with a 25-patient daily worklist that nobody works has zero value. A simple control-chart system with a small worklist that the care management team works religiously, and that has good intervention protocols and tight feedback loops, has substantial value. Build the workflow first. Build the model into it second. (The Basic tier in the <a href="chapter03.08-architecture.html">Architecture companion's</a> Estimated Implementation Time table reflects exactly this discipline: a control-chart-only deployment with full workflow and governance in 4-8 months, before the gradient-boosted composite model enters the picture.)</p>
+<p>Patient-reported data is gold and most programs underuse it. The thing that surprised me the first time I worked on a post-discharge program: patient symptom check-ins, when designed well and delivered through a low-friction channel, are often the highest-signal feature in the model. Higher than the RPM device data. Higher than the EHR features. Patients know how they're feeling. They'll tell you if you ask. The trick is making the asking low-friction (SMS or IVR check-ins of 3-5 questions, not 20-question portal surveys) and timing the asks well (day 3, day 7, day 14, day 21 covers most of the window). The data quality is variable, but the signal is real, and it scales in a way RPM doesn't (no devices to ship, no batteries to fail, no Bluetooth pairing issues).</p>
+<p>Engagement decay is one of the strongest signals. A patient who was engaged and stops engaging is doing one of three things: getting better and not bothering anymore (about half of them); getting worse and not feeling up to engagement (some meaningful fraction); or has a logistical problem (battery, phone broken, traveling). The model can't distinguish these, but the care manager can with a phone call. &quot;We noticed you stopped checking in; everything okay?&quot; is a script that converts disengagement into a conversation, and the conversation surfaces whichever of the three is happening. Build engagement decay into the model and into the worklist as its own first-class feature.</p>
+<p>Cold-start is the default state and you can't shortcut it. Every newly-discharged patient is a cold-start patient. The first few days of monitoring rely on discharge-time features and cohort priors. There's no clever feature engineering that makes this go away; the patient simply doesn't have post-discharge data yet. The right response is uniform high-touch outreach in the first 72 hours regardless of model output, with the model output kicking in for the day 4+ stratification. Programs that try to use the model to ration day-1 outreach are operating in a regime where the model doesn't have the inputs to be reliable, and the false-negative cost is large.</p>
+<p>Equity is a deployment design problem, not a model problem. Subgroup performance monitoring catches model-level disparities. The bigger and harder issue is the upstream availability of data: digital engagement varies across populations, RPM device adoption varies, English-language proficiency affects the patient-facing communication channels, social support affects whether the family can help with logging. Models trained on the data-rich subset don't generalize to the data-poor subset, and the data-poor subset often has the highest clinical risk. The deployment design has to acknowledge this. Some programs explicitly weight outreach toward higher-vulnerability populations regardless of model output; some run parallel non-digital monitoring tracks (community health workers, in-home check-ins) for populations that don't use digital channels well; some provide devices and language-appropriate engagement materials proactively. The right answer depends on the population. The wrong answer is to ignore it and hope the model handles it.</p>
+<p>Causal inference is the biggest research-to-production gap. The published literature on post-discharge interventions has the same problem: most evidence comes from observational studies where intervention assignment correlated with risk. The cleanest evidence for program effectiveness comes from randomized trials, which are rare. If your program supports it, run a randomized rollout: half the eligible patients get the program, half get usual care. The result is defensible evidence for executive review and protects the program from &quot;we don't know if it's working&quot; challenges in the next budget cycle. If randomization isn't feasible, target-trial-emulation with propensity matching is the next best thing.</p>
+<p>The biggest mistake I see: optimizing for the wrong metric. AUROC is the model team's metric. Top-decile capture is the operations team's metric. Successful contact rate is the workflow metric. Intervention rate is the program metric. Reduced 30-day readmission rate (vs. matched controls) is the outcome metric. Cost per readmission avoided is the financial metric. Cost per quality-adjusted life-year is the value-based-care metric. If you can't tell me what your program looks like across all seven, you have a science project, not a program. The transition from science project to program is the hardest single transition in this work, and it's exactly the same lesson as Recipe 3.7 because the underlying structure is the same.</p>
+<p>The political reality: post-discharge programs compete with other quality initiatives for funding. The CFO's question is &quot;what's the ROI?&quot; The ROI math: average cost of a 30-day readmission is in the $10,000-20,000 range depending on payer mix. A program that prevents one to two readmissions per care manager per month covers the care manager's loaded cost. The financial story works for hospitals at risk under HRRP penalties or in value-based-care arrangements. It works less well for fee-for-service hospitals where readmissions are revenue. The latter case is harder; the program has to compete on quality metrics and patient experience rather than direct ROI. Be honest about which case you're in.</p>
+<p>The thing nobody talks about: program graduation criteria. When does a patient stop being in the post-discharge monitoring program? At 30 days because that's the HRRP window? At 60 or 90 days because clinical risk persists? When the patient meets specific stability criteria (stable weight, stable symptoms, stable engagement)? When the patient explicitly opts out? When their devices stop reporting for some defined period? Each program makes a choice. Programs without explicit graduation criteria end up monitoring patients indefinitely, which dilutes care manager capacity and produces alert fatigue. Programs with graduation criteria need to handle the off-ramp: hand-off back to primary care, education materials about ongoing self-monitoring, clear messaging about when to call.</p>
+<p>Closed-loop is not the right answer for most programs. Standing orders for medication titration, automated diuretic adjustments triggered by weight trends, automated home health activations: these can work in narrow scenarios with strong governance, but they raise the regulatory bar substantially (FDA SaMD considerations, scope-of-practice issues for the standing-order delegation, patient consent considerations). Most programs stop short of full closed-loop and keep the human in the loop for the actual care decision. The pipeline surfaces; the care manager decides. Closed-loop is an extension worth designing for in narrow scenarios after the human-in-the-loop program is mature, not a starting point.</p>
+<p>The thing I'd do differently: I'd start narrower than I usually have. A heart failure transitions program with a single cohort, a single device program (Bluetooth scale), a single PRO check-in cadence, and a defined intervention protocol scales better and produces clearer evidence than a multi-cohort everything-at-once program. Pilot, validate, scale. The hospitals that try to launch a post-discharge program for everyone simultaneously usually end up with a program that's mediocre for everyone; the hospitals that pilot with heart failure, prove it works, and then add COPD and post-op cardiac in sequence end up with multiple programs that each work well.</p>
+<p>Lives are saved here too, just less dramatically than in Recipe 3.7. The signal is slower and the impact is harder to attribute, but the published evidence on transitions-of-care interventions is genuine. The Coleman Care Transitions Intervention, Naylor's Transitional Care Model, the Project RED protocol, and various integrated RPM programs have all shown reductions in 30-day readmission rates in randomized or quasi-experimental studies.  The work is hard, but it's worth doing. Just go in with eyes open about what &quot;doing it&quot; actually requires: the workflow, the staffing, the governance, the equity considerations, and the ongoing operational discipline.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 3.5 (Lab Result Outlier Detection):</strong> Patient-specific baseline establishment for labs is a closely related problem; the techniques for identifying patient-specific normal ranges transfer.</li>
+<li><strong>Recipe 3.7 (Patient Deterioration Early Warning):</strong> Inpatient deterioration is the same fundamental problem on a different timescale, with different sensors and different intervention windows. Many architectural patterns transfer.</li>
+<li><strong>Recipe 3.9 (Cybersecurity / Access Pattern Anomalies):</strong> Behavioral baseline establishment and engagement-decay detection share statistical foundations.</li>
+<li><strong>Recipe 4.x (Personalization / Recommendation):</strong> Outreach channel optimization, message timing, and content personalization for patient-facing communication overlap with personalization patterns in Chapter 4.</li>
+<li><strong>Recipe 7.x (Predictive Analytics / Risk Scoring):</strong> The discharge-time readmission risk score that feeds this recipe is a Chapter 7 problem. The composite scoring layer in this recipe is also predictive analytics, and many of the validation patterns transfer.</li>
+<li><strong>Recipe 12.x (Time Series Analysis / Forecasting):</strong> Trajectory forecasting and residual-based anomaly detection are core time-series patterns covered in Chapter 12.</li>
+<li><strong>Recipe 2.x (LLM / Generative AI):</strong> Outreach script generation, narrative explanations, and case summaries use patterns from Chapter 2.</li>
+<li><strong>Recipe 8.x (NLP / Traditional):</strong> Care management note extraction uses NLP patterns from Chapter 8.</li>
+<li><strong>Recipe 11.x (Conversational AI):</strong> Patient-facing conversational check-ins use patterns from Chapter 11.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>anomaly-detection</code> · <code>readmission-risk</code> · <code>post-discharge-monitoring</code> · <code>transitions-of-care</code> · <code>remote-patient-monitoring</code> · <code>rpm</code> · <code>patient-reported-outcomes</code> · <code>pro</code> · <code>heart-failure</code> · <code>copd</code> · <code>hrrp</code> · <code>cms-readmission-program</code> · <code>lace</code> · <code>hospital-score</code> · <code>time-series</code> · <code>xgboost</code> · <code>lightgbm</code> · <code>survival-analysis</code> · <code>feature-store</code> · <code>clarify</code> · <code>model-monitor</code> · <code>model-registry</code> · <code>bedrock</code> · <code>comprehend-medical</code> · <code>kinesis</code> · <code>timestream</code> · <code>dynamodb</code> · <code>opensearch</code> · <code>eventbridge</code> · <code>sagemaker</code> · <code>appsync</code> · <code>step-functions</code> · <code>care-management</code> · <code>local-validation</code> · <code>subgroup-performance</code> · <code>equity</code> · <code>sdoh</code> · <code>calibration</code> · <code>shap</code> · <code>engagement-decay</code> · <code>cold-start</code> · <code>causal-inference</code> · <code>fda-cds</code> · <code>samd</code> · <code>hipaa</code> · <code>complex</code> · <code>production</code> · <code>provider</code></p>
+<hr />
+<p><em>← <a href="chapter03.07-patient-deterioration-early-warning.html">Recipe 3.7: Patient Deterioration Early Warning</a> · <a href="chapter03-preface.html">Chapter 3 Preface</a> · <a href="chapter03.09-cybersecurity-access-pattern-anomalies.html">Next: Recipe 3.9 - Cybersecurity / Access Pattern Anomalies →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 7.11: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-711-python-implementation-example">Recipe 7.11: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the claim denial prediction pipeline from Recipe 7.11. It demonstrates the core concepts (synthetic claims generation, gradient-boosted classification with class imbalance handling, SHAP explainability, and SageMaker integration) using synthetic data and a locally-trained model. It is not production-ready. Real denial prediction systems require validated feature engineering against actual payer behavior, continuous retraining, and months of threshold calibration with your billing team. Think of this as the whiteboard sketch, not the deployment blueprint.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the following packages:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>scikit-learn<span class="w"> </span>xgboost<span class="w"> </span>shap<span class="w"> </span>matplotlib
+</pre></div>
+
+<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>sagemaker:CreateTrainingJob</code>, <code>sagemaker:CreateModel</code>, <code>sagemaker:CreateEndpointConfig</code>, <code>sagemaker:CreateEndpoint</code>, <code>sagemaker:InvokeEndpoint</code> (for SageMaker training and inference)</li>
+<li><code>sagemaker:CreateTransformJob</code> (for batch scoring)</li>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code> (for training data, model artifacts, and batch outputs)</li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:Query</code> (for prediction storage)</li>
+<li><code>iam:PassRole</code> (to pass the SageMaker execution role)</li>
+</ul>
+<p>For this example, we train locally with synthetic data first, then show how you'd wire it into SageMaker. The local version lets you see the full pipeline without incurring AWS costs.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>These thresholds and lookup tables control the synthetic data generation and model behavior. In production, these would come from your actual claims history and payer contracts.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="c1"># Structured logging. Never log PHI (patient names, MRNs, specific diagnosis</span>
+<span class="c1"># details in combination with identifying info). Log claim_id for tracing.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># --- Risk thresholds ---</span>
+<span class="c1"># These define the operational cutoffs for routing claims to review queues.</span>
+<span class="c1"># Start conservative (lower thresholds = more flags) and loosen as your</span>
+<span class="c1"># billing team develops trust in the model.</span>
+<span class="n">HIGH_RISK_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>    <span class="c1"># Route to supervisor review</span>
+<span class="n">MEDIUM_RISK_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.40</span>  <span class="c1"># Surface warning to coder</span>
+<span class="n">LOW_RISK_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.20</span>     <span class="c1"># Auto-clear, no flag</span>
+
+<span class="c1"># --- Synthetic data parameters ---</span>
+<span class="c1"># Realistic claim volume for a mid-size health system.</span>
+<span class="c1"># Denial rates vary by payer; 10-15% overall is typical.</span>
+<span class="n">NUM_CLAIMS</span> <span class="o">=</span> <span class="mi">50000</span>
+<span class="n">OVERALL_DENIAL_RATE</span> <span class="o">=</span> <span class="mf">0.12</span>    <span class="c1"># 12% base denial rate</span>
+
+<span class="c1"># --- Payer-specific denial rates ---</span>
+<span class="c1"># In production, you&#39;d compute these from actual claims history.</span>
+<span class="c1"># These are illustrative but realistic ranges.</span>
+<span class="n">PAYER_DENIAL_RATES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;BCBS&quot;</span><span class="p">:</span> <span class="mf">0.09</span><span class="p">,</span>
+    <span class="s2">&quot;UnitedHealthcare&quot;</span><span class="p">:</span> <span class="mf">0.14</span><span class="p">,</span>
+    <span class="s2">&quot;Aetna&quot;</span><span class="p">:</span> <span class="mf">0.11</span><span class="p">,</span>
+    <span class="s2">&quot;Cigna&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">,</span>
+    <span class="s2">&quot;Humana&quot;</span><span class="p">:</span> <span class="mf">0.13</span><span class="p">,</span>
+    <span class="s2">&quot;Medicare&quot;</span><span class="p">:</span> <span class="mf">0.07</span><span class="p">,</span>
+    <span class="s2">&quot;Medicaid&quot;</span><span class="p">:</span> <span class="mf">0.16</span><span class="p">,</span>
+    <span class="s2">&quot;Tricare&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># --- Common CPT codes with rough denial risk multipliers ---</span>
+<span class="c1"># Higher multiplier = more likely to be denied without proper documentation/PA.</span>
+<span class="n">CPT_RISK_MULTIPLIERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;99213&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>   <span class="c1"># Office visit, established (low risk)</span>
+    <span class="s2">&quot;99214&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>   <span class="c1"># Office visit, moderate (low risk)</span>
+    <span class="s2">&quot;99215&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>   <span class="c1"># Office visit, high complexity (slightly elevated)</span>
+    <span class="s2">&quot;27447&quot;</span><span class="p">:</span> <span class="mf">1.8</span><span class="p">,</span>   <span class="c1"># Total knee replacement (PA-sensitive)</span>
+    <span class="s2">&quot;29881&quot;</span><span class="p">:</span> <span class="mf">1.6</span><span class="p">,</span>   <span class="c1"># Knee arthroscopy (PA-sensitive)</span>
+    <span class="s2">&quot;43239&quot;</span><span class="p">:</span> <span class="mf">1.4</span><span class="p">,</span>   <span class="c1"># Upper GI endoscopy with biopsy</span>
+    <span class="s2">&quot;70553&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>   <span class="c1"># Brain MRI (medical necessity scrutiny)</span>
+    <span class="s2">&quot;72148&quot;</span><span class="p">:</span> <span class="mf">1.3</span><span class="p">,</span>   <span class="c1"># Lumbar spine MRI</span>
+    <span class="s2">&quot;90837&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>   <span class="c1"># Psychotherapy, 60 min</span>
+    <span class="s2">&quot;99283&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>   <span class="c1"># ED visit, moderate</span>
+    <span class="s2">&quot;99285&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>   <span class="c1"># ED visit, high severity</span>
+    <span class="s2">&quot;20610&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>   <span class="c1"># Joint injection</span>
+    <span class="s2">&quot;64483&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>   <span class="c1"># Epidural injection (PA-sensitive)</span>
+    <span class="s2">&quot;77067&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>   <span class="c1"># Screening mammography (preventive, rarely denied)</span>
+    <span class="s2">&quot;36415&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>   <span class="c1"># Venipuncture (almost never denied)</span>
+<span class="p">}</span>
+
+<span class="c1"># --- Place of service codes ---</span>
+<span class="n">PLACE_OF_SERVICE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="s2">&quot;Office&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;21&quot;</span><span class="p">:</span> <span class="s2">&quot;Inpatient Hospital&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;22&quot;</span><span class="p">:</span> <span class="s2">&quot;Outpatient Hospital&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;23&quot;</span><span class="p">:</span> <span class="s2">&quot;Emergency Room&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;24&quot;</span><span class="p">:</span> <span class="s2">&quot;Ambulatory Surgical Center&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;31&quot;</span><span class="p">:</span> <span class="s2">&quot;Skilled Nursing Facility&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;81&quot;</span><span class="p">:</span> <span class="s2">&quot;Independent Lab&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># --- SageMaker configuration ---</span>
+<span class="n">SAGEMAKER_ROLE_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerExecutionRole&quot;</span>
+<span class="n">S3_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;claim-denial-ml&quot;</span>
+<span class="n">MODEL_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;models/denial-prediction&quot;</span>
+<span class="n">DATA_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;data/features&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-generate-synthetic-claims-data">Step 1: Generate Synthetic Claims Data</h2>
+<p><em>The main recipe's Step 1 computes features from real claims history. Here we generate realistic synthetic claims data with the same structure. The key property to get right is the class imbalance: most claims are paid, and denial probability depends on interactions between payer, procedure, PA status, and provider.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_synthetic_claims</span><span class="p">(</span><span class="n">n_claims</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">NUM_CLAIMS</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate synthetic claims data with realistic denial patterns.</span>
+
+<span class="sd">    The denial probability for each claim is driven by interactions between</span>
+<span class="sd">    features, mimicking how real payer adjudication works:</span>
+<span class="sd">    - Certain payer + procedure combinations have high denial rates</span>
+<span class="sd">    - Missing prior auth when required almost guarantees denial</span>
+<span class="sd">    - Provider history and place of service modify risk</span>
+
+<span class="sd">    Returns a DataFrame with features and a binary &#39;denied&#39; label.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="c1"># --- Generate base features ---</span>
+    <span class="n">payers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">PAYER_DENIAL_RATES</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">cpt_codes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">CPT_RISK_MULTIPLIERS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">pos_codes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">PLACE_OF_SERVICE</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">provider_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MD&quot;</span><span class="p">,</span> <span class="s2">&quot;DO&quot;</span><span class="p">,</span> <span class="s2">&quot;NP&quot;</span><span class="p">,</span> <span class="s2">&quot;PA&quot;</span><span class="p">,</span> <span class="s2">&quot;Facility&quot;</span><span class="p">]</span>
+    <span class="n">specialties</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;Family Medicine&quot;</span><span class="p">,</span> <span class="s2">&quot;Internal Medicine&quot;</span><span class="p">,</span> <span class="s2">&quot;Orthopedics&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Cardiology&quot;</span><span class="p">,</span> <span class="s2">&quot;Radiology&quot;</span><span class="p">,</span> <span class="s2">&quot;Emergency Medicine&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Psychiatry&quot;</span><span class="p">,</span> <span class="s2">&quot;General Surgery&quot;</span><span class="p">,</span> <span class="s2">&quot;Gastroenterology&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Neurology&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Sample ICD-10 codes (simplified; real data has 70k+ codes)</span>
+    <span class="n">icd10_codes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;M17.11&quot;</span><span class="p">,</span> <span class="s2">&quot;M54.5&quot;</span><span class="p">,</span> <span class="s2">&quot;I10&quot;</span><span class="p">,</span> <span class="s2">&quot;E11.9&quot;</span><span class="p">,</span> <span class="s2">&quot;J06.9&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;K21.0&quot;</span><span class="p">,</span> <span class="s2">&quot;G43.909&quot;</span><span class="p">,</span> <span class="s2">&quot;F32.1&quot;</span><span class="p">,</span> <span class="s2">&quot;M79.3&quot;</span><span class="p">,</span> <span class="s2">&quot;R10.9&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Z00.00&quot;</span><span class="p">,</span> <span class="s2">&quot;Z12.31&quot;</span><span class="p">,</span> <span class="s2">&quot;S82.001A&quot;</span><span class="p">,</span> <span class="s2">&quot;M25.511&quot;</span><span class="p">,</span> <span class="s2">&quot;J18.9&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Modifiers that affect denial risk</span>
+    <span class="n">modifier_options</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;25&quot;</span><span class="p">,</span> <span class="s2">&quot;26&quot;</span><span class="p">,</span> <span class="s2">&quot;59&quot;</span><span class="p">,</span> <span class="s2">&quot;76&quot;</span><span class="p">,</span> <span class="s2">&quot;LT&quot;</span><span class="p">,</span> <span class="s2">&quot;RT&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Build the claims DataFrame</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;claim_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;CLM-</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">07d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_claims</span><span class="p">)],</span>
+        <span class="s2">&quot;payer&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">payers</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;cpt_code&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cpt_codes</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;icd10_primary&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">icd10_codes</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;num_diagnoses&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;place_of_service&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">pos_codes</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;provider_type&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">provider_types</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;specialty&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">specialties</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;patient_age&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;claim_amount&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_claims</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;num_line_items&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;modifier_1&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">modifier_options</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="s2">&quot;has_secondary_insurance&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">n_claims</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">]),</span>
+        <span class="s2">&quot;is_resubmission&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">n_claims</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.92</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">]),</span>
+        <span class="s2">&quot;days_since_service&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># --- Assign prior-auth requirement and status ---</span>
+    <span class="c1"># High-risk CPT codes (multiplier &gt; 1.3) are more likely to require PA.</span>
+    <span class="n">pa_required_prob</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;cpt_code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="mf">0.7</span> <span class="k">if</span> <span class="n">CPT_RISK_MULTIPLIERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.3</span> <span class="k">else</span> <span class="mf">0.1</span>
+    <span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;pa_required&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pa_required_prob</span><span class="p">)</span>
+
+    <span class="c1"># If PA is required, it&#39;s present ~70% of the time (some are missed).</span>
+    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;pa_on_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;pa_required&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.70</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span>
+        <span class="mi">0</span>  <span class="c1"># If not required, field is 0</span>
+    <span class="p">)</span>
+
+    <span class="c1"># --- Compute denial probability as a function of feature interactions ---</span>
+    <span class="c1"># This is the &quot;oracle&quot; that mimics payer adjudication logic.</span>
+
+    <span class="c1"># Start with payer base denial rate</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;payer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">PAYER_DENIAL_RATES</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="c1"># Apply CPT risk multiplier (interaction: payer rate * procedure risk)</span>
+    <span class="n">cpt_mult</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;cpt_code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">CPT_RISK_MULTIPLIERS</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">denial_prob</span> <span class="o">*</span> <span class="n">cpt_mult</span>
+
+    <span class="c1"># PA required but missing is a near-guarantee of denial</span>
+    <span class="n">pa_missing</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;pa_required&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;pa_on_file&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pa_missing</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">denial_prob</span> <span class="o">+</span> <span class="mf">0.55</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">),</span> <span class="n">denial_prob</span><span class="p">)</span>
+
+    <span class="c1"># Place of service interactions (outpatient surgery scrutinized more)</span>
+    <span class="n">outpatient_surgical</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;place_of_service&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">&quot;22&quot;</span><span class="p">,</span> <span class="s2">&quot;24&quot;</span><span class="p">])</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">outpatient_surgical</span><span class="p">,</span> <span class="n">denial_prob</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">denial_prob</span><span class="p">)</span>
+
+    <span class="c1"># High claim amounts get more scrutiny</span>
+    <span class="n">high_amount</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;claim_amount&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">5000</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">high_amount</span><span class="p">,</span> <span class="n">denial_prob</span> <span class="o">*</span> <span class="mf">1.15</span><span class="p">,</span> <span class="n">denial_prob</span><span class="p">)</span>
+
+    <span class="c1"># Resubmissions have slightly lower denial (issue was fixed)</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;is_resubmission&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">denial_prob</span> <span class="o">*</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">denial_prob</span><span class="p">)</span>
+
+    <span class="c1"># Late submissions (&gt;30 days) get timely filing denials</span>
+    <span class="n">late_filing</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;days_since_service&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">30</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">late_filing</span><span class="p">,</span> <span class="n">denial_prob</span> <span class="o">+</span> <span class="mf">0.10</span><span class="p">,</span> <span class="n">denial_prob</span><span class="p">)</span>
+
+    <span class="c1"># Add noise and clip to [0, 1]</span>
+    <span class="n">denial_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">denial_prob</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">,</span> <span class="n">n_claims</span><span class="p">),</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">)</span>
+
+    <span class="c1"># Generate binary outcome</span>
+    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;denied&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">denial_prob</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Generated </span><span class="si">%d</span><span class="s2"> claims. Denial rate: </span><span class="si">%.1f%%</span><span class="s2"> (</span><span class="si">%d</span><span class="s2"> denied, </span><span class="si">%d</span><span class="s2"> paid)&quot;</span><span class="p">,</span>
+        <span class="n">n_claims</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;denied&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;denied&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+        <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;denied&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-feature-engineering-and-encoding">Step 2: Feature Engineering and Encoding</h2>
+<p><em>The main recipe discusses how categorical features (CPT codes, payers, etc.) need careful encoding for tree models. Here we handle that encoding plus derived interaction features that carry most of the predictive signal.</em></p>
+<div class="code"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LabelEncoder</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_features</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Encode categorical features and split into train/test sets.</span>
+
+<span class="sd">    For gradient-boosted trees, we use label encoding for categoricals</span>
+<span class="sd">    (trees can split on ordinal-encoded categoricals just fine, unlike</span>
+<span class="sd">    linear models which need one-hot encoding). For the logistic regression</span>
+<span class="sd">    baseline, we&#39;ll one-hot encode separately.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        X_train, X_test, y_train, y_test, feature_names, label_encoders</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create a copy so we don&#39;t mutate the original</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># --- Derived interaction features ---</span>
+    <span class="c1"># These capture the payer-procedure interactions that drive most denials.</span>
+
+    <span class="c1"># Payer + CPT interaction (the single most predictive feature)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;payer_cpt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="s2">&quot;payer&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">features</span><span class="p">[</span><span class="s2">&quot;cpt_code&quot;</span><span class="p">]</span>
+
+    <span class="c1"># PA gap: required but not on file</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;pa_gap&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;pa_required&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;pa_on_file&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Log-transformed claim amount (reduces skew for the model)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;claim_amount_log&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;claim_amount&quot;</span><span class="p">])</span>
+
+    <span class="c1"># --- Label-encode categoricals ---</span>
+    <span class="n">categorical_cols</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;payer&quot;</span><span class="p">,</span> <span class="s2">&quot;cpt_code&quot;</span><span class="p">,</span> <span class="s2">&quot;icd10_primary&quot;</span><span class="p">,</span> <span class="s2">&quot;place_of_service&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;provider_type&quot;</span><span class="p">,</span> <span class="s2">&quot;specialty&quot;</span><span class="p">,</span> <span class="s2">&quot;modifier_1&quot;</span><span class="p">,</span> <span class="s2">&quot;payer_cpt&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">label_encoders</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categorical_cols</span><span class="p">:</span>
+        <span class="n">le</span> <span class="o">=</span> <span class="n">LabelEncoder</span><span class="p">()</span>
+        <span class="c1"># Handle None/NaN in modifier column</span>
+        <span class="n">features</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s2">&quot;NONE&quot;</span><span class="p">)</span>
+        <span class="n">features</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">le</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+        <span class="n">label_encoders</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">le</span>
+
+    <span class="c1"># --- Select model features ---</span>
+    <span class="n">feature_cols</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;payer&quot;</span><span class="p">,</span> <span class="s2">&quot;cpt_code&quot;</span><span class="p">,</span> <span class="s2">&quot;icd10_primary&quot;</span><span class="p">,</span> <span class="s2">&quot;place_of_service&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;provider_type&quot;</span><span class="p">,</span> <span class="s2">&quot;specialty&quot;</span><span class="p">,</span> <span class="s2">&quot;modifier_1&quot;</span><span class="p">,</span> <span class="s2">&quot;payer_cpt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;num_diagnoses&quot;</span><span class="p">,</span> <span class="s2">&quot;patient_age&quot;</span><span class="p">,</span> <span class="s2">&quot;claim_amount_log&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;num_line_items&quot;</span><span class="p">,</span> <span class="s2">&quot;pa_required&quot;</span><span class="p">,</span> <span class="s2">&quot;pa_on_file&quot;</span><span class="p">,</span> <span class="s2">&quot;pa_gap&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;has_secondary_insurance&quot;</span><span class="p">,</span> <span class="s2">&quot;is_resubmission&quot;</span><span class="p">,</span> <span class="s2">&quot;days_since_service&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="s2">&quot;denied&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Stratified split preserves the class imbalance ratio in both sets</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">y</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Train set: </span><span class="si">%d</span><span class="s2"> claims (</span><span class="si">%.1f%%</span><span class="s2"> denied). Test set: </span><span class="si">%d</span><span class="s2"> claims (</span><span class="si">%.1f%%</span><span class="s2"> denied)&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">),</span> <span class="n">y_train</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">),</span> <span class="n">y_test</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">feature_cols</span><span class="p">,</span> <span class="n">label_encoders</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-train-logistic-regression-baseline">Step 3: Train Logistic Regression Baseline</h2>
+<p><em>Always start with a simple baseline. Logistic regression gives you a floor to beat and helps validate that the signal is in the data. If logistic regression gets 0.75+ AUC, you know a more complex model will do even better.</em></p>
+<div class="code"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">roc_auc_score</span><span class="p">,</span> <span class="n">average_precision_score</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">train_baseline</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train a logistic regression baseline with class weighting.</span>
+
+<span class="sd">    Logistic regression needs scaled features (unlike trees) and handles</span>
+<span class="sd">    class imbalance via the class_weight parameter. It&#39;s fast, interpretable,</span>
+<span class="sd">    and sets a performance floor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Scale features for logistic regression (trees don&#39;t need this)</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+    <span class="n">X_train_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+    <span class="n">X_test_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+
+    <span class="c1"># class_weight=&#39;balanced&#39; adjusts weights inversely proportional to</span>
+    <span class="c1"># class frequency. Equivalent to oversampling the minority class.</span>
+    <span class="n">lr_model</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span>
+        <span class="n">class_weight</span><span class="o">=</span><span class="s2">&quot;balanced&quot;</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+        <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;lbfgs&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">lr_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_scaled</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+
+    <span class="c1"># Predict probabilities (not hard labels) for threshold-independent evaluation</span>
+    <span class="n">y_pred_proba</span> <span class="o">=</span> <span class="n">lr_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_test_scaled</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">roc_auc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">)</span>
+    <span class="n">pr_auc</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Logistic Regression baseline: ROC-AUC=</span><span class="si">%.4f</span><span class="s2">, PR-AUC=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">,</span> <span class="n">pr_auc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">lr_model</span><span class="p">,</span>
+        <span class="s2">&quot;scaler&quot;</span><span class="p">:</span> <span class="n">scaler</span><span class="p">,</span>
+        <span class="s2">&quot;roc_auc&quot;</span><span class="p">:</span> <span class="n">roc_auc</span><span class="p">,</span>
+        <span class="s2">&quot;pr_auc&quot;</span><span class="p">:</span> <span class="n">pr_auc</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-train-xgboost-with-class-imbalance-handling">Step 4: Train XGBoost with Class Imbalance Handling</h2>
+<p><em>This is the main model. XGBoost handles the heterogeneous feature landscape (categoricals, numerics, binary flags) and discovers non-linear interactions automatically. The critical parameter for imbalanced data is <code>scale_pos_weight</code>, which tells the model to penalize misclassifying the minority class more heavily.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">xgboost</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xgb</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">train_xgboost</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train an XGBoost classifier with class imbalance handling.</span>
+
+<span class="sd">    Key choices:</span>
+<span class="sd">    - scale_pos_weight: ratio of negative to positive examples. Tells the</span>
+<span class="sd">      model that missing a denial is ~7x worse than a false alarm.</span>
+<span class="sd">    - eval_metric &#39;aucpr&#39;: optimizes for precision-recall AUC, which is</span>
+<span class="sd">      more informative than ROC-AUC for imbalanced data.</span>
+<span class="sd">    - early_stopping_rounds: prevents overfitting by stopping when</span>
+<span class="sd">      validation performance plateaus.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute class weight ratio</span>
+    <span class="c1"># If 12% denial rate: (1 - 0.12) / 0.12 = 7.3</span>
+    <span class="n">n_positive</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">n_negative</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_positive</span>
+    <span class="n">scale_pos_weight</span> <span class="o">=</span> <span class="n">n_negative</span> <span class="o">/</span> <span class="n">n_positive</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Class balance: </span><span class="si">%d</span><span class="s2"> denied (</span><span class="si">%.1f%%</span><span class="s2">), </span><span class="si">%d</span><span class="s2"> paid. scale_pos_weight=</span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">n_positive</span><span class="p">,</span> <span class="p">(</span><span class="n">n_positive</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">n_negative</span><span class="p">,</span> <span class="n">scale_pos_weight</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Create DMatrix objects (XGBoost&#39;s optimized data structure)</span>
+    <span class="n">dtrain</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">DMatrix</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">y_train</span><span class="p">)</span>
+    <span class="n">dtest</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">DMatrix</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;objective&quot;</span><span class="p">:</span> <span class="s2">&quot;binary:logistic&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;eval_metric&quot;</span><span class="p">:</span> <span class="s2">&quot;aucpr&quot;</span><span class="p">,</span>            <span class="c1"># precision-recall AUC</span>
+        <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>                    <span class="c1"># tree depth (6 is a good default)</span>
+        <span class="s2">&quot;eta&quot;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>                       <span class="c1"># learning rate (low for stability)</span>
+        <span class="s2">&quot;subsample&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>                  <span class="c1"># row subsampling per tree</span>
+        <span class="s2">&quot;colsample_bytree&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>           <span class="c1"># feature subsampling per tree</span>
+        <span class="s2">&quot;scale_pos_weight&quot;</span><span class="p">:</span> <span class="n">scale_pos_weight</span><span class="p">,</span>
+        <span class="s2">&quot;min_child_weight&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>            <span class="c1"># minimum samples per leaf</span>
+        <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>                      <span class="c1"># minimum loss reduction for split</span>
+        <span class="s2">&quot;tree_method&quot;</span><span class="p">:</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span>             <span class="c1"># faster training with histograms</span>
+        <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Train with early stopping on validation set</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">train</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">,</span>
+        <span class="n">dtrain</span><span class="p">,</span>
+        <span class="n">num_boost_round</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+        <span class="n">evals</span><span class="o">=</span><span class="p">[(</span><span class="n">dtrain</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">),</span> <span class="p">(</span><span class="n">dtest</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">)],</span>
+        <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">verbose_eval</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>                   <span class="c1"># print every 50 rounds</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Evaluate</span>
+    <span class="n">y_pred_proba</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dtest</span><span class="p">)</span>
+    <span class="n">roc_auc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">)</span>
+    <span class="n">pr_auc</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;XGBoost: ROC-AUC=</span><span class="si">%.4f</span><span class="s2">, PR-AUC=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">,</span> <span class="n">pr_auc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span>
+        <span class="s2">&quot;roc_auc&quot;</span><span class="p">:</span> <span class="n">roc_auc</span><span class="p">,</span>
+        <span class="s2">&quot;pr_auc&quot;</span><span class="p">:</span> <span class="n">pr_auc</span><span class="p">,</span>
+        <span class="s2">&quot;best_iteration&quot;</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">best_iteration</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-evaluate-with-imbalance-appropriate-metrics">Step 5: Evaluate with Imbalance-Appropriate Metrics</h2>
+<p><em>Raw accuracy is meaningless for imbalanced data. A model predicting &quot;paid&quot; for everything gets 88% accuracy but catches zero denials. We evaluate with precision-recall curves, PR-AUC, confusion matrices at chosen thresholds, and threshold-specific operating points.</em></p>
+<div class="code"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">precision_recall_curve</span><span class="p">,</span>
+    <span class="n">confusion_matrix</span><span class="p">,</span>
+    <span class="n">classification_report</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_model</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.40</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate predictions with metrics appropriate for class imbalance.</span>
+
+<span class="sd">    Key metrics:</span>
+<span class="sd">    - PR-AUC: area under precision-recall curve (the single best summary</span>
+<span class="sd">      statistic for imbalanced binary classification)</span>
+<span class="sd">    - Precision at chosen recall: &quot;if we want to catch X% of denials,</span>
+<span class="sd">      what fraction of our flags are correct?&quot;</span>
+<span class="sd">    - Confusion matrix at operational threshold: shows the actual</span>
+<span class="sd">      true/false positive/negative counts at the threshold you&#39;d deploy with</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># --- Precision-Recall curve ---</span>
+    <span class="n">precision</span><span class="p">,</span> <span class="n">recall</span><span class="p">,</span> <span class="n">thresholds</span> <span class="o">=</span> <span class="n">precision_recall_curve</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">)</span>
+    <span class="n">pr_auc</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">)</span>
+    <span class="n">roc_auc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">)</span>
+
+    <span class="c1"># --- Find operational points ---</span>
+    <span class="c1"># &quot;At what threshold do we catch 80% of denials?&quot;</span>
+    <span class="n">recall_target</span> <span class="o">=</span> <span class="mf">0.80</span>
+    <span class="n">idx_80_recall</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">recall</span> <span class="o">-</span> <span class="n">recall_target</span><span class="p">))</span>
+    <span class="n">threshold_at_80_recall</span> <span class="o">=</span> <span class="n">thresholds</span><span class="p">[</span><span class="n">idx_80_recall</span><span class="p">]</span> <span class="k">if</span> <span class="n">idx_80_recall</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">thresholds</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.5</span>
+    <span class="n">precision_at_80_recall</span> <span class="o">=</span> <span class="n">precision</span><span class="p">[</span><span class="n">idx_80_recall</span><span class="p">]</span>
+
+    <span class="c1"># --- Confusion matrix at the chosen operational threshold ---</span>
+    <span class="n">y_pred_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_pred_proba</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">cm</span> <span class="o">=</span> <span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_binary</span><span class="p">)</span>
+    <span class="n">tn</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">tp</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="n">report</span> <span class="o">=</span> <span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_binary</span><span class="p">,</span> <span class="n">target_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Paid&quot;</span><span class="p">,</span> <span class="s2">&quot;Denied&quot;</span><span class="p">])</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;roc_auc&quot;</span><span class="p">:</span> <span class="n">roc_auc</span><span class="p">,</span>
+        <span class="s2">&quot;pr_auc&quot;</span><span class="p">:</span> <span class="n">pr_auc</span><span class="p">,</span>
+        <span class="s2">&quot;threshold_used&quot;</span><span class="p">:</span> <span class="n">threshold</span><span class="p">,</span>
+        <span class="s2">&quot;precision_at_80_recall&quot;</span><span class="p">:</span> <span class="n">precision_at_80_recall</span><span class="p">,</span>
+        <span class="s2">&quot;threshold_for_80_recall&quot;</span><span class="p">:</span> <span class="n">threshold_at_80_recall</span><span class="p">,</span>
+        <span class="s2">&quot;confusion_matrix&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;true_negatives&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">tn</span><span class="p">),</span>
+            <span class="s2">&quot;false_positives&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">fp</span><span class="p">),</span>
+            <span class="s2">&quot;false_negatives&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">fn</span><span class="p">),</span>
+            <span class="s2">&quot;true_positives&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">tp</span><span class="p">),</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;classification_report&quot;</span><span class="p">:</span> <span class="n">report</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ROC-AUC: </span><span class="si">%.4f</span><span class="s2"> | PR-AUC: </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">,</span> <span class="n">pr_auc</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;At threshold </span><span class="si">%.2f</span><span class="s2">: TP=</span><span class="si">%d</span><span class="s2">, FP=</span><span class="si">%d</span><span class="s2">, FN=</span><span class="si">%d</span><span class="s2">, TN=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">tn</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;To catch 80</span><span class="si">%%</span><span class="s2"> of denials, use threshold=</span><span class="si">%.3f</span><span class="s2"> (precision=</span><span class="si">%.2f</span><span class="s2"> at that point)&quot;</span><span class="p">,</span>
+        <span class="n">threshold_at_80_recall</span><span class="p">,</span> <span class="n">precision_at_80_recall</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-shap-explainability">Step 6: SHAP Explainability</h2>
+<p><em>Every flagged claim needs a human-readable reason. SHAP decomposes each prediction into per-feature contributions so a biller can see exactly why the model flagged the claim and decide what to fix. Without this, the model is a black box that nobody trusts.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">shap</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">explain_prediction</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">claim_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate SHAP explanations for a single claim prediction.</span>
+
+<span class="sd">    SHAP values tell you: &quot;This feature pushed the denial probability</span>
+<span class="sd">    up by 0.15&quot; or &quot;This feature pushed it down by 0.08.&quot; The sum of</span>
+<span class="sd">    all SHAP values plus the base rate equals the final prediction.</span>
+
+<span class="sd">    For operational use, we translate the top contributing features into</span>
+<span class="sd">    natural-language explanations that a biller can act on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TreeExplainer is optimized for tree models (exact, fast)</span>
+    <span class="n">explainer</span> <span class="o">=</span> <span class="n">shap</span><span class="o">.</span><span class="n">TreeExplainer</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># TreeExplainer accepts DataFrames directly for xgb.train() models</span>
+    <span class="n">shap_values</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">shap_values</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+
+    <span class="c1"># Get the explanation for one specific claim</span>
+    <span class="n">claim_shap</span> <span class="o">=</span> <span class="n">shap_values</span><span class="p">[</span><span class="n">claim_index</span><span class="p">]</span>
+    <span class="n">claim_features</span> <span class="o">=</span> <span class="n">X_test</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">claim_index</span><span class="p">]</span>
+    <span class="n">base_value</span> <span class="o">=</span> <span class="n">explainer</span><span class="o">.</span><span class="n">expected_value</span>
+
+    <span class="c1"># Sort features by absolute SHAP contribution (most important first)</span>
+    <span class="n">feature_importance</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="nb">zip</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">claim_shap</span><span class="p">,</span> <span class="n">claim_features</span><span class="p">),</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Build human-readable explanation for top 5 contributors</span>
+    <span class="n">explanations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">feat_name</span><span class="p">,</span> <span class="n">shap_val</span><span class="p">,</span> <span class="n">feat_val</span> <span class="ow">in</span> <span class="n">feature_importance</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;increases&quot;</span> <span class="k">if</span> <span class="n">shap_val</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;decreases&quot;</span>
+        <span class="n">explanations</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;feature&quot;</span><span class="p">:</span> <span class="n">feat_name</span><span class="p">,</span>
+            <span class="s2">&quot;shap_value&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">shap_val</span><span class="p">),</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;feature_value&quot;</span><span class="p">:</span> <span class="n">feat_val</span><span class="p">,</span>
+            <span class="s2">&quot;direction&quot;</span><span class="p">:</span> <span class="n">direction</span><span class="p">,</span>
+            <span class="s2">&quot;narrative&quot;</span><span class="p">:</span> <span class="n">_feature_to_narrative</span><span class="p">(</span><span class="n">feat_name</span><span class="p">,</span> <span class="n">shap_val</span><span class="p">,</span> <span class="n">feat_val</span><span class="p">),</span>
+        <span class="p">})</span>
+
+    <span class="n">prediction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">base_value</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">claim_shap</span><span class="p">))</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Claim </span><span class="si">%d</span><span class="s2">: prediction=</span><span class="si">%.3f</span><span class="s2"> (base=</span><span class="si">%.3f</span><span class="s2"> + shap_sum=</span><span class="si">%.3f</span><span class="s2">)&quot;</span><span class="p">,</span>
+        <span class="n">claim_index</span><span class="p">,</span> <span class="n">prediction</span><span class="p">,</span> <span class="n">base_value</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">claim_shap</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">explanations</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%s</span><span class="s2">: SHAP=</span><span class="si">%.4f</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">exp</span><span class="p">[</span><span class="s2">&quot;feature&quot;</span><span class="p">],</span> <span class="n">exp</span><span class="p">[</span><span class="s2">&quot;shap_value&quot;</span><span class="p">],</span> <span class="n">exp</span><span class="p">[</span><span class="s2">&quot;narrative&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;claim_index&quot;</span><span class="p">:</span> <span class="n">claim_index</span><span class="p">,</span>
+        <span class="s2">&quot;prediction&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">prediction</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;base_value&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">base_value</span><span class="p">),</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;top_factors&quot;</span><span class="p">:</span> <span class="n">explanations</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_feature_to_narrative</span><span class="p">(</span><span class="n">feature_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">shap_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">feature_value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map a SHAP feature contribution to a human-readable explanation.</span>
+
+<span class="sd">    In production, this mapping would be much richer, pulling in actual</span>
+<span class="sd">    payer names, procedure descriptions, and historical rates from your</span>
+<span class="sd">    feature store. This simplified version shows the pattern.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;higher&quot;</span> <span class="k">if</span> <span class="n">shap_value</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;lower&quot;</span>
+
+    <span class="n">narratives</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;pa_gap&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Prior auth gap (required but missing) pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pa_required&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PA requirement status pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pa_on_file&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PA on file status pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payer_cpt&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;This payer-procedure combination pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payer&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;This payer&#39;s overall denial behavior pushes risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cpt_code&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;This procedure code&#39;s denial history pushes risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;claim_amount_log&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Claim amount pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;days_since_service&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Days since service pushes risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;place_of_service&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Place of service pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;modifier_1&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Modifier status pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">narratives</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature_name</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">feature_name</span><span class="si">}</span><span class="s2"> pushes denial risk </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="step-7-sagemaker-training-integration">Step 7: SageMaker Training Integration</h2>
+<p><em>This shows how you'd train the same model on SageMaker instead of locally. SageMaker handles distributed training, automatic model artifact storage, and seamless deployment to endpoints. The built-in XGBoost container matches our local training exactly.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sagemaker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.inputs</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrainingInput</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.xgboost</span><span class="w"> </span><span class="kn">import</span> <span class="n">XGBoost</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">train_on_sagemaker</span><span class="p">(</span>
+    <span class="n">training_data_s3_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">validation_data_s3_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">denial_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">OVERALL_DENIAL_RATE</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train the denial prediction model on SageMaker.</span>
+
+<span class="sd">    This mirrors the local XGBoost training but runs on managed infrastructure.</span>
+<span class="sd">    The model artifact is stored in S3 and can be deployed directly to an endpoint.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        training_data_s3_uri: S3 path to training CSV (no header, label in first column)</span>
+<span class="sd">        validation_data_s3_uri: S3 path to validation CSV</span>
+<span class="sd">        denial_rate: observed denial rate for computing scale_pos_weight</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        S3 URI of the trained model artifact</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sess</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+    <span class="n">scale_pos_weight</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">denial_rate</span><span class="p">)</span> <span class="o">/</span> <span class="n">denial_rate</span>
+
+    <span class="c1"># The SageMaker XGBoost framework estimator runs a custom training script.</span>
+    <span class="c1"># For the built-in algorithm (no custom code), use sagemaker.estimator.Estimator</span>
+    <span class="c1"># with the XGBoost image URI and omit entry_point.</span>
+    <span class="n">xgb_estimator</span> <span class="o">=</span> <span class="n">XGBoost</span><span class="p">(</span>
+        <span class="n">entry_point</span><span class="o">=</span><span class="s2">&quot;train.py&quot;</span><span class="p">,</span>        <span class="c1"># Required for framework estimator mode (custom preprocessing)</span>
+        <span class="n">framework_version</span><span class="o">=</span><span class="s2">&quot;1.7-1&quot;</span><span class="p">,</span>     <span class="c1"># XGBoost version in the container</span>
+        <span class="n">role</span><span class="o">=</span><span class="n">SAGEMAKER_ROLE_ARN</span><span class="p">,</span>
+        <span class="n">instance_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">instance_type</span><span class="o">=</span><span class="s2">&quot;ml.m5.2xlarge&quot;</span><span class="p">,</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">S3_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">MODEL_PREFIX</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">,</span>
+        <span class="n">sagemaker_session</span><span class="o">=</span><span class="n">sess</span><span class="p">,</span>
+        <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;objective&quot;</span><span class="p">:</span> <span class="s2">&quot;binary:logistic&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;eval_metric&quot;</span><span class="p">:</span> <span class="s2">&quot;aucpr&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_round&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s2">&quot;eta&quot;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>
+            <span class="s2">&quot;subsample&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+            <span class="s2">&quot;colsample_bytree&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+            <span class="s2">&quot;scale_pos_weight&quot;</span><span class="p">:</span> <span class="n">scale_pos_weight</span><span class="p">,</span>
+            <span class="s2">&quot;min_child_weight&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">&quot;early_stopping_rounds&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="c1"># Encrypt training volume with KMS (PHI requirement)</span>
+        <span class="n">volume_kms_key</span><span class="o">=</span><span class="s2">&quot;alias/sagemaker-training-key&quot;</span><span class="p">,</span>
+        <span class="c1"># Run in VPC for network isolation</span>
+        <span class="n">subnets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subnet-abc123&quot;</span><span class="p">],</span>
+        <span class="n">security_group_ids</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sg-xyz789&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># SageMaker expects data in specific channels</span>
+    <span class="n">train_input</span> <span class="o">=</span> <span class="n">TrainingInput</span><span class="p">(</span>
+        <span class="n">training_data_s3_uri</span><span class="p">,</span>
+        <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;text/csv&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">val_input</span> <span class="o">=</span> <span class="n">TrainingInput</span><span class="p">(</span>
+        <span class="n">validation_data_s3_uri</span><span class="p">,</span>
+        <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;text/csv&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">xgb_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">({</span><span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="n">train_input</span><span class="p">,</span> <span class="s2">&quot;validation&quot;</span><span class="p">:</span> <span class="n">val_input</span><span class="p">})</span>
+
+    <span class="n">model_artifact</span> <span class="o">=</span> <span class="n">xgb_estimator</span><span class="o">.</span><span class="n">model_data</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model artifact stored at: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">model_artifact</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model_artifact</span>
+</pre></div>
+
+<hr />
+<h2 id="step-8-deploy-real-time-endpoint-and-score-claims">Step 8: Deploy Real-Time Endpoint and Score Claims</h2>
+<p><em>Once trained, the model needs to serve predictions in real-time (when a coder finalizes a claim) and in batch (nightly scoring of all pending claims). This shows both patterns.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">deploy_realtime_endpoint</span><span class="p">(</span><span class="n">model_artifact_s3</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deploy the trained model as a SageMaker real-time endpoint.</span>
+
+<span class="sd">    Real-time inference adds ~50-150ms latency per claim, which is</span>
+<span class="sd">    acceptable for inline billing system integration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sess</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+    <span class="n">sm_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create model object pointing to the artifact</span>
+    <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;denial-prediction-model-latest&quot;</span>
+    <span class="n">sm_client</span><span class="o">.</span><span class="n">create_model</span><span class="p">(</span>
+        <span class="n">ModelName</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+        <span class="n">PrimaryContainer</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;Image&quot;</span><span class="p">:</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">image_uris</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="s2">&quot;xgboost&quot;</span><span class="p">,</span> <span class="n">sess</span><span class="o">.</span><span class="n">boto_region_name</span><span class="p">,</span> <span class="s2">&quot;1.7-1&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;ModelDataUrl&quot;</span><span class="p">:</span> <span class="n">model_artifact_s3</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">ExecutionRoleArn</span><span class="o">=</span><span class="n">SAGEMAKER_ROLE_ARN</span><span class="p">,</span>
+        <span class="c1"># VPC config for PHI data isolation</span>
+        <span class="n">VpcConfig</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;SecurityGroupIds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;sg-xyz789&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;Subnets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;subnet-abc123&quot;</span><span class="p">],</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Create endpoint config</span>
+    <span class="n">endpoint_config_name</span> <span class="o">=</span> <span class="s2">&quot;denial-prediction-endpoint-config&quot;</span>
+    <span class="n">sm_client</span><span class="o">.</span><span class="n">create_endpoint_config</span><span class="p">(</span>
+        <span class="n">EndpointConfigName</span><span class="o">=</span><span class="n">endpoint_config_name</span><span class="p">,</span>
+        <span class="n">ProductionVariants</span><span class="o">=</span><span class="p">[{</span>
+            <span class="s2">&quot;VariantName&quot;</span><span class="p">:</span> <span class="s2">&quot;primary&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ModelName&quot;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+            <span class="s2">&quot;InstanceType&quot;</span><span class="p">:</span> <span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;InitialInstanceCount&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">}],</span>
+        <span class="c1"># Encrypt model artifacts on the endpoint instance</span>
+        <span class="n">KmsKeyId</span><span class="o">=</span><span class="s2">&quot;alias/sagemaker-endpoint-key&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Create (or update) the endpoint</span>
+    <span class="n">endpoint_name</span> <span class="o">=</span> <span class="s2">&quot;denial-prediction-prod&quot;</span>
+    <span class="n">sm_client</span><span class="o">.</span><span class="n">create_endpoint</span><span class="p">(</span>
+        <span class="n">EndpointName</span><span class="o">=</span><span class="n">endpoint_name</span><span class="p">,</span>
+        <span class="n">EndpointConfigName</span><span class="o">=</span><span class="n">endpoint_config_name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Endpoint &#39;</span><span class="si">%s</span><span class="s2">&#39; creating. Wait for InService status.&quot;</span><span class="p">,</span> <span class="n">endpoint_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">endpoint_name</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">score_claim_realtime</span><span class="p">(</span><span class="n">endpoint_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">claim_features</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Score a single claim against the real-time endpoint.</span>
+
+<span class="sd">    Called by the billing system when a coder finalizes a claim.</span>
+<span class="sd">    Returns the denial probability for immediate display.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sm_runtime</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker-runtime&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Serialize features as CSV (SageMaker XGBoost expects CSV input).</span>
+    <span class="c1"># CRITICAL: order must match training feature order exactly.</span>
+    <span class="c1"># Use a canonical feature list, not the dictionary&#39;s key order.</span>
+    <span class="n">FEATURE_ORDER</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;payer&quot;</span><span class="p">,</span> <span class="s2">&quot;cpt_code&quot;</span><span class="p">,</span> <span class="s2">&quot;icd10_primary&quot;</span><span class="p">,</span> <span class="s2">&quot;place_of_service&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;provider_type&quot;</span><span class="p">,</span> <span class="s2">&quot;specialty&quot;</span><span class="p">,</span> <span class="s2">&quot;modifier_1&quot;</span><span class="p">,</span> <span class="s2">&quot;payer_cpt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;num_diagnoses&quot;</span><span class="p">,</span> <span class="s2">&quot;patient_age&quot;</span><span class="p">,</span> <span class="s2">&quot;claim_amount_log&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;num_line_items&quot;</span><span class="p">,</span> <span class="s2">&quot;pa_required&quot;</span><span class="p">,</span> <span class="s2">&quot;pa_on_file&quot;</span><span class="p">,</span> <span class="s2">&quot;pa_gap&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;has_secondary_insurance&quot;</span><span class="p">,</span> <span class="s2">&quot;is_resubmission&quot;</span><span class="p">,</span> <span class="s2">&quot;days_since_service&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">feature_values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">claim_features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">FEATURE_ORDER</span><span class="p">]</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">feature_values</span><span class="p">)</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">sm_runtime</span><span class="o">.</span><span class="n">invoke_endpoint</span><span class="p">(</span>
+        <span class="n">EndpointName</span><span class="o">=</span><span class="n">endpoint_name</span><span class="p">,</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;text/csv&quot;</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">denial_probability</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;denial_probability&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">denial_probability</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;risk_tier&quot;</span><span class="p">:</span> <span class="n">_classify_risk</span><span class="p">(</span><span class="n">denial_probability</span><span class="p">),</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_classify_risk</span><span class="p">(</span><span class="n">probability</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map probability to operational risk tier.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">probability</span> <span class="o">&gt;=</span> <span class="n">HIGH_RISK_THRESHOLD</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;HIGH&quot;</span>
+    <span class="k">if</span> <span class="n">probability</span> <span class="o">&gt;=</span> <span class="n">MEDIUM_RISK_THRESHOLD</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;MEDIUM&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;LOW&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-9-batch-scoring-with-sagemaker-batch-transform">Step 9: Batch Scoring with SageMaker Batch Transform</h2>
+<p><em>Nightly batch scoring evaluates all pending claims and populates worklists for the next day. Batch transform is more cost-effective than keeping a real-time endpoint running for overnight scoring of large claim volumes.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_batch_scoring</span><span class="p">(</span><span class="n">model_artifact_s3</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">input_s3_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_s3_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run batch transform to score all pending claims overnight.</span>
+
+<span class="sd">    Batch transform is ideal for the nightly scoring run:</span>
+<span class="sd">    - Spins up compute, scores all claims, writes results, shuts down</span>
+<span class="sd">    - More cost-effective than keeping an endpoint running for large batch jobs</span>
+<span class="sd">    - Handles arbitrarily large claim volumes with automatic splitting</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model_artifact_s3: S3 URI of the trained model</span>
+<span class="sd">        input_s3_uri: S3 path containing claim feature CSVs to score</span>
+<span class="sd">        output_s3_uri: S3 path to write prediction results</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sess</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+    <span class="n">sm_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker&quot;</span><span class="p">)</span>
+
+    <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;denial-prediction-batch-model&quot;</span>
+
+    <span class="c1"># Create model (reuse artifact from training)</span>
+    <span class="n">sm_client</span><span class="o">.</span><span class="n">create_model</span><span class="p">(</span>
+        <span class="n">ModelName</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+        <span class="n">PrimaryContainer</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;Image&quot;</span><span class="p">:</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">image_uris</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="s2">&quot;xgboost&quot;</span><span class="p">,</span> <span class="n">sess</span><span class="o">.</span><span class="n">boto_region_name</span><span class="p">,</span> <span class="s2">&quot;1.7-1&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;ModelDataUrl&quot;</span><span class="p">:</span> <span class="n">model_artifact_s3</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">ExecutionRoleArn</span><span class="o">=</span><span class="n">SAGEMAKER_ROLE_ARN</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Launch batch transform job</span>
+    <span class="n">transform_job_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;denial-scoring-nightly-</span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">sm_client</span><span class="o">.</span><span class="n">create_transform_job</span><span class="p">(</span>
+        <span class="n">TransformJobName</span><span class="o">=</span><span class="n">transform_job_name</span><span class="p">,</span>
+        <span class="n">ModelName</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+        <span class="n">TransformInput</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;DataSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;S3DataSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;S3DataType&quot;</span><span class="p">:</span> <span class="s2">&quot;S3Prefix&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;S3Uri&quot;</span><span class="p">:</span> <span class="n">input_s3_uri</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;ContentType&quot;</span><span class="p">:</span> <span class="s2">&quot;text/csv&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SplitType&quot;</span><span class="p">:</span> <span class="s2">&quot;Line&quot;</span><span class="p">,</span>       <span class="c1"># Each line is one claim</span>
+        <span class="p">},</span>
+        <span class="n">TransformOutput</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;S3OutputPath&quot;</span><span class="p">:</span> <span class="n">output_s3_uri</span><span class="p">,</span>
+            <span class="s2">&quot;AssembleWith&quot;</span><span class="p">:</span> <span class="s2">&quot;Line&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">TransformResources</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;InstanceType&quot;</span><span class="p">:</span> <span class="s2">&quot;ml.m5.2xlarge&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;InstanceCount&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Batch transform job &#39;</span><span class="si">%s</span><span class="s2">&#39; started. Input: </span><span class="si">%s</span><span class="s2">, Output: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">transform_job_name</span><span class="p">,</span> <span class="n">input_s3_uri</span><span class="p">,</span> <span class="n">output_s3_uri</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">transform_job_name</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full local pipeline assembled into a single function. This demonstrates the end-to-end flow: generate data, train both models, evaluate, and explain.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_full_pipeline</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the complete claim denial prediction pipeline locally.</span>
+
+<span class="sd">    This demonstrates the end-to-end workflow:</span>
+<span class="sd">    1. Generate synthetic claims with realistic denial patterns</span>
+<span class="sd">    2. Engineer features and encode categoricals</span>
+<span class="sd">    3. Train logistic regression baseline</span>
+<span class="sd">    4. Train XGBoost with class imbalance handling</span>
+<span class="sd">    5. Evaluate both models with imbalance-appropriate metrics</span>
+<span class="sd">    6. Generate SHAP explanations for flagged claims</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CLAIM DENIAL PREDICTION PIPELINE&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Generate synthetic claims</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 1] Generating synthetic claims data...&quot;</span><span class="p">)</span>
+    <span class="n">claims_df</span> <span class="o">=</span> <span class="n">generate_synthetic_claims</span><span class="p">(</span><span class="n">n_claims</span><span class="o">=</span><span class="n">NUM_CLAIMS</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">claims_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> claims&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Denial rate: </span><span class="si">{</span><span class="n">claims_df</span><span class="p">[</span><span class="s1">&#39;denied&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Denied: </span><span class="si">{</span><span class="n">claims_df</span><span class="p">[</span><span class="s1">&#39;denied&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">, Paid: </span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">claims_df</span><span class="p">[</span><span class="s1">&#39;denied&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Feature engineering</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 2] Preparing features and train/test split...&quot;</span><span class="p">)</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">encoders</span> <span class="o">=</span> <span class="n">prepare_features</span><span class="p">(</span><span class="n">claims_df</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Train: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span><span class="si">}</span><span class="s2"> claims | Test: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span><span class="si">}</span><span class="s2"> claims&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Features: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Logistic regression baseline</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 3] Training logistic regression baseline...&quot;</span><span class="p">)</span>
+    <span class="n">lr_results</span> <span class="o">=</span> <span class="n">train_baseline</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Baseline ROC-AUC: </span><span class="si">{</span><span class="n">lr_results</span><span class="p">[</span><span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Baseline PR-AUC: </span><span class="si">{</span><span class="n">lr_results</span><span class="p">[</span><span class="s1">&#39;pr_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: XGBoost model</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 4] Training XGBoost with class imbalance handling...&quot;</span><span class="p">)</span>
+    <span class="n">xgb_results</span> <span class="o">=</span> <span class="n">train_xgboost</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  XGBoost ROC-AUC: </span><span class="si">{</span><span class="n">xgb_results</span><span class="p">[</span><span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  XGBoost PR-AUC: </span><span class="si">{</span><span class="n">xgb_results</span><span class="p">[</span><span class="s1">&#39;pr_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Improvement over baseline: +</span><span class="si">{</span><span class="n">xgb_results</span><span class="p">[</span><span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">lr_results</span><span class="p">[</span><span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> ROC-AUC&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Detailed evaluation at operational threshold</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 5] Evaluating at operational threshold...&quot;</span><span class="p">)</span>
+    <span class="n">dtest</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">DMatrix</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+    <span class="n">y_pred_proba</span> <span class="o">=</span> <span class="n">xgb_results</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dtest</span><span class="p">)</span>
+    <span class="n">eval_results</span> <span class="o">=</span> <span class="n">evaluate_model</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred_proba</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">MEDIUM_RISK_THRESHOLD</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: SHAP explanation for a high-risk claim</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 6] Generating SHAP explanations for a flagged claim...&quot;</span><span class="p">)</span>
+    <span class="c1"># Find a high-risk claim to explain</span>
+    <span class="n">high_risk_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y_pred_proba</span> <span class="o">&gt;</span> <span class="n">HIGH_RISK_THRESHOLD</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">high_risk_indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">explain_idx</span> <span class="o">=</span> <span class="n">high_risk_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">explanation</span> <span class="o">=</span> <span class="n">explain_prediction</span><span class="p">(</span>
+            <span class="n">xgb_results</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">claim_index</span><span class="o">=</span><span class="n">explain_idx</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Explaining claim at index </span><span class="si">{</span><span class="n">explain_idx</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Prediction: </span><span class="si">{</span><span class="n">explanation</span><span class="p">[</span><span class="s1">&#39;prediction&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (base: </span><span class="si">{</span><span class="n">explanation</span><span class="p">[</span><span class="s1">&#39;base_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">explanation</span><span class="p">[</span><span class="s2">&quot;top_factors&quot;</span><span class="p">][:</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">factor</span><span class="p">[</span><span class="s1">&#39;feature&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: SHAP=</span><span class="si">{</span><span class="n">factor</span><span class="p">[</span><span class="s1">&#39;shap_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">+.4f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">factor</span><span class="p">[</span><span class="s1">&#39;narrative&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  No claims above HIGH threshold in test set.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Summary</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SUMMARY&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Logistic Regression: ROC-AUC=</span><span class="si">{</span><span class="n">lr_results</span><span class="p">[</span><span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, PR-AUC=</span><span class="si">{</span><span class="n">lr_results</span><span class="p">[</span><span class="s1">&#39;pr_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  XGBoost: ROC-AUC=</span><span class="si">{</span><span class="n">xgb_results</span><span class="p">[</span><span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, PR-AUC=</span><span class="si">{</span><span class="n">xgb_results</span><span class="p">[</span><span class="s1">&#39;pr_auc&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Claims flagged (&gt;</span><span class="si">{</span><span class="n">MEDIUM_RISK_THRESHOLD</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2"> threshold): </span><span class="si">{</span><span class="p">(</span><span class="n">y_pred_proba</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">MEDIUM_RISK_THRESHOLD</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  High-risk (&gt;</span><span class="si">{</span><span class="n">HIGH_RISK_THRESHOLD</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="p">(</span><span class="n">y_pred_proba</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">HIGH_RISK_THRESHOLD</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  For SageMaker deployment, use train_on_sagemaker() and deploy_realtime_endpoint().&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  For nightly batch scoring, use run_batch_scoring().&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">run_full_pipeline</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="gap-to-production">Gap to Production</h2>
+<p>This example demonstrates the core ML pipeline, but deploying a claim denial prediction system to production requires substantial additional engineering. Here's the distance between this sketch and something you'd put in front of your billing team.</p>
+<p><strong>Error handling and retries.</strong> Every AWS API call (SageMaker endpoint invocation, DynamoDB writes, S3 reads) needs retry logic with exponential backoff. Use <code>botocore.config.Config(retries={&quot;max_attempts&quot;: 3, &quot;mode&quot;: &quot;adaptive&quot;})</code> for boto3 calls. Handle SageMaker endpoint <code>ModelError</code> exceptions (malformed input) separately from throttling errors.</p>
+<p><strong>Input validation.</strong> Validate every claim feature before sending to the model. CPT codes should match a known code set. Payer IDs should exist in your payer master. Claim amounts should be positive. Reject or flag claims with missing critical features rather than letting the model predict on garbage.</p>
+<p><strong>Real feature engineering.</strong> The synthetic data here uses static lookup tables. Production features require rolling historical computations: payer-procedure denial rates over trailing 6 months, provider-specific denial patterns, and temporal trends. This is a Glue or Spark ETL job that runs daily, writing to a feature store (SageMaker Feature Store or a simple S3-backed table).</p>
+<p><strong>Model monitoring and drift detection.</strong> Payer rules change. New PA requirements appear. Coverage policies shift quarterly. Monitor prediction distributions daily. Compare predicted denial rates to actual denial rates (once adjudication results arrive, typically 14-30 days later). Trigger retraining when accuracy degrades by more than 2-3 points of AUC. SageMaker Model Monitor automates much of this.</p>
+<p><strong>The feedback loop problem.</strong> If your model flags claims and coders fix them before submission, the &quot;fixed&quot; claims get paid. Your training data then shows these payer-procedure combinations as low-risk (because you fixed them). You need to track which claims were modified based on model predictions and either exclude them from training or use counterfactual labels (&quot;would have been denied if not modified&quot;). This is the hardest engineering problem in the system.</p>
+<p><strong>Structured logging (not print statements).</strong> Replace all <code>print()</code> calls with structured JSON logging. Log claim_id, prediction, risk_tier, and model_version for every scoring event. Never log PHI field values (patient name, DOB, specific diagnosis text in combination with identifiers). Use CloudWatch Logs Insights for querying.</p>
+<p><strong>IAM least-privilege.</strong> The example uses a single broad role. Production needs separate roles: (1) Glue ETL role with S3 read/write and data source access, (2) SageMaker training role with S3 and KMS access, (3) Lambda scoring role with SageMaker InvokeEndpoint and DynamoDB write, (4) Worklist Lambda role with DynamoDB read and downstream queue write. Each scoped to specific resource ARNs.</p>
+<p><strong>VPC and network isolation.</strong> All components that touch claims data must run in a VPC with no internet access. Use VPC endpoints for S3, DynamoDB, SageMaker, CloudWatch Logs, and KMS. Security groups should restrict traffic to minimum required ports between components.</p>
+<p><strong>KMS encryption.</strong> Use customer-managed KMS keys (not AWS-managed) for all data at rest. Separate keys for training data, model artifacts, and prediction storage. Rotate annually. Audit key usage via CloudTrail.</p>
+<p><strong>Testing.</strong> Unit tests for feature engineering logic (the encoding, interaction features, and derived metrics). Integration tests that score a known claim and verify the output format. Load tests for the real-time endpoint (how many concurrent claims per second before latency degrades?). Fairness tests: does model performance vary across patient demographics?</p>
+<p><strong>Threshold calibration.</strong> The thresholds (0.40, 0.70) in this example are arbitrary. Production thresholds need calibration against your specific coder capacity. If you flag 2,000 claims per day but your team can only review 200, you need a higher threshold. If you flag 50 but your team has capacity for 500, lower it. This is an ongoing tuning process, not a one-time setting.</p>
+<p><strong>DynamoDB numeric types.</strong> DynamoDB does not accept Python floats. Convert all numeric values to <code>Decimal</code> before calling <code>put_item</code>. The <code>Decimal</code> import at the top of this file is there for this reason. Wrap prediction probabilities and dollar amounts with <code>Decimal(str(value))</code> to avoid <code>TypeError</code> at write time.</p>
+<p><strong>Batch vs. real-time tradeoffs.</strong> Real-time scoring (at claim creation) gives instant feedback but costs more (endpoint running 24/7). Batch scoring (nightly) is cheaper but means claims created today don't get scored until tonight. Most organizations start with nightly batch, then add real-time for high-volume billers or specific high-risk procedure categories.</p>
+<p><strong>Multi-class extension.</strong> Binary denied/paid is the starting point. Production systems benefit from predicting the denial reason code (CO-4 coding error, CO-16 missing info, CO-50 medical necessity, CO-197 PA required). This changes the output from &quot;likely denied&quot; to &quot;likely denied for reason X,&quot; which is far more actionable. Requires sufficient training examples per reason code.</p>
+<hr />
+<p><em>← <a href="chapter07.11-claim-denial-prediction.html">Recipe 7.11: Claim Denial and Prior-Auth Determination Prediction</a> · <a href="chapter07-preface.html">Chapter 7 Index</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

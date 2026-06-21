@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 5.10 Architecture and Implementation: Deceased Patient Resolution and Record Reconciliation</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested nav-active" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-510-architecture-and-implementation-deceased-patient-resolution-and-record-reconciliation">Recipe 5.10 Architecture and Implementation: Deceased Patient Resolution and Record Reconciliation</h1>
+<p><em>Companion to <a href="chapter05.10-deceased-patient-resolution-reconciliation.html">Recipe 5.10: Deceased Patient Resolution and Record Reconciliation</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon S3 for the multi-source death-event landing zone.</strong> The heterogeneous death-event sources (SSA Limited Access Death Master File batch files, state vital-records death feeds, payer death feeds, obituary feeds) deliver their data as files on varying schedules. S3 is the landing zone for the inbound files with SSE-KMS encryption, source-prefix organization (one prefix per source for per-source IAM scoping), Object Lock in Compliance mode for the audit-archive bucket, and lifecycle to S3 Glacier Deep Archive for the long-retention requirement.</p>
+<p><strong>AWS Glue for the multi-source death-event normalization pipeline.</strong> The inbound death-event files arrive in source-specific schemas (the LADMF's fixed-width format, the state vital-records offices' varying formats, the payer feeds' varying formats); the Glue jobs normalize each source's schema to a common death-event schema with per-event provenance metadata captured in the normalization step. The Glue Data Catalog manages the per-source schema definitions; the Glue jobs are versioned and re-run on schema changes.</p>
+<p><strong>AWS Step Functions for the death-event-resolution orchestration.</strong> Each death event flows through the pipeline's stages (matching, multi-source reconciliation, MPI update, downstream cascade) as a Step Functions workflow. The workflow has per-step retries, per-step error routing to DLQs, parallel execution where the per-event work permits, and explicit synchronization at the cross-recipe-coordination steps. Step Functions provides the audit-and-monitoring substrate for the per-event flow.</p>
+<p><strong>AWS Lambda for the per-stage handler logic.</strong> Each stage's logic (the matching Lambda, the reconciliation Lambda, the MPI-update Lambda, the per-system-cascade Lambdas) runs as a Lambda invocation with least-privilege IAM. Lambda's per-invocation isolation provides the execution boundary; the per-stage logic is composable and testable independently.</p>
+<p><strong>Amazon DynamoDB for the death-event log, the MPI's death-status state, and the verification queue.</strong> The death-event log captures per-event provenance for the multi-decade retention horizon. The MPI's death-status state carries the patient's computed death status, the date-of-death (or the conflict-flagged set of dates from multiple sources), and the cross-source provenance. The verification queue holds the cases requiring human review (medium-confidence matches, premature-death-report candidates, cross-source disagreements). All three tables use customer-managed KMS encryption, point-in-time recovery, and DynamoDB Streams to drive the cross-recipe event fan-out and the downstream-cascade propagation.</p>
+<p><strong>Amazon RDS for Aurora PostgreSQL for the institution's MPI.</strong> The institution's MPI is the canonical patient identity store from recipe 5.1; the deceased-patient pipeline consults and updates the MPI through the same database substrate that the rest of the chapter operates against. The MPI's death-status fields are extended with the deceased-patient-resolution-specific schema (per-source provenance, computed death status, per-source date-of-death history, sensitivity classification).</p>
+<p><strong>Amazon EventBridge for the deceased-patient-event fan-out.</strong> When a death event is applied, an event flows out to the per-system cascade consumers, the cross-recipe consumers (recipes 5.1, 5.5, 5.7, 5.8, 5.9), and the analytics consumers. EventBridge rules route the event to each consumer with DLQs for failed deliveries. The per-consumer event schema is explicit and versioned; the consumer-side validation is signature-validated for cross-account consumers.</p>
+<p><strong>Amazon SQS for the cascade-acknowledgment queues.</strong> Each downstream system that consumes the deceased-patient-event signal posts an acknowledgment back through SQS when the system has applied the change. The acknowledgment queue lets the deceased-patient-resolution pipeline track the cross-system-propagation-completeness metric and detect systems that are not propagating the event correctly.</p>
+<p><strong>Amazon SageMaker for the deceased-patient-matching-tolerance calibration and the per-source quality monitoring.</strong> The matching tolerance is calibrated against a curated calibration set (synthetic data plus opt-in pilot data from collaborating institutions) using SageMaker training jobs. The per-source quality monitoring (the SSA DMF's premature-death-report rate, the state vital-records-feed accuracy per jurisdiction, the EHR-recorded-death-event timeliness) is computed as SageMaker Processing jobs against the per-source death-event audit data.</p>
+<p><strong>Amazon Athena, AWS Glue Data Catalog, and AWS Lake Formation for the audit-and-analytics surface.</strong> The death-event log, the per-source provenance metadata, the verification-queue decisions, and the cascade-completion data surface through Athena queries with Lake Formation column-level and row-level access controls. The HIPAA-posthumous-protection-period access controls are enforced through Lake Formation's data filters.</p>
+<p><strong>Amazon Cognito and AWS IAM Identity Center for the personal-representative authentication.</strong> Where the personal representative needs access to the deceased patient's record during the estate-administration period, the personal-representative-portal authentication operates through Cognito with the institutional verification framework. The personal-representative's authorization is mediated through the institution's release-of-information process; Cognito provides the authentication substrate.</p>
+<p><strong>AWS Secrets Manager for the per-source-feed credentials.</strong> The SSA LADMF subscription credentials, the state-vital-records-feed credentials, the payer-feed credentials, and the obituary-feed credentials are stored in Secrets Manager with customer-managed KMS encryption and rotation per the source's framework cadence.</p>
+<p><strong>AWS KMS for the cryptographic-key custody.</strong> Customer-managed KMS keys for the death-event log, the MPI's death-status state, the verification queue, the audit archive, and the Secrets Manager secrets. The key policies enforce least-privilege access; the death-event-ingestion Lambda role can decrypt the inbound source data but cannot decrypt the MPI's other PHI; the MPI-update Lambda role can update the death-status fields but cannot mutate the rest of the MPI's schema.</p>
+<p><strong>Amazon CloudWatch and AWS CloudTrail.</strong> CloudWatch metrics on per-source death-event ingestion rate, per-source matching success rate, per-source quality drift, mean-time-to-recognize-death, false-positive-death-rate, family-correspondence-after-death rate, cross-system-propagation-completeness rate, premature-death-report-reversal latency. CloudWatch alarms on per-source-quality-drift breaches, family-correspondence-after-death rate spikes, premature-death-report-reversal-latency breaches. CloudTrail data events on every read of the death-event log, every write to the MPI's death-status state, every access to the deceased-patient records under the HIPAA-posthumous-protection-period framework. Same chapter pattern as 5.1, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9.</p>
+<p><strong>Amazon QuickSight for the operational and quality dashboards.</strong> Per-source ingestion-and-quality trend, mean-time-to-recognize-death trend by source mix, false-positive-death-rate trend, family-correspondence-after-death incident map, cross-system-propagation-completeness trend, premature-death-report-reversal latency distribution, personal-representative-record-request-completion-time distribution.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph External_Sources
+      LADMF[SSA Limited Access&lt;br/&gt;Death Master File]
+      VRF[State Vital-Records&lt;br/&gt;Death Feeds]
+      PAY[Payer Death Feeds&lt;br/&gt;CMS MBD, commercial]
+      EHR[EHR-recorded&lt;br/&gt;Death Events]
+      HOSP[Hospice Agency&lt;br/&gt;Death Events]
+      OBIT[Obituary Feeds]
+      FAM[Family-Reported&lt;br/&gt;Deaths Intake]
+      PROV[Provider-Reported&lt;br/&gt;Deaths]
+    end
+
+    subgraph Ingestion_Substrate
+      S3L[(S3 Landing Zone&lt;br/&gt;per-source prefix&lt;br/&gt;SSE-KMS)]
+      GLU[AWS Glue&lt;br/&gt;multi-source&lt;br/&gt;normalization]
+      GLUC[Glue Data Catalog]
+    end
+
+    subgraph Resolution_Pipeline
+      SF1[Step Functions&lt;br/&gt;death-event-resolution&lt;br/&gt;orchestrator]
+      L1[Lambda&lt;br/&gt;death-event-matcher]
+      L2[Lambda&lt;br/&gt;multi-source-reconciler]
+      L3[Lambda&lt;br/&gt;premature-death-report-&lt;br/&gt;verification-router]
+      L4[Lambda&lt;br/&gt;hidden-duplicate-&lt;br/&gt;revealer]
+      L5[Lambda&lt;br/&gt;mpi-update-handler]
+    end
+
+    subgraph MPI_Substrate
+      RDS1[(Aurora PostgreSQL&lt;br/&gt;Local MPI)]
+      DDB1[(DynamoDB&lt;br/&gt;death-event-log)]
+      DDB2[(DynamoDB&lt;br/&gt;verification-queue)]
+      DDB3[(DynamoDB&lt;br/&gt;cascade-ack-store)]
+    end
+
+    subgraph Cascade_Substrate
+      EB1[EventBridge&lt;br/&gt;deceased-patient-events-bus]
+      SQS1[SQS&lt;br/&gt;cascade-acknowledgment]
+      L6[Lambda&lt;br/&gt;appointment-canceller]
+      L7[Lambda&lt;br/&gt;active-prescription-&lt;br/&gt;reviewer]
+      L8[Lambda&lt;br/&gt;billing-episode-closer]
+      L9[Lambda&lt;br/&gt;communication-path-&lt;br/&gt;switcher]
+      L10[Lambda&lt;br/&gt;portal-access-handler]
+    end
+
+    subgraph Cross_Recipe
+      C1[Recipe 5.1&lt;br/&gt;internal duplicates]
+      C5[Recipe 5.5&lt;br/&gt;cross-facility]
+      C7[Recipe 5.7&lt;br/&gt;longitudinal name change]
+      C8[Recipe 5.8&lt;br/&gt;privacy-preserving]
+      C9[Recipe 5.9&lt;br/&gt;national-scale TEFCA]
+    end
+
+    subgraph Identity_Substrate
+      SM1[(Secrets Manager&lt;br/&gt;per-source credentials)]
+      KMS1[(AWS KMS&lt;br/&gt;customer-managed keys)]
+      COG1[Cognito&lt;br/&gt;personal-representative&lt;br/&gt;portal IdP]
+    end
+
+    subgraph Operational_Substrate
+      SM2[SageMaker&lt;br/&gt;matching-tolerance&lt;br/&gt;calibration]
+      SM3[SageMaker&lt;br/&gt;per-source quality&lt;br/&gt;monitoring]
+      AT1[Athena]
+      LF1[Lake Formation&lt;br/&gt;posthumous-protection&lt;br/&gt;access controls]
+      QS1[QuickSight&lt;br/&gt;operational and&lt;br/&gt;quality dashboards]
+      CW1[CloudWatch&lt;br/&gt;metrics and alarms]
+      CT1[CloudTrail&lt;br/&gt;audit logs]
+      S3A[(S3 audit-archive&lt;br/&gt;Object Lock Compliance)]
+    end
+
+    LADMF --&gt; S3L
+    VRF --&gt; S3L
+    PAY --&gt; S3L
+    OBIT --&gt; S3L
+    EHR --&gt; SF1
+    HOSP --&gt; SF1
+    FAM --&gt; SF1
+    PROV --&gt; SF1
+    S3L --&gt; GLU
+    GLU --&gt; GLUC
+    GLU --&gt; SF1
+    SF1 --&gt; L1
+    L1 --&gt; RDS1
+    L1 --&gt; L2
+    L2 --&gt; DDB1
+    L2 --&gt; L3
+    L3 --&gt; DDB2
+    L2 --&gt; L4
+    L4 --&gt; RDS1
+    L4 --&gt; C1
+    L2 --&gt; L5
+    L5 --&gt; RDS1
+    L5 --&gt; DDB1
+    L5 --&gt; EB1
+    EB1 --&gt; L6
+    EB1 --&gt; L7
+    EB1 --&gt; L8
+    EB1 --&gt; L9
+    EB1 --&gt; L10
+    EB1 --&gt; C5
+    EB1 --&gt; C7
+    EB1 --&gt; C8
+    EB1 --&gt; C9
+    L6 --&gt; SQS1
+    L7 --&gt; SQS1
+    L8 --&gt; SQS1
+    L9 --&gt; SQS1
+    L10 --&gt; SQS1
+    SQS1 --&gt; DDB3
+    SM1 --&gt; KMS1
+    KMS1 --&gt; RDS1
+    KMS1 --&gt; DDB1
+    KMS1 --&gt; DDB2
+    KMS1 --&gt; S3L
+    KMS1 --&gt; S3A
+    COG1 --&gt; RDS1
+    SM2 --&gt; RDS1
+    SM3 --&gt; DDB1
+    DDB1 --&gt; AT1
+    DDB3 --&gt; AT1
+    AT1 --&gt; LF1
+    AT1 --&gt; QS1
+    L1 --&gt; CW1
+    L2 --&gt; CW1
+    L5 --&gt; CW1
+    L1 --&gt; CT1
+    L5 --&gt; CT1
+    EB1 --&gt; CT1
+
+    style RDS1 fill:#9ff,stroke:#333
+    style DDB1 fill:#9ff,stroke:#333
+    style DDB2 fill:#9ff,stroke:#333
+    style DDB3 fill:#9ff,stroke:#333
+    style S3L fill:#cfc,stroke:#333
+    style S3A fill:#cfc,stroke:#333
+    style SM1 fill:#fc9,stroke:#333
+    style EB1 fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon S3, AWS Glue, AWS Glue Data Catalog, AWS Step Functions, AWS Lambda, Amazon DynamoDB, Amazon RDS for Aurora PostgreSQL (or the institution's existing MPI), Amazon EventBridge, Amazon SQS, Amazon Cognito, AWS Secrets Manager, AWS KMS, Amazon SageMaker, Amazon Athena, AWS Lake Formation, Amazon QuickSight, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>External Inputs</strong></td>
+<td>The institution's local MPI (the canonical patient identity store from recipe 5.1). The SSA Limited Access Death Master File subscription (where the institution has obtained the certification) or an authorized intermediary's feed. The state-vital-records-feed subscription per jurisdiction (where the institution operates). The payer-death-feed subscription per data-use agreement. The EHR-recorded-death-event integration with the institution's EHR. The hospice-agency-death-event integration (where the institution operates a hospice or has the referral relationship). The family-reported-death intake from the patient-services call center. The obituary-feed subscription (commercial aggregator). The provider-reported-death intake from faxed/mailed/HIE-mediated notifications. Cross-recipe dependencies: recipe 5.1 local MPI for the duplicate-resolution-coordination, recipe 5.5 cross-facility matcher for the deceased-patient signaling, recipe 5.7 longitudinal-name-change for the post-death history closure, recipe 5.8 privacy-preserving-linkage for the deceased-patient-PPRL signaling, recipe 5.9 cross-network matcher for the cross-network deceased-patient suppression.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: scoped <code>dynamodb:GetItem</code> / <code>PutItem</code> / <code>Query</code> on the death-event-log, the verification-queue, and the cascade-ack-store; <code>s3:GetObject</code> on the per-source landing-zone prefix bound to the source-specific Lambda; <code>s3:PutObject</code> on the audit-archive bucket; <code>secretsmanager:GetSecretValue</code> on the per-source-credentials secrets pinned to the current rotation; <code>kms:Decrypt</code> on the audit-and-attribution KMS keys; <code>events:PutEvents</code> on the deceased-patient-events bus; <code>sqs:SendMessage</code> on the cascade-acknowledgment queue. The death-event-matcher Lambda has read-only access to the local MPI; mutations to the local MPI happen through the mpi-update-handler Lambda, which has scoped write access to the death-status fields but not to the rest of the MPI's schema. The premature-death-report-verification-router Lambda has scoped access to the verification queue and the audit-archive but no write access to the MPI. The per-system-cascade Lambdas have scoped access to the operational systems they operate against (the appointment-cancellation Lambda has access to the scheduling-system API; the active-prescription-reviewer Lambda has access to the e-prescribing-system API; and so on); the per-system access is bound to the specific Lambda role. Never use <code>*</code> actions or <code>*</code> resources in production.</td>
+</tr>
+<tr>
+<td><strong>BAA, Source Subscriptions, and HIPAA Posthumous Protection</strong></td>
+<td>AWS BAA signed. SSA LADMF certification under the Bipartisan Budget Act of 2013's framework or authorized-intermediary data-use agreement. State vital-records office data-use agreements per jurisdiction (with per-jurisdiction operational and access constraints). Payer-death-feed data-use agreements per payer relationship. Hospice-agency data-sharing agreement (where applicable). Obituary-feed commercial-subscription agreement. The HIPAA Privacy Rule's posthumous-protection-period (50 years from date of death) operational compliance program with named ownership, named processes, and named review committees. Personal-representative authorization framework operational compliance program with named ownership and named processes.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3 buckets: SSE-KMS with customer-managed keys. Audit-archive S3: SSE-KMS with customer-managed keys, Object Lock in Compliance mode, lifecycle to S3 Glacier Deep Archive after 90 days. Aurora PostgreSQL: customer-managed KMS at rest, TLS in transit. DynamoDB tables: customer-managed KMS at rest. Lambda log groups: KMS-encrypted. Secrets Manager: KMS-encrypted with customer-managed keys. KMS key policies enforce least-privilege access; the death-event-matcher Lambda role can decrypt the per-source landing-zone data but cannot decrypt the MPI's other PHI; the mpi-update-handler Lambda role can update the death-status fields but cannot decrypt the rest of the MPI's PHI. mTLS for the per-source-feed transport where the source supports it (CMS MBD's mTLS, the modernized state-vital-records-feed's mTLS); HTTPS-with-strong-TLS for the rest.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: all Lambdas in VPC. VPC endpoints for DynamoDB, S3, Secrets Manager, KMS, CloudWatch Logs, EventBridge, SQS, Step Functions, Athena, STS, SageMaker. Private subnet for Aurora PostgreSQL with no public-network reachability; security group enumerates the specific Lambda execution-role-bound ENIs authorized to connect. Outbound-only NAT Gateway or VPC endpoint for the per-source-feed connectivity; per-source allow-list of the source's network endpoints.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the death-event-log, the verification-queue, the cascade-ack-store DynamoDB tables, the per-source landing-zone and audit-archive S3 buckets, the per-source-credentials and per-jurisdiction-credential Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Step Functions executions logged. EventBridge events logged. CloudTrail logs encrypted with KMS and retained per the regulatory-floor (the longest of HIPAA's 50-year posthumous-protection-period, state medical-records-retention, the per-source-data-use-agreement audit-retention floor, the cross-jurisdictional retention overlay where the institution operates across borders). Audit logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days; CloudTrail data events forwarded to a dedicated audit AWS account. Same chapter pattern as 5.1, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9.</td>
+</tr>
+<tr>
+<td><strong>Reference Data and Source Configuration</strong></td>
+<td>A versioned reference-data store with: the per-source-feed subscription credentials and rotation status, the per-source-quality classification (the SSA DMF's premature-death-report rate baseline, the per-state-vital-records-feed accuracy per jurisdiction, the per-payer-feed reliability), the deceased-patient-matching-tolerance configuration (per-source matching tolerance), the date-of-death-conflict-resolution policy (per-use-case selection), the per-system-cascade-cadence configuration (the appropriate-cadence per downstream system), the HIPAA-posthumous-protection-period access-control rules (per-use-case authorization framework), the personal-representative-authorization framework, the family-reported-death-intake script, the per-jurisdiction-vital-records-feed overlay rules. The reference data refreshes on regulatory and operational cadences and is versioned so each event references the configuration version active at the resolution time.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthetic data with modeled deceased-patient cohorts. Synthea generates synthetic patient populations with simulated death events; extending Synthea to produce a deceased-patient-resolution test cohort (synthetic patients with multi-source death events, synthetic premature-death-report cases, synthetic hidden-duplicate-revelation cases) is feasible. The SSA-published DMF samples (where available under the certification framework) provide the operational format for the LADMF integration. The CDC's NCHS publishes vital-records-data-format samples that approximate the production formats. Pilot testing against opt-in collaborating institutions provides the operational validation. Never use real PHI or real death-event data in development environments.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At an institution operating at a large-integrated-delivery-network scale (one million patients in the local MPI, ten thousand death events per year, integration with four death-event sources): S3 for the landing-zone-and-audit-archive typically $200-500 per month; Glue for the multi-source normalization typically $100-300 per month; Step Functions for the per-event orchestration typically $50-150 per month; Lambda invocations typically $50-200 per month at this volume; DynamoDB for the death-event-log and verification-queue typically $100-400 per month; Aurora PostgreSQL for the local MPI typically $1,000-3,000 per month (depends on the existing MPI substrate); EventBridge and SQS typically $20-100 per month; SageMaker typically $200-500 per month; Athena typically $50-150 per month; QuickSight typically $50-200 per month; KMS, Secrets Manager, CloudWatch, CloudTrail typically $200-500 per month. Total AWS infrastructure typically $2,000-6,000 per month at this scale, dominated by Aurora PostgreSQL. The per-source subscription fees are separate (LADMF certification has its own fee structure; payer-feed agreements have varying fee structures; obituary-feed subscriptions are commercial).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Per-source landing zone for inbound death-event files (SSE-KMS, per-source prefix); audit-archive bucket (SSE-KMS, Object Lock in Compliance mode, lifecycle to Glacier Deep Archive)</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Multi-source death-event normalization pipeline; per-source schema definitions managed in the Glue Data Catalog</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Death-event-resolution orchestration with per-step retries, error routing to DLQs, parallel execution where the per-event work permits</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Per-stage handler logic: death-event-matcher, multi-source-reconciler, premature-death-report-verification-router, hidden-duplicate-revealer, mpi-update-handler, per-system-cascade Lambdas (appointment-canceller, active-prescription-reviewer, billing-episode-closer, communication-path-switcher, portal-access-handler)</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Death-event-log (per-event provenance for the multi-decade retention horizon), verification-queue (cases requiring human review), cascade-ack-store (per-system propagation acknowledgments)</td>
+</tr>
+<tr>
+<td><strong>Amazon RDS for Aurora PostgreSQL</strong></td>
+<td>Local MPI for the institution; the deceased-patient-resolution pipeline consults and updates the MPI through the same database substrate</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Deceased-patient-event fan-out: <code>deceased_patient_resolved</code>, <code>deceased_status_reversed</code>, <code>hidden_duplicate_revealed</code>, <code>personal_representative_authorized</code>, <code>posthumous_access_granted</code>, <code>cross_source_disagreement_flagged</code></td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Cascade-acknowledgment queue (per-system propagation acknowledgments)</td>
+</tr>
+<tr>
+<td><strong>Amazon Cognito</strong></td>
+<td>Personal-representative-portal authentication during the estate-administration period</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Per-source-feed credentials with rotation per source's framework cadence</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for the death-event-log, the MPI's death-status state, the verification queue, the audit archive, and the Secrets Manager secrets</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Deceased-patient-matching-tolerance calibration; per-source quality monitoring (premature-death-report rate, per-jurisdiction-vital-records-feed accuracy, per-payer-feed reliability)</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena and AWS Glue Data Catalog</strong></td>
+<td>SQL access to the death-event-log, the per-source provenance metadata, the verification-queue decisions, and the cascade-completion data</td>
+</tr>
+<tr>
+<td><strong>AWS Lake Formation</strong></td>
+<td>Column-level and row-level access controls for the differentiated audiences (treatment-context, estate-administration, research, audit, governance, analytics); HIPAA-posthumous-protection-period access-control enforcement</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Operational and quality dashboards (per-source ingestion-and-quality trend, mean-time-to-recognize-death trend, false-positive-death-rate trend, family-correspondence-after-death incident map, cross-system-propagation-completeness trend)</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics and alarms (per-source-quality-drift breaches, family-correspondence-after-death rate spikes, premature-death-report-reversal-latency breaches)</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all API calls on the death-event-log, the verification-queue, the audit-archive bucket, the per-source-credentials Secrets Manager secrets, the customer-managed KMS keys</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful patterns and reference materials for this recipe:</p>
+<ul>
+<li>The <a href="https://www.ssa.gov/dataexchange/">Social Security Administration's Death Master File</a> program documentation describes the data-source content and the access framework.</li>
+<li>The <a href="https://ladmf.ntis.gov/">National Technical Information Service's Limited Access Death Master File</a> program operates the access certification under the Bipartisan Budget Act of 2013's framework.</li>
+<li>The <a href="https://www.cdc.gov/nchs/nvss/index.htm">CDC's National Center for Health Statistics Vital Statistics System</a> publishes the data-format standards and the inter-jurisdictional-coordination guidance for state-vital-records-feed implementations.</li>
+<li>The <a href="https://www.naphsis.org/">National Association for Public Health Statistics and Information Systems</a> coordinates the state-vital-records offices' modernization work and publishes the FHIR-based death-reporting implementation guidance.</li>
+<li>The <a href="https://hl7.org/fhir/us/vrdr/">HL7 FHIR Vital Records Death Reporting Implementation Guide</a> specifies the FHIR-based death-reporting profile that the modernized state-vital-records feeds increasingly implement.</li>
+<li>The <a href="https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/health-information-of-deceased-individuals/index.html">HHS Office for Civil Rights HIPAA Privacy Rule guidance on deceased individuals</a> describes the 50-year posthumous-protection period and the personal-representative framework.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest a death event from a source feed.</strong> The per-source ingestion pipeline reads the inbound source data, normalizes it to the common death-event schema, captures the per-event provenance, and emits the normalized event into the death-event-resolution pipeline. Skip the provenance capture and the institution loses the ability to reverse premature death reports correctly later, because the audit trail no longer reflects which source triggered the resolution.</p>
+<pre class="code code-plain"><code>FUNCTION ingest_death_event_from_source(
+    source_id, source_specific_record):
+
+    // Step 1A: load the per-source schema definition. The
+    // schema definition is versioned in the Glue Data
+    // Catalog; the per-source ingestion uses the schema
+    // version active at ingestion time.
+    source_schema =
+        load_per_source_schema_definition(
+            source_id,
+            schema_version_active_at=
+                current UTC timestamp)
+
+    // Step 1B: normalize the source-specific record to the
+    // common death-event schema. The normalization is
+    // per-source: the LADMF&#x27;s fixed-width-format parsing,
+    // the per-state-vital-records FHIR-or-batch-format
+    // parsing, the payer-feed parsing.
+    normalized_event = normalize_to_common_schema(
+        source_specific_record, source_schema)
+
+    // The common death-event schema captures:
+    // - patient identifying information (name, DOB, sex,
+    //   address as available, SSN where the source
+    //   provides it)
+    // - date of death (the source&#x27;s reported date)
+    // - cause of death (where the source provides it; the
+    //   institution may suppress this for cross-recipe
+    //   propagation per the institutional sensitivity
+    //   policy)
+    // - source-specific identifiers (the source&#x27;s record
+    //   identifier, the source&#x27;s submission identifier)
+
+    // Step 1C: capture the per-event provenance. The
+    // provenance carries the source identifier, the
+    // source-specific record identifier, the source&#x27;s
+    // submission timestamp, the institution&#x27;s ingestion
+    // timestamp, the source-quality classification at
+    // the time of ingestion, and the supporting-evidence
+    // reference (where the source provides one).
+    provenance = build_provenance_envelope(
+        source_id=source_id,
+        source_record_id=
+            source_specific_record.record_id,
+        source_submission_timestamp=
+            source_specific_record.submission_timestamp,
+        institution_ingestion_timestamp=
+            current UTC timestamp,
+        source_quality_classification=
+            load_per_source_quality_classification(
+                source_id,
+                classification_active_at=
+                    current UTC timestamp),
+        supporting_evidence_reference=
+            extract_supporting_evidence_reference(
+                source_specific_record))
+
+    // Step 1D: persist the inbound event into the death-
+    // event-log with the per-event provenance.
+    event_id = generate_event_id()
+    death_event_log.put({
+        event_id: event_id,
+        normalized_event: normalized_event,
+        provenance: provenance,
+        ingestion_status: &quot;received&quot;,
+        ingested_at: current UTC timestamp
+    })
+
+    audit_log({
+        event_type: &quot;DEATH_EVENT_INGESTED&quot;,
+        event_id: event_id,
+        source_id: source_id,
+        ingested_at: current UTC timestamp
+    })
+
+    // Step 1E: dispatch the event to the resolution
+    // pipeline (Step 2).
+    Lambda.invoke_async(
+        &quot;death-event-matcher&quot;,
+        {event_id: event_id})
+
+    RETURN event_id
+</code></pre>
+<p><strong>Step 2: Match the death event against the MPI under the deceased-patient-resolution tolerance.</strong> The matcher consults the local MPI, applies the per-source matching tolerance (different sources have different demographic-data-quality profiles, so the per-source tolerance is calibrated separately), and produces a candidate set with per-candidate match confidence. High-confidence matches route to auto-resolution; medium-confidence matches route to the verification queue; the matcher also detects hidden-duplicate-revelation cases. Skip the per-source tolerance calibration and you treat the SSA DMF (which has high-quality demographics) the same as the family-reported intake (which has variable demographics), with the consequent matching-quality compromise.</p>
+<pre class="code code-plain"><code>FUNCTION match_death_event_against_mpi(event_id):
+
+    // Step 2A: load the death-event record.
+    death_event = death_event_log.get(event_id)
+
+    // Step 2B: load the per-source matching tolerance.
+    // Different sources have different appropriate
+    // tolerances. The SSA DMF has high-quality
+    // demographics (verified at SSA&#x27;s source); the
+    // tolerance can be tighter. The family-reported
+    // intake has variable demographic completeness; the
+    // tolerance is looser to accept incomplete data with
+    // appropriate confidence weighting.
+    matching_tolerance = load_deceased_patient_tolerance(
+        source_id=death_event.provenance.source_id)
+
+    // Step 2C: candidate-generation step (blocking).
+    candidate_record_ids = local_mpi.block(
+        normalize_for_deceased_resolution(
+            death_event.normalized_event),
+        matching_tolerance.blocking_strategy)
+
+    // Step 2D: per-candidate scoring.
+    scored_candidates = []
+    FOR EACH candidate_id IN candidate_record_ids:
+        candidate_record = local_mpi.get(candidate_id)
+
+        per_feature_similarity_scores =
+            compute_per_feature_similarities(
+                death_event.normalized_event,
+                candidate_record.normalized_features,
+                matching_tolerance)
+
+        match_score = combine_with_fellegi_sunter(
+            per_feature_similarity_scores,
+            matching_tolerance.feature_weights,
+            matching_tolerance.missing_feature_weights)
+
+        IF match_score &gt;= matching_tolerance
+                            .candidate_acceptance_threshold:
+            scored_candidates.append({
+                candidate_record_id: candidate_id,
+                match_score: match_score,
+                match_confidence_tier:
+                    classify_confidence_tier(
+                        match_score, matching_tolerance)
+            })
+
+    // Step 2E: detect hidden-duplicate-revelation. If the
+    // match produces multiple high-confidence candidates,
+    // the death event has revealed a previously-hidden
+    // duplicate chain in the MPI.
+    high_confidence_candidates = filter_by_confidence(
+        scored_candidates, &quot;high&quot;)
+
+    IF len(high_confidence_candidates) &gt; 1:
+        // Hidden-duplicate-revelation case: route to
+        // the coordinated-resolution pipeline (Step 3B).
+        audit_log({
+            event_type:
+                &quot;HIDDEN_DUPLICATE_REVEALED_BY_DEATH_EVENT&quot;,
+            event_id: event_id,
+            duplicate_candidate_ids:
+                [c.candidate_record_id for c in
+                 high_confidence_candidates],
+            revealed_at: current UTC timestamp
+        })
+
+        Lambda.invoke_async(
+            &quot;hidden-duplicate-revealer&quot;,
+            {event_id: event_id,
+             duplicate_candidates:
+                 high_confidence_candidates})
+        RETURN
+
+    // Step 2F: route based on the dominant candidate&#x27;s
+    // confidence.
+    IF len(scored_candidates) == 0:
+        // No-match: park the event for retrospective
+        // re-matching (the matched-patient may not yet
+        // exist in the MPI; the event is retained in
+        // case the patient is added later).
+        death_event_log.update(event_id, {
+            resolution_status: &quot;no_match&quot;,
+            resolved_at: current UTC timestamp
+        })
+
+        audit_log({
+            event_type: &quot;DEATH_EVENT_NO_MATCH&quot;,
+            event_id: event_id,
+            resolved_at: current UTC timestamp
+        })
+        RETURN
+
+    dominant_candidate = scored_candidates[0]
+
+    IF dominant_candidate.match_confidence_tier == &quot;high&quot;:
+        // Auto-resolution path: dispatch to the multi-
+        // source reconciler (Step 3).
+        Lambda.invoke_async(
+            &quot;multi-source-reconciler&quot;,
+            {event_id: event_id,
+             matched_record_id:
+                 dominant_candidate.candidate_record_id})
+
+    ELIF dominant_candidate.match_confidence_tier ==
+         &quot;medium&quot;:
+        // Verification-queue path: route to the human-
+        // review queue.
+        verification_queue.put({
+            event_id: event_id,
+            candidate_record_id:
+                dominant_candidate.candidate_record_id,
+            match_score: dominant_candidate.match_score,
+            queued_at: current UTC timestamp
+        })
+
+        audit_log({
+            event_type: &quot;DEATH_EVENT_QUEUED_FOR_REVIEW&quot;,
+            event_id: event_id,
+            queued_at: current UTC timestamp
+        })
+
+    ELSE:
+        // Low-confidence: park the event in the no-match
+        // archive with the candidate set for audit.
+        death_event_log.update(event_id, {
+            resolution_status: &quot;low_confidence_no_match&quot;,
+            scored_candidates: scored_candidates,
+            resolved_at: current UTC timestamp
+        })
+
+        audit_log({
+            event_type:
+                &quot;DEATH_EVENT_LOW_CONFIDENCE_NO_MATCH&quot;,
+            event_id: event_id,
+            resolved_at: current UTC timestamp
+        })
+</code></pre>
+<p><strong>Step 3: Reconcile the death event with any existing death events for the same patient.</strong> Multiple sources may report the same patient's death with potentially-different dates, potentially-conflicting evidence, and potentially-different supporting documents. The reconciler combines the per-source events into a consolidated death-event view per patient, applies the date-of-death-conflict-resolution policy, detects premature-death-report candidates (a single source's death event without corroboration from other sources), and produces the consolidated view that the MPI will consume. Skip the multi-source reconciliation and you collapse multiple sources to a single source's view with the consequent quality compromise.</p>
+<pre class="code code-plain"><code>FUNCTION reconcile_multi_source_death_events(
+    event_id, matched_record_id):
+
+    // Step 3A: load the new death event and any prior
+    // death events for the same matched patient record.
+    new_event = death_event_log.get(event_id)
+    prior_events = death_event_log.query_by_matched_record(
+        matched_record_id)
+
+    all_events = prior_events + [new_event]
+
+    // Step 3B: apply the date-of-death-conflict-resolution
+    // policy. The policy is per-use-case: legal-and-
+    // billing uses the death-certificate-date (when
+    // available); clinical-event-timing uses the EHR-
+    // recorded-date (when available); cohort-survival uses
+    // the earliest-plausible-date; default uses the
+    // highest-quality-source&#x27;s date.
+    conflict_resolution_policy =
+        load_date_of_death_conflict_resolution_policy()
+
+    consolidated_dates = compute_consolidated_dates(
+        all_events, conflict_resolution_policy)
+
+    // The consolidated_dates carry the per-use-case
+    // selected date and the per-source date history for
+    // the audit trail and for downstream-consumer use.
+    // Where the source dates differ by more than the
+    // policy&#x27;s threshold, the case is flagged for review.
+
+    IF consolidated_dates.has_threshold_exceeded_conflict:
+        // Date-of-death-conflict-flagged: route to the
+        // verification queue with the conflict context.
+        verification_queue.put({
+            event_id: event_id,
+            matched_record_id: matched_record_id,
+            verification_reason:
+                &quot;date_of_death_conflict&quot;,
+            consolidated_dates: consolidated_dates,
+            queued_at: current UTC timestamp
+        })
+
+        audit_log({
+            event_type:
+                &quot;DEATH_EVENT_DATE_CONFLICT_FLAGGED&quot;,
+            event_id: event_id,
+            consolidated_dates_summary:
+                summarize_dates(consolidated_dates),
+            flagged_at: current UTC timestamp
+        })
+        RETURN
+
+    // Step 3C: premature-death-report detection. If the
+    // new event is from a source with a non-trivial
+    // premature-death-report rate (the SSA DMF, for
+    // example) and the event has no corroboration from
+    // other sources, route to the verification queue
+    // before applying the death status to the high-
+    // impact downstream systems.
+    new_event_source_id =
+        new_event.provenance.source_id
+    new_event_source_quality =
+        load_per_source_quality_classification(
+            new_event_source_id,
+            classification_active_at=
+                current UTC timestamp)
+
+    IF new_event_source_quality
+         .premature_death_report_rate &gt;
+         PREMATURE_DEATH_REPORT_VERIFICATION_THRESHOLD
+       AND len(prior_events) == 0:
+        // Premature-death-report verification candidate.
+        verification_queue.put({
+            event_id: event_id,
+            matched_record_id: matched_record_id,
+            verification_reason:
+                &quot;premature_death_report_candidate&quot;,
+            queued_at: current UTC timestamp
+        })
+
+        audit_log({
+            event_type:
+                &quot;DEATH_EVENT_PREMATURE_REPORT_FLAGGED&quot;,
+            event_id: event_id,
+            source_id: new_event_source_id,
+            flagged_at: current UTC timestamp
+        })
+        RETURN
+
+    // Step 3D: build the consolidated death-event view.
+    consolidated_view = build_consolidated_view(
+        all_events,
+        consolidated_dates,
+        per_source_provenance=
+            extract_per_source_provenance(all_events))
+
+    // Step 3E: dispatch to the MPI-update handler (Step 4).
+    Lambda.invoke_async(
+        &quot;mpi-update-handler&quot;,
+        {event_id: event_id,
+         matched_record_id: matched_record_id,
+         consolidated_view: consolidated_view})
+
+    audit_log({
+        event_type: &quot;DEATH_EVENT_RECONCILED&quot;,
+        event_id: event_id,
+        matched_record_id: matched_record_id,
+        reconciled_at: current UTC timestamp
+    })
+</code></pre>
+<p><strong>Step 4: Apply the death-status update to the MPI atomically.</strong> The mpi-update-handler executes the death-status application as a transactional write that includes the consolidated death-event-view application, any coordinated duplicate-resolution actions (where the death event revealed hidden duplicates), and the audit-event emission. The transactional write ensures the MPI's downstream consumers see a consistent state. Skip the transactional discipline and the institution produces inconsistent operational behavior across the systems that consume the MPI's death-status field at slightly different moments.</p>
+<pre class="code code-plain"><code>FUNCTION apply_death_status_to_mpi(
+    event_id, matched_record_id,
+    consolidated_view):
+
+    // Step 4A: load the current MPI record state.
+    current_record = local_mpi.get(matched_record_id)
+
+    // Step 4B: build the updated record state with the
+    // death-status applied. The record&#x27;s death-event
+    // history list is appended; the computed death status
+    // is updated; the per-source provenance is captured.
+    updated_record = apply_death_event_to_record(
+        current_record, consolidated_view)
+
+    // Step 4C: execute the transactional write. The write
+    // updates the MPI record, appends the death-event
+    // log entry for audit, and emits the deceased-patient
+    // event signal. The Aurora PostgreSQL transaction
+    // ensures atomicity.
+    transaction = local_mpi.begin_transaction()
+    TRY:
+        local_mpi.update_record(
+            matched_record_id, updated_record,
+            transaction=transaction)
+        death_event_log.update(
+            event_id,
+            {resolution_status: &quot;applied&quot;,
+             resolved_at: current UTC timestamp},
+            transaction=transaction)
+        local_mpi.commit_transaction(transaction)
+    EXCEPT TransactionFailedError:
+        local_mpi.rollback_transaction(transaction)
+        audit_log({
+            event_type:
+                &quot;DEATH_EVENT_TRANSACTION_FAILED&quot;,
+            event_id: event_id,
+            matched_record_id: matched_record_id,
+            failed_at: current UTC timestamp
+        })
+        RAISE
+
+    // Step 4D: emit the deceased-patient-event signal to
+    // the EventBridge fan-out. The signal carries the
+    // event identifier, the matched record identifier,
+    // the consolidated date of death (per-use-case), the
+    // per-source provenance, and the cross-recipe
+    // coordination metadata.
+    EventBridge.PutEvents([{
+        source: &quot;deceased-patient-resolution&quot;,
+        detail_type: &quot;deceased_patient_resolved&quot;,
+        detail: {
+            event_id: event_id,
+            matched_record_id: matched_record_id,
+            consolidated_date_of_death:
+                consolidated_view
+                  .consolidated_dates.legal_billing_date,
+            per_source_provenance:
+                consolidated_view.per_source_provenance,
+            applied_at: current UTC timestamp
+        }
+    }])
+
+    audit_log({
+        event_type: &quot;DEATH_EVENT_APPLIED&quot;,
+        event_id: event_id,
+        matched_record_id: matched_record_id,
+        applied_at: current UTC timestamp
+    })
+</code></pre>
+<p><strong>Step 5: Propagate the death status to the downstream operational systems on each system's appropriate cadence.</strong> Each downstream system has its own appropriate-cadence configuration. The cascade Lambdas consume the deceased-patient-event signal from EventBridge and apply the system-specific behavior change. Each cascade Lambda emits an acknowledgment back to the cascade-ack-store when the change has been applied. Skip the per-system cadence configuration and you apply the cascade at the wrong cadence for some systems (too slow for systems that need real-time, too aggressive for systems that should be batch).</p>
+<pre class="code code-plain"><code>FUNCTION cascade_appointment_cancellation(
+    event_id, matched_record_id,
+    consolidated_date_of_death):
+
+    // Step 5A-Appointment: cancel future appointments and
+    // suppress automated reminders. This is a real-time
+    // cascade because an appointment scheduled for
+    // tomorrow has its automated reminder going out
+    // today, and the family experience of a wrong-patient
+    // reminder is acutely negative.
+
+    // Identify future appointments (after the date of
+    // death).
+    future_appointments =
+        appointment_system.get_future_appointments(
+            patient_id=matched_record_id,
+            after_date=consolidated_date_of_death)
+
+    FOR EACH appointment IN future_appointments:
+        // Cancel each future appointment. The cancellation
+        // reason is &quot;deceased patient&quot;; the cancellation
+        // is propagated to the scheduling-system audit log.
+        appointment_system.cancel_appointment(
+            appointment_id=appointment.id,
+            cancellation_reason=&quot;deceased_patient&quot;,
+            cancelled_at=current UTC timestamp)
+
+    // Suppress automated reminders. The reminder-system
+    // configuration is updated to suppress all outbound
+    // reminders for this patient.
+    reminder_system.suppress_reminders(
+        patient_id=matched_record_id,
+        suppression_reason=&quot;deceased_patient&quot;,
+        suppressed_at=current UTC timestamp)
+
+    // Step 5A-Appointment-Final: emit cascade-completion
+    // acknowledgment.
+    cascade_ack_store.put({
+        event_id: event_id,
+        cascade_consumer: &quot;appointment-system&quot;,
+        completed_at: current UTC timestamp,
+        appointments_cancelled: len(future_appointments)
+    })
+
+    audit_log({
+        event_type:
+            &quot;CASCADE_APPOINTMENT_CANCELLATION_APPLIED&quot;,
+        event_id: event_id,
+        matched_record_id: matched_record_id,
+        applied_at: current UTC timestamp
+    })
+
+FUNCTION cascade_active_prescription_review(
+    event_id, matched_record_id,
+    consolidated_date_of_death):
+
+    // Step 5B-Prescription: review active prescriptions
+    // and apply the appropriate post-death handling.
+    // Active prescriptions are flagged for clinical review
+    // (auto-cancellation may not be appropriate for all
+    // medication classes; some require provider sign-off).
+
+    active_prescriptions =
+        prescription_system
+          .get_active_prescriptions(
+            patient_id=matched_record_id)
+
+    FOR EACH prescription IN active_prescriptions:
+        // Cancel the auto-refill loop. New refills are
+        // blocked.
+        prescription_system.cancel_auto_refill(
+            prescription_id=prescription.id,
+            cancellation_reason=&quot;deceased_patient&quot;,
+            cancelled_at=current UTC timestamp)
+
+        // Flag for clinical review. Some prescription
+        // dispositions (controlled substances, in-process
+        // mail-order packages) require explicit clinical
+        // disposition.
+        clinical_review_queue.put({
+            patient_id: matched_record_id,
+            prescription_id: prescription.id,
+            review_reason:
+                &quot;deceased_patient_prescription_disposition&quot;,
+            queued_at: current UTC timestamp
+        })
+
+    cascade_ack_store.put({
+        event_id: event_id,
+        cascade_consumer: &quot;prescription-system&quot;,
+        completed_at: current UTC timestamp,
+        active_prescriptions_processed:
+            len(active_prescriptions)
+    })
+
+    audit_log({
+        event_type:
+            &quot;CASCADE_PRESCRIPTION_REVIEW_APPLIED&quot;,
+        event_id: event_id,
+        matched_record_id: matched_record_id,
+        applied_at: current UTC timestamp
+    })
+
+FUNCTION cascade_communication_path_switch(
+    event_id, matched_record_id,
+    consolidated_date_of_death):
+
+    // Step 5C-Communication: stop default communications
+    // and switch to the bereavement-aware communication
+    // path.
+
+    // Stop the default communications.
+    outreach_platform.suppress_default_communications(
+        patient_id=matched_record_id,
+        suppression_reason=&quot;deceased_patient&quot;,
+        suppressed_at=current UTC timestamp)
+
+    // Trigger the bereavement-aware communication path.
+    // The path is institutionally-defined and is opt-in
+    // for the family (the institution does not assume
+    // bereavement-aware contact authorization without an
+    // explicit family signal).
+    bereavement_aware_path.initialize(
+        patient_id=matched_record_id,
+        date_of_death=consolidated_date_of_death,
+        initialized_at=current UTC timestamp)
+
+    cascade_ack_store.put({
+        event_id: event_id,
+        cascade_consumer: &quot;communication-path&quot;,
+        completed_at: current UTC timestamp
+    })
+
+    audit_log({
+        event_type:
+            &quot;CASCADE_COMMUNICATION_PATH_SWITCHED&quot;,
+        event_id: event_id,
+        matched_record_id: matched_record_id,
+        applied_at: current UTC timestamp
+    })
+
+// Additional cascade Lambdas operate similarly for the
+// billing-episode-closer (close open episodes-of-care,
+// apply post-death billing treatment, route to estate-
+// administration workflow), the portal-access-handler
+// (suspend the patient&#x27;s own account, provision the
+// personal-representative&#x27;s access through the
+// institutional process), the cross-recipe coordination
+// signal (signal recipes 5.1, 5.5, 5.7, 5.8, 5.9 with
+// the appropriate per-recipe consumer schema).
+</code></pre>
+<p><strong>Step 6: Handle premature-death-report verification and reversal.</strong> The verification queue surfaces cases where the death status may be wrongly applied. The verifier (a designated operational role with appropriate training and authorization) reviews the case, applies the institutional verification framework (cross-source verification, supporting-document review, family-contact verification), and produces the verification decision. If the death report is verified, the resolution proceeds; if the death report is reversed, the reversal pathway restores the live-patient state. Skip the verification framework and you produce the disrupted-patient-experience cases the recipe is for.</p>
+<pre class="code code-plain"><code>FUNCTION execute_premature_death_report_reversal(
+    event_id, matched_record_id, verifier_identity,
+    reversal_reason):
+
+    // Step 6A: validate the verifier&#x27;s authorization. The
+    // reversal is a high-impact operation; the verifier
+    // role is institutionally-named and specifically-
+    // authorized.
+    IF NOT validate_verifier_authorization(
+            verifier_identity,
+            &quot;premature_death_report_reversal&quot;):
+        audit_log({
+            event_type:
+                &quot;REVERSAL_AUTHORIZATION_REJECTED&quot;,
+            verifier_identity:
+                summarize_for_audit(verifier_identity),
+            rejected_at: current UTC timestamp
+        })
+        RAISE AuthorizationFailedError()
+
+    // Step 6B: validate the dual-control approval. The
+    // reversal requires two operators from non-
+    // overlapping organizational units to approve.
+    IF NOT verify_dual_control_approval(
+            event_id, &quot;premature_death_report_reversal&quot;):
+        audit_log({
+            event_type:
+                &quot;REVERSAL_DUAL_CONTROL_INCOMPLETE&quot;,
+            event_id: event_id,
+            queued_at: current UTC timestamp
+        })
+        RAISE DualControlIncompleteError()
+
+    // Step 6C: load the current record state.
+    current_record = local_mpi.get(matched_record_id)
+
+    // Step 6D: build the reverted record state. The
+    // reversal restores the live-patient state but
+    // retains the audit history of the death-event-
+    // application and the reversal.
+    reverted_record = apply_reversal_to_record(
+        current_record,
+        reversal_reason=reversal_reason,
+        verifier_identity=verifier_identity)
+
+    // Step 6E: execute the transactional reversal.
+    transaction = local_mpi.begin_transaction()
+    TRY:
+        local_mpi.update_record(
+            matched_record_id, reverted_record,
+            transaction=transaction)
+        death_event_log.update(
+            event_id,
+            {resolution_status: &quot;reversed&quot;,
+             reversal_reason: reversal_reason,
+             reversed_by: verifier_identity,
+             reversed_at: current UTC timestamp},
+            transaction=transaction)
+        local_mpi.commit_transaction(transaction)
+    EXCEPT TransactionFailedError:
+        local_mpi.rollback_transaction(transaction)
+        RAISE
+
+    // Step 6F: emit the reversal event for the cascade-
+    // reversal consumers.
+    EventBridge.PutEvents([{
+        source: &quot;deceased-patient-resolution&quot;,
+        detail_type: &quot;deceased_status_reversed&quot;,
+        detail: {
+            event_id: event_id,
+            matched_record_id: matched_record_id,
+            reversal_reason: reversal_reason,
+            verifier_identity:
+                summarize_for_audit(verifier_identity),
+            reversed_at: current UTC timestamp
+        }
+    }])
+
+    audit_log({
+        event_type:
+            &quot;DEATH_EVENT_REVERSED&quot;,
+        event_id: event_id,
+        matched_record_id: matched_record_id,
+        reversal_reason: reversal_reason,
+        verifier_identity:
+            summarize_for_audit(verifier_identity),
+        reversed_at: current UTC timestamp
+    })
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter05.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample inbound death event from the SSA Limited Access Death Master File (illustrative; the LADMF format is fixed-width):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;death-event-ssa-2026-q2-44912001&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ssa-ladmf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;normalized_event&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;given_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ROBERT&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;middle_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;JAMES&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;family_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ANDERSON&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;dob&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1942-05-14&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ssn_last_4&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;4827&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;date_of_death&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;state_of_death&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cause_of_death&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ssa-ladmf&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ladmf-2026-q1-batch-44912001&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source_submission_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-15T00:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;institution_ingestion_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-16T07:14:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source_quality_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;premature_death_report_rate_baseline&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.013</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;data_completeness_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.78</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;matching_anchor_strength_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ssn_strong&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;supporting_evidence_reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample inbound death event from a state vital-records FHIR-based feed (illustrative; conforms approximately to the VRDR Implementation Guide):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;death-event-vrdr-2026-q2-77821445&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;state-vital-records-virginia&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;normalized_event&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;given_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Robert&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;middle_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;James&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;family_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Anderson&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;dob&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1942-05-14&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sex&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;M&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;address_line_1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1247 Oak Street&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;city&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Richmond&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;VA&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;zip_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;23220&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;date_of_death&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;state_of_death&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;VA&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cause_of_death_underlying&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I25.10&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;death_certifier_identifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;npi-1234567890&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;state-vital-records-virginia&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;va-dc-2026-02-008-44521&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source_submission_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-15T14:22:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;institution_ingestion_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source_quality_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;premature_death_report_rate_baseline&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.002</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;data_completeness_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;matching_anchor_strength_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;demographics_strong&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;supporting_document_certainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;death_certificate&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;supporting_evidence_reference&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="s2">&quot;s3://vital-records-archive/va/2026/02/dc-2026-02-008-44521.pdf&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample consolidated death-event view (after multi-source reconciliation):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;matched_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mpi-rec-3387221&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;consolidated_view&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;consolidated_dates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;legal_billing_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;clinical_event_timing_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;earliest_plausible_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;default_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;date_of_death_conflict_flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;per_source_dates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;ssa-ladmf&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;state-vital-records-virginia&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-08&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;per_source_provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;state-vital-records-virginia&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;source_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;va-dc-2026-02-008-44521&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;supporting_document_certainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;death_certificate&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;received_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:00Z&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ssa-ladmf&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;source_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ladmf-2026-q1-batch-44912001&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;supporting_document_certainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ssa_record&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;received_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-16T07:14:00Z&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;consolidated_source_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;premature_death_report_candidate&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;hidden_duplicate_revelation_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;consolidated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-16T07:14:08Z&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample cascade-acknowledgment summary (after the downstream propagation):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;death-event-vrdr-2026-q2-77821445&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;matched_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mpi-rec-3387221&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cascade_consumer_acknowledgments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;appointment-system&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:14Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;appointments_cancelled&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prescription-system&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:22Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;active_prescriptions_processed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;communication-path&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:18Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">18</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;billing-system&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:08:44Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;open_episodes_closed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">524</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient-portal&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:31Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">31</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care-management-dashboard&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:15:22Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">922</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;analytics-platform&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T08:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">17996</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cross-recipe-5.5-cross-facility&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:42Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cascade_consumer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cross-recipe-5.9-tefca&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-16T03:00:55Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ack_latency_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">55</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;cross_system_propagation_completeness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Single-source EHR-only baseline</th>
+<th>Multi-source pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mean-time-to-recognize-death (population scale)</td>
+<td>30-180 days</td>
+<td>5-30 days</td>
+</tr>
+<tr>
+<td>Death-event-source coverage</td>
+<td>30-50%</td>
+<td>90-98%</td>
+</tr>
+<tr>
+<td>Death-event match rate at fixed false-acceptance threshold (FAR=0.001)</td>
+<td>n/a</td>
+<td>92-97%</td>
+</tr>
+<tr>
+<td>False-positive death rate (premature death applied)</td>
+<td>n/a</td>
+<td>0.001-0.005</td>
+</tr>
+<tr>
+<td>False-negative death rate (death not recognized within 90 days)</td>
+<td>0.40-0.60</td>
+<td>0.05-0.15</td>
+</tr>
+<tr>
+<td>Hidden-duplicate-revelation rate per 1000 death events</td>
+<td>n/a</td>
+<td>5-25</td>
+</tr>
+<tr>
+<td>Cross-system-propagation-completeness (all systems acknowledged within 24 hours)</td>
+<td>60-80%</td>
+<td>95-99%</td>
+</tr>
+<tr>
+<td>Family-correspondence-after-death incidents per 1000 deaths</td>
+<td>200-500</td>
+<td>5-30</td>
+</tr>
+<tr>
+<td>Premature-death-report reversal latency (end-to-end)</td>
+<td>n/a</td>
+<td>2-5 business days</td>
+</tr>
+<tr>
+<td>Personal-representative-record-request completion time</td>
+<td>n/a</td>
+<td>5-15 business days</td>
+</tr>
+<tr>
+<td>Audit-event volume per resolved death event</td>
+<td>n/a</td>
+<td>8-25 (per-resolution audit including cascade acknowledgments)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>The SSA DMF's three-year access restriction creates an operational gap.</strong> Healthcare organizations that consume the publicly-available DMF (without LADMF certification) are operating with a three-year-stale view of the SSA's death data, which is the most operationally-valuable window. The mitigation is LADMF certification or authorized-intermediary subscription. The certification process is institutional and has its own ongoing compliance program; the institutions that operate the certification well treat it as a multi-year program rather than a project.</li>
+<li><strong>The state-vital-records-feed landscape is heterogeneous and slow to modernize.</strong> Some states publish near-real-time FHIR-based death feeds; some states publish batch files monthly; some states publish quarterly or with longer lags. The institution operating across multiple states inherits the heterogeneity. The mitigation is per-jurisdiction-feed integration with per-jurisdiction-cadence configuration; the institution that does not invest in the per-jurisdiction integration has systematic death-event-recognition gaps in the slow-to-modernize jurisdictions.</li>
+<li><strong>The premature-death-report rate is small but operationally non-trivial.</strong> A 1-3% premature-death-report rate at the SSA DMF, applied without verification, produces 10-30 incorrectly-disrupted patients per 1000 death events. The patient experience during the disruption is acutely negative; the operational cost of the reversal is non-trivial; the institutional reputation cost is real. The mitigation is the verification-queue-and-reversal pathway with explicit institutional ownership; the institution that does not invest in the pathway absorbs the disruption-cost-and-reputation-cost as ongoing operational liability.</li>
+<li><strong>The hidden-duplicate-revelation cases produce coordinated-resolution complexity.</strong> Death events that reveal duplicate chains require the deceased-patient-resolution pipeline to coordinate with the recipe 5.1 duplicate-resolution pipeline atomically. The atomic coordination is operationally non-trivial (the two pipelines have to share transactional state; the cross-pipeline audit trail has to capture the coordinated resolution as a single event). The mitigation is the coordinated-resolution Lambda that operates against both pipelines transactionally; the institution that does not implement the coordination produces inconsistent operational behavior across the duplicate chain's records.</li>
+<li><strong>The family-correspondence-after-death rate is the most family-visible signal.</strong> Every wrong-patient communication sent to a deceased patient's family is a single negative experience for the family that the institution's downstream systems produced because the deceased-patient-resolution pipeline did not propagate the death status in time. The metric is operationally important and family-facing; the institution that invests in driving the metric down (by improving source coverage, by reducing recognition latency, by improving cross-system-propagation-completeness) sees the family experience improve over time.</li>
+<li><strong>The HIPAA-posthumous-protection-period enforcement is a multi-decade discipline.</strong> The 50-year posthumous-protection period is the longest single retention requirement in the chapter. The institution's access-control engine, audit-and-attribution layer, and analytics-access controls all need to enforce the posthumous framework. The discipline is operationally important and is one of the institutional capabilities that the deceased-patient-resolution program builds. The institution that does not invest in the discipline has an inconsistent posthumous-access posture across the institution's various read paths.</li>
+<li><strong>The personal-representative framework requires institutional release-of-information integration.</strong> The personal representative's access to the deceased patient's record during the estate-administration period operates under the institutional release-of-information framework, with the personal-representative authentication mediated through the institutional verification process. The integration is non-trivial (the personal-representative's identity verification, the authorization-scope binding, the audit logging on every access). The mitigation is the personal-representative-portal Cognito-and-IAM integration with the institutional release-of-information system; the institution that does not implement the integration has a poor personal-representative experience that affects family trust during the estate-administration period.</li>
+<li><strong>Cross-recipe coordination at the architectural level introduces non-obvious dependencies.</strong> The deceased-patient signal flows to recipes 5.1, 5.5, 5.7, 5.8, and 5.9; each cross-recipe consumer has its own appropriate behavior change. The cross-recipe coordination is engineered through the EventBridge fan-out with explicit per-consumer schemas; the institution that does not engineer the coordination produces inconsistent deceased-patient handling across the chapter's recipes.</li>
+<li><strong>The institutional learning curve is substantial.</strong> Operating the deceased-patient-resolution pipeline well requires institutional capabilities (multi-source integration, verification operations, posthumous-protection compliance, personal-representative coordination, family-experience design) that most institutions are still building. The capabilities take years to develop; the institutions that operate the pipeline well have invested in the capabilities deliberately, often through a multi-year program.</li>
+<li><strong>The data-quality-drift-monitoring discipline is essential.</strong> The per-source data quality drifts over time (the SSA DMF's premature-death-report rate may shift; the state-vital-records-feed accuracy may improve as the modernization rolls out; the payer-feed reliability may shift with operational changes at the payer). The institution that does not monitor the per-source data-quality drift discovers the drift through specific operational incidents (a premature-death-report-rate spike that produces a wave of incorrectly-disrupted patients; a state-vital-records-feed accuracy degradation that produces a wave of false-rejection cases). The mitigation is the per-source quality monitoring as part of the pipeline's operational dashboards.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Per-source subscription and certification onboarding.</strong> The institution has to obtain the LADMF certification (or contract with an authorized intermediary), negotiate the per-state-vital-records-feed data-use agreements per jurisdiction, negotiate the per-payer-death-feed agreements per payer relationship, contract with a hospice-agency data-sharing partner where applicable, subscribe to the obituary-feed commercial aggregator, and integrate the per-source feed with the institution's ingestion pipeline. Each of these is its own onboarding project; the institution's specific source mix shapes the program's scope and timeline.</p>
+<p><strong>Family-reported-death intake operational discipline.</strong> The family-reported-death intake is the most family-experience-sensitive operational surface. The intake worker's training, the intake script's design, the intake's audit-and-quality posture, and the intake's downstream-propagation discipline are all institutional-design choices that affect the family's experience and the institution's deceased-patient-resolution effectiveness. Build the intake as a deliberate operational program with named ownership, named processes, and continuous quality monitoring. Skip this and the institution's first family-reported-death-experience incident is the family's experience.</p>
+<p><strong>Premature-death-report-reversal pathway with named operational ownership.</strong> The reversal pathway is the operational program that determines the institution's response to incorrectly-applied death status. The pathway has named ownership (a designated reversal-operator role with institutional authority), named processes (the verification framework, the dual-control approval, the cross-system-reversal coordination), and named SLAs (the maximum reversal-completion time, the family-communication framework during reversal). Build the pathway as a deliberate operational program; treat the reversal as a high-touch, high-importance institutional function rather than as an exceptional ad-hoc operation.</p>
+<p><strong>HIPAA-posthumous-protection-period access-control enforcement engine.</strong> The 50-year posthumous-protection period is enforced through an access-control engine that consults the patient's deceased status, the date of death, the requesting-context's authorization framework, and the institutional access-control posture. Specify the engine's structure (the per-request access decision, the per-decision audit logging, the per-decision authorization-framework selection), the institutional review (the compliance-team review of the access-control configuration, the privacy-team review of the access-control decisions), and the multi-decade operational discipline (the engine is maintained over the 50-year horizon with appropriate lifecycle management).</p>
+<p><strong>Personal-representative-portal authorization-mediation workflow.</strong> The personal representative's access to the deceased patient's record during the estate-administration period operates under the institutional release-of-information framework. The integration is non-trivial: the personal-representative's identity verification through the institutional process, the authorization-scope binding (the personal representative is authorized to access specific record types for specific purposes during specific time windows), the per-access audit logging, and the institutional release-of-information system integration. Build the integration as a deliberate workflow; treat the personal-representative experience as a key institutional touchpoint that affects family trust during a sensitive period.</p>
+<p><strong>Three review queues with cohort-and-cycle-aware tooling.</strong> The deceased-patient-match-review queue surfaces medium-confidence matches that the matcher routed for human review; reviewers see the candidate set with the per-source provenance and the underlying records. The premature-death-report-verification queue surfaces the cases requiring premature-death-report verification; verifiers apply the institutional verification framework. The date-of-death-conflict-resolution queue surfaces the cases where the per-source dates of death exceed the conflict-threshold; resolvers apply the date-of-death-conflict-resolution policy. Each review tool emits the reviewer's decision back into the operational training signal.</p>
+<p><strong>Cross-recipe coordination event contract.</strong> The deceased-patient signal flows to recipes 5.1 (the consolidated record's death status drives the duplicate-resolution decisions), 5.5 (the cross-facility matcher suppresses deceased-patient candidates), 5.7 (the longitudinal-name-change history is closed at the date of death), 5.8 (the privacy-preserving-linkage encoded payloads are updated to reflect the deceased status), and 5.9 (the cross-network match infrastructure suppresses deceased-patient candidates). Specify the per-consumer event schema, the consumer-side signature validation, the schema-versioning policy, and the per-event-source allow-list.</p>
+<p><strong>Idempotency and retry semantics.</strong> The pipeline must handle duplicate-event delivery, source-side retries, and Lambda re-runs without producing duplicate audit events, duplicate cascade-acknowledgments, or scrambled per-source provenance. Use the (event_id, source_id) tuple as the idempotency key for the death-event-log writes; use (event_id, cascade_consumer) for the cascade-acknowledgment store; use (matched_record_id, reversal_event_id) for the reversal events. Configure DLQs on every Lambda path; Step Functions Catch states route terminal failures to the DLQ so stuck workflows are visible. Same chapter pattern as 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9.</p>
+<p><strong>Per-source quality-drift monitoring discipline.</strong> The CloudWatch metrics with per-source dimensions, the QuickSight dashboard, the institutional review cadence, and the disparity-alarm thresholds are architecture-level commitments, not bolt-ons. Specify the operational thresholds, the per-source aggregation, the disparity-metric definitions, and the institutional response protocol. Per-source-premature-death-report-rate-drift &gt; 50% from baseline = MEDIUM alarm; per-source-data-completeness-score-drift &lt; -10% from baseline = MEDIUM (because data-completeness drift reduces matching effectiveness); per-source-matching-success-rate-drift &lt; -15% from baseline = HIGH (because matching-success-rate drift produces death-event-recognition gaps). Same chapter pattern as 5.1, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9.</p>
+<p><strong>Compliance and operational ownership.</strong> The deceased-patient-resolution program sits at the intersection of analytics, clinical operations, compliance, privacy, security, IT, legal, patient-experience, and patient-advocacy. Establish clear operational ownership: who tunes the per-source matching tolerance, who reviews the per-source-quality-drift reports, who owns the LADMF certification and the per-jurisdiction-vital-records-data-use agreements, who handles the family-reported-death intake operations, who responds to premature-death-report verifications and reversals, who owns the HIPAA-posthumous-protection-period compliance program, who owns the personal-representative-experience program. The pipeline works only when the operational ownership is clear and funded across the institution, not just within the IT or analytics organization.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Authorized-intermediary LADMF subscription.</strong> Rather than obtaining the LADMF certification directly, the institution contracts with an authorized intermediary that has the certification and provides the LADMF data through a value-added service. The architectural extension is the per-intermediary integration with the institution's ingestion pipeline; the data flow is similar to the direct LADMF subscription but the certification overhead is moved to the intermediary. The pattern is operationally common for institutions that do not have the institutional capacity to maintain the LADMF certification independently.</p>
+<p><strong>State-vital-records FHIR-based feed integration.</strong> As state vital-records offices modernize to FHIR-based death-event publication (the VRDR profile), the institution's per-jurisdiction feed integration evolves from batch-file processing to real-time FHIR-based event subscription. The architectural extension is a per-jurisdiction FHIR-subscription endpoint that consumes the FHIR-based death events as they are published, with the appropriate per-jurisdiction-feed-rate-and-rate-limiting configuration. The pattern reduces the death-event recognition latency for the participating jurisdictions and supports the institution's broader interoperability roadmap.</p>
+<p><strong>Cross-network death-event propagation through TEFCA.</strong> The deceased-patient signal flows through the TEFCA federation to the participating organizations that may have records for the deceased patient. The architectural extension is a TEFCA-mediated deceased-patient-event propagation pipeline that signals the cross-network participants of the deceased status, with the appropriate authorization-framework and audit-and-attribution layer. The pattern reduces the cross-organizational deceased-patient-recognition latency and supports the broader national-scale-matching infrastructure (recipe 5.9).</p>
+<p><strong>Hospice-data-network deceased-patient-source integration.</strong> As hospice-and-palliative-care data integration matures, the regional and national hospice-data networks become high-quality deceased-patient sources for their enrolled populations. The architectural extension is a hospice-data-network subscription with appropriate data-use agreements; the data flow is similar to the per-jurisdiction-vital-records-feed integration but the source is the hospice-data network rather than the state vital-records office. The pattern provides high-quality, near-real-time deceased-patient data for the hospice-served population.</p>
+<p><strong>Pharmacy-network deceased-patient-fraud-detection integration.</strong> The institution's pharmacy-dispensing data and the institution's deceased-patient-resolution data, combined, provide a deceased-patient-pharmacy-fraud-detection signal. The architectural extension is a fraud-detection pipeline that joins the deceased-patient signal with the active-prescription-dispensing data to detect patterns of post-death prescription activity (a fraud signal where someone obtained the deceased patient's identity for prescription-fraud purposes). The pattern complements the chapter 3 fraud-detection recipes and provides a deceased-patient-specific fraud-detection capability.</p>
+<p><strong>Cohort-survival-analysis cohort-refresh automation.</strong> As the deceased-patient-resolution pipeline produces consolidated death-event data, the institution's cohort-survival-analysis infrastructure consumes the data for the cohort refresh. The architectural extension is a cohort-survival-analysis-refresh pipeline that re-runs the cohort definitions with the updated deceased-patient data, computes the censoring decisions, and produces the refreshed cohort for the analytics consumers. The pattern supports the institution's outcomes-research and quality-measurement programs.</p>
+<p><strong>Quality-measurement-pipeline deceased-patient-handling automation.</strong> The institution's quality-measurement pipeline consumes the deceased-patient signal and applies the per-measure deceased-patient handling. The architectural extension is a quality-measurement-deceased-patient-rule engine that consumes the deceased-patient signal and applies the per-measure rules (HEDIS, CMS Star Ratings, contracted commercial-payer measures) with the appropriate exclusion or inclusion logic. The pattern automates the deceased-patient-handling that the institution's quality-measurement program has historically managed manually.</p>
+<p><strong>Family-bereavement-aware-communication-path opt-in framework.</strong> The institution's bereavement-aware communication path is opt-in (the institution does not assume bereavement-aware contact authorization without an explicit family signal). The architectural extension is a family-opt-in capture-and-management framework that captures the family's communication preferences (the institutional-relationships, the institutional-touchpoints, the institutional-support contact information) and operates the bereavement-aware communications under the family's preferences. The pattern respects the family's autonomy and supports the institutional-bereavement-support function.</p>
+<p><strong>Personal-representative-portal patient-record-access workflow.</strong> The personal-representative's access to the deceased patient's record during the estate-administration period operates through the personal-representative-portal Cognito-and-IAM integration with the institutional release-of-information system. The architectural extension is a personal-representative-portal patient-record-access workflow that supports the personal-representative through the access process (the institutional-onboarding flow, the institutional-explanation language, the institutional-support contact information, the per-record-type access-decision framework, the audit-and-attribution layer). The pattern supports the personal-representative experience during the estate-administration period and is consistent with the framework's individual-access-services exchange purpose at recipe 5.9.</p>
+<p><strong>Multi-decade-archival-pathway lifecycle automation.</strong> The HIPAA-posthumous-protection-period 50-year retention requirement extends the institution's record-retention obligation far beyond the patient's lifetime. The architectural extension is a multi-decade-archival pathway that lifecycles the deceased-patient records from the active-MPI substrate to a deceased-patient-archive substrate with the appropriate access-control, audit, and retention configuration; the per-stage lifecycle is automated through S3 lifecycle policies, Aurora archival pathways, and the institutional governance review. The pattern supports the multi-decade compliance posture without producing the active-MPI cost-and-performance overhead that comes from retaining the deceased-patient records in the active substrate indefinitely.</p>
+<p><strong>Cross-jurisdictional posthumous-protection-overlay engine.</strong> Some states have stricter posthumous-protection requirements than the HIPAA federal floor (state-specific posthumous-protection-period extensions, state-specific deceased-patient-record-disclosure rules). The architectural extension is a cross-jurisdictional posthumous-protection-overlay engine that consumes the patient's residence jurisdiction, the requesting context's jurisdiction, the per-state overlay rules, and produces the per-request posthumous-protection access decision. The pattern is operationally important for institutions operating across multiple states with diverging posthumous-protection rules.</p>
+<p><strong>Active-learning-driven matching-tolerance tuning.</strong> As the deceased-patient-match-review queue resolves cases, the labels feed a periodic re-training of the deceased-patient-matching tolerance and the per-feature weights. Active learning concentrates the review effort on the cases that most improve the downstream accuracy and the per-source-quality classification; over time, the review queue depth decreases as the matcher absorbs the labeled cases. The active-learning pattern is constrained by the deceased-patient-context-specific considerations (the labels are on death-event-resolution decisions; the calibration has to be careful about the per-source-quality and per-source-tolerance dependencies).</p>
+<p><strong>Audit-summary delivery to the personal representative.</strong> As part of the personal-representative-experience layer, the personal representative may opt to receive periodic summaries of how the deceased patient's record has been accessed during the estate-administration period, with the access events, the requesting contexts, the use cases, and the disclosure forms identified. The architectural extension is a personal-representative-portal summary-delivery service that aggregates the per-access records and delivers them on the personal-representative's chosen cadence. The pattern is consistent with the framework's individual-access-services exchange purpose and supports the personal-representative experience during the estate-administration period.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html">Amazon S3 User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html">Amazon RDS for Aurora User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html">Amazon SQS Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html">Amazon Cognito Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html">AWS Secrets Manager User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/kms/latest/developerguide/overview.html">AWS Key Management Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/athena/latest/ug/what-is.html">Amazon Athena User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lake-formation/latest/dg/what-is-lake-formation.html">AWS Lake Formation Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/serverless-patterns"><code>aws-samples/serverless-patterns</code></a>: EventBridge + Lambda + DynamoDB patterns applicable to the per-event handler logic</li>
+<li><a href="https://github.com/aws-samples/aws-glue-samples"><code>aws-samples/aws-glue-samples</code></a>: Glue ETL patterns applicable to the multi-source death-event normalization pipeline</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences): browse for healthcare data-integration and master-data-management reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: search &quot;MPI,&quot; &quot;patient matching,&quot; &quot;interoperability&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/architecture/">AWS Architecture Blog</a>: search &quot;data integration,&quot; &quot;event-driven architecture&quot; for relevant patterns</li>
+</ul>
+<p><strong>External References (Standards and Frameworks):</strong></p>
+<ul>
+<li><a href="https://www.ssa.gov/dataexchange/">Social Security Administration's Death Master File</a>: the SSA's death-data-source program description</li>
+<li><a href="https://ladmf.ntis.gov/">National Technical Information Service's Limited Access Death Master File</a>: the LADMF certification program operated by NTIS</li>
+<li><a href="https://www.congress.gov/bill/113th-congress/house-bill/2775">Bipartisan Budget Act of 2013 Section 203</a>: the legal framework that constrains DMF access</li>
+<li><a href="https://www.cdc.gov/nchs/nvss/index.htm">CDC's National Center for Health Statistics Vital Statistics System</a>: the federal vital-records-data-standards-and-coordination program</li>
+<li><a href="https://www.naphsis.org/">National Association for Public Health Statistics and Information Systems</a>: the state-vital-records-offices' coordinating organization</li>
+<li><a href="https://hl7.org/fhir/us/vrdr/">HL7 FHIR Vital Records Death Reporting Implementation Guide</a>: the FHIR-based death-reporting implementation guidance for the modernized state-vital-records feeds</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/health-information-of-deceased-individuals/index.html">HHS OCR HIPAA Privacy Rule Guidance on Deceased Individuals</a>: the 50-year posthumous-protection period and the personal-representative framework</li>
+<li><a href="https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E/section-164.502">HIPAA Privacy Rule Personal Representatives Provision (45 CFR 164.502(g))</a>: the personal-representative-authorization framework</li>
+<li><a href="https://www.cste.org/">Council for State and Territorial Epidemiologists</a>: the public-health-coordinating-organization-for-vital-records-data</li>
+<li><a href="https://www.healthit.gov/topic/information-blocking">21st Century Cures Act Information Blocking Rule</a>: the regulatory framework that interacts with deceased-patient-record disclosure</li>
+</ul>
+<p><strong>External References (Industry):</strong></p>
+<ul>
+<li><a href="https://sequoiaproject.org/">Sequoia Project Patient Matching Framework</a>: industry-developed framework for patient-matching that informs the deceased-patient-matching expectations</li>
+<li><a href="https://www.himss.org/">HIMSS Master Patient Index Resources</a>: industry-association resources on master-patient-index management including deceased-patient-resolution guidance</li>
+<li><a href="https://www.ahima.org/">American Health Information Management Association (AHIMA)</a>: industry-association resources on health-information management including deceased-patient-record management</li>
+<li><a href="https://www.healthit.gov/">The Office of the National Coordinator for Health Information Technology (ONC)</a>: the federal agency that operates the information-blocking rule enforcement and the broader interoperability framework</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Single-source ingestion (typically EHR-recorded-deaths plus family-reported-death intake), basic MPI death-status update, a small set of cascade consumers (appointment-system, communication-path), basic audit-and-attribution layer, no premature-death-report-verification pathway</td>
+<td>3-6 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Multi-source ingestion (LADMF-or-authorized-intermediary, per-jurisdiction state-vital-records-feeds, payer-death-feeds, hospice-agency-deaths, family-reported-deaths, obituary-feeds, provider-reported-deaths), full MPI death-status update with multi-source reconciliation and date-of-death-conflict-resolution, full cascade-propagation across all operational systems (appointment, prescription, billing, communication-path, portal, care-management, analytics, quality-measurement), three-queue review tooling (deceased-patient-match-review, premature-death-report-verification, date-of-death-conflict-resolution), HIPAA-posthumous-protection-period access-control engine, personal-representative-portal authorization-mediation workflow, premature-death-report-reversal pathway with named operational ownership, complete CloudTrail and audit-retention posture, family-bereavement-aware-communication-path opt-in framework, per-source quality-drift monitoring</td>
+<td>12-24 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add authorized-intermediary LADMF subscription, state-vital-records FHIR-based feed integration, cross-network deceased-patient-event propagation through TEFCA, hospice-data-network deceased-patient-source integration, pharmacy-network deceased-patient-fraud-detection integration, cohort-survival-analysis cohort-refresh automation, quality-measurement-pipeline deceased-patient-handling automation, multi-decade-archival-pathway lifecycle automation, cross-jurisdictional posthumous-protection-overlay engine, active-learning-driven matching-tolerance tuning, audit-summary delivery to the personal representative</td>
+<td>9-18 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter05.10-deceased-patient-resolution-reconciliation.html">Main Recipe 5.10</a> · <a href="chapter05.10-python-example.html">Python Example</a> · <a href="chapter05-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

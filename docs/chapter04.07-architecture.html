@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 4.7 Architecture and Implementation: Care Management Program Enrollment</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested nav-active" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-47-architecture-and-implementation-care-management-program-enrollment">Recipe 4.7 Architecture and Implementation: Care Management Program Enrollment</h1>
+<p><em>Companion to <a href="chapter04.07-care-management-program-enrollment.html">Recipe 4.7: Care Management Program Enrollment</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon SageMaker for the model training and serving stack.</strong> Three model families per program: the per-program response (uplift) model, the per-program enrollment-likelihood model, and the per-program engagement-prediction model (predicting whether an enrolled patient will engage). With four to seven programs in the portfolio, the model count multiplies; SageMaker Pipelines (or Step Functions orchestration over SageMaker training jobs) handles the per-program retraining cadence. Inference uses Batch Transform on a weekly or monthly cadence aligned with enrollment cycles; same cost reasoning as 4.4, 4.5, 4.6 (batch is dramatically cheaper than idle real-time endpoints, and enrollment decisions don't run in real-time). SageMaker is HIPAA-eligible under BAA.</p>
+<p><strong>Amazon SageMaker Feature Store for per-patient and per-(patient, program) features.</strong> Patient-level features (clinical risk, engagement history, demographics, SDOH proxies) reused from earlier recipes. Per-(patient, program) features specific to this recipe: prior enrollment in the program, prior engagement during enrollment, prior disenrollment reason, time since last enrollment, cross-program coordination state. The offline store powers daily/weekly batch enrichment; the online store supports the lower-latency lookups used during outreach when a care manager pulls up a patient and the system surfaces the current recommendation context.</p>
+<p><strong>Amazon DynamoDB for the program registry, eligibility records, recommendation log, patient program state, engagement state, and outreach state.</strong> Same <code>patient-profile</code> table from prior recipes, extended with program-related attributes. New table <code>program-registry</code> keyed on <code>program_id</code> and <code>version</code>. New table <code>patient-program-state</code> keyed on (patient_id, program_id) for the per-(patient, program) state machine, with attributes: <code>state</code>, <code>state_history</code>, <code>eligibility_reason</code>, <code>priority</code>, <code>priority_components</code>, <code>current_enrollment_metadata</code>, <code>last_evaluation_date</code>. New table <code>outreach-state</code> for in-flight outreach attempts. New table <code>engagement-state</code> for in-program engagement scoring.</p>
+<p><strong>Amazon S3 for the data lake, evaluation outputs, and longitudinal storage.</strong> Source data feeds (claims, EHR, lab, pharmacy, discharge feeds, care management system events) land in S3 via Kinesis Firehose for streaming and Glue for batch. Offline feature store backed by S3. Eligibility evaluation outputs land in S3 per run. Per-program evaluation cohorts (treated and matched-control) land in S3 for outcome evaluation. Long-horizon engagement and outcome history accumulate for retraining.</p>
+<p><strong>AWS Glue and Amazon Athena for eligibility evaluation, propensity matching, and outcome evaluation.</strong> Eligibility is a SQL-shaped problem at scale, identical pattern to 4.6's gap evaluator. Glue jobs run nightly to evaluate every program in the registry against every eligible-population patient. Athena powers the per-program, per-cohort, per-clinician dashboards and the outcome-evaluation pipeline. Propensity matching for the difference-in-differences evaluator runs in Glue with logistic-regression or gradient-boosted propensity models, joining matched pairs into evaluation cohorts.</p>
+<p><strong>AWS Step Functions for batch orchestration.</strong> Same pattern as 4.5 and 4.6. The daily eligibility evaluation pipeline is a Step Functions workflow. The weekly/monthly enrollment-decision orchestration is a separate Step Functions workflow that runs the multi-stage allocation, persists recommendations, and triggers outreach generation. The post-enrollment monthly outcome-evaluation pipeline is a third Step Functions workflow.</p>
+<p><strong>Amazon EventBridge for scheduling and event-driven triggers.</strong> EventBridge schedules the daily eligibility run and the enrollment-decision run. EventBridge rules handle event-driven triggers: a discharge event triggers transitional-care eligibility evaluation for that patient outside the daily cycle (transitional care is time-sensitive); a clinical-deterioration event during enrollment triggers cross-program transition evaluation; a graduation event triggers post-graduation observation entry.</p>
+<p><strong>Amazon Kinesis Data Streams for engagement, enrollment-state, and clinical events.</strong> Same engagement-event bus from 4.1 through 4.6. New event types specific to this recipe: <code>program_recommended</code>, <code>program_outreach_initiated</code>, <code>program_outreach_attempted</code>, <code>program_consent_obtained</code>, <code>program_enrolled</code>, <code>program_engagement_event</code>, <code>program_at_risk</code>, <code>program_retention_attempted</code>, <code>program_disenrolled</code>, <code>program_graduated</code>, <code>program_re_eligible</code>, <code>cross_program_transition_recommended</code>. The state-machine worker consumes these and updates <code>patient-program-state</code>.</p>
+<p><strong>Amazon Bedrock for care-manager-facing briefings, patient-facing enrollment messages, mid-program engagement summaries, and disenrollment-decision narratives.</strong> Four distinct LLM use cases:</p>
+<ol>
+<li>
+<p><strong>Enrollment briefing for the care manager.</strong> A structured-output prompt takes the patient's clinical context, the recommended program, the per-program uplift estimates with confidence intervals, recent clinical events, and the suspected barriers, and returns a one-paragraph briefing the care manager reads before initial outreach. Includes &quot;what to lead with,&quot; &quot;anticipated concerns,&quot; and &quot;social context that matters.&quot;</p>
+</li>
+<li>
+<p><strong>Patient-facing enrollment message tailoring.</strong> Same pattern as 4.4 through 4.6: structured assignment in, tailored message out, validator before send. Care management enrollment messaging requires plan-sponsorship identification and program-specific consent language; the validator enforces both.</p>
+</li>
+<li>
+<p><strong>Mid-program engagement summary for case rounds.</strong> A weekly or monthly per-(patient, program) summary distilling structured engagement data (last contact, missed check-ins, recent clinical events, outstanding goals) into a paragraph for case-rounds discussion. Care managers triage from the summaries.</p>
+</li>
+<li>
+<p><strong>Disenrollment-decision rationale.</strong> When the deterministic policy recommends disenrollment, an LLM-generated rationale lists the engagement-history evidence, the policy-rule that triggered the recommendation, and any countervailing factors. The clinical lead reviews the rationale and makes the actual disenrollment call. The LLM is decision support for a human, not autonomous disenrollment.</p>
+</li>
+</ol>
+<p>Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models.</p>
+<p><strong>AWS Lambda for per-stage glue logic.</strong> The eligibility evaluator dispatcher, the response-model invocation orchestrator, the priority synthesizer, the multi-stage allocation runner, the briefing-generation orchestrator, the state-machine worker, the engagement-scoring worker, the retention-trigger worker, the cross-program-transition recommender, and the post-graduation observation worker all run as Lambdas.</p>
+<p><strong>Amazon Connect (or contracted outreach platform) for care-manager telephonic outreach.</strong> Care management programs are predominantly telephonic and televisit. Plans with in-house care management teams often build on Amazon Connect; plans with vendor care management use the vendor's queue and a structured-event integration. The AWS-specific piece is HIPAA-eligible call recording, the contact-flow-to-engagement-event integration, and the per-care-manager work-queue routing that respects language, condition, and program-specialization match.</p>
+<p><strong>Amazon SES for member-facing email and Pinpoint (or contracted vendor) for SMS.</strong> Same as prior chapters; both under BAA.</p>
+<p><strong>Amazon QuickSight for operations dashboards.</strong> Per-program enrollment funnels (eligible -&gt; recommended -&gt; outreach -&gt; consented -&gt; enrolled -&gt; engaged -&gt; graduated). Per-cohort equity dashboards. Per-care-manager workload and outcome dashboards. Per-program ROI dashboards (cost-versus-value, with cohort breakdowns). Outcome-evaluation dashboards (per-program propensity-matched difference-in-differences, with cohort stratification). QuickSight on Athena, with row-level security for cohort-specific filters.</p>
+<p><strong>AWS HealthLake (optional, for FHIR-based clinical data integration).</strong> When the program needs fine-grained clinical data (problem list, observations, encounters, medications) for the response model and the program-fit score, HealthLake provides FHIR-native storage with built-in normalization. The lighter pattern is direct FHIR-to-S3 integration; HealthLake is the heavier pattern for plans operating across multiple EHR vendors.</p>
+<p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Same PHI infrastructure pattern as prior recipes. Customer-managed keys, CloudTrail data events on PHI tables, CloudWatch alarms on batch-run failures, eligibility-volume drift, enrollment-pipeline backups, and cohort-metric drift.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Sources
+      A1[Claims Feed]
+      A2[EHR / FHIR]
+      A3[Lab Results]
+      A4[Pharmacy / Adherence from 4.5]
+      A5[Discharge Feeds]
+      A6[Care Gap State from 4.6]
+      A7[Risk Stratification Scores]
+      A8[Care Management System Events]
+      A9[Patient Self-Report]
+    end
+
+    A1 --&gt;|Streaming| B1[Kinesis Firehose\ncm-source-events]
+    A2 --&gt;|Daily/streaming| B1
+    A3 --&gt;|Streaming| B1
+    A4 --&gt;|Daily| B1
+    A5 --&gt;|Streaming| B1
+    A6 --&gt;|Daily| B1
+    A7 --&gt;|Daily| B1
+    A8 --&gt;|Streaming| L1[Kinesis\ncm-engagement-stream]
+    A9 --&gt;|Portal/app| L1
+
+    B1 --&gt; S1[S3\ncm-data-lake]
+    S1 --&gt; C1[Glue\neligibility-evaluation]
+    PR1[Lambda\nregistry-sync] --&gt; D1[DynamoDB\nprogram-registry]
+    D1 --&gt; C1
+    C1 --&gt; F1[SageMaker Feature Store\npatient-program features]
+    C1 --&gt; G1[DynamoDB\npatient-program-state]
+
+    F1 --&gt; H1[Step Functions\nresponse-enrichment]
+    H1 --&gt; H2[SageMaker Batch Transform\nuplift-models per program]
+    H1 --&gt; H3[SageMaker Batch Transform\nenrollment-likelihood\nmodels per program]
+    H1 --&gt; H4[SageMaker Batch Transform\nengagement-prediction\nmodels per program]
+    H1 --&gt; H5[Lambda\npriority-synthesizer]
+    H2 --&gt; H5
+    H3 --&gt; H5
+    H4 --&gt; H5
+    H5 --&gt; G1
+
+    SF1[Step Functions\nenrollment-decision] --&gt; EO1[Lambda\nmulti-stage-allocator]
+    EO1 --&gt; G1
+    EO1 --&gt; R1[Lambda\nbriefing-generator]
+    R1 --&gt; R2[Bedrock\nenrollment briefings]
+    R2 --&gt; R3[DynamoDB\nenrollment-briefings]
+    R3 --&gt; R4[Care Manager Queue]
+
+    R4 --&gt; AC1[Amazon Connect\noutreach]
+    AC1 --&gt; AO1[DynamoDB\noutreach-state]
+    AC1 --&gt; AO2[Bedrock\npatient-message tailoring]
+    AO2 --&gt; AO3[SES / SMS / Portal]
+
+    AC1 -.Outreach events.-&gt; L1
+    AO3 -.Engagement events.-&gt; L1
+    A8 -.Program events.-&gt; L1
+
+    L1 --&gt; SM1[Lambda\nstate-machine-worker]
+    SM1 --&gt; G1
+    SM1 --&gt; ET1[Lambda\nengagement-scorer]
+    ET1 --&gt; EG1[DynamoDB\nengagement-state]
+    EG1 --&gt; RT1[Lambda\nretention-trigger]
+    RT1 --&gt; R4
+
+    SM1 --&gt; CT1[Lambda\ncross-program-transition]
+    CT1 --&gt; SF1
+
+    L1 --&gt; L3[Kinesis Firehose]
+    L3 --&gt; S2[S3\ncm-event-lake]
+    S2 --&gt; L4[Glue + Athena\noutcome-evaluation]
+    S2 --&gt; L5[QuickSight\nprogram-and-equity dashboards]
+    L4 --&gt; M1[SageMaker Training\nperiodic retrain]
+    M1 --&gt; H2
+    M1 --&gt; H3
+    M1 --&gt; H4
+
+    style F1 fill:#9ff,stroke:#333
+    style D1 fill:#9ff,stroke:#333
+    style G1 fill:#9ff,stroke:#333
+    style EG1 fill:#9ff,stroke:#333
+    style AO1 fill:#9ff,stroke:#333
+    style R3 fill:#9ff,stroke:#333
+    style S1 fill:#cfc,stroke:#333
+    style S2 fill:#cfc,stroke:#333
+    style L1 fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon SageMaker (Training, Batch Transform, Feature Store, Pipelines), Amazon DynamoDB, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon Connect, Amazon SES, Amazon Pinpoint or contracted SMS provider, Amazon QuickSight, AWS HealthLake (optional), AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: <code>sagemaker:CreateTransformJob</code> / <code>DescribeTransformJob</code> scoped to specific model ARNs; <code>dynamodb:GetItem</code> / <code>BatchWriteItem</code> / <code>UpdateItem</code> scoped to specific tables (especially <code>patient-program-state</code>, <code>engagement-state</code>, <code>outreach-state</code>); <code>bedrock:InvokeModel</code> on specific foundation-model ARNs; <code>s3:GetObject</code> / <code>PutObject</code> scoped to enrollment, eligibility, evaluation, and briefing buckets; <code>kinesis:PutRecord</code> on the cm-engagement-stream; <code>connect:*</code> scoped to the care-management contact flow; <code>ses:SendEmail</code> and <code>pinpoint:SendMessages</code> scoped to BAA-covered identities. Never <code>*</code>.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker, DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, Connect, SES, Pinpoint, KMS, HealthLake.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>DynamoDB: customer-managed KMS at rest (especially <code>patient-program-state</code>, <code>engagement-state</code>, and <code>enrollment-briefings</code>; the per-(patient, program) state plus engagement scoring is highly inferential PHI). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker training, Batch Transform, and Feature Store: VPC-only, with KMS keys for model artifacts and Feature Store offline storage. Lambda log groups KMS-encrypted. Briefing text stored in DynamoDB is PHI; the briefing contains diagnoses, social context, and clinical-trajectory framing.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas in VPC. SageMaker training, Batch Transform, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (<code>states</code>), EventBridge (<code>events</code>), Glue, Athena, STS, SES, Pinpoint, Connect, HealthLake. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR FHIR feeds typically arrive via PrivateLink, Direct Connect, or SFTP-over-VPN. Care management system integrations vary by vendor; PrivateLink or VPN preferred. VPC Flow Logs enabled.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the <code>patient-program-state</code>, <code>program-registry</code>, <code>enrollment-briefings</code>, <code>outreach-state</code>, <code>engagement-state</code>, <code>recommendation-log</code>, and <code>patient-profile</code> tables. Data events on the S3 buckets containing source feeds, eligibility outputs, evaluation cohorts, and briefing outputs.</td>
+</tr>
+<tr>
+<td><strong>Equity Governance</strong></td>
+<td>Document priority synthesis weights, the multi-stage allocation policy, the equity floors per program, the per-cohort enrollment-rate parity targets, and the disenrollment-decision policy before launch. Cross-functional review committee (medical director, program leadership, equity lead, data science, operations, member-experience lead, legal/compliance) signs off on the policy and reviews quarterly. Disenrollment-for-cause decisions go through committee review on a monthly cadence; individual cases that affect protected populations get heightened review. The Obermeyer-style failure mode is the canonical concern; instrumentation and governance are how you avoid it.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>A starter set of synthetic patients with realistic risk profiles, condition mixes, prior-year utilization, and SDOH features (Synthea provides good baseline data; augment with synthesized engagement and enrollment-history fields). A small program registry (3-5 programs covering disease-specific, complex-care, transitional, and polypharmacy archetypes). Synthetic engagement and outcome labels to support uplift-model training scaffolding. Synthetic care-management-system events.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a 250,000-member health plan with ~18,000 eligible patients, ~5 programs, and ~1,400 active enrollment slots: SageMaker Batch Transform (3 model families × 5 programs, weekly): roughly $250-500/month at modest instance sizes. SageMaker Feature Store offline store: $100-200/month. SageMaker training (monthly retrain of 15 model artifacts): $200-400/month. DynamoDB on-demand: $300-700/month (the per-(patient, program) state and engagement-state tables are the largest). Lambda + Step Functions: $100-250/month. Bedrock for enrollment briefings (~1,400 active per month plus outreach attempts), patient-message tailoring (~2,000/month), engagement summaries (~5,000/month), disenrollment rationales (~200/month), Haiku-class: $1,500-3,500/month. SES + Pinpoint SMS: $50-150/month. Connect for in-house care management team (15-30 FTE depending on caseload): $1,500-4,500/month plus telephony. S3 + Glue + Athena: $400-800/month. QuickSight: $50/user/month authors plus reader fees. HealthLake (if used): $500-2,500/month. Estimated infrastructure total: $5,000-12,000/month for a regional plan, before staff time, telephony, and outsourced care management contracts (which dwarf the AWS line items).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Hosts the per-program response (uplift), enrollment-likelihood, and engagement-prediction models; runs training and Batch Transform jobs</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Per-patient and per-(patient, program) features (eligibility, prior enrollment history, prior engagement history, SDOH proxies, cross-program coordination state) reused across this recipe and prior chapter recipes</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores program registry, per-(patient, program) state machine, recommendation log, outreach state, engagement state, enrollment briefings, and clinician/care-manager overrides</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Hosts the cm-data-lake, offline feature store, eligibility outputs, evaluation cohorts, briefings audit trail, training data, and engagement-event lake</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Daily eligibility evaluation against the program registry, propensity-matching for outcome evaluation, schedule import, outcome-evaluation jobs</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena</strong></td>
+<td>SQL access to the data lake; powers per-program funnels, per-cohort dashboards, and outcome-evaluation queries</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the daily eligibility pipeline, the weekly/monthly enrollment-decision pipeline, the per-discharge transitional-care evaluation pipeline, and the monthly outcome-evaluation pipeline</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Schedules batch runs; routes discharge, clinical-deterioration, graduation, disenrollment, and re-eligibility events</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Carries care-management engagement, outreach, clinical, and self-report events into the state-machine worker and engagement scorer</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Lands engagement events into S3 Parquet for long-horizon evaluation and retraining</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Runs the registry sync, eligibility dispatcher, response-model invocation orchestrator, priority synthesizer, multi-stage allocator, briefing generator, state-machine worker, engagement scorer, retention trigger, cross-program transition recommender, and outcome-evaluation orchestrator</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Hosts the LLM for enrollment briefings, patient-facing enrollment messages, mid-program engagement summaries, and disenrollment-decision rationales</td>
+</tr>
+<tr>
+<td><strong>Amazon Connect</strong></td>
+<td>Care-manager telephonic outreach with HIPAA-eligible call recording, work-queue routing, and integration with the engagement event stream</td>
+</tr>
+<tr>
+<td><strong>Amazon SES</strong></td>
+<td>Bulk email delivery under BAA for patient-facing enrollment outreach</td>
+</tr>
+<tr>
+<td><strong>Amazon Pinpoint</strong></td>
+<td>SMS delivery for enrollment outreach and check-in reminders</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake</strong></td>
+<td>Optional FHIR-native data store when fine-grained clinical data is needed for response models and program-fit scoring</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Operational dashboards: per-program funnels, per-cohort equity, per-care-manager workload and outcomes, per-program ROI, propensity-matched outcome evaluation</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all PHI-containing stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, cohort-sliced enrollment dashboards, alarms on enrollment volume drift and outcome-metric drift</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all PHI-related API calls</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful aws-samples patterns for this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: XGBoost and SageMaker Pipelines notebooks that mirror per-program model training and inference patterns.</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage that maps onto the per-(patient, program) feature pipeline.</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Demonstrates structured-output prompting applicable to enrollment briefings, engagement summaries, and disenrollment-decision rationales.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Evaluate the program registry against patient data to produce per-(patient, program) eligibility records.</strong> Eligibility runs nightly. For each program in the registry, evaluate denominator, inclusion, and exclusion predicates against the patient feature snapshot. Skip the registry abstraction and you end up hard-coding program logic, which becomes unmaintainable as the portfolio evolves.</p>
+<pre class="code code-plain"><code>FUNCTION evaluate_program_eligibility(patients, run_date):
+    // Load every active program version. The registry is the source
+    // of truth; engineering does not hard-code program logic. New
+    // programs and capacity changes land as new registry versions.
+    active_programs = DynamoDB.Query(
+        &quot;program-registry&quot;,
+        filter = &quot;effective_start &lt;= :rd AND effective_end &gt;= :rd&quot;,
+        params = { :rd = run_date }
+    )
+
+    FOR each program in active_programs:
+        // Step 1A: denominator. Determine which patients are eligible
+        // for this program as of run_date. Denominator predicates use
+        // condition flags, recent events, risk-score thresholds, and
+        // continuous-enrollment criteria expressed in the registry&#x27;s
+        // predicate language.
+        denominator = Athena.Query(
+            program.denominator_query_template,
+            params = { run_date: run_date,
+                       lookback_start: run_date - program.denominator_lookback_days }
+        )
+
+        // Step 1B: inclusion criteria. Some programs have additional
+        // inclusion logic on top of the denominator (e.g., HF program
+        // requires not just an HF diagnosis but also at least one
+        // HF-related encounter or admission in the last 6 months).
+        inclusion_passing = Athena.Query(
+            program.inclusion_query_template,
+            params = { run_date: run_date,
+                       denominator_population: denominator }
+        )
+
+        // Step 1C: exclusion criteria. Hospice election, active oncology
+        // treatment, current enrollment in a competing program, prior
+        // disenrollment for cause within the lookback, language not
+        // supported by program staffing.
+        excluded = Athena.Query(
+            program.exclusion_query_template,
+            params = { run_date: run_date }
+        )
+
+        // Step 1D: per-patient eligibility determination.
+        FOR each patient_id in inclusion_passing:
+            IF patient_id in excluded:
+                eligibility = &quot;excluded&quot;
+                exclusion_reason = lookup_exclusion_reason(patient_id, program, excluded)
+            ELSE:
+                eligibility = &quot;eligible&quot;
+                exclusion_reason = null
+
+            previous_record = DynamoDB.GetItem(&quot;patient-program-state&quot;,
+                                                key = (patient_id, program.program_id))
+
+            // State-machine semantics for eligibility transitions.
+            IF previous_record.eligibility != eligibility:
+                eligibility_event = &quot;transitioned_&quot; + previous_record.eligibility +
+                                     &quot;_to_&quot; + eligibility
+            ELSE:
+                eligibility_event = &quot;unchanged&quot;
+
+            DynamoDB.PutItem(&quot;patient-program-state&quot;, {
+                patient_id:           patient_id,
+                program_id:           program.program_id,
+                program_version:      program.version,
+                eligibility:          eligibility,
+                exclusion_reason:     exclusion_reason,
+                state:                derive_state(previous_record, eligibility),
+                state_history:        previous_record.state_history.append({
+                                          event: eligibility_event,
+                                          timestamp: run_date,
+                                          source: &quot;eligibility_evaluation&quot;
+                                      }),
+                last_evaluation_date: run_date,
+                data_quality_flag:    assess_source_completeness(patient_id, program)
+                    // values: &#x27;complete&#x27;, &#x27;sparse_history&#x27;,
+                    // &#x27;recent_plan_change&#x27;, &#x27;cross_provider_fragmentation&#x27;.
+                    // Downstream consumers should gate on this when the
+                    // data is unreliable, mirroring the pattern from 4.5
+                    // and 4.6.
+            })
+
+        // Emit eligibility-change events for downstream consumers.
+        // Time-sensitive eligibility changes (transitional care after
+        // a discharge) trigger the per-discharge evaluation flow rather
+        // than waiting for the next enrollment-decision cycle.
+        FOR each newly_eligible_patient in newly_eligible(inclusion_passing,
+                                                          program, run_date):
+            Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+                event_type:  &quot;eligibility_acquired&quot;,
+                patient_id:  newly_eligible_patient,
+                program_id:  program.program_id,
+                run_date:    run_date,
+                time_sensitive: program.is_time_sensitive,
+                timestamp:   current UTC timestamp
+            })
+</code></pre>
+<p><strong>Step 2: Score per-program response (uplift), enrollment likelihood, and program-fit per (patient, program).</strong> The response model predicts the conditional treatment effect; the enrollment-likelihood model predicts whether the patient will accept enrollment given outreach; the program-fit score combines hard-coded theory-of-change alignment with a learned component. Skip per-program modeling and you treat all programs as interchangeable, which is the trap of &quot;highest risk first&quot; enrollment that ignores program semantics.</p>
+<pre class="code code-plain"><code>FUNCTION enrich_eligible_candidates(eligibility_records, run_date):
+    eligible = filter(eligibility_records, eligibility = &quot;eligible&quot;)
+
+    // Group by program_id so each program&#x27;s models run on the relevant
+    // subset; per-program models are different artifacts.
+    eligible_by_program = group_by(eligible, &quot;program_id&quot;)
+
+    job_handles = []
+    FOR each program_id, program_eligible in eligible_by_program:
+        candidate_path = &quot;s3://cm-enrichment/run_date=&quot; + run_date +
+                         &quot;/program=&quot; + program_id + &quot;/candidates.parquet&quot;
+        write_parquet(program_eligible, candidate_path)
+
+        // Stage A: per-program uplift (response) scoring. The model
+        // takes patient features, recent clinical trajectory, prior
+        // engagement signals, barrier flags, and SDOH features and
+        // returns a per-patient predicted uplift estimate (the
+        // expected change in the program&#x27;s primary outcome from
+        // enrollment, versus no enrollment), with a confidence
+        // interval. Trained against propensity-matched historical
+        // enrollment data, ideally augmented with randomized-enrollment
+        // data when available.
+        uplift_job = SageMaker.CreateTransformJob(
+            transform_job_name = &quot;uplift-&quot; + program_id + &quot;-&quot; + run_date,
+            model_name         = UPLIFT_MODEL_NAMES[program_id],
+            transform_input    = candidate_path,
+            transform_output   = &quot;s3://cm-scores/run_date=&quot; + run_date +
+                                 &quot;/uplift/&quot; + program_id + &quot;/&quot;,
+            instance_type      = &quot;ml.m5.large&quot;,
+            instance_count     = 1
+        )
+        job_handles.append(uplift_job)
+
+        // Stage B: enrollment-likelihood scoring. Per-program model
+        // predicting probability the patient accepts enrollment given
+        // outreach. Inputs include barrier flags from 4.5 (transportation,
+        // language, cost-sensitivity), prior enrollment-attempt history,
+        // recent engagement responsiveness, and care-team-relationship
+        // signals.
+        likelihood_job = SageMaker.CreateTransformJob(
+            transform_job_name = &quot;likelihood-&quot; + program_id + &quot;-&quot; + run_date,
+            model_name         = LIKELIHOOD_MODEL_NAMES[program_id],
+            transform_input    = candidate_path,
+            transform_output   = &quot;s3://cm-scores/run_date=&quot; + run_date +
+                                 &quot;/likelihood/&quot; + program_id + &quot;/&quot;,
+            instance_type      = &quot;ml.m5.large&quot;,
+            instance_count     = 1
+        )
+        job_handles.append(likelihood_job)
+
+        // Stage C: engagement-prediction scoring (post-enrollment).
+        // Per-program model predicting probability the patient remains
+        // engaged through program completion given enrollment. Used
+        // both for priority synthesis and for setting expectations
+        // during enrollment outreach.
+        engagement_job = SageMaker.CreateTransformJob(
+            transform_job_name = &quot;engagement-&quot; + program_id + &quot;-&quot; + run_date,
+            model_name         = ENGAGEMENT_MODEL_NAMES[program_id],
+            transform_input    = candidate_path,
+            transform_output   = &quot;s3://cm-scores/run_date=&quot; + run_date +
+                                 &quot;/engagement/&quot; + program_id + &quot;/&quot;,
+            instance_type      = &quot;ml.m5.large&quot;,
+            instance_count     = 1
+        )
+        job_handles.append(engagement_job)
+
+    wait_for_jobs(job_handles)
+
+    // Stage D: program-fit scoring. Combines a hard-coded
+    // theory-of-change-alignment score with a learned component.
+    // The hard-coded part encodes program semantics: a patient with
+    // primary HF as the actionable problem has high HF-program fit;
+    // a patient with multi-system complexity has high complex-care
+    // fit; a recently-discharged patient has high transitional-care
+    // fit during the post-discharge window.
+    FOR each candidate in eligible:
+        uplift = read_uplift_score(candidate, run_date)
+            // { point_estimate, ci_low, ci_high }
+        likelihood = read_likelihood_score(candidate, run_date)
+        engagement = read_engagement_score(candidate, run_date)
+        fit_score = compute_program_fit(candidate, candidate.program_id)
+            // hard-coded + learned; values [0, 1]
+            // examples of hard-coded rules:
+            //   transitional_care: fit = 1.0 if discharge &lt; 7 days,
+            //                          0.7 if 7-14, 0.3 if 14-30, 0.0 if &gt;30
+            //   heart_failure_program: fit = 0.9 if HF is the primary
+            //                              actionable problem;
+            //                          0.4 if HF + 3+ other major
+            //                              actionable problems (consider
+            //                              complex-care instead)
+            //   complex_care: fit ranges with multi-system score
+
+        cohort_features = lookup_cohort_features(candidate.patient_id)
+
+        // Priority synthesis. Policy weights live in versioned config:
+        // {
+        //   uplift:               0.45,  // dominant: this is the
+        //                                  // counterfactual benefit
+        //   enrollment_likelihood: 0.20,  // can&#x27;t help if not enrolled
+        //   program_fit:          0.20,  // matters for downstream
+        //                                  // engagement and outcome
+        //   post_enrollment_engagement: 0.15
+        // }
+        priority = (policy.weights.uplift              * normalize(uplift.point_estimate) +
+                    policy.weights.enrollment_likelihood * likelihood +
+                    policy.weights.program_fit         * fit_score +
+                    policy.weights.post_enrollment_engagement * engagement)
+
+        priority_components = {
+            uplift_contrib:             policy.weights.uplift * normalize(uplift.point_estimate),
+            uplift_uncertainty:         uplift.ci_high - uplift.ci_low,
+            likelihood_contrib:         policy.weights.enrollment_likelihood * likelihood,
+            fit_contrib:                policy.weights.program_fit * fit_score,
+            engagement_contrib:         policy.weights.post_enrollment_engagement * engagement
+        }
+
+        DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+            key = (candidate.patient_id, candidate.program_id),
+            updates = {
+                uplift_score:         uplift,
+                enrollment_likelihood: likelihood,
+                engagement_prediction: engagement,
+                fit_score:            fit_score,
+                priority:             priority,
+                priority_components:  priority_components,
+                cohort_features:      cohort_features,
+                policy_version:       policy.policy_version,
+                last_enrichment_date: run_date
+            })
+
+    RETURN read_enriched_candidates(eligible, run_date)
+</code></pre>
+<p><strong>Step 3: Multi-stage enrollment allocation with capacity, equity, and operational-feasibility constraints.</strong> The orchestrator runs in stages so program semantics are respected: time-sensitive transitional-care first, disease-specific high-fit second, complex-care third, parallel add-ons fourth. Within each stage, allocation is greedy-by-priority subject to capacity and equity constraints. Skip the multi-stage structure and you produce allocations that ignore the most important property of care management: that programs are designed for specific theories of change.</p>
+<pre class="code code-plain"><code>FUNCTION allocate_enrollments(enriched_candidates, run_date, policy):
+    // Per-program capacity counters from registry-stated capacity minus
+    // current active enrollments.
+    capacity_remaining = {}
+    equity_remaining = {}
+    FOR each program in policy.programs:
+        active_enrollments = count_active_enrollments(program.program_id)
+        capacity_remaining[program.program_id] = (program.target_active_capacity -
+                                                   active_enrollments)
+        equity_remaining[program.program_id] = {}
+        FOR floor_cohort, floor_count in policy.equity_floors[program.program_id]:
+            equity_remaining[program.program_id][floor_cohort] = floor_count
+
+    // Per-patient single-active-primary-program counter. A patient is
+    // not in two competing primary programs simultaneously, but parallel
+    // add-ons (polypharmacy, behavioral-health) can stack on top of a
+    // primary. The registry tags each program as &#x27;primary&#x27; or &#x27;add_on&#x27;.
+    patient_primary_assigned = {}
+    patient_add_on_count = {}
+
+    allocated = []
+
+    // Stage 1: time-sensitive programs (transitional care after
+    // discharge). Time-sensitive programs are prioritized because a
+    // delayed enrollment is a structurally weaker enrollment (the
+    // first 7-14 days post-discharge are the highest-leverage window).
+    time_sensitive_programs = filter(policy.programs, is_time_sensitive = true)
+    stage1_candidates = filter(enriched_candidates,
+                                program_id in time_sensitive_programs)
+    stage1_sorted = sort stage1_candidates by priority DESC
+
+    allocated += allocate_stage(stage1_sorted, capacity_remaining,
+                                equity_remaining, patient_primary_assigned,
+                                patient_add_on_count, policy,
+                                stage_name = &quot;time_sensitive&quot;)
+
+    // Stage 2: disease-specific programs for patients with high
+    // theory-of-change fit. The fit score is the gating filter:
+    // a patient with HF among many other things has lower HF-program
+    // fit and is held for stage 3 (complex-care).
+    disease_programs = filter(policy.programs,
+                               category = &quot;disease_specific&quot;,
+                               is_time_sensitive = false)
+    stage2_candidates = filter(enriched_candidates,
+                                program_id in disease_programs,
+                                fit_score &gt;= policy.disease_fit_threshold,
+                                patient_id NOT IN patient_primary_assigned)
+    stage2_sorted = sort stage2_candidates by priority DESC
+
+    allocated += allocate_stage(stage2_sorted, capacity_remaining,
+                                equity_remaining, patient_primary_assigned,
+                                patient_add_on_count, policy,
+                                stage_name = &quot;disease_specific&quot;)
+
+    // Stage 3: complex-care for residual high-uplift patients who
+    // didn&#x27;t fit a disease-specific program. These are the patients
+    // whose problem profile is heterogeneous enough that complex-care
+    // is the right fit.
+    complex_programs = filter(policy.programs, category = &quot;complex_care&quot;)
+    stage3_candidates = filter(enriched_candidates,
+                                program_id in complex_programs,
+                                patient_id NOT IN patient_primary_assigned)
+    stage3_sorted = sort stage3_candidates by priority DESC
+
+    allocated += allocate_stage(stage3_sorted, capacity_remaining,
+                                equity_remaining, patient_primary_assigned,
+                                patient_add_on_count, policy,
+                                stage_name = &quot;complex_care&quot;)
+
+    // Stage 4: parallel add-on programs (polypharmacy, behavioral-health
+    // integration). Add-ons stack on top of a primary enrollment, with
+    // a per-patient cap on total parallel programs (typically 1-2 at
+    // most beyond the primary).
+    add_on_programs = filter(policy.programs, category = &quot;add_on&quot;)
+    stage4_candidates = filter(enriched_candidates,
+                                program_id in add_on_programs)
+    stage4_sorted = sort stage4_candidates by priority DESC
+
+    allocated += allocate_stage(stage4_sorted, capacity_remaining,
+                                equity_remaining, patient_primary_assigned,
+                                patient_add_on_count, policy,
+                                stage_name = &quot;add_on&quot;)
+
+    // Persist recommendations and transition state machine to
+    // &#x27;recommended&#x27; for downstream outreach.
+    FOR row in allocated:
+        DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+            key = (row.patient_id, row.program_id),
+            updates = {
+                state:                &quot;recommended&quot;,
+                state_history:        previous_state_history.append({
+                                          event: &quot;transitioned_eligible_to_recommended&quot;,
+                                          timestamp: run_date,
+                                          stage: row.stage_name,
+                                          allocation_reason: row.allocation_reason
+                                      }),
+                recommended_run_date: run_date,
+                allocation_reason:    row.allocation_reason,
+                policy_version:       policy.policy_version
+            })
+
+        Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+            event_type:        &quot;program_recommended&quot;,
+            patient_id:        row.patient_id,
+            program_id:        row.program_id,
+            stage:             row.stage_name,
+            priority:          row.priority,
+            priority_components: row.priority_components,
+            allocation_reason: row.allocation_reason,
+            cohort_features:   row.cohort_features,
+            policy_version:    policy.policy_version,
+            run_date:          run_date,
+            timestamp:         current UTC timestamp
+        })
+
+    DynamoDB.BatchWriteItem(&quot;recommendation-log&quot;, allocated)
+    RETURN allocated
+
+FUNCTION allocate_stage(candidates_sorted, capacity_remaining,
+                         equity_remaining, patient_primary_assigned,
+                         patient_add_on_count, policy, stage_name):
+    stage_allocated = []
+    FOR candidate in candidates_sorted:
+        program = lookup_program(candidate.program_id)
+
+        // Capacity check.
+        IF capacity_remaining[program.program_id] &lt;= 0:
+            CONTINUE
+
+        // Per-patient primary-program constraint.
+        IF program.category != &quot;add_on&quot; AND
+           candidate.patient_id in patient_primary_assigned:
+            CONTINUE
+
+        // Per-patient add-on cap.
+        IF program.category == &quot;add_on&quot; AND
+           patient_add_on_count.get(candidate.patient_id, 0) &gt;= policy.max_add_ons_per_patient:
+            CONTINUE
+
+        // Operational feasibility: language, geography, modality.
+        IF NOT operational_feasible(candidate, program):
+            CONTINUE
+
+        // Cross-recipe coordination check (4.4 wellness, 4.5 adherence,
+        // 4.6 care-gap). Some combinations should not be enrolled
+        // simultaneously. The cross-recipe coordination policy lives
+        // in shared chapter-level config.
+        IF cross_recipe_conflicts(candidate, program):
+            CONTINUE
+
+        // Equity floor: if the candidate is in a floor cohort and there
+        // is reserved capacity, prefer using floor capacity.
+        cohort_features = candidate.cohort_features
+        applicable_floors = applicable_floor_cohorts(cohort_features,
+                                                      policy.equity_floors[program.program_id])
+        used_floor = null
+        FOR floor_cohort in applicable_floors:
+            IF equity_remaining[program.program_id][floor_cohort] &gt; 0:
+                equity_remaining[program.program_id][floor_cohort] -= 1
+                used_floor = floor_cohort
+                BREAK
+
+        // Allocate.
+        capacity_remaining[program.program_id] -= 1
+        IF program.category == &quot;add_on&quot;:
+            patient_add_on_count[candidate.patient_id] = (
+                patient_add_on_count.get(candidate.patient_id, 0) + 1)
+        ELSE:
+            patient_primary_assigned[candidate.patient_id] = program.program_id
+
+        stage_allocated.append({
+            patient_id:        candidate.patient_id,
+            program_id:        program.program_id,
+            stage_name:        stage_name,
+            priority:          candidate.priority,
+            priority_components: candidate.priority_components,
+            allocation_reason: reason_string(candidate, used_floor, stage_name),
+            cohort_features:   cohort_features,
+            uplift_estimate:   candidate.uplift_score
+        })
+
+    RETURN stage_allocated
+</code></pre>
+<p><strong>Step 4: Generate the care-manager enrollment briefing and dispatch outreach.</strong> Once a recommendation is made, the care management team needs a readable briefing before the initial outreach call. The briefing distills the deterministic ranker's choice plus the patient's clinical and social context into a paragraph the care manager can read in 30 seconds. Skip the briefing and the care manager goes into the call cold, which produces lower enrollment-conversion and worse rapport on the calls that succeed.</p>
+<pre class="code code-plain"><code>FUNCTION dispatch_outreach(allocated_recommendations, run_date):
+    FOR row in allocated_recommendations:
+        // Build the structured briefing context. De-identify before
+        // the LLM call; re-attach identifiers in the persisted briefing.
+        briefing_context = {
+            patient_summary:           build_clinical_summary(row.patient_id),
+                // de-identified: condition list, recent trajectory,
+                // key recent events, current medications, SDOH proxies
+            program_id:                row.program_id,
+            program_name:              lookup_program_name(row.program_id),
+            program_theory_of_change:  lookup_program_theory_of_change(row.program_id),
+            uplift_estimate:           row.uplift_estimate,
+                // includes confidence interval; the briefing should
+                // communicate uncertainty honestly
+            enrollment_likelihood:     row.priority_components.likelihood_contrib,
+            anticipated_barriers:      lookup_barriers(row.patient_id),
+                // from 4.5: cost, language, transportation, beliefs
+            recent_clinical_events:    lookup_recent_events(row.patient_id, days = 90),
+            cross_program_context:     lookup_other_program_state(row.patient_id),
+            allocation_reason:         row.allocation_reason
+        }
+
+        briefing = Bedrock.InvokeModel(
+            model_id = ENROLLMENT_BRIEFING_MODEL_ID,
+            body     = build_briefing_prompt(briefing_context, BRIEFING_OUTPUT_SCHEMA)
+        )
+        briefing_parsed = parse_json(briefing.completion)
+            // { headline, lead_with, anticipated_concerns,
+            //   social_context_that_matters, suggested_modality,
+            //   suggested_outreach_window, confidence_notes }
+
+        validate_briefing(briefing_parsed, observed_context = briefing_context)
+            // 
+
+        DynamoDB.PutItem(&quot;enrollment-briefings&quot;, {
+            briefing_id:        build_briefing_id(row, run_date),
+            patient_id:         row.patient_id,
+            program_id:         row.program_id,
+            briefing_text:      briefing_parsed,
+            briefing_context:   briefing_context,
+            allocation_reason:  row.allocation_reason,
+            policy_version:     row.policy_version,
+            generated_at:       run_date
+        })
+
+        // Route to care-management work queue. Routing respects
+        // language, condition specialization, and per-care-manager
+        // workload.
+        cm_assignment = route_to_care_manager(row, lookup_cm_pool(row.program_id))
+
+        DynamoDB.PutItem(&quot;outreach-state&quot;, {
+            outreach_id:        new UUID,
+            patient_id:         row.patient_id,
+            program_id:         row.program_id,
+            briefing_id:        build_briefing_id(row, run_date),
+            assigned_to:        cm_assignment.cm_id,
+            state:              &quot;queued&quot;,
+            attempts:           [],
+            created_at:         run_date,
+            policy_version:     row.policy_version
+        })
+
+        DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+            key = (row.patient_id, row.program_id),
+            updates = {
+                state:                &quot;outreach_in_progress&quot;,
+                state_history:        previous_state_history.append({
+                                          event: &quot;transitioned_recommended_to_outreach&quot;,
+                                          timestamp: run_date,
+                                          assigned_to: cm_assignment.cm_id
+                                      })
+            })
+
+        Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+            event_type:    &quot;program_outreach_initiated&quot;,
+            patient_id:    row.patient_id,
+            program_id:    row.program_id,
+            assigned_to:   cm_assignment.cm_id,
+            briefing_id:   build_briefing_id(row, run_date),
+            timestamp:     current UTC timestamp
+        })
+
+FUNCTION record_outreach_attempt(outreach_id, attempt_result):
+    // attempt_result is one of:
+    //   { result: &quot;consented&quot;, consent_form_id, baseline_assessment_id }
+    //   { result: &quot;declined&quot;, reason }
+    //   { result: &quot;unreachable&quot;, attempt_count, next_attempt_scheduled }
+    //   { result: &quot;deferred&quot;, reason, defer_until }
+    //
+    // 
+    outreach = DynamoDB.GetItem(&quot;outreach-state&quot;, outreach_id)
+    outreach.attempts.append({
+        attempt_at:  current UTC timestamp,
+        result:      attempt_result.result,
+        details:     attempt_result
+    })
+
+    BRANCH on attempt_result.result:
+        CASE &quot;consented&quot;:
+            outreach.state = &quot;consented&quot;
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (outreach.patient_id, outreach.program_id),
+                updates = {
+                    state: &quot;enrolled&quot;,
+                    state_history: previous_state_history.append({
+                        event: &quot;transitioned_outreach_to_enrolled&quot;,
+                        timestamp: current UTC timestamp,
+                        consent_form_id: attempt_result.consent_form_id
+                    }),
+                    enrollment_metadata: {
+                        enrolled_at: current UTC timestamp,
+                        consent_form_id: attempt_result.consent_form_id,
+                        baseline_assessment_id: attempt_result.baseline_assessment_id,
+                        target_duration: lookup_target_duration(outreach.program_id)
+                    }
+                })
+
+        CASE &quot;declined&quot;:
+            outreach.state = &quot;declined&quot;
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (outreach.patient_id, outreach.program_id),
+                updates = {
+                    state: &quot;declined&quot;,
+                    state_history: previous_state_history.append({
+                        event: &quot;transitioned_outreach_to_declined&quot;,
+                        timestamp: current UTC timestamp,
+                        decline_reason: attempt_result.reason
+                    })
+                })
+
+        CASE &quot;unreachable&quot;:
+            outreach.state = &quot;unreachable_pending_retry&quot;
+            IF attempt_result.attempt_count &gt;= POLICY.max_outreach_attempts:
+                outreach.state = &quot;unreachable_terminal&quot;
+                DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                    key = (outreach.patient_id, outreach.program_id),
+                    updates = {
+                        state: &quot;outreach_failed&quot;,
+                        state_history: previous_state_history.append({
+                            event: &quot;transitioned_outreach_to_failed&quot;,
+                            timestamp: current UTC timestamp,
+                            attempts: attempt_result.attempt_count
+                        })
+                    })
+
+        CASE &quot;deferred&quot;:
+            outreach.state = &quot;deferred&quot;
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (outreach.patient_id, outreach.program_id),
+                updates = {
+                    state: &quot;deferred&quot;,
+                    deferred_until: attempt_result.defer_until,
+                    state_history: previous_state_history.append({
+                        event: &quot;transitioned_outreach_to_deferred&quot;,
+                        timestamp: current UTC timestamp,
+                        defer_until: attempt_result.defer_until,
+                        defer_reason: attempt_result.reason
+                    })
+                })
+
+    DynamoDB.PutItem(&quot;outreach-state&quot;, outreach)
+
+    Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+        event_type:    &quot;program_outreach_attempted&quot;,
+        outreach_id:   outreach_id,
+        patient_id:    outreach.patient_id,
+        program_id:    outreach.program_id,
+        result:        attempt_result.result,
+        timestamp:     current UTC timestamp
+    })
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter04.07-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<p><strong>Step 5: Track in-program engagement and trigger retention when engagement declines.</strong> Once a patient is enrolled, the engagement scorer runs against the program-specific engagement profile. Below threshold, the retention worker activates. Skip the engagement tracking and you discover at month three that the patient stopped engaging at month one and the program slot has been wasted.</p>
+<pre class="code code-plain"><code>FUNCTION score_engagement(patient_id, program_id, run_date):
+    enrollment = DynamoDB.GetItem(&quot;patient-program-state&quot;,
+                                   key = (patient_id, program_id)).enrollment_metadata
+    program = lookup_program(program_id)
+
+    // Pull the engagement profile for this (patient, program). Profiles
+    // are program-specific: HF program profile is weekly check-in
+    // attendance + weight-monitoring submission rate; complex-care
+    // profile is monthly visit attendance + care-plan-goal progress;
+    // polypharmacy profile is session attendance + prescriber-action
+    // follow-through.
+    profile = build_engagement_profile(patient_id, program_id, run_date)
+        // {
+        //   scheduled_contacts:           [...],
+        //   completed_contacts:           [...],
+        //   missed_contacts:              [...],
+        //   self_reported_data_submissions: [...],
+        //   education_modules_completed:  [...],
+        //   recent_clinical_events:       [...]
+        // }
+
+    // Compute engagement score per program&#x27;s scoring function.
+    engagement_score = program.engagement_scoring_function(profile)
+        // continuous, [0, 1]; 0 = no engagement, 1 = full engagement
+
+    // Threshold check.
+    threshold = program.at_risk_threshold
+    is_at_risk = engagement_score &lt; threshold
+
+    // Classification of engagement decline (if at-risk):
+    decline_pattern = null
+    IF is_at_risk:
+        decline_pattern = classify_decline(profile)
+            // values:
+            //   &#x27;no_initial_engagement&#x27;: never engaged after enrollment
+            //   &#x27;gradual_drop_off&#x27;: engagement declined steadily
+            //   &#x27;event_driven_drop&#x27;: engagement dropped after specific event
+            //                       (admission, life event, season change)
+            //   &#x27;modality_mismatch&#x27;: engagement low on assigned modality;
+            //                        signal that a different modality might work
+            //   &#x27;staffing_disruption&#x27;: care-manager change, vacation, transition
+
+    DynamoDB.UpdateItem(&quot;engagement-state&quot;,
+        key = (patient_id, program_id),
+        updates = {
+            engagement_score:    engagement_score,
+            engagement_profile:  profile,
+            is_at_risk:          is_at_risk,
+            decline_pattern:     decline_pattern,
+            last_scored_at:      run_date
+        })
+
+    IF is_at_risk:
+        Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+            event_type:        &quot;program_at_risk&quot;,
+            patient_id:        patient_id,
+            program_id:        program_id,
+            engagement_score:  engagement_score,
+            decline_pattern:   decline_pattern,
+            timestamp:         current UTC timestamp
+        })
+        trigger_retention(patient_id, program_id, decline_pattern)
+
+FUNCTION trigger_retention(patient_id, program_id, decline_pattern):
+    // Retention strategies are program-specific and decline-pattern-specific.
+    BRANCH on decline_pattern:
+        CASE &quot;no_initial_engagement&quot;:
+            // The patient consented but never engaged after the first
+            // outreach. Try once with a different care manager and a
+            // different modality before giving up.
+            schedule_retention_attempt(patient_id, program_id,
+                strategy = &quot;fresh_cm_different_modality&quot;,
+                attempt_within_days = 7)
+
+        CASE &quot;gradual_drop_off&quot;:
+            // Engagement is fading. A direct check-in conversation
+            // about whether the program is still useful is the right
+            // move; the conversation may surface barriers that can
+            // be addressed.
+            schedule_retention_attempt(patient_id, program_id,
+                strategy = &quot;engagement_check_in_conversation&quot;,
+                attempt_within_days = 5)
+
+        CASE &quot;event_driven_drop&quot;:
+            // Something happened (admission, family crisis, change in
+            // condition). The retention attempt addresses the event,
+            // not the engagement metric directly.
+            schedule_retention_attempt(patient_id, program_id,
+                strategy = &quot;event_acknowledgment_and_recalibration&quot;,
+                attempt_within_days = 3)
+
+        CASE &quot;modality_mismatch&quot;:
+            // The patient consented to telephonic but isn&#x27;t picking up;
+            // try video, SMS-first, or in-person if available.
+            schedule_retention_attempt(patient_id, program_id,
+                strategy = &quot;modality_switch&quot;,
+                attempt_within_days = 7)
+
+        CASE &quot;staffing_disruption&quot;:
+            // The disruption is on the program side. Address it
+            // operationally rather than treating it as patient
+            // disengagement.
+            schedule_continuity_recovery(patient_id, program_id)
+
+FUNCTION evaluate_disenrollment(patient_id, program_id, run_date):
+    // Disenrollment decisions are run on a separate cadence (typically
+    // weekly) for at-risk patients whose retention attempts have not
+    // succeeded. The decision is decision-supported, not autonomous;
+    // a human (clinical lead, program manager) makes the actual call.
+    //
+    // 
+    state = DynamoDB.GetItem(&quot;patient-program-state&quot;,
+                              key = (patient_id, program_id))
+    engagement = DynamoDB.GetItem(&quot;engagement-state&quot;,
+                                   key = (patient_id, program_id))
+    enrollment = state.enrollment_metadata
+
+    days_since_enrollment = run_date - enrollment.enrolled_at.date
+    days_since_last_engagement = run_date - last_engagement_date(engagement)
+
+    // Decision policy. Earlier in the program, retention is preferred;
+    // later, partial-credit graduation may be appropriate. For-cause
+    // disenrollment is reserved for sustained no-engagement after
+    // multiple retention attempts.
+    IF engagement.is_at_risk AND
+       count_failed_retention_attempts(patient_id, program_id) &gt;= POLICY.max_retention_attempts AND
+       days_since_last_engagement &gt;= POLICY.disenroll_no_engagement_days:
+        recommended_action = &quot;disenroll_for_no_engagement&quot;
+    ELSE IF days_since_enrollment &gt;= enrollment.target_duration:
+        // Program duration met or exceeded.
+        IF goals_substantially_met(patient_id, program_id):
+            recommended_action = &quot;graduate&quot;
+        ELSE IF engagement.is_at_risk:
+            recommended_action = &quot;disenroll_did_not_complete&quot;
+        ELSE:
+            recommended_action = &quot;extend_or_transition&quot;
+                // engaged but not yet meeting goals; consider extension
+                // or cross-program transition to a maintenance pathway
+    ELSE IF clinical_deterioration_detected(patient_id, program_id):
+        // Patient deteriorated during enrollment beyond the program&#x27;s
+        // theory of change; consider transition to higher-acuity
+        // program (e.g., disease-specific to complex-care).
+        recommended_action = &quot;transition_to_higher_acuity&quot;
+    ELSE:
+        recommended_action = &quot;continue&quot;
+
+    IF recommended_action != &quot;continue&quot;:
+        // Generate a decision-support rationale via LLM.
+        rationale_context = {
+            patient_summary:           build_clinical_summary(patient_id),
+            program_id:                program_id,
+            enrollment_metadata:       enrollment,
+            engagement_history:        engagement.engagement_profile,
+            recent_clinical_events:    lookup_recent_events(patient_id, days = 90),
+            recommended_action:        recommended_action,
+            policy_rule_triggered:     describe_triggering_rule(recommended_action,
+                                                                   engagement,
+                                                                   enrollment, run_date)
+        }
+        rationale = Bedrock.InvokeModel(
+            model_id = DISENROLLMENT_RATIONALE_MODEL_ID,
+            body     = build_rationale_prompt(rationale_context, RATIONALE_OUTPUT_SCHEMA)
+        )
+        rationale_parsed = parse_json(rationale.completion)
+            // { headline, evidence_summary, countervailing_factors,
+            //   policy_rule, suggested_human_review_questions }
+
+        validate_rationale(rationale_parsed, observed_context = rationale_context)
+            // 
+
+        DynamoDB.PutItem(&quot;disenrollment-decisions&quot;, {
+            decision_id:           new UUID,
+            patient_id:            patient_id,
+            program_id:            program_id,
+            recommended_action:    recommended_action,
+            rationale:             rationale_parsed,
+            rationale_context:     rationale_context,
+            human_review_pending:  true,
+            recommended_at:        run_date
+        })
+
+        Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+            event_type:        &quot;disenrollment_decision_recommended&quot;,
+            patient_id:        patient_id,
+            program_id:        program_id,
+            recommended_action: recommended_action,
+            timestamp:         current UTC timestamp
+        })
+</code></pre>
+<p><strong>Step 6: Process the human disenrollment decision and handle cross-program transitions and post-graduation observation.</strong> A clinical lead or program manager reviews the recommendation and decides; the system then transitions state and triggers downstream cross-program logic. Skip the post-graduation observation and you lose patients to relapse without any visibility, undermining the whole point of program graduation.</p>
+<pre class="code code-plain"><code>FUNCTION process_disenrollment_decision(decision_id, human_decision):
+    // human_decision is one of:
+    //   { decision: &quot;approve&quot;, recommended_action }
+    //   { decision: &quot;override&quot;, actual_action, override_reason }
+    decision = DynamoDB.GetItem(&quot;disenrollment-decisions&quot;, decision_id)
+    final_action = (decision.recommended_action if human_decision.decision == &quot;approve&quot;
+                                                  else human_decision.actual_action)
+
+    BRANCH on final_action:
+        CASE &quot;graduate&quot;:
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (decision.patient_id, decision.program_id),
+                updates = {
+                    state: &quot;graduated&quot;,
+                    state_history: previous_state_history.append({
+                        event: &quot;transitioned_enrolled_to_graduated&quot;,
+                        timestamp: current UTC timestamp,
+                        decision_id: decision_id
+                    }),
+                    graduation_metadata: {
+                        graduated_at: current UTC timestamp,
+                        post_graduation_observation_window:
+                            POLICY.post_graduation_observation_days,
+                        post_graduation_relapse_signals: []
+                    }
+                })
+            // Trigger cross-program transition recommendation: the
+            // graduate may benefit from a maintenance pathway (e.g., HF
+            // graduate -&gt; light-touch-monitoring) or a complementary
+            // program (e.g., HF graduate with new diabetes signals -&gt;
+            // DM program).
+            recommend_cross_program_transitions(decision.patient_id,
+                                                  prior_program_id = decision.program_id,
+                                                  context = &quot;graduation&quot;)
+
+        CASE &quot;disenroll_for_no_engagement&quot;:
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (decision.patient_id, decision.program_id),
+                updates = {
+                    state: &quot;disenrolled_for_cause&quot;,
+                    state_history: previous_state_history.append({
+                        event: &quot;transitioned_enrolled_to_disenrolled_for_cause&quot;,
+                        timestamp: current UTC timestamp,
+                        decision_id: decision_id
+                    }),
+                    disenrollment_metadata: {
+                        disenrolled_at: current UTC timestamp,
+                        reason: &quot;no_engagement_after_retention&quot;,
+                        re_eligibility_window_days: POLICY.re_eligibility_window_for_no_engagement
+                    }
+                })
+
+        CASE &quot;disenroll_did_not_complete&quot;:
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (decision.patient_id, decision.program_id),
+                updates = {
+                    state: &quot;disenrolled_incomplete&quot;,
+                    state_history: previous_state_history.append({
+                        event: &quot;transitioned_enrolled_to_disenrolled_incomplete&quot;,
+                        timestamp: current UTC timestamp,
+                        decision_id: decision_id
+                    })
+                })
+
+        CASE &quot;transition_to_higher_acuity&quot;:
+            // Mid-program escalation. Disenroll from current program
+            // (with completed-portion noted) and immediately recommend
+            // higher-acuity program enrollment.
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (decision.patient_id, decision.program_id),
+                updates = {
+                    state: &quot;transitioned_out&quot;,
+                    state_history: previous_state_history.append({
+                        event: &quot;transitioned_enrolled_to_transitioned_out&quot;,
+                        timestamp: current UTC timestamp,
+                        decision_id: decision_id,
+                        reason: &quot;deterioration_during_enrollment&quot;
+                    })
+                })
+            recommend_cross_program_transitions(decision.patient_id,
+                                                  prior_program_id = decision.program_id,
+                                                  context = &quot;deterioration&quot;)
+
+        CASE &quot;extend_or_transition&quot;:
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (decision.patient_id, decision.program_id),
+                updates = {
+                    state: &quot;enrolled_extended&quot;,
+                    enrollment_metadata.target_duration:
+                        enrollment_metadata.target_duration + POLICY.extension_days,
+                    state_history: previous_state_history.append({
+                        event: &quot;extended&quot;,
+                        timestamp: current UTC timestamp,
+                        decision_id: decision_id
+                    })
+                })
+
+    DynamoDB.UpdateItem(&quot;disenrollment-decisions&quot;,
+        key = decision_id,
+        updates = {
+            human_review_pending: false,
+            human_decision:       human_decision,
+            final_action:         final_action,
+            resolved_at:          current UTC timestamp
+        })
+
+FUNCTION post_graduation_observation(run_date):
+    // Daily sweep of recently graduated patients within their
+    // observation window. Watch for relapse signals (admission,
+    // ED visit, abnormal lab, missed follow-up appointment, sharp
+    // engagement drop on related ongoing programs).
+    recently_graduated = DynamoDB.Query(
+        &quot;patient-program-state&quot;,
+        filter = &quot;state = :graduated AND graduation_metadata.graduated_at &gt;= :cutoff&quot;,
+        params = { :graduated: &quot;graduated&quot;,
+                   :cutoff: run_date - MAX_OBSERVATION_DAYS }
+    )
+
+    FOR each row in recently_graduated:
+        relapse_signals = detect_relapse_signals(row.patient_id,
+                                                   row.program_id,
+                                                   row.graduation_metadata.graduated_at)
+            // signals: admission, ED visit, abnormal lab,
+            //          missed follow-up, adherence drop, weight gain
+            //          (HF), sharp engagement drop on parallel programs
+
+        IF len(relapse_signals) &gt; 0:
+            DynamoDB.UpdateItem(&quot;patient-program-state&quot;,
+                key = (row.patient_id, row.program_id),
+                updates = {
+                    state: &quot;in_observation_relapse_detected&quot;,
+                    graduation_metadata.post_graduation_relapse_signals:
+                        relapse_signals
+                })
+
+            // Re-eligibility evaluation runs immediately rather than
+            // waiting for the next eligibility cycle. The patient may
+            // be a candidate for re-enrollment, transition to a
+            // higher-acuity program, or temporary watchful waiting.
+            Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+                event_type:        &quot;post_graduation_relapse_detected&quot;,
+                patient_id:        row.patient_id,
+                prior_program_id:  row.program_id,
+                relapse_signals:   relapse_signals,
+                timestamp:         current UTC timestamp
+            })
+
+FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, context):
+    // Evaluate the patient&#x27;s current eligibility and uplift across all
+    // programs. Identify candidate transitions and surface them to the
+    // care management team for decisioning.
+    current_eligibility = read_current_eligibility(patient_id)
+    current_uplifts = read_current_uplifts(patient_id)
+    candidates = []
+    FOR each program_id, eligibility in current_eligibility:
+        IF eligibility != &quot;eligible&quot;:
+            CONTINUE
+        IF program_id == prior_program_id:
+            CONTINUE
+        priority = synthesize_priority(current_uplifts[program_id], context)
+        candidates.append({
+            program_id: program_id,
+            priority:   priority,
+            context:    context
+        })
+    candidates_sorted = sort candidates by priority DESC
+
+    IF len(candidates_sorted) &gt; 0:
+        top_candidate = candidates_sorted[0]
+        DynamoDB.PutItem(&quot;cross-program-transitions&quot;, {
+            transition_id:       new UUID,
+            patient_id:          patient_id,
+            prior_program_id:    prior_program_id,
+            recommended_program_id: top_candidate.program_id,
+            context:             context,
+            priority:            top_candidate.priority,
+            recommended_at:      current UTC timestamp,
+            human_review_pending: true
+        })
+        Kinesis.PutRecord(stream = &quot;cm-engagement-stream&quot;, record = {
+            event_type:               &quot;cross_program_transition_recommended&quot;,
+            patient_id:               patient_id,
+            prior_program_id:         prior_program_id,
+            recommended_program_id:   top_candidate.program_id,
+            context:                  context,
+            timestamp:                current UTC timestamp
+        })
+</code></pre>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample patient program state record:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-002148&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;program_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart-failure-program&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;program_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-v2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;eligibility&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eligible&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;enrolled&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;state_history&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transitioned_eligible_to_recommended&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-12&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;stage&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;disease_specific&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;allocation_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high_uplift_disease_fit&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transitioned_recommended_to_outreach&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-15&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;assigned_to&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cm-007&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transitioned_outreach_to_enrolled&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-19&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;consent_form_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;consent-2026-04-19-pat-002148-hf&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;uplift_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;point_estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ci_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.09</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ci_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.27</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;90_day_readmission_probability_reduction&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;enrollment_likelihood&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.62</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;engagement_prediction&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.71</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;fit_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;priority&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.62</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;priority_components&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;uplift_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.30</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;uplift_uncertainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;likelihood_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;fit_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.17</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;engagement_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.11</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;enrollment_metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;enrolled_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-19&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;consent_form_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;consent-2026-04-19-pat-002148-hf&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;baseline_assessment_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;baseline-2026-04-19-pat-002148-hf&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;target_duration&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">84</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;cohort_features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;engagement_history_quartile&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;q3&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sdoh_cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate_food_security&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_band&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;65-74&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;data_quality_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;complete&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;policy_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cm-policy-v0.6&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample care manager enrollment briefing:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;briefing_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;brief-2026-04-15-pat-002148-hf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-002148&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;program_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart-failure-program&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;headline&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HF program candidate after recent decompensation; cost concerns likely; daughter is engaged.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;lead_with&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Linda was admitted in February for HF decompensation that started after she ran out of furosemide. The HF program&#39;s weekly check-ins and daily-weight monitoring directly address that pattern. Lead with the connection to keeping her out of the hospital, not with the program structure.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;anticipated_concerns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Cost of additional medications (she&#39;s a Medicare beneficiary in donut hole most of the year; LIS not enrolled).&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Concern about additional appointments competing with grandchildren-care responsibilities.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Uncertainty about whether she can do daily weights reliably (no scale at home; the program covers a Bluetooth scale).&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;social_context_that_matters&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Lives alone in a fourth-floor walkup with intermittent elevator. Daughter visits weekends and is documented as a willing care partner. Spanish is preferred for written materials; verbal communication in English is fine.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;suggested_modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;telephonic for first contact; transition to video for week-three care-plan review when daughter can participate.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;suggested_outreach_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;weekday mornings; she&#39;s typically home then.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;confidence_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Uplift estimate has wide CI (0.09-0.27); the recommendation is to enroll, but expectations should be calibrated to a probabilistic improvement, not a guaranteed prevention.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;policy_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cm-policy-v0.6&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample mid-program engagement record:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;engagement_record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eng-2026-05-10-pat-002148-hf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-002148&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;program_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart-failure-program&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scoring_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-19_to_2026-05-10&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;engagement_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.78</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;is_at_risk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;decline_pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;engagement_profile&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;scheduled_contacts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;completed_contacts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;missed_contacts&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;weight_submission_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.86</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;education_modules_completed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;recent_clinical_events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab_BNP&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;412 pg/mL&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-02&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;trend&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;down_from_baseline&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;decision_support_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Engagement is strong. BNP trending down. No retention action needed. Continue weekly check-ins; plan week-six medication-reconciliation visit on schedule.&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample quarterly outcome evaluation:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;evaluation_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eval-2026Q1-heart-failure-program&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;program_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart-failure-program&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;evaluation_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-10-01_to_2026-03-31&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;propensity_matched_difference_in_differences&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;primary_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;90_day_all_cause_readmission_rate&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ate&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.064</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.092</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.036</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;interpretation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Enrolled patients had a 90-day readmission rate ~6.4 percentage points lower than matched non-enrolled patients.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;ate_by_cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;language=en&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.071</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.103</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.039</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;language=es&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.038</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.082</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.006</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sdoh_cohort=transportation_barrier&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.024</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.062</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.014</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;secondary_outcomes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;90_day_ed_visit_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.029</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">-0.054</span><span class="p">,</span><span class="w"> </span><span class="mf">-0.004</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;180_day_total_cost_change&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">-1240</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">-2110</span><span class="p">,</span><span class="w"> </span><span class="mi">-370</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;currency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;USD&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;uplift_calibration&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;predicted_uplift_quintiles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.04</span><span class="p">,</span><span class="w"> </span><span class="mf">0.10</span><span class="p">,</span><span class="w"> </span><span class="mf">0.16</span><span class="p">,</span><span class="w"> </span><span class="mf">0.22</span><span class="p">,</span><span class="w"> </span><span class="mf">0.31</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;realized_uplift_quintiles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.02</span><span class="p">,</span><span class="w"> </span><span class="mf">0.08</span><span class="p">,</span><span class="w"> </span><span class="mf">0.15</span><span class="p">,</span><span class="w"> </span><span class="mf">0.20</span><span class="p">,</span><span class="w"> </span><span class="mf">0.27</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;calibration_slope&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;interpretation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Model is reasonably well-calibrated; mild over-estimation in higher quintiles.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;sample_size_treated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sample_size_control&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;program_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">740000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;value_of_avoided_admissions_180d&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1180000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;net_estimated_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">440000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;roi_ratio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.59</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Risk-rank-only enrollment baseline</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enrollment-conversion rate (recommended -&gt; consented)</td>
+<td>25-40%</td>
+<td>45-60%</td>
+</tr>
+<tr>
+<td>Per-program engagement rate at week 4 (enrolled patients still engaged)</td>
+<td>50-65%</td>
+<td>70-85%</td>
+</tr>
+<tr>
+<td>Per-program graduation rate (enrolled patients reaching program completion)</td>
+<td>35-55%</td>
+<td>55-75%</td>
+</tr>
+<tr>
+<td>Propensity-matched difference-in-differences in 90-day readmissions (HF program)</td>
+<td>-1 to -3 pp</td>
+<td>-4 to -8 pp</td>
+</tr>
+<tr>
+<td>Per-cohort enrollment-rate parity (worst-served cohort vs. best-served)</td>
+<td>35-55% gap</td>
+<td>5-15% gap</td>
+</tr>
+<tr>
+<td>End-to-end batch run time (250K members, 5 programs, weekly enrichment)</td>
+<td>n/a</td>
+<td>3-5 hours</td>
+</tr>
+<tr>
+<td>Care-manager outreach-to-enrollment conversion improvement</td>
+<td>reference</td>
+<td>+30 to +60% relative</td>
+</tr>
+<tr>
+<td>Disenrollment-for-no-engagement rate</td>
+<td>15-25%</td>
+<td>6-12%</td>
+</tr>
+<tr>
+<td>Cross-program transition recommendation acceptance rate</td>
+<td>n/a</td>
+<td>60-80%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Patients with sparse historical data.</strong> A patient newly attributed to the practice or recently joined the plan has minimal prior engagement, prior enrollment, or prior outcome data. Cold-start cohort defaults are essential, and the recommender should weight patient-specific predictions less heavily for these patients until enough history accumulates. The <code>data_quality_flag</code> exposes this; downstream consumers (specifically the disenrollment evaluator) should gate harder when quality is low.</li>
+<li><strong>Programs with overlapping eligibility but conflicting theories of change.</strong> A patient eligible for both heart-failure and complex-care programs can be a hard call: HF is the most actionable single condition, but the patient also has CKD, depression, and social complexity that complex-care addresses better. The fit-score logic forces a choice, but the choice is genuinely hard, and clinician override of the recommendation is appropriate often. Track override rate by (patient-profile, program-pair) to identify systematic miscalibration.</li>
+<li><strong>Recently graduated patients with relapse signals.</strong> Post-graduation observation surfaces relapse signals, but the action is ambiguous: re-enroll the patient (capacity-cost), transition to a maintenance pathway (may not exist), or escalate to higher-acuity (consumes a complex-care slot). The system flags; the human decides; the failure mode is that the flag arrives but no slot is available.</li>
+<li><strong>Programs whose target outcomes are slow to materialize.</strong> Diabetes management's primary outcome (A1c change) takes 3 to 6 months to read out; the response model trained on it has a long feedback loop. During the loop, the model is trained on stale data. Confidence intervals widen for slow-outcome programs; the orchestrator should apply additional uplift-uncertainty penalties for programs with delayed outcomes.</li>
+<li><strong>Cohort fairness in the response model.</strong> If the historical enrollment data has systematically different engagement patterns by cohort (because the program structure historically didn't fit some cohorts), the response model encodes those patterns and predicts low uplift for cohorts the program could have served better with operational adjustments. Cohort-aware calibration and ongoing fairness monitoring are not nice-to-haves; they are how you avoid the Obermeyer failure mode at scale.</li>
+<li><strong>Program capacity that flexes during the year.</strong> Care management staffing flexes (maternity leaves, vacations, hiring cycles, contract renegotiations). Capacity reductions can happen mid-cycle, leaving patients in the recommended state with no slot to enroll into. The orchestrator needs to handle capacity contraction gracefully rather than producing recommendations that operations cannot fulfill.</li>
+<li><strong>Cross-program coordination across vendor and in-house programs.</strong> Plans often run a mix of in-house programs (Connect-based, internal staff) and vendor-delivered programs (third-party care management vendors). Cross-vendor visibility into engagement and outcomes can be poor, and the recommender's view of program state can diverge from the vendor's actual record. Contractual data-feed requirements are the durable fix.</li>
+<li><strong>Disenrollment-for-cause concentrated in protected cohorts.</strong> If the disenrollment-for-no-engagement rate is materially higher in some cohorts than others, that disparity is a fairness concern and may have civil-rights implications. Equity instrumentation on disenrollment rates is required, and the disenrollment policy may need cohort-aware retention budget adjustments.</li>
+<li><strong>Operational fatigue from too many transition recommendations.</strong> Cross-program transition recommendations after every graduation, every disenrollment, and every relapse signal can flood the care management team. Apply per-care-manager and per-program throttles; only the highest-priority transitions should reach the human review queue.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Program-registry curation as an ongoing program.</strong> Like the measure registry in 4.6, the program registry is a living artifact. New programs launch, old programs sunset, capacities change quarterly with staffing, contractual obligations evolve, and clinical evidence shifts what each program does. Plan for at least 0.25 to 0.5 FTE of program-leadership and clinical-informatics time on registry maintenance ongoing, plus a structured change-management process with parallel evaluation against the prior version when significant changes ship.</p>
+<p><strong>Causal-inference rigor for response models.</strong> Most plans have observational data only (selection-biased enrollment history). Training response models on observational data without causal-inference tooling (propensity matching at minimum, doubly-robust estimation when feasible, randomized evaluation cohorts when possible) produces uplift estimates that are systematically biased toward the patient profiles that historically got selected for enrollment. The downstream effect is a recommender that recommends what the historical selection process recommended, with extra steps. Plan for a data science investment in causal inference: skills, tooling (EconML, DoWhy, causaldata), and the operational willingness to randomize a fraction of enrollment slots for unbiased evaluation. Without this, the program drifts toward serving the cohorts the historical bias served.</p>
+<p><strong>Multi-source state-machine reconciliation.</strong> The patient's program state lives in multiple systems: the recommender's <code>patient-program-state</code> table, the care management vendor's case-management system, the EHR's care-plan view, and the patient's portal. Drift across these is a chronic operational pain. Plan for tight integration with the case-management system (event-driven sync, not periodic batch reconciliation), explicit conflict-resolution rules when sources disagree, and periodic full-reconciliation runs that flag drift for human review.</p>
+<p><strong>Outreach attempt management with humane defaults.</strong> The pseudocode handles outreach-attempt counting and terminal-unreachable transitions, but a production system needs more nuance: rest periods between attempts, time-of-day modeling per patient, opt-out registry integration, suppression after specific patient signals (missed appointment plus declined first outreach is a stronger signal than two unanswered calls), and integration with TCPA and state telephone-consumer-protection rules. The outreach worker is the most patient-facing component; treat it accordingly.</p>
+<p><strong>Patient consent, HIPAA authorization, and program-specific consent forms.</strong> Care management enrollment requires multiple consent artifacts: HIPAA authorization for data sharing across program staff, program-specific informed consent describing what the patient is enrolling into, and (for some programs) consent for data sharing with external entities (community resources, social-work referrals). The consent capture and storage flow needs to be tightly designed and tightly audited; consent-form-version mismatches and missing consent are compliance issues that produce disenrollment-and-restart cycles.</p>
+<p><strong>Cross-recipe orchestration with Recipes 4.4, 4.5, and 4.6.</strong> A patient who's a candidate for adherence intervention (4.5), care-gap closure (4.6), wellness program (4.4), and care management (4.7) gets too many touches if each recipe orchestrates independently. The shared <code>outreach_recent_total_30d_count</code> on the patient-profile table is the foundation; the cross-recipe coordination policy that decides which recipe wins when caps would be exceeded needs to be explicit, version-controlled, and committee-reviewed. For 4.7 specifically, care management enrollment outreach should typically <em>not</em> be capped against routine engagement messages from 4.4-4.6 because the enrollment conversation is a distinct, infrequent interaction; document the exception in the cross-recipe policy.</p>
+<p><strong>Disenrollment governance and review.</strong> Disenrollment-for-cause decisions have member-experience implications and may have civil-rights implications if they concentrate in protected populations. Build a monthly disenrollment-review cadence: a cross-functional committee reviews the prior month's disenrollment-for-cause cases, with cohort breakdowns, looking for patterns that suggest the policy is mis-targeting, the retention attempts are inadequate, or the program structure is unfit for some cohorts. Build the review cadence into the policy from day one, not as an afterthought.</p>
+<p><strong>Equity floor design.</strong> The equity floors implemented in Step 3 reserve capacity for cohorts with documented enrollment-rate disparities. Designing the floors well requires baseline cohort data (which you don't have until operating for some time), explicit policy on which disparities trigger floors, and willingness to revisit floors quarterly. The Obermeyer failure mode is the canonical concern: a recommender trained on historical data with under-represented cohorts will systematically under-enroll those cohorts unless the design explicitly compensates. Equity floors are one mechanism; cohort-aware retraining with reweighting is another; cohort-stratified outcome evaluation is the validation.</p>
+<p><strong>Privacy in program state and enrollment briefings.</strong> The <code>patient-program-state</code> table joins (patient_id, program_id, state, uplift_score, priority_components) and is highly inferential. A row indicating &quot;patient recommended for high-risk complex-care program&quot; is more sensitive than a row indicating &quot;patient eligible for wellness program.&quot; Apply tighter controls to program state for stigmatized or high-sensitivity programs (behavioral health, substance use, palliative care, HIV-related): narrower IAM read scopes, optional separate-table partitioning, additional CloudTrail data event capture, and a documented minimum-necessary access policy. Enrollment briefings stored in DynamoDB are PHI; the briefing text contains diagnoses, social context, and trajectory framing. Treat them with the same encryption, IAM, and audit posture as clinical notes.</p>
+<p><strong>Idempotency and retry semantics.</strong> Same pattern as 4.4 through 4.6. Each stage's outputs are addressed by deterministic keys (run_date, program_id, patient_id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.</p>
+<p><strong>Cost-per-enrollment and cost-per-prevented-event tracking.</strong> The cost numbers in the prerequisites table are infrastructure only. Production reporting needs end-to-end cost (infrastructure + care-manager loaded hours + telephony + program-specific costs like Bluetooth scales for HF or pharmacist time for polypharmacy) divided by confirmed prevented events attributable to the program (above the matched-control baseline). That number compared to the value of prevented events (avoided admission cost, avoided ED visit cost, plan-quality-bonus value) determines whether the program returns its budget. The data engineering to track this end-to-end with attribution is its own project and is essential for program-level decisions about expansion or contraction.</p>
+<p><strong>Annual and contractual reporting requirements.</strong> CMS Medicare Advantage care management activities have specific reporting requirements (CCM and PCM CPT code documentation, care plan structure, time-tracking for billable activities). State Medicaid programs often have their own care management reporting structures. Value-based contracts have their own. Build the reporting layer into the system from the beginning; retrofitting reporting onto a system that wasn't designed for it is painful and produces compliance gaps.</p>
+<p><strong>Patient-friendly enrollment visibility.</strong> Patients should be able to see their own program enrollment status, upcoming activities, and progress in the patient portal, with explanations they can understand. &quot;Your heart-failure care management program&quot; is more useful than &quot;HF-CMP-2026-v2.&quot; Patient-facing summaries are a separate UX project, with content review by health-literacy specialists, but the program state machine in this recipe is the source data. Plan for the patient-facing layer as a parallel deliverable.</p>
+<p><strong>Care-manager workload modeling.</strong> Care managers don't have uniform capacity: a complex-care manager handling 50 patients with multi-system disease has different bandwidth than a transitional-care nurse running 20 active 30-day episodes. The work-queue routing in Step 4 needs to model per-care-manager realistic loaded hours, not just headcount. Without this, the routing produces care-manager burnout, attrition, and a slow-moving operations problem that undermines the entire program.</p>
+<p><strong>Member-experience and PROMs measurement.</strong> Beyond clinical outcomes, care management programs should measure member experience (CG-CAHPS for the care management interaction specifically; not the overall plan CAHPS) and patient-reported outcome measures (PROMs) where available. Member experience is often the leading indicator that diverges from clinical outcome metrics; a program that improves admissions but produces low member experience is sustainable for a quarter and politically untenable thereafter.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Real-time post-discharge transitional care enrollment.</strong> Beyond the daily eligibility cycle, an EventBridge rule can fire on incoming discharge events and trigger immediate transitional-care eligibility evaluation, response scoring, and enrollment recommendation, with care-manager assignment within hours of discharge. The 30-day TCM window is time-sensitive; reducing the time-to-outreach from days to hours captures more of the high-leverage early window.</p>
+<p><strong>Hospital-at-home and remote-monitoring program integration.</strong> Plans increasingly offer hospital-at-home and high-acuity-at-home programs as alternatives to admission. The recommender can layer these into the program portfolio, with response models predicting which patients would benefit and which patients are operationally feasible (caregiver availability, home environment, technology comfort). The overall pattern is the same; the eligibility and response models are program-specific.</p>
+<p><strong>Behavioral-health integration.</strong> Behavioral-health needs intersect heavily with care management for chronic conditions; depression in the heart-failure population, anxiety in the diabetes population, substance-use comorbidity in the chronic-pain population. Adding a behavioral-health-integration pathway as an add-on program (the add_on category in the multi-stage allocator) catches these patients without requiring separate eligibility flow. The validator and consent framework matter more here because behavioral-health communications have additional regulatory requirements.</p>
+<p><strong>SDOH-focused care management.</strong> Some plans run dedicated SDOH-focused programs (housing instability, food insecurity, transportation, social isolation) staffed by community health workers and social workers. These have different denominators (less driven by clinical risk, more by SDOH-screening positives), different theories of change (resource navigation rather than clinical care), and different outcomes (housing stability, food-security improvement, social-connectedness improvement). The architecture extends naturally; the metrics extend less naturally and are worth their own evaluation pipeline.</p>
+<p><strong>Dynamic enrollment-cycle cadence.</strong> A monthly enrollment cycle is operationally simple but imposes a one-month wait for any patient who becomes eligible day-after-the-cycle. A more sophisticated approach: weekly cycles for non-time-sensitive programs, daily cycles for time-sensitive programs (transitional care, post-deterioration escalation), with capacity reservation logic that holds slots across cycles to prevent depletion in early-cycle weeks.</p>
+<p><strong>Care-team coordination across provider organizations.</strong> A patient who is enrolled in a plan-run heart-failure program but also followed by an ACO-run primary-care medical home and a specialty-cardiology practice is being managed by three different teams with three different views. Cross-organization care-coordination layers (often vendor-supplied or built on FHIR-based shared care plans) become the integration substrate; the recommender's program-state events flow into the shared care plan rather than living in isolation.</p>
+<p><strong>Predictive disenrollment-prevention.</strong> Beyond the at-risk threshold, a per-patient model can predict the probability of disengagement over the next 14 days, surfacing patients for retention attention before the threshold crosses. This is a separate model family with the engagement-decline event as the prediction target; trained on enrollment cohorts, validated against held-out enrollments.</p>
+<p><strong>Cross-recipe orchestration with Recipes 4.4, 4.5, 4.6.</strong> A patient who's a candidate for adherence intervention (4.5), care management (4.7), care-gap closure (4.6), and a wellness program (4.4) gets too many independent recommendations if each recipe orchestrates alone. Cross-recipe orchestration: shared contact-frequency budget (Chapter 4-wide), shared priority arbitration when caps would be exceeded, per-patient orchestration that picks the right recipe for the right moment. For 4.7 specifically, care management enrollment outreach typically should not be capped against routine engagement messages because the enrollment conversation is a distinct, infrequent interaction; document the exception in the cross-recipe policy.</p>
+<p><strong>Cohort-specific program variants.</strong> Some patient cohorts benefit from cohort-specific program structures: Spanish-language disease-specific programs, programs adapted for low-health-literacy populations, programs with home-visit options for mobility-limited patients, programs with extended-hour staffing for working-age members who can't engage during business hours. Variants are added to the registry as separate programs with their own capacity; the multi-stage allocator handles them as siblings.</p>
+<p><strong>Member-incentive integration.</strong> Some plans offer member-facing incentives for care-management engagement (gift cards for completing baseline assessment, premium discounts for program graduation) within regulatory limits. The recommender can route incentive-eligible recommendations with a different message frame and track incentive uptake as an enrollment-conversion-lift signal. Beware: incentive programs can introduce unintended behavioral patterns and may complicate compliance reporting; legal review before launch.</p>
+<p><strong>Cost-aware uplift optimization.</strong> Beyond per-(patient, program) uplift, a more sophisticated allocator optimizes total expected value subject to total budget rather than per-program capacity. This requires per-program cost models (per-patient loaded cost varies by program and by patient acuity within program), per-program impact-in-dollars models, and an integer-programming formulation. Useful when the plan has flexibility to reallocate budget across programs in response to demand. Crosses into Chapter 14 (operations research) territory.</p>
+<p><strong>Closure of the loop with provider performance.</strong> Care management programs intersect with provider performance: a patient enrolled in a care management program because their PCP was missing the boat on heart-failure management is a pattern; a high-volume of patients in care management for the same provider is a signal. The recommender's outputs can feed provider-performance dashboards, with the appropriate caveats about confounding (sicker panels generate more care-management referrals).</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html">Amazon SageMaker Batch Transform</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html">Amazon SageMaker Model Registry</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html">Amazon SageMaker Pipelines</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/inference-call-tools.html">Amazon Bedrock structured output and function calling</a></li>
+<li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html">Amazon EventBridge Scheduler</a></li>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html">Amazon Connect Administrator Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/ses/latest/dg/Welcome.html">Amazon SES Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/pinpoint/latest/userguide/welcome.html">Amazon Pinpoint User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Reference notebooks for XGBoost, Batch Transform, SageMaker Pipelines, and Model Registry workflows applicable to per-program model lifecycles</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage that maps to the per-(patient, program) feature pipeline</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Hands-on labs covering structured-output prompting that informs enrollment briefings, engagement summaries, and disenrollment-decision rationales</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter AI/ML and Healthcare): browse for healthcare personalization and population-health reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;SageMaker Pipelines,&quot; &quot;Feature Store,&quot; and &quot;uplift modeling&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/industries/">AWS for Industries Blog</a> (Healthcare and Life Sciences): search &quot;care management,&quot; &quot;population health,&quot; and &quot;value-based care&quot; for end-to-end customer architectures</li>
+</ul>
+<p><strong>External References (Conceptual and Methodological):</strong></p>
+<ul>
+<li><a href="https://github.com/py-why/EconML"><code>econml</code></a>: Microsoft Research's library for heterogeneous treatment effect estimation, the workhorse for per-(patient, program) uplift modeling</li>
+<li><a href="https://github.com/py-why/dowhy"><code>DoWhy</code></a>: causal-inference framework for structuring assumptions and running sensitivity analysis</li>
+<li><a href="https://github.com/NickCH-K/causaldata"><code>causaldata</code></a>: example datasets for causal-inference workflows useful in scaffolding response-model training pipelines</li>
+<li><a href="https://www.science.org/doi/10.1126/science.aax2342">Obermeyer et al. 2019, Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations</a>: the canonical cautionary tale for response-modeling failures in care management; required reading</li>
+<li><a href="https://www.cms.gov/medicare/medicare-fee-for-service-payment/physicianfeesched/chronic-care-management">CMS Chronic Care Management (CCM) Services</a>: Medicare fee-for-service CCM billing structure, including the 99490, 99491, 99437, 99439 CPT codes and documentation requirements</li>
+<li><a href="https://www.cms.gov/files/document/mln908628-transitional-care-management-services.pdf">CMS Transitional Care Management (TCM) Services</a>: TCM CPT codes 99495 / 99496 and documentation requirements</li>
+<li><a href="https://www.ncqa.org/">NCQA Care Management Standards</a>: NCQA's care-management accreditation standards, applicable for plans pursuing accreditation</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient data generator including realistic conditions, encounters, and procedures useful for non-PHI development of care management pipelines</li>
+<li><a href="https://www.populationhealthalliance.org/">Care Continuum Alliance Care Management Outcomes Standards</a>: the population-health-alliance care-management outcome standards</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Program registry with 2-3 high-volume programs + risk-stratification-based eligibility + observational uplift models per program + single-stage greedy allocator + manual outreach workflow + minimal cohort dashboard</td>
+<td>14-18 weeks</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full pipeline: 4-7 program registry + multi-source eligibility + per-program response, enrollment-likelihood, and engagement-prediction models with propensity-matched evaluation + multi-stage capacity-aware allocator + LLM-generated enrollment briefings + Connect-integrated outreach workflow + engagement-and-retention worker + disenrollment governance + cross-program transition logic + post-graduation observation + outcome-evaluation pipeline + cohort and equity dashboards + cross-recipe orchestration</td>
+<td>12-16 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add real-time post-discharge enrollment, hospital-at-home integration, behavioral-health pathway, SDOH-focused programs, randomized-evaluation cohort, predictive disenrollment-prevention, member-incentive integration, cost-aware uplift optimization, provider-performance feedback</td>
+<td>10-16 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter04.07-care-management-program-enrollment.html">Main Recipe 4.7</a> · <a href="chapter04.07-python-example.html">Python Example</a> · <a href="chapter04-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

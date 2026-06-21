@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 12.5: Hospital Census Forecasting ⭐⭐⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-125-hospital-census-forecasting-">Recipe 12.5: Hospital Census Forecasting ⭐⭐⭐</h1>
+<p><strong>Complexity:</strong> Medium · <strong>Phase:</strong> Production · <strong>Estimated Cost:</strong> ~$400-$1,800 per month per hospital workload</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>It's 06:30 on a Monday at a 412-bed community hospital. The bed huddle has just started. The house supervisor is reading off the census from a printed report that captured the state of the hospital at midnight. Five and a half hours ago. Since then, the ED admitted nine patients overnight, three more are being held in ED beds waiting for a floor assignment, the cath lab has two procedures starting at 07:00 that will need step-down beds by 11:00, and PACU is holding a post-op orthopedic case who needs a med-surg bed in the next hour. Discharge planning thinks today's discharge volume will be &quot;around 38 to 42, maybe a little less because Dr. Patel is on vacation,&quot; which is the kind of guess that ends with the chief operating officer asking, at 16:00, why nobody saw the bed crisis coming.</p>
+<p>The hospital is going to be operationally tight today. Some of that tightness was knowable. Some of it is genuinely random. The mix is exactly the part that nobody at the bed huddle has a systematic way to separate. The house supervisor has thirty years of pattern recognition baked into their bones, and they will get the day mostly right by feel. They will also be wrong in costly ways, twice a week, in ways nobody can quite forensically reconstruct after the fact, because the hospital does not actually have a forecast it tracks against. It has a midnight snapshot, a census report that updates every two hours, and a printed sheet that the house supervisor annotates in pencil between phone calls.</p>
+<p>Every hospital with more than two hundred beds plays out some version of this scene every morning. The bed huddle is the central nervous system for inpatient operations, and it runs on three things: the current census (now), the past few days of census trends (last week), and the team's collective intuition about what today will look like (vibes). Discharges are the lever everyone tries to pull (case management runs the discharge list, hospitalists round earlier, social work expedites SNF placements). Admissions are the demand they try to absorb (ED holds, direct admits, scheduled surgical admits, transfers from outside facilities). The transfer center makes accept-or-divert decisions based on bed availability that won't actually exist until somebody discharges. The OR schedule for tomorrow gets locked in based on assumptions about bed availability tonight. The medical informatics team has been asked, three times in the last two years, to produce a &quot;real-time bed forecast.&quot; Each time the project has stalled because the data is messy, the operational decisions are political, and the existing reporting solution is &quot;good enough.&quot;</p>
+<p>The cost of getting this wrong shows up in places nobody attributes back to the bed forecast. ED boarding hours (a patient admitted but stuck in an ED bed for hours waiting for a floor bed) are the canonical metric: every hour of boarding correlates with worse outcomes, longer total length of stay, and higher per-stay cost. Diversions (<a href="https://www.cms.gov/Medicare/Provider-Enrollment-and-Certification/QAPI/Downloads/Bed-Capacity-and-Diversion-Calculations.pdf">ambulances rerouted to other hospitals because yours is on bypass</a>) cost revenue and damage community-trust relationships. Cancelled elective surgeries cost both revenue and patient goodwill. Transferred-out patients (sent to a tertiary center because your hospital had no bed) cost both. Travel-nurse premium pay for the unit that was chronically tight costs the CFO's quarterly margin. Nobody has a single line item on the P&amp;L called &quot;bed forecasting failures,&quot; but the cost is real and large, and it is the kind of cost that operations people can describe in ten minutes if you ask them about a recent bad week.</p>
+<p>The promise of hospital census forecasting is straightforward: take the data the hospital already has (admissions stream, ED boarders, scheduled surgical admits, transfers, discharge dispositions, average length of stay by service line, hospitalist staffing patterns) and produce an hour-by-hour, unit-by-unit forecast of bed occupancy for the next 4 to 72 hours. Pair that forecast with explicit prediction intervals so the bed huddle knows the difference between &quot;we are confidently going to be tight on telemetry tonight&quot; and &quot;there is a 25% chance we hit gridlock by 22:00.&quot; Refresh the forecast as the day progresses and as new data lands (every admission, every discharge, every cancelled surgery, every transfer accepted or declined). Surface the forecast to the bed huddle at 06:30, to the transfer center continuously, to the OR schedulers the night before, and to the ED charge nurse when they're considering whether to call diversion. Get this right and the hospital makes better decisions in real time, and the savings show up in the metrics that matter (boarding hours, diversion hours, cancelled-case rate, premium-labor spend) without anybody having to point at the forecast as the reason.</p>
+<p>Let's get into how this works.</p>
+<hr />
+<h2 id="the-technology-how-hospital-census-forecasting-actually-works">The Technology: How Hospital Census Forecasting Actually Works</h2>
+<h3 id="why-this-is-a-flow-problem-not-a-volume-problem">Why This Is a Flow Problem, Not a Volume Problem</h3>
+<p>The first reflex when you hear &quot;predict bed occupancy&quot; is to reach for a generic time-series forecaster and aim it at historical census numbers. That works on day one and breaks within a quarter. The reason: hospital census is fundamentally a flow problem. Today's census is yesterday's census, plus admissions over the last 24 hours, minus discharges over the last 24 hours, plus or minus transfers (in from other facilities, out to SNF, internal between units). The aggregate level is the result of three separate streams interacting, and each stream has its own dynamics, its own drivers, and its own predictability characteristics.</p>
+<p>Treat census as one time series and you fit a model that has no awareness of the underlying dynamics. It will learn the seasonal pattern (Mondays trend higher than Sundays) but it will struggle when the dynamics shift. A change in average length of stay (because the hospital launched a new discharge initiative, or because the case mix shifted, or because skilled nursing facility availability collapsed in your region) breaks the model in ways the historical census numbers do not anticipate. A change in admission patterns (because a competing hospital closed, because flu season started two weeks early, because a referring practice was acquired) similarly breaks it.</p>
+<p>The right framing is to forecast each flow separately and then compose them. Admissions become one forecast (volume by hour by unit, by source: ED, direct admit, surgical, transfer-in). Discharges become a second forecast (volume by hour by unit, by disposition: home, SNF, rehab, hospice, expired). Length of stay becomes a third forecast or, more often, a survival-style model that says &quot;for each currently-admitted patient, what's the probability they discharge in the next H hours.&quot; Transfers (between units, between facilities) become a fourth flow. Census is the integral of these flows over a starting point. Get the flows right and the census forecast is the bookkeeping that follows.</p>
+<h3 id="the-three-layer-architecture-that-actually-works">The Three-Layer Architecture That Actually Works</h3>
+<p>A capable hospital census pipeline has three conceptual layers that mirror the flow framing.</p>
+<p><strong>Layer 1: Inflow forecasting.</strong> Predict admissions over the forecast horizon, broken down by admission source and admitting service. The pipeline maintains separate sub-models for each source because each has wildly different predictability:</p>
+<p><em>ED admissions</em> are the largest source for most hospitals (60 to 75% of admissions in community hospitals, lower in academic centers). They follow patterns similar to ED arrivals (Recipe 12.3), with the additional layer of admit-rate variability. About 12 to 18% of ED visits become admissions in a typical community ED, but the rate fluctuates with case-mix, season, and ED capacity itself. Forecast volume by ED arrival rate times admit rate, both modeled with the calendar and weather features from Recipe 12.3.</p>
+<p><em>Scheduled surgical admissions</em> are the most predictable inflow because they're literally on a calendar. Tomorrow's OR schedule produces a deterministic count of inpatient post-op admits for the next 24 to 48 hours, with high reliability. The only uncertainty is no-show rate (typically 2 to 5%) and case-cancellation rate (5 to 12% on the day-of, depending on hospital). Forecast: pull the OR schedule, multiply by the historical show-rate, attribute to the appropriate post-op unit.</p>
+<p><em>Direct admissions</em> (admitted from a physician office or clinic without going through the ED) are smaller volume but harder to forecast because the lead time is short (often hours, not days) and the demand is bursty. A fall-day spike in direct admits to ortho is hard to anticipate from yesterday's pattern. Most hospitals model these as a Poisson process with day-of-week and seasonality features.</p>
+<p><em>Transfers in</em> (from outside facilities or affiliated hospitals) flow through the transfer center. The transfer center has visibility into pending requests (typically a few hours of lead time) and can supply that as a feature. Most pipelines treat near-term transfers as a known quantity from the transfer center queue and longer-horizon transfers as a forecast.</p>
+<p><strong>Layer 2: Outflow and length-of-stay modeling.</strong> Predict discharges over the forecast horizon, which is the harder of the two flows. Discharges have two characteristics that make them hard:</p>
+<p><em>The discharge process is partly clinical, partly operational, and partly social.</em> A patient is medically ready to discharge when the attending says so, which is mostly clinical. They actually discharge when the discharge order is in, the medications are reconciled, the transportation is arranged, and the receiving facility (if any) accepts. That second leg is operational and social. A patient who is medically ready at 09:00 may not actually leave the hospital until 17:00 because of insurance authorization, SNF bed availability, or family transportation. The forecast has to capture both the medical-readiness signal and the operational-completion timing.</p>
+<p><em>Discharges concentrate during the day.</em> A typical hospital discharges 70 to 80% of its volume between 10:00 and 18:00, with a strong peak around 13:00 to 15:00. Overnight discharges are minimal. The intra-day pattern is sharp and matters operationally: the bed huddle at 06:30 needs to know how many discharges are projected by 14:00 specifically, not just &quot;by end of day.&quot;</p>
+<p>The standard approach for discharge forecasting is a survival-style model. For each currently-admitted patient, predict the probability they discharge in the next H hours, conditional on their length of stay so far, their service line, their disposition plan (if known), and dozens of other features. Sum the probabilities to get the expected discharge count. The advantage of this framing over a plain count-forecasting approach: it naturally incorporates patient-level information (a patient on day 6 of an exacerbation admission has different discharge dynamics than a patient on day 1 of a planned surgical admission) and it makes the discharge prediction a per-patient question, which is exactly what the case manager working the unit needs anyway.</p>
+<p>The features that matter for the survival model: service line, primary diagnosis (or DRG, once the working DRG is assigned), age, length of stay so far, day of week, hour of day, attending hospitalist, planned disposition (home, SNF, rehab, hospice), <a href="https://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/HospitalAcqCond">Hospital Acquired Condition</a> flags, recent vital sign trajectory, recent lab abnormalities, pending consults, and whether a discharge order has been written. The last feature is the strongest single predictor: &quot;discharge order entered&quot; raises the probability of discharge in the next 6 hours from a baseline of around 8 to 15% to typically 75 to 90%.</p>
+<p><strong>Layer 3: Census composition and unit assignment.</strong> Compose the inflows, outflows, and current state into a unit-level census forecast. This is conceptually simple bookkeeping:</p>
+<pre class="code code-plain"><code>projected_census(unit, t+h) = current_census(unit, t)
+                              + projected_admissions_to_unit(unit, t, t+h)
+                              + projected_internal_transfers_in(unit, t, t+h)
+                              - projected_discharges_from_unit(unit, t, t+h)
+                              - projected_internal_transfers_out(unit, t, t+h)
+                              ± uncertainty
+</code></pre>
+<p>The hard part is unit assignment. A patient admitted from the ED with a chest pain rule-out goes to telemetry, not med-surg. A post-op total knee goes to ortho, not general surgery. A patient who was on CCU but is being downgraded goes to step-down, not back to cath lab. The unit-assignment logic depends on diagnosis, surgical type, attending preference, current unit availability, and the hospital's bed-management protocols. Most pipelines model this as a multinomial classifier per admission source: given the admission's features (diagnosis, surgery type, ED disposition), predict the probability distribution over candidate units.</p>
+<p>The output of Layer 3 is the unit-level census forecast: for each unit, for each hour over the forecast horizon, the expected occupancy and a prediction interval. The aggregate hospital census is the sum across units, but the unit-level breakdown is what operations actually consume.</p>
+<h3 id="what-makes-census-different-from-other-forecasts">What Makes Census Different From Other Forecasts</h3>
+<p>Several characteristics distinguish hospital census forecasting from other time-series problems and shape the methods that work.</p>
+<p><strong>Forecasts have to compose with current state.</strong> The forecast is anchored on the current census, which is itself a moving target throughout the day. Every admission and discharge updates the starting point for the rest of the forecast. The pipeline has to update incrementally, not produce a one-shot daily forecast that goes stale by 09:00. Most production systems re-run inference every 15 to 60 minutes, with the inflow and outflow models taking the latest known state as input.</p>
+<p><strong>Forecast horizon and operational use are tightly coupled.</strong> Different operational decisions live at different horizons:</p>
+<ul>
+<li>1 to 4 hours: ED diversion decisions, transfer-center accept/decline, OR add-ons</li>
+<li>4 to 12 hours: same-shift staffing pulls, discharge expediting, internal transfer prioritization</li>
+<li>12 to 24 hours: next-shift staffing, OR schedule adjustments, surge-plan activation</li>
+<li>24 to 72 hours: tomorrow's bed plan, OR booking decisions, transfer-in capacity commitments</li>
+<li>72 hours to 7 days: weekly staffing, scheduled procedure planning</li>
+</ul>
+<p>A single model is rarely best across all horizons. Short-horizon forecasts benefit most from current-state features (ED holds, post-op pipeline, pending discharges). Longer-horizon forecasts depend more on calendar and seasonality features. Production pipelines either fit horizon-specific models or use a single model with horizon-dependent feature weighting.</p>
+<p><strong>Units are not independent.</strong> Telemetry being full means new admissions cascade to overflow units. CCU being full means step-down patients can't transfer up. The bed-management protocols define a graph of unit-to-unit overflow rules, and the forecast has to respect them or it produces unit-level numbers that don't add up to a coherent hospital plan. Most teams handle this by forecasting each unit independently and then running a post-processing pass that respects the overflow rules and produces a constrained joint forecast.</p>
+<p><strong>Length of stay is the most operationally actionable input.</strong> A 0.3-day reduction in average LOS frees up roughly 8% of bed-hours in a 412-bed hospital. The forecast has to be sensitive enough to detect when LOS is shifting and surface that to the leadership who can act on it. A pipeline that forecasts census without ever exposing the LOS assumption is missing the operational lever the bed huddle most wants to pull.</p>
+<p><strong>The data is mostly timestamped, but timestamps are not always trustworthy.</strong> ADT (admit-discharge-transfer) messages timestamp every state change in the patient's hospital journey. In theory, you can reconstruct the entire hospital flow from ADT history. In practice, ADT timestamps are sometimes wrong (the discharge timestamp captures when the discharge order was entered, not when the patient left the bed; the transfer timestamp captures when the patient was assigned to the new unit, not when they actually moved). Production pipelines clean and reconcile timestamps against secondary signals (bed-cleaning logs, EHR location updates, telemetry leads detached) and treat the cleaned version as authoritative. Skipping this work produces a forecast trained on noisy timestamps that is calibrated to the noise rather than to the underlying flow.</p>
+<h3 id="methods-that-earn-their-keep">Methods That Earn Their Keep</h3>
+<p>For each of the three layers, a small number of methods consistently work in production.</p>
+<p><strong>For inflow forecasting (Layer 1):</strong> The same toolbox as Recipe 12.3 (ED arrivals) plus deterministic schedule integration for surgical admits. Poisson regression with calendar and weather features handles ED-driven admissions. Multinomial classifiers handle service-line and unit assignment. The OR schedule is read directly. Direct admits and transfer requests use simple Poisson models with day-of-week features.</p>
+<p><strong>For outflow forecasting (Layer 2):</strong> Survival models (Cox proportional hazards, accelerated failure time, gradient-boosted survival models like XGBSE, or deep survival models like DeepHit) on per-patient features. The patient-level approach is more accurate and more operationally useful than aggregate count forecasting. Output: per-patient discharge probability over the forecast horizon, summed for unit-level expected discharges. State-space methods (per-service LOS distributions updated as new discharges arrive) are a simpler alternative when patient-level features are sparse.</p>
+<p><strong>For census composition (Layer 3):</strong> Bookkeeping plus Monte Carlo. Sample N times from each component distribution (admissions, discharges, transfers), compose the census trajectory for each sample, take the mean and percentiles across samples. This naturally produces calibrated prediction intervals. A hospital with thousands of patient-state combinations runs this comfortably with N=500 to 1000 samples; per-unit calibration improves with more samples but with diminishing returns past 1000.</p>
+<p><strong>For real-time updating:</strong> Particle filters or sequential Monte Carlo methods are theoretically elegant but operationally heavy. The simpler approach is to re-run the full pipeline every 15 to 60 minutes with the latest state and let the new forecast supersede the old. The marginal cost of compute is low compared to the operational complexity of online filtering.</p>
+<h3 id="the-general-architecture-pattern">The General Architecture Pattern</h3>
+<p>At a conceptual level, the pipeline looks like this:</p>
+<pre class="code code-plain"><code>[ADT Stream]
+[OR Schedule]                    +---------------------+    +--------------------+    +---------------------+
+[Transfer Center Queue]   ----&gt;  | Inflow Forecasting  |    | Outflow / LOS      |    | Census Composition  |
+[ED Tracking Board]              | (per source, per    |    | Modeling           |    | (Monte Carlo on     |
+[EHR Patient State]              |  service, per unit) |    | (per-patient       |    |  inflows + outflows |
+                                 |                     |    |  survival model)   |    |  + current state)   |
+                                 +---------------------+    +--------------------+    +---------------------+
+                                          |                          |                          |
+                                          +---------+----------------+--------------------------+
+                                                    |
+                                                    v
+                                          +---------------------+
+                                          | Forecast Repository |
+                                          | (per-unit, per-hour |
+                                          |  occupancy + intervals)
+                                          +---------------------+
+                                                    |
+                                                    v
+                                          +---------------------+
+                                          | Operational         |
+                                          | Consumers           |
+                                          | (Bed Huddle, Transfer
+                                          |  Center, OR, ED)    |
+                                          +---------------------+
+</code></pre>
+<p><strong>ADT Stream.</strong> Every hospital state change (admission, discharge, transfer, room change, status change) emits an HL7 ADT message or its FHIR Encounter equivalent. The pipeline ingests these in near real time and maintains a current-state view of every occupied bed.</p>
+<p><strong>OR Schedule, Transfer Center Queue, ED Tracking Board.</strong> Three known-quantity feeds. The OR schedule for the next 48 hours is a deterministic input. The transfer center queue is a near-term-known input (1 to 6 hours of lead time). The ED tracking board provides current ED census, holds, and admitted-but-not-yet-placed patients.</p>
+<p><strong>EHR Patient State.</strong> Per-patient features needed by the survival model: service, attending, working DRG (if available), discharge order status, planned disposition, length of stay so far, age, comorbidities. This is typically pulled from the EHR via FHIR API or a clinical data warehouse mirror, refreshed on the same cadence as the forecast.</p>
+<p><strong>Inflow Forecasting.</strong> Per-source, per-service, per-unit admission forecasts. Models trained on historical ADT plus feeds. Refreshed weekly or when drift is detected.</p>
+<p><strong>Outflow / LOS Modeling.</strong> Per-patient discharge probability over the forecast horizon. Survival model trained on historical encounters with feature engineering on patient state at each prediction time. Refreshed monthly or quarterly.</p>
+<p><strong>Census Composition.</strong> Monte Carlo simulation of the census trajectory. Takes the inflow forecasts, the outflow probabilities, and the current state as inputs. Produces per-unit, per-hour expected occupancy plus prediction intervals.</p>
+<p><strong>Forecast Repository.</strong> The output table: (unit, forecast_for_timestamp, expected_occupancy, lower_bound, upper_bound, generated_at_timestamp). Every consumer reads from this.</p>
+<p><strong>Operational Consumers.</strong> The bed huddle dashboard, the transfer center decision support, the OR scheduler, the ED diversion-decision tool, and the staffing scheduler all consume the same forecast. The integration is structured (REST API or query against the forecast store) and the latency budget is single-digit seconds.</p>
+<p>That's the whole concept. Three flows, composed into a unit-level census, refreshed continuously, surfaced everywhere. The hard parts are in the data plumbing (ADT cleanup, unit-assignment logic, length-of-stay feature engineering) and in the operational integration, not in the forecasting math.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter12.05-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>The forecasting math is the easy part of this. I have built two of these and the modeling has consistently been the smallest fraction of the engineering investment. The hard parts are upstream (ADT cleanup, length-of-stay feature engineering, unit-assignment ground truth) and downstream (operational integration, feedback capture, narrative explanation). A team that allocates 50% of the budget to data plumbing, 20% to modeling, and 30% to operational integration is closer to the right ratio than the typical &quot;70% modeling, 30% the rest&quot; assumption people walk in with.</p>
+<p>The thing that surprised me the first time was how much of the forecast accuracy comes from the discharge order signal. The single feature &quot;has a discharge order been entered for this patient&quot; carries more predictive power for the next-6-hours discharge probability than every other feature combined. A naive model that uses only this feature, with no calendar features, no service line, no LOS, and no demographics, beats a sophisticated model trained without the discharge order. The lesson is not that the other features don't matter; they matter for longer horizons and for patients without orders. The lesson is that the operational reality of how hospitals actually discharge patients is captured in a single binary signal that lots of teams overlook because it feels too simple.</p>
+<p>Alert fatigue and dashboard fatigue are real failure modes for census forecasting too. A bed huddle dashboard that shows projections every 15 minutes, with green/yellow/red bands, gets glanced at for two weeks and then ignored. The dashboard has to surface the actionable signal, not the raw projection. &quot;Telemetry will be at 94% by 14:00 with p90 of 29 (capacity 28)&quot; is interesting. &quot;Recommend prioritizing the 2 medically-ready discharges currently held for SNF placement to free capacity before the 13:00 OR turnover&quot; is actionable. The narrative-summary layer is not optional for adoption; it's the difference between a tool the bed huddle uses and a tool they tolerate.</p>
+<p>The thing I underestimated, repeatedly, is the political dimension of unit-assignment ground truth. The hospital's bed map looks clean on paper. In reality, the assignment of patients to units is a negotiation between attending preference, charge nurse judgment, current capacity, and historical practice. The unit-assignment classifier trained on historical data captures this negotiation faithfully, including its inconsistencies. When the forecast disagrees with what the bed huddle thinks should happen, the right answer is sometimes &quot;the forecast is correctly capturing what historically happened&quot; and sometimes &quot;the historical pattern was suboptimal and the bed huddle wants to change it.&quot; Disambiguating these cases requires conversations with the bed-management team that nobody scopes into the project plan but everyone has to have eventually.</p>
+<p>The part that took me the longest to internalize is that this is fundamentally an operational research project wearing a forecasting hat. The forecast is the input to a queueing-and-flow system that the hospital is running implicitly. The bed huddle's job is to balance demand against capacity in real time. The forecast helps them do this better. But the optimization problem (which patients to expedite, which transfers to accept, which surgeries to schedule, which units to open) is not solved by the forecast; it's informed by it. A team that understands the forecast as one input among many to a larger operations problem builds something that gets adopted. A team that thinks they're shipping a forecast as the answer ships something that gets bought, deployed, and quietly bypassed.</p>
+<p>If I were starting a new hospital census project today, I would do three things differently. First, I would invest in the calibration and feedback infrastructure on day one, not month four. Second, I would build the narrative-summary layer alongside the forecast, not as a phase-two add-on. Third, I would accept from the beginning that the operational integration work is at least as much engineering as the modeling work, and resource accordingly. The teams that get this right are the ones who plan for it. The teams that don't get blindsided.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 12.1 (Appointment Volume Forecasting):</strong> Outpatient counterpart to this recipe. Shares the calendar-feature engineering and the operational dashboard pattern; differs in clinical context and decision latency.</li>
+<li><strong>Recipe 12.3 (ED Arrival Forecasting):</strong> The ED arrival forecast feeds into this recipe's inflow model as the input volume, with admit-rate as the conversion factor. The two pipelines often share infrastructure.</li>
+<li><strong>Recipe 12.4 (Lab Result Trend Analysis):</strong> Adjacent recipe in the time-series chapter. Shares the FHIR-based ingestion pattern and the survival-style modeling for some variants.</li>
+<li><strong>Recipe 12.6 (Revenue Cycle Cash Flow Forecasting):</strong> Different domain (financial, not operational) but similar structure: forecasting flows that compose into a level (cash on hand, like census). The methods carry over.</li>
+<li><strong>Recipe 12.7 (Vital Sign Trajectory Monitoring):</strong> The patient-level acute counterpart. Real-time vital-sign trajectories feed into the discharge-readiness signal that the survival model in this recipe consumes.</li>
+<li><strong>Recipe 14.x (Optimization / Operations Research):</strong> The downstream consumer of census forecasts. Bed assignment, OR scheduling, and staffing optimization all live in that chapter and use the forecast outputs from this recipe as constraint inputs.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>time-series</code> · <code>census-forecasting</code> · <code>hospital-operations</code> · <code>bed-management</code> · <code>survival-analysis</code> · <code>monte-carlo</code> · <code>poisson-regression</code> · <code>xgboost-survival</code> · <code>deepar</code> · <code>healthlake</code> · <code>fhir</code> · <code>adt</code> · <code>sagemaker</code> · <code>dynamodb</code> · <code>step-functions</code> · <code>medium</code> · <code>production</code> · <code>hipaa</code> · <code>ed-boarding</code> · <code>or-scheduling</code></p>
+<hr />
+<p><em>← <a href="chapter12.04-lab-result-trend-analysis.html">Previous: Recipe 12.4 - Lab Result Trend Analysis</a> · <a href="chapter12-preface.html">Chapter 12 Index</a> · <a href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">Next: Recipe 12.6 - Revenue Cycle Cash Flow Forecasting →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

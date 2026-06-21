@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 13.8 Architecture and Implementation: Medical Concept Normalization and Mapping</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested nav-active" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-138-architecture-and-implementation-medical-concept-normalization-and-mapping">Recipe 13.8 Architecture and Implementation: Medical Concept Normalization and Mapping</h1>
+<p><em>Companion to <a href="chapter13.08-medical-concept-normalization-mapping.html">Recipe 13.8: Medical Concept Normalization and Mapping</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Neptune for the knowledge graph store.</strong> Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be.</p>
+<p><strong>AWS Glue for terminology ingestion.</strong> Terminology files come in various formats (RRF for UMLS/RxNorm, RF2 for SNOMED, CSV for ICD-10, custom formats for LOINC). Glue ETL jobs handle the parsing and transformation, writing Neptune bulk loader CSV files to S3. The Neptune bulk loader then reads directly from S3 using its own IAM role (Neptune fetches the files, not Glue). This means Neptune's VPC needs an S3 Gateway endpoint, and Neptune's IAM role needs <code>s3:GetObject</code> on the processed files bucket. The jobs run on each terminology release, which means monthly at most. Glue's serverless Spark environment handles the large file sizes (UMLS is multiple gigabytes) without requiring persistent infrastructure.</p>
+<p><strong>Amazon ElastiCache (Redis) for normalization caching.</strong> Point lookups against Neptune are fast (single-digit milliseconds for direct node lookups), but multi-hop traversals can take longer. For the most common normalization queries (single concept to canonical form), a Redis cache in front of Neptune reduces latency to sub-millisecond and protects Neptune from query storms during batch processing runs.</p>
+<p><strong>AWS Lambda + API Gateway for the normalization API.</strong> The normalization service is a stateless lookup: receive a concept, query the graph (or cache), return the mappings. Lambda handles this cleanly with automatic scaling. API Gateway provides the REST interface, request validation, and throttling. Deploy as a private API (VPC endpoint access only) with IAM authorization (SigV4) for service-to-service calls. API keys alone are insufficient for authorization; they're for throttling, not security.</p>
+<p><strong>Amazon S3 for terminology file staging.</strong> Raw terminology downloads land in S3 before Glue processes them. S3 also stores the processed graph load files (Neptune bulk loader format) and serves as the audit trail for which terminology versions have been ingested.</p>
+<p><strong>AWS Step Functions for ingestion orchestration.</strong> A terminology update involves multiple steps: download the new release, validate file integrity, run the Glue ETL, bulk-load into Neptune, validate the load, warm the cache, and notify consumers. Step Functions orchestrates this sequence with error handling and retry logic.</p>
+<p><strong>Design principle: PHI boundary.</strong> The normalization service is a reference data service, not a clinical data service. It accepts only terminology codes and returns mappings. It never accepts patient identifiers. Correlation with patient records happens in the calling system, not here. API Gateway request validation should reject requests containing fields outside the defined schema. Lambda logging should use structured logging with an explicit allowlist of loggable fields (code, terminology, timestamp) and never log caller-supplied context. Neptune parameterized queries (shown in the pseudocode below) prevent query-string injection of arbitrary data.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TD
+    A[Terminology Sources\nUMLS / SNOMED / ICD-10\nLOINC / RxNorm] --&gt;|Download| B[S3 Bucket\nterminology-raw/]
+    B --&gt;|Trigger| C[Step Functions\nIngestion Orchestrator]
+    C --&gt;|Parse &amp; Transform| D[AWS Glue\nETL Jobs]
+    D --&gt;|Bulk Load| E[Amazon Neptune\nKnowledge Graph]
+    E --&gt;|Query| F[Lambda\nNormalization Service]
+    G[ElastiCache Redis\nMapping Cache] &lt;--&gt;|Cache| F
+    F --&gt;|REST API| H[API Gateway\n/normalize endpoint]
+    H --&gt;|Consume| I[Analytics / CDS\nQuality Reporting]
+    J[Curation UI] --&gt;|Custom Mappings| E
+
+    style E fill:#9ff,stroke:#333
+    style G fill:#ff9,stroke:#333
+    style H fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Neptune, AWS Glue, Amazon ElastiCache (Redis), AWS Lambda, API Gateway, Amazon S3, AWS Step Functions</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td><code>neptune-db:*</code> (scoped to cluster ARN), <code>glue:StartJobRun</code> (scoped to job names), <code>s3:GetObject</code> on <code>arn:aws:s3:::terminology-raw/*</code>, <code>s3:PutObject</code> on <code>arn:aws:s3:::terminology-processed/*</code>, <code>elasticache:*</code> (scoped to cluster ARN), <code>lambda:InvokeFunction</code> (scoped to function ARN), <code>states:StartExecution</code> (scoped to state machine ARN)</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Concept mappings themselves aren't PHI, but normalization queries in context (which patient maps to which concept) can constitute PHI.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Neptune: encryption at rest (enabled at cluster creation, cannot be added later). S3: SSE-KMS. ElastiCache: encryption at rest and in-transit. All API calls over TLS.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Neptune requires VPC deployment. Lambda in same VPC with VPC endpoints for S3 and CloudWatch Logs. ElastiCache in same VPC. No public internet access to Neptune. Security groups: Lambda SG allows outbound 8182 to Neptune SG and outbound 6379 to ElastiCache SG; Neptune SG allows inbound 8182 from Lambda SG and Glue SG; ElastiCache SG allows inbound 6379 from Lambda SG. Neptune requires an S3 Gateway endpoint for bulk loader access.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all API calls. Neptune audit logging enabled for query-level audit trail.</td>
+</tr>
+<tr>
+<td><strong>Terminology Licenses</strong></td>
+<td>UMLS license (free, requires registration with NLM). SNOMED CT (free in US via NLM). CPT (paid AMA license). ICD-10 (free from CMS). LOINC (free, requires registration). RxNorm (free via NLM).</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>UMLS Metathesaurus subset. NLM provides sample files for development. Never load full UMLS into a dev environment without understanding the size (multiple GB).</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200-2,000/month for a basic deployment.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Neptune</strong></td>
+<td>Stores the terminology knowledge graph: concepts as nodes, mappings as edges</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Parses and transforms terminology source files into Neptune bulk load format</td>
+</tr>
+<tr>
+<td><strong>Amazon ElastiCache (Redis)</strong></td>
+<td>Caches frequent normalization lookups for sub-millisecond response</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Serves normalization queries, handles cache logic, orchestrates graph traversals</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>REST interface for the normalization service with throttling and auth</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Stages raw terminology files and processed load files</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the multi-step terminology ingestion pipeline</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Manages encryption keys for Neptune, S3, and ElastiCache</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Metrics, logs, and alarms for ingestion failures and API latency</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Terminology file ingestion.</strong> When a new terminology release arrives (downloaded manually or via automated NLM API calls), it lands in S3 and triggers the ingestion orchestrator. The first task is parsing the raw files into a normalized intermediate format. UMLS uses RRF (Rich Release Format), which is pipe-delimited with specific column semantics. SNOMED uses RF2 (Release Format 2), a set of tab-delimited files with concept, description, and relationship tables. Each terminology has its own parser, but they all produce the same output: a set of nodes (concepts) and edges (relationships) ready for graph loading. Skip this step and you have no data. Get the parsing wrong and you have wrong data, which is worse.</p>
+<pre class="code code-plain"><code>FUNCTION ingest_terminology(terminology_name, version, s3_path):
+    // Download and validate the raw terminology files from S3.
+    // Each terminology has a known file structure:
+    //   UMLS: MRCONSO.RRF (concepts), MRREL.RRF (relationships)
+    //   SNOMED: sct2_Concept_*.txt, sct2_Relationship_*.txt
+    //   ICD-10: icd10cm_tabular_*.xml or flat files from CMS
+    //   RxNorm: RXNCONSO.RRF, RXNREL.RRF
+    raw_files = download_from_s3(s3_path)
+    
+    // Validate file checksums against the published manifest.
+    // Terminology releases include integrity checks. Use them.
+    validate_checksums(raw_files, terminology_name)
+    
+    // Select the appropriate parser based on terminology type.
+    // Each parser knows the file format and column semantics.
+    parser = get_parser_for(terminology_name)
+    
+    // Parse concepts: extract code, display name, semantic type, status.
+    // Each concept becomes a node in the graph.
+    concepts = parser.extract_concepts(raw_files)
+    
+    // Parse relationships: extract source, target, relationship type, metadata.
+    // Each relationship becomes an edge in the graph.
+    relationships = parser.extract_relationships(raw_files)
+    
+    // Tag every concept and relationship with version and load timestamp.
+    // This enables temporal queries: &quot;what was the mapping as of date X?&quot;
+    tag_with_version(concepts, terminology_name, version)
+    tag_with_version(relationships, terminology_name, version)
+    
+    RETURN concepts, relationships
+</code></pre>
+<p><strong>Step 2: Graph construction and loading.</strong> The parsed concepts and relationships need to be loaded into Neptune. For initial loads and large updates, Neptune's bulk loader is dramatically faster than individual insert queries. The bulk loader reads CSV files from S3 in a specific format: one file for nodes, one for edges, with headers defining the property names and types. For incremental updates (a few hundred new concepts in a monthly RxNorm release), individual Gremlin or openCypher queries work fine. The choice between bulk and incremental depends on the size of the delta. This step also handles the critical task of linking concepts across terminologies: when UMLS tells us that SNOMED concept 44054006 and ICD-10 code E11 share a CUI, we create a cross-terminology edge between them.</p>
+<pre class="code code-plain"><code>FUNCTION build_graph_load_files(concepts, relationships):
+    // Neptune bulk loader expects CSV files with specific headers.
+    // Node file: ~id, ~label, code:String, display:String, terminology:String, 
+    //            version:String, status:String, semantic_type:String
+    // Edge file: ~id, ~from, ~to, ~label, relationship_type:String, 
+    //            confidence:Double, provenance:String, effective_date:Date
+    
+    node_file = create_csv_with_headers(NEPTUNE_NODE_SCHEMA)
+    edge_file = create_csv_with_headers(NEPTUNE_EDGE_SCHEMA)
+    
+    FOR each concept in concepts:
+        // Generate a deterministic node ID from terminology + code + version.
+        // This ensures idempotent loads: reloading the same version doesn&#x27;t create duplicates.
+        node_id = generate_node_id(concept.terminology, concept.code, concept.version)
+        
+        append_row(node_file, {
+            id:            node_id,
+            label:         &quot;Concept&quot;,
+            code:          concept.code,
+            display:       concept.display_name,
+            terminology:   concept.terminology,
+            version:       concept.version,
+            status:        concept.status,        // &quot;active&quot; or &quot;retired&quot;
+            semantic_type: concept.semantic_type   // e.g., &quot;Disease or Syndrome&quot;
+        })
+    
+    FOR each relationship in relationships:
+        // Generate edge ID from source + target + type for idempotency.
+        source_id = generate_node_id(relationship.source_terminology, 
+                                     relationship.source_code, 
+                                     relationship.source_version)
+        target_id = generate_node_id(relationship.target_terminology, 
+                                     relationship.target_code, 
+                                     relationship.target_version)
+        
+        append_row(edge_file, {
+            id:                generate_edge_id(source_id, target_id, relationship.type),
+            from:              source_id,
+            to:                target_id,
+            label:             relationship.type,   // &quot;equivalent_to&quot;, &quot;broader_than&quot;, &quot;maps_to&quot;
+            relationship_type: relationship.type,
+            confidence:        relationship.confidence,   // 0.0 to 1.0
+            provenance:        relationship.provenance,   // &quot;UMLS&quot;, &quot;NLM_MAP&quot;, &quot;CUSTOM&quot;
+            effective_date:    relationship.effective_date
+        })
+    
+    // Upload to S3 for Neptune bulk loader.
+    upload_to_s3(node_file, &quot;terminology-processed/nodes/&quot;)
+    upload_to_s3(edge_file, &quot;terminology-processed/edges/&quot;)
+    
+    RETURN s3_paths_for_load_files
+</code></pre>
+<p><strong>Step 3: Cross-terminology linking via UMLS CUIs.</strong> This is the heart of the normalization system. UMLS assigns a Concept Unique Identifier (CUI) to each distinct clinical meaning. When SNOMED concept 44054006 (&quot;Type 2 diabetes mellitus&quot;) and ICD-10 code E11 (&quot;Type 2 diabetes mellitus&quot;) share CUI C0011860, that tells us they represent the same clinical idea. This step creates the cross-terminology edges that make normalization possible. Without it, you have isolated terminology islands with no bridges between them.</p>
+<pre class="code code-plain"><code>FUNCTION create_cross_terminology_links(umls_concepts):
+    // UMLS MRCONSO.RRF contains rows like:
+    //   CUI | Language | Source | Code | Display
+    //   C0011860 | ENG | SNOMEDCT_US | 44054006 | Type 2 diabetes mellitus
+    //   C0011860 | ENG | ICD10CM | E11 | Type 2 diabetes mellitus
+    //
+    // Same CUI = same meaning across terminologies.
+    
+    // Group all source concepts by their CUI.
+    cui_groups = group_by(umls_concepts, field=&quot;CUI&quot;)
+    
+    cross_links = empty list
+    
+    FOR each cui, concepts_in_group in cui_groups:
+        // For each pair of concepts sharing a CUI but from different terminologies,
+        // create a cross-terminology equivalence edge.
+        FOR each pair (concept_a, concept_b) in concepts_in_group 
+            WHERE concept_a.terminology != concept_b.terminology:
+            
+            // Determine the relationship type.
+            // UMLS provides relationship attributes (REL, RELA) that indicate
+            // whether the mapping is exact, broader, narrower, or related.
+            rel_type = determine_relationship_type(concept_a, concept_b, cui)
+            
+            // Assign confidence based on relationship type.
+            // UMLS synonymy judgments have a known error rate of ~2-3%, so even
+            // exact matches don&#x27;t get 1.0. Reserve 1.0 for manually curated mappings.
+            confidence = CASE rel_type:
+                &quot;equivalent_to&quot;: 0.95
+                &quot;broader_than&quot;:  0.80
+                &quot;narrower_than&quot;: 0.80
+                &quot;related_to&quot;:    0.60
+                DEFAULT:         0.50
+            
+            append to cross_links: {
+                source:     concept_a,
+                target:     concept_b,
+                type:       rel_type,        // &quot;equivalent_to&quot;, &quot;broader_than&quot;, &quot;narrower_than&quot;
+                confidence: confidence,      // Varies by relationship type; 1.0 reserved for curated mappings
+                provenance: &quot;UMLS_CUI_&quot; + cui
+            }
+    
+    RETURN cross_links
+</code></pre>
+<p><strong>Step 4: Normalization query service.</strong> This is the API that consuming systems call. Given a concept (code + terminology), return the canonical form and all known mappings to other terminologies. The service first checks the Redis cache (most common lookups are repeated frequently). On cache miss, it queries Neptune with a graph traversal that follows cross-terminology edges, respecting relationship types and version constraints. The response includes confidence scores and provenance so consumers can make informed decisions about which mappings to trust.</p>
+<pre class="code code-plain"><code>FUNCTION normalize_concept(code, terminology, target_terminologies, version=null):
+    // Build a cache key from the input parameters.
+    cache_key = build_cache_key(code, terminology, target_terminologies, version)
+    
+    // Check Redis cache first. Most normalization queries are repeated
+    // (the same ICD-10 codes appear on thousands of claims).
+    cached_result = redis.get(cache_key)
+    IF cached_result is not null:
+        RETURN cached_result
+    
+    // Cache miss. Query Neptune.
+    // Find the source concept node.
+    source_node = neptune.query(&quot;&quot;&quot;
+        MATCH (c:Concept {code: $code, terminology: $terminology})
+        WHERE c.status = &#x27;active&#x27;
+        AND ($version IS NULL OR c.version = $version)
+        RETURN c
+    &quot;&quot;&quot;, params={code, terminology, version})
+    
+    IF source_node is null:
+        RETURN {status: &quot;not_found&quot;, code: code, terminology: terminology}
+    
+    // Traverse cross-terminology edges to find mappings.
+    // Limit traversal depth to 2 hops (source -&gt; CUI bridge -&gt; target)
+    // to avoid runaway queries on densely connected concepts.
+    mappings = neptune.query(&quot;&quot;&quot;
+        MATCH (source:Concept {code: $code, terminology: $terminology})
+              -[r:equivalent_to|maps_to|broader_than|narrower_than]-&gt;
+              (target:Concept)
+        WHERE target.terminology IN $target_terminologies
+        AND target.status = &#x27;active&#x27;
+        RETURN target.code AS code,
+               target.terminology AS terminology,
+               target.display AS display,
+               type(r) AS relationship_type,
+               r.confidence AS confidence,
+               r.provenance AS provenance
+        ORDER BY r.confidence DESC
+    &quot;&quot;&quot;, params={code, terminology, target_terminologies})
+    
+    // Build the response with the source concept and all mappings.
+    result = {
+        source: {
+            code:        source_node.code,
+            terminology: source_node.terminology,
+            display:     source_node.display,
+            semantic_type: source_node.semantic_type
+        },
+        mappings: mappings,
+        mapping_count: length(mappings),
+        query_timestamp: current_utc_timestamp()
+    }
+    
+    // Cache the result. TTL depends on how frequently terminologies update.
+    // 24 hours is reasonable: terminology releases are at most monthly.
+    redis.set(cache_key, result, ttl=86400)
+    
+    RETURN result
+</code></pre>
+<p><strong>Step 5: Hierarchy traversal for value set expansion.</strong> Quality measures and clinical rules often reference value sets: &quot;all codes that represent diabetes.&quot; This requires traversing the terminology hierarchy. In SNOMED CT, &quot;Type 2 diabetes mellitus&quot; (44054006) is-a &quot;Diabetes mellitus&quot; (73211009), which is-a &quot;Disorder of glucose metabolism&quot; (126877002). A value set defined at &quot;Diabetes mellitus&quot; needs to include all descendants. This step provides that expansion, which is computationally expensive for broad concepts but essential for correct quality measurement.</p>
+<pre class="code code-plain"><code>FUNCTION expand_value_set(root_code, terminology, include_descendants=true, max_depth=5, max_results=10000):
+    // Start with the root concept.
+    // &quot;Value set expansion&quot; means: give me this concept and everything below it
+    // in the hierarchy.
+    
+    IF not include_descendants:
+        // Simple case: just return the root concept and its cross-terminology mappings.
+        RETURN normalize_concept(root_code, terminology, all_terminologies)
+    
+    // Traverse the &quot;is-a&quot; hierarchy downward from the root.
+    // max_depth prevents runaway traversals on very broad concepts
+    // (e.g., &quot;Clinical finding&quot; in SNOMED has hundreds of thousands of descendants).
+    descendants = neptune.query(&quot;&quot;&quot;
+        MATCH (root:Concept {code: $root_code, terminology: $terminology})
+              &lt;-[:is_a*1..$max_depth]-
+              (descendant:Concept {terminology: $terminology})
+        WHERE descendant.status = &#x27;active&#x27;
+        RETURN descendant.code AS code,
+               descendant.display AS display,
+               length(path) AS depth
+        ORDER BY depth ASC
+    &quot;&quot;&quot;, params={root_code, terminology, max_depth})
+    
+    // Guard against runaway expansions. Broad concepts like &quot;Clinical finding&quot;
+    // (SNOMED 404684003) have hundreds of thousands of descendants.
+    truncated = false
+    IF length(descendants) &gt; max_results:
+        descendants = descendants[0..max_results]
+        truncated = true
+    
+    // For each descendant, also find cross-terminology mappings.
+    // This gives you the full value set in all terminologies.
+    expanded_set = [{code: root_code, terminology: terminology}]
+    
+    FOR each descendant in descendants:
+        append to expanded_set: {
+            code:        descendant.code,
+            terminology: terminology,
+            display:     descendant.display,
+            depth:       descendant.depth
+        }
+        
+        // Optionally expand each descendant to other terminologies.
+        // This is expensive for large hierarchies. Consider doing it lazily.
+        cross_maps = normalize_concept(descendant.code, terminology, target_terminologies)
+        append cross_maps.mappings to expanded_set
+    
+    RETURN {
+        root:            {code: root_code, terminology: terminology},
+        total_concepts:  length(expanded_set),
+        truncated:       truncated,
+        concepts:        expanded_set
+    }
+</code></pre>
+<p><strong>Step 6: Version management and temporal queries.</strong> Terminologies change. A code that existed in ICD-10-CM 2023 might be retired in 2024 and replaced by two more specific codes. Your normalization system needs to answer questions like &quot;what was the correct mapping for this code as of the date this claim was filed?&quot; This step handles version-aware queries by maintaining historical edges and filtering by effective date.</p>
+<pre class="code code-plain"><code>FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_date):
+    // Find the concept version that was active on the given date.
+    // Terminology versions have effective dates (e.g., ICD-10-CM FY2024 effective Oct 1, 2023).
+    
+    active_version = neptune.query(&quot;&quot;&quot;
+        MATCH (c:Concept {code: $code, terminology: $terminology})
+        WHERE c.effective_date &lt;= $as_of_date
+        AND (c.retirement_date IS NULL OR c.retirement_date &gt; $as_of_date)
+        RETURN c
+        ORDER BY c.effective_date DESC
+        LIMIT 1
+    &quot;&quot;&quot;, params={code, terminology, as_of_date})
+    
+    IF active_version is null:
+        RETURN {status: &quot;not_found_at_date&quot;, code: code, as_of: as_of_date}
+    
+    // Find mappings that were active on that date.
+    mappings = neptune.query(&quot;&quot;&quot;
+        MATCH (source:Concept {code: $code, terminology: $terminology})
+              -[r]-&gt;(target:Concept)
+        WHERE target.terminology IN $target_terminologies
+        AND r.effective_date &lt;= $as_of_date
+        AND (r.retirement_date IS NULL OR r.retirement_date &gt; $as_of_date)
+        AND target.effective_date &lt;= $as_of_date
+        AND (target.retirement_date IS NULL OR target.retirement_date &gt; $as_of_date)
+        RETURN target, r
+    &quot;&quot;&quot;, params={code, terminology, target_terminologies, as_of_date})
+    
+    RETURN {
+        source:    active_version,
+        mappings:  mappings,
+        as_of:     as_of_date,
+        note:      &quot;Mappings reflect terminology state as of the specified date&quot;
+    }
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune graph client, check out the <a href="chapter13.08-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample normalization response for &quot;Type 2 diabetes mellitus&quot; (ICD-10 E11):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;E11&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;terminology&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ICD10CM&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Type 2 diabetes mellitus&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;semantic_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Disease or Syndrome&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;mappings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;44054006&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;terminology&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SNOMEDCT&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Type 2 diabetes mellitus&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relationship_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;equivalent_to&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;UMLS_CUI_C0011860&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;73211009&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;terminology&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SNOMEDCT&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Diabetes mellitus&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relationship_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;broader_than&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SNOMED_HIERARCHY&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;4855003&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;terminology&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SNOMEDCT&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Diabetic retinopathy&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;relationship_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;related_to&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;UMLS_ASSOCIATION&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;mapping_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;query_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-06-01T14:30:22Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Point lookup (cached)</td>
+<td>&lt; 1ms</td>
+</tr>
+<tr>
+<td>Point lookup (cache miss, single hop)</td>
+<td>5-15ms</td>
+</tr>
+<tr>
+<td>Multi-hop traversal (2 hops)</td>
+<td>20-80ms</td>
+</tr>
+<tr>
+<td>Value set expansion (100 descendants)</td>
+<td>200-500ms</td>
+</tr>
+<tr>
+<td>Value set expansion (10,000 descendants)</td>
+<td>2-5 seconds</td>
+</tr>
+<tr>
+<td>Full terminology load (SNOMED CT)</td>
+<td>30-60 minutes</td>
+</tr>
+<tr>
+<td>Incremental update (monthly RxNorm)</td>
+<td>5-15 minutes</td>
+</tr>
+<tr>
+<td>Graph size (full UMLS subset)</td>
+<td>~5M nodes, ~20M edges</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li>Very broad hierarchy expansions (e.g., &quot;all clinical findings&quot; in SNOMED) can return hundreds of thousands of concepts and take minutes. Pagination and depth limits are essential.</li>
+<li>Ambiguous mappings where UMLS provides multiple candidate targets with similar confidence. Consumers need logic to pick the best match for their context.</li>
+<li>Retired codes that appear in historical data but have no active mapping target. You need a &quot;best available&quot; fallback strategy.</li>
+<li>Composite concepts that require multiple codes in the target terminology. The API returns individual mappings; the consumer must assemble them.</li>
+</ul>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Real-time NLP normalization.</strong> Integrate the normalization API with an NLP pipeline (see Chapter 8) that extracts clinical concepts from free text. The NLP system identifies &quot;type 2 DM&quot; in a clinical note, the normalization service maps it to the canonical SNOMED concept, and downstream systems get structured, coded data from unstructured text. This is the bridge between NLP extraction and computable clinical data.</p>
+<p><strong>FHIR ConceptMap integration.</strong> Expose your normalization mappings as FHIR ConceptMap resources. This makes your terminology service interoperable with any FHIR-compliant system. The ConceptMap resource has native support for equivalence types (equivalent, wider, narrower, inexact), which maps directly to your graph edge types. Useful for health information exchange scenarios.</p>
+<p><strong>Automated mapping suggestion.</strong> For concepts that lack cross-terminology mappings, use embedding-based similarity to suggest candidates. Encode concept display names and definitions as vectors, find nearest neighbors across terminologies, and present suggestions to terminologists for review. This accelerates curation for the long tail of unmapped concepts. Not a replacement for human review, but a significant productivity multiplier.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/neptune/latest/userguide/intro.html">Amazon Neptune User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-opencypher.html">Neptune openCypher Query Language</a></li>
+<li><a href="https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html">Neptune Bulk Loader</a></li>
+<li><a href="https://aws.amazon.com/neptune/pricing/">Amazon Neptune Pricing</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl.html">AWS Glue ETL Programming Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/WhatIs.html">Amazon ElastiCache for Redis</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+</ul>
+<p><strong>Terminology Sources:</strong></p>
+<ul>
+<li><a href="https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/index.html">UMLS Metathesaurus (NLM)</a></li>
+<li><a href="https://browser.ihtsdotools.org/">SNOMED CT Browser</a></li>
+<li><a href="https://www.cms.gov/medicare/coding-billing/icd-10-codes">ICD-10-CM Files (CMS)</a></li>
+<li><a href="https://loinc.org/downloads/">LOINC Downloads (Regenstrief)</a></li>
+<li><a href="https://www.nlm.nih.gov/research/umls/rxnorm/index.html">RxNorm (NLM)</a></li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/blogs/database/building-a-healthcare-knowledge-graph-on-amazon-neptune/">Building a Healthcare Knowledge Graph on AWS</a></li>
+<li><a href="https://aws.amazon.com/blogs/database/graph-data-modelling-with-amazon-neptune/">Graph Data Modeling with Amazon Neptune</a></li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Timeline</th>
+<th>What You Get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Basic</strong></td>
+<td>4-6 weeks</td>
+<td>Single terminology pair (ICD-10 to SNOMED), point lookup API, no caching</td>
+</tr>
+<tr>
+<td><strong>Production-ready</strong></td>
+<td>3-5 months</td>
+<td>Full UMLS integration, 5+ terminologies, caching layer, version management, curation UI</td>
+</tr>
+<tr>
+<td><strong>With variations</strong></td>
+<td>6-9 months</td>
+<td>NLP integration, FHIR ConceptMap exposure, automated mapping suggestions, multi-tenant support</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter13.08-medical-concept-normalization-mapping.html">Main Recipe 13.8</a> · <a href="chapter13.08-python-example.html">Python Example</a> · <a href="chapter13-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

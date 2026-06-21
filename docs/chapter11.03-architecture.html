@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 11.3 Architecture and Implementation: Prescription Refill Request Bot</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested nav-active" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-113-architecture-and-implementation-prescription-refill-request-bot">Recipe 11.3 Architecture and Implementation: Prescription Refill Request Bot</h1>
+<p><em>Companion to <a href="chapter11.03-prescription-refill-request-bot.html">Recipe 11.3: Prescription Refill Request Bot</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Bedrock for the LLM and the embeddings.</strong> Same selection criteria as recipes 11.1 and 11.2. The refill bot specifically benefits from a model with strong tool-use (function-calling) support and strong medical-terminology comprehension. Claude Sonnet-class or Nova Pro-class models for orchestration; smaller models for the lighter-weight intent-classification and medication-resolution sub-tasks. Bedrock provides HIPAA-eligible deployment under BAA.</p>
+<p><strong>Amazon Bedrock Knowledge Bases for the institutional content.</strong> The refill bot needs the same kind of curated content the FAQ and scheduling bots needed, plus a medication-information corpus: drug-interaction summaries, common-question answers per medication class, the practice's patient-facing medication-management content, the practice's refill protocol's patient-facing phrasings. Knowledge Bases provides the managed RAG layer.</p>
+<p><strong>Amazon Bedrock Agents for tool orchestration.</strong> Same selection rationale as recipe 11.2. The bot's tools (medication-list-lookup, medication-resolution, protocol-evaluate, e-prescribe, clinical-routing, lab-reconciliation, status-check) are defined as Agents action groups with OpenAPI schemas. The Agent handles the multi-step LLM-and-tool flow.</p>
+<p><strong>Amazon Bedrock Guardrails for scope and content filtering.</strong> Same purpose as recipes 11.1 and 11.2, with refill-specific configuration: clinical-advice filter aggressive, dose-change filter aggressive, controlled-substance auto-approval blocked, medication-discontinuation guidance blocked.</p>
+<p><strong>Amazon Comprehend Medical for medication entity extraction.</strong> Comprehend Medical's RxNorm-coded medication entity extraction supplements the LLM's medication-resolution. Where the LLM is uncertain about which medication the patient is referring to, Comprehend Medical's structured extraction can disambiguate or flag ambiguity.</p>
+<p><strong>AWS HealthLake (optional) for the FHIR-native chart context.</strong> When the institution stores FHIR data in HealthLake, the bot's medication-list-lookup, lab-reconciliation, and chart-context tools can query HealthLake directly. When the FHIR data lives in the institution's EHR, the bot's tools query the EHR's FHIR API instead. The bot's tool surface abstracts the underlying source.</p>
+<p><strong>Amazon API Gateway and AWS Lambda for the backend.</strong> Same chat-handler pattern as recipe 11.2. The tool Lambdas that integrate with the EHR's FHIR API and the e-prescribing platform run in VPC with controlled egress.</p>
+<p><strong>The institution's e-prescribing infrastructure (typically Surescripts-routed).</strong> The bot's e-prescribe tool wraps the practice's existing e-prescribing setup. The practice already has the Surescripts connection, the prescriber's DEA registration (where applicable for controlled substances, though the bot does not auto-approve those), and the dispensing-pharmacy directory. The bot's tool layer is a wrapper around the existing infrastructure, not a replacement.</p>
+<p><strong>The institution's clinical-decision-support layer (typically embedded in the EHR; CDS Hooks where available).</strong> The protocol-evaluate tool invokes the institution's CDS layer for drug-interaction screening, contraindication checks, and policy enforcement. Where the EHR exposes CDS Hooks, the integration uses the standard hook calls; otherwise, the protocol-evaluate tool calls the EHR's vendor-specific interaction-screening API.</p>
+<p><strong>Amazon DynamoDB for conversation state, session state, tool-call ledger, and co-signature queue.</strong> Four tables: <code>conversation-state</code>, <code>conversation-metadata</code>, <code>tool-call-ledger</code>, and <code>cosignature-queue</code> (the prescriber's pending-review queue with TTL on stale entries that should escalate).</p>
+<p><strong>Amazon S3 for source documents, the audit archive, and the refill-event journal.</strong> Same as recipe 11.2, plus a separately-governed refill-event journal that records every refill action's durable record. Object Lock in compliance mode for the medical-records retention window.</p>
+<p><strong>AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena.</strong> Same operational and audit primitives as recipe 11.2.</p>
+<p><strong>Amazon Connect for the live-agent handoff (optional).</strong> Same as recipe 11.2. The refill bot's handoff path drops the patient into the appropriate clinical-staff queue (nurse triage, prescriber inbox, pharmacy coordination) with the structured ticket attached.</p>
+<p><strong>AWS WAF in front of the chat endpoint.</strong> Same as recipe 11.2 with rate limits tuned for the refill use case. Refill endpoints have stricter limits than scheduling because refill abuse (a malicious actor attempting to trigger fraudulent refills under stolen identity) has higher consequences.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Channels
+      WEB[Web Chat Widget]
+      APP[Patient Portal Embed]
+      VOICE[Voice via Connect]
+    end
+
+    subgraph Edge
+      WAF[AWS WAF]
+      APIGW[API Gateway]
+    end
+
+    subgraph Conversation_Core
+      L_CHAT[Lambda&lt;br/&gt;chat handler]
+      L_INPUT[Lambda&lt;br/&gt;input screening&lt;br/&gt;+ crisis detection]
+      L_OUTPUT[Lambda&lt;br/&gt;output screening]
+      L_HANDOFF[Lambda&lt;br/&gt;handoff orchestration]
+      L_IDENTITY[Lambda&lt;br/&gt;identity verification]
+    end
+
+    subgraph LLM_and_Agent
+      AGENT[Bedrock Agents&lt;br/&gt;tool orchestration]
+      BEDROCK[Bedrock&lt;br/&gt;LLM generation]
+      KB[Bedrock Knowledge Bases&lt;br/&gt;institutional content]
+      GUARDRAILS[Bedrock Guardrails]
+      CM[Comprehend Medical&lt;br/&gt;medication entity&lt;br/&gt;extraction]
+    end
+
+    subgraph Refill_Tools
+      L_MED_LIST[Lambda&lt;br/&gt;medication_list_lookup]
+      L_MED_RESOLVE[Lambda&lt;br/&gt;medication_resolution]
+      L_PROTOCOL[Lambda&lt;br/&gt;protocol_evaluate]
+      L_LAB_RECON[Lambda&lt;br/&gt;lab_reconciliation]
+      L_INTERACTION[Lambda&lt;br/&gt;interaction_screening]
+      L_EPRESCRIBE[Lambda&lt;br/&gt;e_prescribe]
+      L_ROUTING[Lambda&lt;br/&gt;clinical_routing]
+      L_STATUS[Lambda&lt;br/&gt;refill_status_check]
+      L_PATIENT_LOOKUP[Lambda&lt;br/&gt;patient_lookup]
+    end
+
+    subgraph External_Integrations
+      EHR[(Institution&lt;br/&gt;EHR / FHIR&lt;br/&gt;endpoint)]
+      HEALTHLAKE[(AWS HealthLake&lt;br/&gt;optional)]
+      CDS[(EHR CDS&lt;br/&gt;Hooks layer)]
+      SURESCRIPTS[(Surescripts&lt;br/&gt;e-prescribing&lt;br/&gt;network)]
+      PHARMACY[(Dispensing&lt;br/&gt;Pharmacy)]
+    end
+
+    subgraph State_and_Audit
+      DDB_SESS[(DynamoDB&lt;br/&gt;conversation state)]
+      DDB_META[(DynamoDB&lt;br/&gt;conversation metadata)]
+      DDB_TOOL[(DynamoDB&lt;br/&gt;tool-call ledger)]
+      DDB_COSIGN[(DynamoDB&lt;br/&gt;co-signature queue)]
+      S3_AUDIT[(S3&lt;br/&gt;audit archive)]
+      S3_REFILL[(S3&lt;br/&gt;refill-event&lt;br/&gt;journal)]
+    end
+
+    subgraph Events_and_Analytics
+      EB[EventBridge]
+      KIN[Kinesis Firehose]
+      ATH[Athena]
+      CW[CloudWatch]
+      CT[CloudTrail]
+    end
+
+    subgraph Secrets_and_Keys
+      SM_SEC[(Secrets Manager)]
+      KMS[(AWS KMS)]
+    end
+
+    WEB --&gt; WAF
+    APP --&gt; WAF
+    VOICE --&gt; APIGW
+    WAF --&gt; APIGW
+    APIGW --&gt; L_CHAT
+    L_CHAT --&gt; L_INPUT
+    L_CHAT --&gt; L_IDENTITY
+    L_IDENTITY --&gt; L_PATIENT_LOOKUP
+    L_PATIENT_LOOKUP --&gt; EHR
+    L_CHAT --&gt; AGENT
+    AGENT --&gt; BEDROCK
+    AGENT --&gt; KB
+    AGENT --&gt; GUARDRAILS
+    AGENT --&gt; CM
+    AGENT --&gt; L_MED_LIST
+    AGENT --&gt; L_MED_RESOLVE
+    AGENT --&gt; L_PROTOCOL
+    AGENT --&gt; L_LAB_RECON
+    AGENT --&gt; L_INTERACTION
+    AGENT --&gt; L_EPRESCRIBE
+    AGENT --&gt; L_ROUTING
+    AGENT --&gt; L_STATUS
+    L_MED_LIST --&gt; EHR
+    L_MED_LIST --&gt; HEALTHLAKE
+    L_LAB_RECON --&gt; EHR
+    L_LAB_RECON --&gt; HEALTHLAKE
+    L_PROTOCOL --&gt; CDS
+    L_INTERACTION --&gt; CDS
+    L_EPRESCRIBE --&gt; SURESCRIPTS
+    SURESCRIPTS --&gt; PHARMACY
+    L_EPRESCRIBE --&gt; DDB_COSIGN
+    L_ROUTING --&gt; EHR
+    L_STATUS --&gt; SURESCRIPTS
+    L_STATUS --&gt; PHARMACY
+    L_CHAT --&gt; L_OUTPUT
+    L_OUTPUT --&gt; L_HANDOFF
+    L_CHAT --&gt; DDB_SESS
+    L_CHAT --&gt; DDB_META
+    AGENT --&gt; DDB_TOOL
+    L_CHAT --&gt; EB
+    EB --&gt; KIN
+    KIN --&gt; S3_AUDIT
+    L_EPRESCRIBE --&gt; S3_REFILL
+    L_ROUTING --&gt; S3_REFILL
+    S3_AUDIT --&gt; ATH
+    S3_REFILL --&gt; ATH
+    L_CHAT --&gt; CW
+    APIGW --&gt; CT
+    L_EPRESCRIBE --&gt; SM_SEC
+    L_PATIENT_LOOKUP --&gt; SM_SEC
+    KMS --&gt; S3_AUDIT
+    KMS --&gt; S3_REFILL
+    KMS --&gt; DDB_SESS
+    KMS --&gt; DDB_META
+    KMS --&gt; DDB_TOOL
+    KMS --&gt; DDB_COSIGN
+    KMS --&gt; SM_SEC
+
+    style AGENT fill:#fcf,stroke:#333
+    style BEDROCK fill:#fcf,stroke:#333
+    style KB fill:#fcf,stroke:#333
+    style GUARDRAILS fill:#fcf,stroke:#333
+    style CM fill:#fcf,stroke:#333
+    style L_INPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_OUTPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_IDENTITY fill:#fcc,stroke:#900,stroke-width:3px
+    style L_PROTOCOL fill:#fcc,stroke:#900,stroke-width:3px
+    style EHR fill:#ccf,stroke:#333
+    style SURESCRIPTS fill:#ccf,stroke:#333
+    style DDB_TOOL fill:#9ff,stroke:#333
+    style DDB_COSIGN fill:#9ff,stroke:#333
+    style S3_REFILL fill:#cfc,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Bedrock (with Agents, Knowledge Bases, Guardrails, and a foundation model selected for tool-use plus an embedding model for the institutional corpus), AWS Lambda, Amazon API Gateway, AWS WAF, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon Comprehend Medical (for medication entity extraction). Optionally: AWS HealthLake (for FHIR-native chart context), Amazon Connect (for live-agent handoff and voice-channel hosting), Amazon QuickSight (for dashboards).</td>
+</tr>
+<tr>
+<td><strong>External Inputs</strong></td>
+<td>EHR with FHIR API access. The bot's tools wrap the institution's MedicationRequest, Observation (lab), Patient, AllergyIntolerance, and Condition resources. The institution's clinical-decision-support layer, accessible through CDS Hooks where available or through a vendor-specific interaction-screening API otherwise. The institution's e-prescribing setup (typically Surescripts-routed). The institution's pharmacy directory and the patient's preferred-pharmacy mappings. The institution's refill protocol, formally documented and converted to code by the engineering team in collaboration with clinical leadership. The protocol covers per-medication-class auto-approval rules, monitoring requirements, dosing rules, prescriber-authority rules, controlled-substance handling, and exceptions. Standing-order documentation from the medical leadership delegating refill authority to the bot under defined conditions. The institution's medication-information corpus (curated from a clinical reference like RxNorm or FDB, or licensed from a vendor like Lexicomp or First Databank). The institution's controlled-substance schedule mapping per medication. Validation set of representative refill conversations covering the institution's medication catalog.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege roles. The protocol-evaluate Lambda has read-only access to the patient's chart context and the protocol artifact; it has no e-prescribing permission. The e-prescribe Lambda has the specific permission to invoke the e-prescribing platform; it does not have permission to read the patient's full chart. Separation of concerns by Lambda role limits the blast radius of any single Lambda's compromise. The medication-list-lookup Lambda has read-only access to MedicationRequest. The lab-reconciliation Lambda has read-only access to Observation. The clinical-routing Lambda has permission to write to the appropriate clinical inbox in the EHR. Resource-based policies on each Lambda pin the invoking principal to the production agent or API Gateway stage ARN.</td>
+</tr>
+<tr>
+<td><strong>BAA and Compliance</strong></td>
+<td>AWS BAA signed. Verify Amazon Bedrock (with the specific models and the Agents service in scope), Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Comprehend Medical, and HealthLake (where used) are HIPAA-eligible at build time. EHR vendor agreement: confirm the institution's data-use agreement permits the bot's read-and-write integration with MedicationRequest. E-prescribing platform agreement: confirm the platform supports automated submissions under the prescriber's delegation. Surescripts conformance for any e-prescribing transactions. Audit retention policy reviewed by the privacy officer and the medical-records team. The refill-event journal retention floor is the longest of HIPAA's six-year minimum, the state-specific medical-records retention rules, the state-specific PDMP and pharmacy-record retention rules where applicable, and the institutional regulatory floor.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Source-document bucket: SSE-KMS with customer-managed keys, versioning enabled. Audit-archive and refill-event-journal buckets: SSE-KMS with customer-managed keys, Object Lock in compliance mode for the retention window, lifecycle to S3 Glacier Deep Archive after 90 days. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all integrations with the EHR, the CDS layer, the e-prescribing platform, and the pharmacy. The vector store under Knowledge Bases encrypted with customer-managed KMS keys. Different KMS key per data class for blast-radius containment (conversation-state vs refill-event-journal vs audit-archive).</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: tool Lambdas that call the EHR, CDS layer, and e-prescribing platform run in VPC with controlled egress. PrivateLink to the EHR or CDS endpoints where supported; tightly-scoped NAT path with allow-list otherwise. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, HealthLake (where used), and Comprehend Medical so the back-office Lambdas do not need public-internet egress for AWS-internal calls. Endpoint policies pin access to the specific resources the bot uses. The patient-facing edge (API Gateway, WAF) is public by design; the EHR and e-prescribing traffic is private.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the audit-archive S3 bucket, the refill-event-journal S3 bucket, the source-document S3 bucket, the DynamoDB conversation, tool-call, and co-signature tables, the Secrets Manager secrets, and the customer-managed KMS keys. Bedrock and Bedrock Agents invocations logged with metadata. Lambda invocations logged. API Gateway access logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longest of HIPAA's six-year minimum, state medical-records retention rules, and the institutional regulatory floor.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthetic patient refill requests stratified by intent (refill, status, cancel), by medication class (covering the institution's catalog), by complexity (auto-approve, route-to-prescriber, route-with-monitoring-due, deny, controlled-substance-route), and by edge case (medication-name ambiguity, discontinued medications, specialist medications, early refills, abuse signals). Synthetic patient identities and synthetic chart contexts. Public clinical-vocabulary lists (RxNorm) for medication-resolution validation. Crisis-detection validation requires carefully-constructed test utterances. Test e-prescribing endpoint in a non-production environment that mimics Surescripts behavior without actually e-prescribing. Test EHR environment with synthetic medication lists, lab results, and prescriber data.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a mid-sized institution scale (twenty-five thousand refill conversations per month, of which roughly 60% auto-approve through the bot, 25% route to clinical staff with structured context, 10% deny with reason, 5% abandon mid-conversation; average 5 turns per conversation; average 1,000 tokens of prompt and 250 tokens of response per turn for the orchestration model plus medication-list, protocol-evaluate, and tool-call overhead): Bedrock LLM invocations typically $0.01-0.05 per refill conversation for a Sonnet-class orchestration model, totaling approximately $5,000-25,000 per year. Bedrock Agents and Knowledge Bases hosting plus the underlying vector store typically $2,000-8,000 per year. Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena total approximately $5,000-18,000 per year combined. Comprehend Medical typically $500-2,500 per year for the medication-extraction volume. AWS HealthLake (when used as the FHIR source) typically $5,000-25,000 per year depending on the data volume. Total AWS infrastructure typically $15,000-80,000 per year at this scale. The infrastructure cost is dominated by the LLM invocation volume, the Knowledge Bases hosting, and HealthLake (when used). The per-refill infrastructure cost is small relative to the operational savings versus nurse-and-prescriber-handled refill processing.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>LLM for orchestration and response generation; embedding model for the institutional corpus</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Agents</strong></td>
+<td>Tool orchestration: define the refill tools as action groups, manage the multi-step LLM-and-tool flow</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Knowledge Bases</strong></td>
+<td>Managed RAG over institutional content (medication-information corpus, refill protocol's patient-facing phrasings, common-question answers per medication class)</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Guardrails</strong></td>
+<td>Content filtering for clinical advice, dose changes, controlled-substance auto-approval, off-scope topics</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Medication entity extraction with RxNorm coding for medication-resolution disambiguation</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Chat handler, input/output screening, identity verification, and tool implementations (medication-list-lookup, medication-resolution, protocol-evaluate, lab-reconciliation, interaction-screening, e-prescribe, clinical-routing, refill-status-check, patient-lookup)</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Public-facing chat endpoint for web and app channels</td>
+</tr>
+<tr>
+<td><strong>AWS WAF</strong></td>
+<td>Rate limiting, bot detection, common attack patterns (with stricter limits on refill endpoints than scheduling endpoints)</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>conversation-state, conversation-metadata, tool-call-ledger, co-signature queue</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Source documents (institutional knowledge), audit archive (conversations), refill-event journal (durable refill records)</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys per data class</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Credentials for the EHR, CDS layer, e-prescribing platform, and pharmacy integrations</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics (auto-approval rate per medication class, time-to-completion, co-signature backlog, identity-verification success, tool-call success per tool, per-cohort slices); alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>API-level audit logging</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Refill-event bus for cross-system event flow (refill_requested, refill_auto_approved, refill_routed, refill_denied, refill_failed, cosignature_pending, cosignature_completed)</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Streaming audit and telemetry delivery</td>
+</tr>
+<tr>
+<td><strong>AWS Glue Data Catalog + Amazon Athena</strong></td>
+<td>SQL access to audit and telemetry</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake (optional)</strong></td>
+<td>FHIR-native chart context (MedicationRequest, Observation, AllergyIntolerance, Condition) when the institution stores FHIR data in HealthLake</td>
+</tr>
+<tr>
+<td><strong>Amazon Connect (optional)</strong></td>
+<td>Live-agent handoff channel; voice-channel hosting for the refill bot</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="pseudocode-walkthrough">Pseudocode Walkthrough</h3>
+<p><strong>Step 1: Receive the chat message, bootstrap the session, and run input safety screening.</strong> Same primitive as recipes 11.1 and 11.2. Crisis detection is especially important in refill contexts because patients sometimes disclose overdose, misuse, or self-harm intent during a refill conversation (&quot;I took double yesterday because I was upset&quot;). Skip the screening and a crisis signal is lost in the refill flow.</p>
+<pre class="code code-plain"><code>ON receive_message(channel, channel_session_id, user_message,
+                  auth_context):
+    // Step 1A: identify or create the session.
+    session = conversation_state_table.get_or_create({
+        channel: channel,
+        channel_session_id: channel_session_id,
+        auth_context: auth_context
+    })
+
+    // Step 1B: on the first message, send the
+    // refill-bot greeting and disclosure.
+    IF session.message_count == 0:
+        attach_greeting_and_disclosure = true
+        EventBridge.PutEvents([{
+            source: &quot;refill_bot&quot;,
+            detail_type: &quot;conversation_started&quot;,
+            detail: {
+                session_id: session.id,
+                channel: channel,
+                authenticated:
+                    auth_context.authenticated
+            }
+        }])
+
+    // Step 1C: persist the user&#x27;s message.
+    conversation_metadata_table.append_turn(
+        session_id: session.id,
+        turn: {
+            speaker: &quot;user&quot;,
+            text: user_message,
+            timestamp: now()
+        })
+
+    // Step 1D: run the same input-screening primitive
+    // as recipes 11.1 and 11.2. Refill-context crisis
+    // signals (overdose disclosure, misuse, self-
+    // harm) take precedence over everything else.
+    screening_result = screen_input(
+        session_id: session.id,
+        user_message: user_message,
+        language: session.language,
+        domain: &quot;refill&quot;)
+
+    IF screening_result.action != &quot;proceed&quot;:
+        return handle_screening_action(
+            session_id: session.id,
+            screening_result: screening_result)
+
+    // Step 1E: continue to intent classification.
+    return handle_message(
+        session_id: session.id,
+        user_message: user_message,
+        attach_greeting: attach_greeting_and_disclosure)
+</code></pre>
+<p><strong>Step 2: Classify intent and route to the appropriate flow or handoff.</strong> The refill bot's intent set is narrower than the scheduling bot's: request_refill, check_refill_status, cancel_refill_request, medication_question, medication_change (out of scope), clinical_question (out of scope), controlled_substance_request (route to clinician), out_of_scope. Skip the explicit out-of-scope handling and the LLM may attempt to answer a clinical question or process a dose-change request, both of which are exactly the failure modes the system is supposed to prevent.</p>
+<pre class="code code-plain"><code>FUNCTION handle_message(session_id, user_message,
+                        attach_greeting):
+    classification = classify_refill_intent(
+        user_message: user_message,
+        recent_turns: conversation_metadata_table
+            .recent_turns(session_id, k: 4),
+        language: session.language)
+
+    IF classification.confidence &lt; INTENT_CONFIDENCE_THRESHOLD:
+        return ask_clarifying_question(
+            session_id: session_id,
+            language: session.language)
+
+    // Step 2A: out-of-scope handling.
+    IF classification.intent == &quot;clinical_question&quot;:
+        return handoff_to_target(
+            session_id: session_id,
+            target: &quot;nurse_triage&quot;,
+            reason: &quot;clinical_content_detected&quot;)
+
+    IF classification.intent == &quot;medication_change&quot;:
+        // Asking to start, stop, or change therapy
+        // is not refill scope. Always route to
+        // clinical staff.
+        return handoff_to_target(
+            session_id: session_id,
+            target: &quot;nurse_triage&quot;,
+            reason: &quot;medication_change_request&quot;)
+
+    IF classification.intent == &quot;scheduling_request&quot;:
+        return handoff_to_target(
+            session_id: session_id,
+            target: &quot;scheduling_bot&quot;,
+            reason: &quot;scheduling_intent&quot;)
+
+    IF classification.intent == &quot;general_question&quot;:
+        return handoff_to_target(
+            session_id: session_id,
+            target: &quot;faq_bot&quot;,
+            reason: &quot;informational_intent&quot;)
+
+    IF classification.intent == &quot;out_of_scope&quot;:
+        return handoff_to_target(
+            session_id: session_id,
+            target: &quot;live_agent&quot;,
+            reason: &quot;scope_violation&quot;)
+
+    // Step 2B: in-scope. The refill flow needs
+    // identity verification before any action that
+    // touches the patient&#x27;s medication record.
+    return route_to_refill_flow(
+        session_id: session_id,
+        intent: classification.intent,
+        extracted_parameters:
+            classification.extracted_parameters)
+</code></pre>
+<p><strong>Step 3: Verify identity at the assurance level appropriate for refill actions.</strong> Refills generally require a higher assurance floor than scheduling because the consequence of a wrong action is therapeutic, not just administrative. Many institutions choose to limit unauthenticated paths to status-check intents only. Skip the higher floor and the bot may take medication actions on the wrong patient's record.</p>
+<pre class="code code-plain"><code>FUNCTION verify_identity(session_id, intent, auth_context):
+    // Step 3A: short-circuit when authenticated.
+    IF auth_context.authenticated:
+        session.verified_patient_id =
+            auth_context.patient_id
+        session.assurance_level = &quot;authenticated&quot;
+        return { action: &quot;verified&quot; }
+
+    // Step 3B: refill-action intents may require
+    // authenticated session.
+    IF intent IN [
+        &quot;request_refill&quot;,
+        &quot;cancel_refill_request&quot;
+    ] AND REQUIRE_AUTHENTICATED_FOR_REFILL:
+        return {
+            action: &quot;require_portal_login&quot;,
+            response: REQUIRE_PORTAL_LOGIN_TEMPLATE
+        }
+
+    // Step 3C: collect identifiers conversationally
+    // for status-check or other allowed unauthenticated
+    // intents.
+    required_assurance =
+        IDENTITY_POLICY.lookup(intent, channel)
+    identifiers = collect_identifiers_from_conversation(
+        session_id: session_id,
+        required_assurance: required_assurance)
+
+    IF identifiers.incomplete:
+        return {
+            action: &quot;ask_for_more_info&quot;,
+            missing: identifiers.missing_factors
+        }
+
+    // Step 3D: invoke patient_lookup tool.
+    lookup_result = patient_lookup_tool.invoke({
+        name: identifiers.name,
+        date_of_birth: identifiers.date_of_birth,
+        confirmation_factor:
+            identifiers.confirmation_factor
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;patient_lookup&quot;,
+        arguments: redact_sensitive(identifiers),
+        result_summary: {
+            match_count: lookup_result.match_count,
+            confidence: lookup_result.confidence
+        })
+
+    IF lookup_result.match_count != 1
+       OR lookup_result.confidence
+          &lt; required_assurance.threshold:
+        return handle_identity_verification_failure(
+            session_id: session_id,
+            lookup_result: lookup_result,
+            required_assurance: required_assurance)
+
+    session.verified_patient_id =
+        lookup_result.patient_id
+    session.assurance_level =
+        required_assurance.level
+    return { action: &quot;verified&quot; }
+</code></pre>
+<p><strong>Step 4: Pull the patient's structured medication list and resolve the patient's free-text descriptor against it.</strong> Once identity is verified, the bot fetches the medication list from the EHR via FHIR. The medication-resolution step uses the LLM with the medication list as context to map the patient's descriptor (&quot;my metformin,&quot; &quot;the white round one,&quot; &quot;the diabetes pill&quot;) to a specific medication record. Skip this step and the bot acts on a medication that may not match what the patient meant.</p>
+<pre class="code code-plain"><code>FUNCTION resolve_medication(session_id, intent,
+                           extracted_parameters):
+    // Step 4A: pull the structured medication list.
+    med_list_result = medication_list_lookup_tool.invoke({
+        patient_id: session.verified_patient_id,
+        active_only: true
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;medication_list_lookup&quot;,
+        arguments: {
+            patient_id_present: true,
+            active_only: true
+        },
+        result_summary: {
+            medication_count:
+                len(med_list_result.medications)
+        })
+
+    IF len(med_list_result.medications) == 0:
+        // The patient has no active medications on
+        // file. This is unusual; route to clinical
+        // staff for chart reconciliation.
+        return handoff_to_target(
+            session_id: session_id,
+            target: &quot;nurse_triage&quot;,
+            reason: &quot;no_active_medications_on_file&quot;)
+
+    // Step 4B: resolve the patient&#x27;s descriptor.
+    resolution_result = medication_resolution_tool.invoke({
+        patient_descriptor:
+            extracted_parameters.medication_descriptor,
+        medication_list: med_list_result.medications,
+        language: session.language
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;medication_resolution&quot;,
+        arguments: {
+            descriptor:
+                extracted_parameters.medication_descriptor
+        },
+        result_summary: {
+            resolution_status:
+                resolution_result.status,
+            resolved_med_id:
+                resolution_result.medication_id,
+            confidence: resolution_result.confidence
+        })
+
+    // Step 4C: handle resolution outcomes.
+    IF resolution_result.status == &quot;ambiguous&quot;:
+        // The patient&#x27;s descriptor matches multiple
+        // medications. Ask to clarify.
+        return {
+            action: &quot;ask_clarification&quot;,
+            response: build_med_clarification_prompt(
+                candidates:
+                    resolution_result.candidates,
+                language: session.language)
+        }
+
+    IF resolution_result.status == &quot;no_match&quot;:
+        // The patient mentioned a medication that
+        // is not on their list. Could be a
+        // discontinued medication, an outside
+        // prescriber&#x27;s medication, a misremembering,
+        // or a medication-naming confusion.
+        return handle_no_match_medication(
+            session_id: session_id,
+            descriptor:
+                extracted_parameters.medication_descriptor)
+
+    IF resolution_result.status == &quot;discontinued_match&quot;:
+        // The medication exists on the patient&#x27;s
+        // record but is marked discontinued.
+        // Route to clinical for reconciliation
+        // rather than auto-acting.
+        return handoff_to_target(
+            session_id: session_id,
+            target: &quot;nurse_triage&quot;,
+            reason: &quot;discontinued_medication_request&quot;,
+            context: {
+                medication: resolution_result.medication
+            })
+
+    // Step 4D: check prescriber authority.
+    IF NOT prescriber_authority_check(
+        medication: resolution_result.medication,
+        practice_context: session.practice_context):
+        // Specialist&#x27;s medication; route to the
+        // specialist&#x27;s office or coordinated-care
+        // pathway with transparent explanation.
+        return handle_specialist_medication(
+            session_id: session_id,
+            medication: resolution_result.medication)
+
+    session.resolved_medication =
+        resolution_result.medication
+    return { action: &quot;resolved&quot; }
+</code></pre>
+<p><strong>Step 5: Evaluate the practice's refill protocol against the resolved medication and chart context.</strong> This is the bot's clinical-decision step. The protocol-evaluate tool reads the necessary chart context (active diagnoses, allergies, recent lab values, blood pressure history, other medications, last-fill date, refills-remaining) and runs the practice's protocol. The protocol returns a structured decision with reasoning. Skip this step and the bot makes refill decisions without a deterministic, auditable, version-stamped clinical rationale.</p>
+<pre class="code code-plain"><code>FUNCTION evaluate_protocol(session_id):
+    medication = session.resolved_medication
+
+    // Step 5A: lab reconciliation.
+    // Reconcile any pending outside-lab results
+    // before evaluating monitoring requirements,
+    // so that a recent lab does not get missed.
+    lab_recon_result = lab_reconciliation_tool.invoke({
+        patient_id: session.verified_patient_id,
+        medication_class: medication.class,
+        lookback_days: 365
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;lab_reconciliation&quot;,
+        arguments: {
+            medication_class: medication.class,
+            lookback_days: 365
+        },
+        result_summary: {
+            relevant_lab_count:
+                len(lab_recon_result.relevant_labs),
+            most_recent_lab_date:
+                lab_recon_result.most_recent_date
+        })
+
+    // Step 5B: drug-interaction screening.
+    interaction_result = interaction_screening_tool.invoke({
+        patient_id: session.verified_patient_id,
+        medication: medication,
+        active_medications: session.active_medications,
+        allergies: session.patient_allergies,
+        conditions: session.patient_conditions
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;interaction_screening&quot;,
+        arguments: {
+            medication_id: medication.id
+        },
+        result_summary: {
+            interactions_found:
+                len(interaction_result.interactions),
+            severity:
+                max_severity(
+                    interaction_result.interactions)
+        })
+
+    // Step 5C: protocol evaluation.
+    protocol_result = protocol_evaluate_tool.invoke({
+        patient_id: session.verified_patient_id,
+        medication: medication,
+        chart_context: {
+            active_medications: session.active_medications,
+            allergies: session.patient_allergies,
+            conditions: session.patient_conditions,
+            relevant_labs: lab_recon_result.relevant_labs,
+            blood_pressure_history:
+                session.blood_pressure_history,
+            last_visit_date: session.last_visit_date
+        },
+        request_context: {
+            timing_since_last_fill:
+                medication.days_since_last_fill,
+            refills_remaining:
+                medication.refills_remaining,
+            patient_stated_context:
+                session.patient_stated_context
+        },
+        protocol_version: ACTIVE_PROTOCOL_VERSION
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;protocol_evaluate&quot;,
+        arguments: {
+            medication_id: medication.id,
+            protocol_version:
+                ACTIVE_PROTOCOL_VERSION
+        },
+        result_summary: {
+            disposition: protocol_result.disposition,
+            rules_fired:
+                protocol_result.rules_fired,
+            protocol_version:
+                protocol_result.protocol_version
+        })
+
+    // Step 5D: controlled-substance triple-check.
+    // The protocol_evaluate already returns
+    // controlled_substance_always_route for any
+    // controlled-substance request. Verify the
+    // disposition matches and never override.
+    IF medication.controlled_substance_schedule
+       IN [&quot;II&quot;, &quot;III&quot;, &quot;IV&quot;, &quot;V&quot;]:
+        IF protocol_result.disposition !=
+           &quot;controlled_substance_always_route&quot;:
+            // Defense-in-depth: protocol returned
+            // the wrong disposition for a controlled
+            // substance. Force the safe path and
+            // alert.
+            alarm_protocol_misclassification(
+                session_id: session_id,
+                medication: medication,
+                returned_disposition:
+                    protocol_result.disposition)
+            protocol_result.disposition =
+                &quot;controlled_substance_always_route&quot;
+
+    session.protocol_decision = protocol_result
+    return { action: &quot;protocol_evaluated&quot; }
+</code></pre>
+<p><strong>Step 6: Execute the disposition (auto-approve, route, deny) through the appropriate transactional tool.</strong> Each disposition has its own tool path: e-prescribe for auto-approve, clinical-routing for route-to-clinician, journal-only for deny. The pharmacy selection happens within auto-approve. Skip the disposition-specific paths and the bot conflates the dispositions and either e-prescribes things it should not or fails to e-prescribe things it should.</p>
+<pre class="code code-plain"><code>FUNCTION execute_disposition(session_id):
+    decision = session.protocol_decision
+    medication = session.resolved_medication
+
+    IF decision.disposition == &quot;auto_approve&quot;:
+        // Step 6A: select dispensing pharmacy.
+        pharmacy_selection =
+            select_dispensing_pharmacy(
+                medication: medication,
+                patient_pharmacies:
+                    session.patient_pharmacies,
+                patient_preference:
+                    session.patient_stated_pharmacy)
+
+        // Step 6B: e-prescribe.
+        eprescribe_result = e_prescribe_tool.invoke({
+            patient_id: session.verified_patient_id,
+            medication: medication,
+            pharmacy: pharmacy_selection.pharmacy,
+            quantity: medication.standard_quantity,
+            days_supply: medication.standard_days_supply,
+            refills_authorized: medication.standard_refills,
+            prescribing_provider:
+                medication.prescribing_provider_id,
+            authorization_basis: {
+                bot_initiated: true,
+                protocol_version:
+                    decision.protocol_version,
+                rules_fired: decision.rules_fired
+            }
+        })
+
+        audit_tool_call(
+            session_id: session_id,
+            tool: &quot;e_prescribe&quot;,
+            arguments: {
+                medication_id: medication.id,
+                pharmacy_id:
+                    pharmacy_selection.pharmacy.id
+            },
+            result_summary: {
+                outcome: eprescribe_result.outcome,
+                prescription_id:
+                    eprescribe_result.prescription_id
+            })
+
+        IF eprescribe_result.outcome != &quot;transmitted&quot;:
+            return handle_eprescribe_failure(
+                session_id: session_id,
+                failure: eprescribe_result)
+
+        // Step 6C: enqueue prescriber co-signature.
+        cosignature_queue.enqueue({
+            prescription_id:
+                eprescribe_result.prescription_id,
+            prescriber_id:
+                medication.prescribing_provider_id,
+            patient_id:
+                session.verified_patient_id,
+            medication_id: medication.id,
+            protocol_version:
+                decision.protocol_version,
+            rules_fired: decision.rules_fired,
+            data_consulted: decision.data_consulted,
+            sla_deadline:
+                now() + COSIGN_SLA_HOURS_AS_DELTA,
+            session_id: session_id
+        })
+
+        // Step 6D: write the refill-event journal.
+        refill_event_journal.write({
+            event_type: &quot;refill_auto_approved&quot;,
+            event_id: generate_event_id(),
+            patient_id: session.verified_patient_id,
+            medication_id: medication.id,
+            medication_name: medication.name,
+            medication_strength: medication.strength,
+            prescription_id:
+                eprescribe_result.prescription_id,
+            dispensing_pharmacy_id:
+                pharmacy_selection.pharmacy.id,
+            prescribing_provider_id:
+                medication.prescribing_provider_id,
+            protocol_version:
+                decision.protocol_version,
+            rules_fired: decision.rules_fired,
+            data_consulted_summary:
+                decision.data_consulted,
+            session_id: session_id,
+            initiated_at: now()
+        })
+
+        // Step 6E: emit lifecycle event.
+        EventBridge.PutEvents([{
+            source: &quot;refill_bot&quot;,
+            detail_type: &quot;refill_auto_approved&quot;,
+            detail: {
+                session_id: session_id,
+                prescription_id:
+                    eprescribe_result.prescription_id,
+                patient_id:
+                    session.verified_patient_id,
+                medication_class: medication.class,
+                channel: session.channel
+            }
+        }])
+
+        return {
+            action: &quot;auto_approved&quot;,
+            response: build_approval_response(
+                medication: medication,
+                pharmacy: pharmacy_selection.pharmacy,
+                prescription_id:
+                    eprescribe_result.prescription_id,
+                language: session.language)
+        }
+
+    IF decision.disposition IN [
+        &quot;route_to_prescriber&quot;,
+        &quot;route_with_monitoring_due&quot;,
+        &quot;route_with_clinical_question&quot;,
+        &quot;controlled_substance_always_route&quot;
+    ]:
+        return execute_clinical_routing(
+            session_id: session_id,
+            decision: decision)
+
+    IF decision.disposition == &quot;deny_with_reason&quot;:
+        return execute_denial(
+            session_id: session_id,
+            decision: decision)
+
+    // Defensive default: anything unexpected
+    // routes to clinical.
+    return execute_clinical_routing(
+        session_id: session_id,
+        decision: decision)
+
+FUNCTION execute_clinical_routing(session_id, decision):
+    medication = session.resolved_medication
+
+    // Package the structured ticket.
+    ticket = {
+        intent: &quot;refill_request&quot;,
+        patient_id: session.verified_patient_id,
+        medication: medication,
+        protocol_decision: decision,
+        patient_stated_context:
+            session.patient_stated_context,
+        patient_summary:
+            summarize_session(session_id),
+        urgency:
+            classify_routing_urgency(
+                medication: medication,
+                decision: decision)
+    }
+
+    routing_target =
+        ROUTING_POLICY.lookup(decision.disposition)
+    // E.g., route_to_prescriber -&gt; prescriber inbox;
+    // route_with_monitoring_due -&gt; nurse triage;
+    // controlled_substance_always_route -&gt; prescriber
+    // inbox with controlled-substance tag.
+
+    routing_result = clinical_routing_tool.invoke({
+        target: routing_target,
+        ticket: ticket
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;clinical_routing&quot;,
+        arguments: {
+            target: routing_target,
+            disposition: decision.disposition
+        },
+        result_summary: {
+            outcome: routing_result.outcome,
+            queue_position:
+                routing_result.queue_position,
+            estimated_sla:
+                routing_result.estimated_sla
+        })
+
+    refill_event_journal.write({
+        event_type: &quot;refill_routed_to_clinician&quot;,
+        event_id: generate_event_id(),
+        patient_id: session.verified_patient_id,
+        medication_id: medication.id,
+        protocol_version: decision.protocol_version,
+        disposition: decision.disposition,
+        rules_fired: decision.rules_fired,
+        routed_to: routing_target,
+        session_id: session_id,
+        initiated_at: now()
+    })
+
+    EventBridge.PutEvents([{
+        source: &quot;refill_bot&quot;,
+        detail_type: &quot;refill_routed&quot;,
+        detail: {
+            session_id: session_id,
+            patient_id: session.verified_patient_id,
+            disposition: decision.disposition,
+            routed_to: routing_target,
+            channel: session.channel
+        }
+    }])
+
+    return {
+        action: &quot;routed&quot;,
+        response: build_routing_response(
+            medication: medication,
+            disposition: decision.disposition,
+            routing_target: routing_target,
+            estimated_sla:
+                routing_result.estimated_sla,
+            language: session.language)
+    }
+</code></pre>
+<p><strong>Step 7: Handle status-check, cancel, and medication-question intents through their own paths.</strong> Status-check queries the e-prescribing platform and the pharmacy integration. Cancel reaches the existing pending refill request and revokes it (if it has not already been processed). Medication-question retrieves curated content from the medication-information knowledge base and answers within scope. Each path has its own tool calls and audit trail.</p>
+<pre class="code code-plain"><code>FUNCTION handle_status_check(session_id, extracted_parameters):
+    // Step 7A: resolve the medication or accept
+    // &quot;all my refills&quot; as the descriptor.
+    IF extracted_parameters.medication_descriptor:
+        resolution = resolve_medication(
+            session_id: session_id,
+            intent: &quot;check_refill_status&quot;,
+            extracted_parameters: extracted_parameters)
+        IF resolution.action != &quot;resolved&quot;:
+            return resolution
+        medication_filter =
+            session.resolved_medication
+
+    // Step 7B: query the e-prescribing platform.
+    status_result = refill_status_check_tool.invoke({
+        patient_id: session.verified_patient_id,
+        medication_id:
+            medication_filter.id IF medication_filter
+            ELSE null
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;refill_status_check&quot;,
+        arguments: {
+            medication_id:
+                medication_filter.id IF medication_filter
+                ELSE null
+        },
+        result_summary: {
+            pending_count:
+                status_result.pending_count,
+            most_recent_status:
+                status_result.most_recent_status
+        })
+
+    return {
+        action: &quot;status_returned&quot;,
+        response: build_status_response(
+            statuses: status_result.statuses,
+            language: session.language)
+    }
+
+FUNCTION handle_cancel_request(session_id,
+                                extracted_parameters):
+    // Find the pending request, verify it has not
+    // already been processed, revoke through the
+    // appropriate tool.
+    pending = find_pending_refill_request(
+        patient_id: session.verified_patient_id,
+        medication_descriptor:
+            extracted_parameters.medication_descriptor)
+
+    IF pending IS NULL:
+        return {
+            action: &quot;no_pending_request&quot;,
+            response:
+                NO_PENDING_REQUEST_TEMPLATE
+        }
+
+    IF pending.status == &quot;transmitted&quot;:
+        // Already gone to the pharmacy. Cancel
+        // requires pharmacy-side coordination,
+        // which is a clinical-routing case.
+        return execute_clinical_routing(
+            session_id: session_id,
+            decision: {
+                disposition:
+                    &quot;route_with_clinical_question&quot;,
+                rules_fired: [&quot;cancel_after_transmit&quot;],
+                data_consulted: { pending: pending },
+                protocol_version: ACTIVE_PROTOCOL_VERSION
+            })
+
+    cancel_result = cancel_refill_request_tool.invoke({
+        request_id: pending.request_id
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;cancel_refill_request&quot;,
+        arguments: {
+            request_id: pending.request_id
+        },
+        result_summary: {
+            outcome: cancel_result.outcome
+        })
+
+    refill_event_journal.write({
+        event_type: &quot;refill_request_cancelled&quot;,
+        event_id: generate_event_id(),
+        patient_id: session.verified_patient_id,
+        original_request_id: pending.request_id,
+        session_id: session_id,
+        initiated_at: now()
+    })
+
+    return {
+        action: &quot;cancelled&quot;,
+        response: CANCEL_CONFIRMED_TEMPLATE
+    }
+
+FUNCTION handle_medication_question(session_id,
+                                    extracted_parameters):
+    // Resolve the medication first; the question
+    // may be about a specific medication on the
+    // patient&#x27;s list.
+    resolution = resolve_medication(
+        session_id: session_id,
+        intent: &quot;medication_question&quot;,
+        extracted_parameters: extracted_parameters)
+
+    IF resolution.action != &quot;resolved&quot;:
+        return resolution
+
+    medication = session.resolved_medication
+
+    // Retrieve from the medication-information
+    // knowledge base. The bot answers from curated
+    // content, not from training data.
+    answer = knowledge_base.retrieve_and_answer(
+        question: extracted_parameters.question,
+        medication: medication,
+        language: session.language)
+
+    // Scope check: if the LLM tried to give clinical
+    // advice or recommend a dose change, replace
+    // with a refusal-and-handoff template.
+    IF detect_out_of_scope_clinical_content(
+        answer: answer):
+        return {
+            action: &quot;out_of_scope_handoff&quot;,
+            response:
+                CLINICAL_QUESTION_HANDOFF_TEMPLATE
+        }
+
+    return {
+        action: &quot;answered&quot;,
+        response: answer.text
+    }
+</code></pre>
+<p><strong>Step 8: Handle refill failures and partial-success cases without losing the patient's trust.</strong> Sometimes the e-prescribe transmission fails (the pharmacy is unreachable, the e-prescribing network has an outage, the prescription is rejected by the platform's validation). Sometimes the e-prescribe succeeds but the co-signature queue write fails. Sometimes the routing tool fails to enqueue the ticket. Each failure mode has its own recovery path. Skip the failure-specific handling and patients leave the conversation thinking the refill happened when it did not, or the refill happened twice because the bot retried after a partial success.</p>
+<pre class="code code-plain"><code>FUNCTION handle_eprescribe_failure(session_id, failure):
+    medication = session.resolved_medication
+
+    IF failure.outcome == &quot;pharmacy_unreachable&quot;:
+        // The pharmacy is offline. Queue the
+        // request for retry, surface to clinical
+        // staff, tell the patient honestly.
+        queue_for_eprescribe_retry(
+            session_id: session_id,
+            medication: medication)
+
+        refill_event_journal.write({
+            event_type: &quot;refill_eprescribe_queued_retry&quot;,
+            event_id: generate_event_id(),
+            patient_id: session.verified_patient_id,
+            medication_id: medication.id,
+            failure_reason: &quot;pharmacy_unreachable&quot;,
+            session_id: session_id,
+            initiated_at: now()
+        })
+
+        return {
+            action: &quot;queued_for_retry&quot;,
+            response: PHARMACY_UNREACHABLE_TEMPLATE
+        }
+
+    IF failure.outcome == &quot;validation_rejected&quot;:
+        // The e-prescribing platform rejected the
+        // submission for a structural reason
+        // (missing field, invalid pharmacy, etc.).
+        // Route to clinical staff for human review.
+        return execute_clinical_routing(
+            session_id: session_id,
+            decision: {
+                disposition:
+                    &quot;route_with_clinical_question&quot;,
+                rules_fired: [&quot;eprescribe_validation_rejected&quot;],
+                data_consulted: { failure: failure },
+                protocol_version: ACTIVE_PROTOCOL_VERSION
+            })
+
+    IF failure.outcome == &quot;transmission_error&quot;:
+        // Generic transmission failure. Queue for
+        // retry, surface to clinical, tell the
+        // patient.
+        queue_for_eprescribe_retry(
+            session_id: session_id,
+            medication: medication)
+
+        return {
+            action: &quot;queued_for_retry&quot;,
+            response: TRANSMISSION_ERROR_TEMPLATE
+        }
+
+    // Default: graceful handoff.
+    return {
+        action: &quot;generic_failure_handoff&quot;,
+        response: GENERIC_FAILURE_TEMPLATE
+    }
+</code></pre>
+<p><strong>Step 9: Run the same output safety screening as recipes 11.1 and 11.2, with refill-specific checks.</strong> The standard output checks (scope filter, hallucination check, vendor-managed guardrails) carry forward. The new checks: did the bot say a refill was sent when no e_prescribe call returned success? Did the bot mention a medication that is not on the patient's list? Did the bot indicate it processed a controlled-substance refill auto-approval? Skip these checks and a hallucinated success-confirmation results in a patient assuming their medication is on the way when it is not.</p>
+<pre class="code code-plain"><code>FUNCTION screen_output(session_id, response,
+                       tool_call_history):
+    // Step 9A: standard checks from recipes 11.1
+    // and 11.2.
+    standard_check = standard_output_screen.evaluate(
+        response: response,
+        session_context: session_context_for(
+            session_id))
+
+    IF standard_check.action != &quot;deliver&quot;:
+        return standard_check
+
+    // Step 9B: refill-specific hallucination check.
+    refill_claims = extract_refill_claims(response)
+    // E.g., &quot;I&#x27;ve sent your metformin refill to
+    // Walgreens on Main Street.&quot;
+
+    FOR claim IN refill_claims:
+        supporting_tool_call =
+            find_supporting_tool_call(
+                claim: claim,
+                tool_call_history: tool_call_history)
+
+        IF supporting_tool_call IS None
+           OR supporting_tool_call.tool != &quot;e_prescribe&quot;:
+            return {
+                action: &quot;replace_with_safe_response&quot;,
+                replacement:
+                    REFILL_CONFIRM_FAILED_TEMPLATE,
+                violation: &quot;unsupported_refill_claim&quot;
+            }
+
+        IF supporting_tool_call.outcome != &quot;transmitted&quot;:
+            return {
+                action: &quot;replace_with_safe_response&quot;,
+                replacement:
+                    REFILL_CONFIRM_FAILED_TEMPLATE,
+                violation:
+                    &quot;refill_claim_inconsistent_with_tool_result&quot;
+            }
+
+    // Step 9C: medication-list integrity check.
+    mentioned_medications =
+        extract_medication_mentions(response)
+    FOR med IN mentioned_medications:
+        IF NOT medication_in_list(
+            mentioned: med,
+            list: session.active_medications):
+            // The response mentions a medication
+            // not on the patient&#x27;s list. Replace
+            // with a safe template.
+            return {
+                action: &quot;replace_with_safe_response&quot;,
+                replacement:
+                    MEDICATION_REFERENCE_INVALID_TEMPLATE,
+                violation:
+                    &quot;medication_not_on_patient_list&quot;
+            }
+
+    // Step 9D: controlled-substance guardrail.
+    IF detect_controlled_substance_auto_approval(
+        response: response):
+        // Triple-defense: if the response indicates
+        // a controlled-substance auto-approval, force
+        // the safe routing path.
+        return {
+            action: &quot;replace_with_safe_response&quot;,
+            replacement:
+                CONTROLLED_SUBSTANCE_ROUTING_TEMPLATE,
+            violation:
+                &quot;controlled_substance_auto_approval_attempted&quot;
+        }
+
+    return {
+        action: &quot;deliver&quot;,
+        response: response
+    }
+</code></pre>
+<p><strong>Step 10: Persist the durable conversation record, the tool-call ledger, and the refill-event journal; emit telemetry; close the session.</strong> Same archive pattern as recipe 11.2 with the refill-event-journal addition. The conversation log captures the conversational details; the refill-event journal captures the durable medication-action records with retention sized to the institution's medical-records floor.</p>
+<pre class="code code-plain"><code>FUNCTION close_conversation_and_archive(session_id, reason):
+    state = conversation_state_table.get(session_id)
+    metadata =
+        conversation_metadata_table.get(session_id)
+    tool_calls =
+        tool_call_ledger.for_session(session_id)
+
+    // Step 10A: build the durable audit record.
+    audit_record = {
+        session_id: session_id,
+        channel: state.channel,
+        started_at: state.started_at,
+        ended_at: now(),
+        language: state.language,
+        verified_patient_id: state.verified_patient_id,
+        assurance_level: state.assurance_level,
+        identity_verification_outcome:
+            state.identity_verification_outcome,
+        intent_at_session: state.intent,
+        turns: [
+            redact_user_phi(turn)
+            for turn in metadata.turns
+        ],
+        tool_calls: [
+            redact_sensitive_args(call)
+            for call in tool_calls
+        ],
+        crisis_detected: state.crisis_detected,
+        scope_violations_caught:
+            state.scope_violation_count,
+        refills_auto_approved:
+            state.refills_auto_approved,
+        refills_routed_to_clinician:
+            state.refills_routed_to_clinician,
+        refills_denied: state.refills_denied,
+        refills_failed: state.refills_failed,
+        handoffs_offered: state.handoffs_offered,
+        handoffs_accepted: state.handoffs_accepted,
+        feedback: state.feedback_history,
+        active_model_id_at_session: state.model_id,
+        active_prompt_version_at_session:
+            state.prompt_version,
+        active_agent_version_at_session:
+            state.agent_version,
+        active_kb_version_at_session: state.kb_version,
+        active_protocol_version_at_session:
+            state.protocol_version,
+        cohort_axes: {
+            language: state.language,
+            channel: state.channel,
+            assurance_level: state.assurance_level,
+            authenticated_path:
+                state.auth_context.authenticated,
+            age_cohort: state.age_cohort
+        },
+        close_reason: reason
+    }
+
+    audit_archive_kinesis_firehose.put(audit_record)
+
+    // Step 10B: emit lifecycle event.
+    EventBridge.PutEvents([{
+        source: &quot;refill_bot&quot;,
+        detail_type: &quot;conversation_closed&quot;,
+        detail: {
+            session_id: session_id,
+            channel: state.channel,
+            disposition: state.final_disposition,
+            // auto_approved | routed | denied |
+            // status_returned | answered |
+            // escalated | abandoned | crisis_routed
+            turn_count: len(metadata.turns),
+            refill_completed:
+                state.refills_auto_approved &gt; 0
+        }
+    }])
+
+    // Step 10C: per-cohort metrics.
+    cloudwatch.put_metric(
+        namespace: &quot;RefillBot&quot;,
+        metric_name: &quot;RefillAutoApproved&quot;,
+        value: 1 if state.refills_auto_approved &gt; 0
+               else 0,
+        dimensions: {
+            channel: state.channel,
+            language: state.language,
+            assurance_level: state.assurance_level,
+            medication_class: state.medication_class
+        })
+
+    cloudwatch.put_metric(
+        namespace: &quot;RefillBot&quot;,
+        metric_name: &quot;TimeToCompletion&quot;,
+        value: state.time_to_completion_seconds,
+        dimensions: {
+            channel: state.channel,
+            language: state.language,
+            disposition: state.final_disposition
+        })
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter11.03-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample conversation (illustrative):</strong></p>
+<pre class="code code-plain"><code>Bot:     Hi Eleanor, I&#x27;m Riverside Clinic&#x27;s refill
+         assistant. I can help you request refills,
+         check status on requests you&#x27;ve already made,
+         and answer common medication questions. I
+         can&#x27;t change your medications or doses, and
+         for clinical questions I&#x27;ll connect you to
+         the nursing team. What can I help with?
+
+Patient: I need a refill on my metformin
+
+Bot:     I see your metformin 500 mg twice daily,
+         last filled at Walgreens on Main Street on
+         March 12th. Let me check the protocol for
+         this one... Your most recent A1c was 7.1
+         from April 28th, which is in range for
+         maintenance. I&#x27;m sending the refill to
+         Walgreens on Main Street: 90-day supply
+         with three refills authorized. Walgreens
+         will text you when it&#x27;s ready, usually
+         later today. Confirmation number is
+         RX-2026-7798231. Anything else?
+
+Patient: thanks, also can you check on the
+         atorvastatin? I sent in a request last week
+
+Bot:     Yes, I see one pending atorvastatin request
+         from May 15th. It went to Dr. Chen&#x27;s queue
+         on the 16th and is waiting on her review;
+         that&#x27;s normal because your last lipid panel
+         was over a year ago, so the protocol holds
+         for prescriber review. I&#x27;ll add a note that
+         you asked about it. The clinic&#x27;s typical
+         response on these is two business days.
+         Want me to also schedule the lipid panel
+         that&#x27;s due?
+
+Patient: yes please
+
+Bot:     Got it. I&#x27;ll connect you to the scheduling
+         assistant to set up the lipid panel. One
+         moment.
+
+         [handoff to scheduling bot]
+</code></pre>
+<p><strong>Sample audit record (illustrative):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;session_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill-2c1f8e3d-9a4b-4e2c-8f1a-3d2b9c4f8a1e&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient_portal_embed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;started_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:17:22Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ended_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:18:31Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en-US&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;verified_patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient-internal-id-redacted-in-log-readback&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;assurance_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;authenticated&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;identity_verification_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;authenticated_session&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intent_at_session&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;request_refill&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tool_calls&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;medication_list_lookup&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;invoked_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:17:31Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;result_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;medication_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;latency_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">318</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;medication_resolution&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;invoked_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:17:34Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;arguments_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;descriptor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;metformin&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;result_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;resolution_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;match&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;resolved_med_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;med-internal-id&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.99</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;latency_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">287</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab_reconciliation&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;invoked_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:17:37Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;arguments_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;medication_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biguanide&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;lookback_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">365</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;result_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;relevant_lab_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;most_recent_lab_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-28&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;latency_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;interaction_screening&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;invoked_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:17:39Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;result_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;interactions_found&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;latency_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">524</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;protocol_evaluate&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;invoked_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:17:41Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;arguments_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;medication_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;med-internal-id&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;protocol_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill-protocol-v4.2&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;result_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;disposition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;auto_approve&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;rules_fired&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="s2">&quot;metformin_maintenance_a1c_in_range&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="s2">&quot;no_dose_change_in_3_months&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="s2">&quot;established_prescriber_authority&quot;</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;protocol_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill-protocol-v4.2&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;latency_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">198</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;e_prescribe&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;invoked_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T09:17:48Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;arguments_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;medication_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;med-internal-id&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;pharmacy_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;walgreens-main-st-12345&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;result_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transmitted&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;prescription_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RX-2026-7798231&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;latency_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1147</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;crisis_detected&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scope_violations_caught&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;refills_auto_approved&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;refills_routed_to_clinician&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;refills_denied&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;refills_failed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;handoffs_offered&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;handoffs_accepted&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;active_model_id_at_session&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anthropic.claude-sonnet-...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;active_prompt_version_at_session&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill-bot-v3.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;active_agent_version_at_session&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill-agent-v2.4&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;active_protocol_version_at_session&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill-protocol-v4.2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cohort_axes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en-US&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient_portal_embed&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;assurance_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;authenticated&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;authenticated_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;65_plus&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;final_disposition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;auto_approved&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;duration_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">69</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;close_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user_session_end&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Old voicemail-and-callback</th>
+<th>Modern conversational refill bot</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Median time-to-completion (auto-approved cases)</td>
+<td>24-72 hours (multiple business days)</td>
+<td>30-90 seconds</td>
+</tr>
+<tr>
+<td>Median time-to-completion (routed cases)</td>
+<td>Not measurably different from voicemail</td>
+<td>24-48 hours (still within clinical SLA but with structured ticket)</td>
+</tr>
+<tr>
+<td>Refill request abandonment rate</td>
+<td>Difficult to measure (patient may call elsewhere)</td>
+<td>&lt;10% mid-conversation abandonment</td>
+</tr>
+<tr>
+<td>Mis-resolved-medication rate</td>
+<td>n/a (form was strict dropdown)</td>
+<td>1-4% (LLM mapping plus validation against patient list)</td>
+</tr>
+<tr>
+<td>Auto-approval rate</td>
+<td>0% (everything went through nurse triage)</td>
+<td>50-75% (depends on protocol breadth and patient population)</td>
+</tr>
+<tr>
+<td>Per-conversation infrastructure cost</td>
+<td>Negligible (voicemail)</td>
+<td>$0.03-0.15</td>
+</tr>
+<tr>
+<td>Per-cohort completion-rate disparity</td>
+<td>Often invisible</td>
+<td>Monitored explicitly per launch gate</td>
+</tr>
+<tr>
+<td>Patient satisfaction (CSAT proxy for the channel)</td>
+<td>Frequently negative because of latency and back-and-forth</td>
+<td>Generally positive for routine refills</td>
+</tr>
+<tr>
+<td>Clinical-staff time per refill</td>
+<td>5-15 minutes per request distributed across receptionist, nurse, and prescriber</td>
+<td>&lt;1 minute per auto-approved refill (co-signature only); 2-5 minutes per routed refill (clinical review of structured ticket)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Misconfigured or vague refill protocol.</strong> When the practice's refill protocol is informally documented (a one-page handout the nurses follow loosely), the bot's ability to auto-approve safely is severely limited. The protocol-cleanup work is a clinical-leadership project, not an engineering project. Mitigation: invest three to six months in protocol formalization before deploying the bot. Document each medication class's auto-approval criteria, monitoring requirements, dosing rules, and exceptions. The protocol cleanup is the single highest-leverage operational investment for the bot's quality.</li>
+<li><strong>Outdated medication lists.</strong> When the patient's medication list in the chart does not reflect what the patient actually takes (a reality in a substantial fraction of patients), the bot's protocol evaluation runs against incomplete data. Mitigation: surface the medication-reconciliation question proactively (&quot;we have you on these seven medications; is anything missing or anything you've stopped?&quot;), route reconciliation events to the clinical workflow, and use the bot as a forcing function for ongoing medication-list hygiene.</li>
+<li><strong>Specialist medications that the practice does not refill.</strong> Patients often do not know which prescriber owns which medication. Mitigation: the bot's prescriber-authority check is explicit, and the routing-to-specialist response is transparent (&quot;the methotrexate is from Dr. Singh in rheumatology; here's how to request a refill from her office; if you want, I can also send a message to her office for you&quot;).</li>
+<li><strong>Controlled-substance requests from patients in pain or dependence.</strong> A patient asking for an early opioid refill is a clinical situation requiring careful handling, not a routine refill. Mitigation: the controlled-substance routing is mandatory, the bot's response is supportive and non-judgmental, the routing target is specifically equipped for these conversations, and crisis-detection signals are layered on top.</li>
+<li><strong>Lab reconciliation gaps.</strong> When the relevant lab was drawn at an outside facility and the result has not been reconciled into the chart, the protocol-evaluation may incorrectly find &quot;monitoring overdue.&quot; Mitigation: the lab-reconciliation tool checks for pending outside-lab results before the protocol evaluation, but the institution's lab-reconciliation pipeline is the upstream prerequisite. Investing in faster outside-lab reconciliation (recipe 5.6 patterns) is the operational floor.</li>
+<li><strong>Patients with multiple pharmacies on file and unclear preference.</strong> &quot;Send it to my pharmacy&quot; when the patient has three pharmacies on file is ambiguous. Mitigation: the bot asks the patient to confirm which pharmacy when there is no clear default, and the patient's recent-fill history informs the default selection.</li>
+<li><strong>Mail-order versus retail-pharmacy splits.</strong> When the patient's insurance has migrated a maintenance medication to mail-order, attempting to fill at the retail pharmacy will be denied at the pharmacy counter. Mitigation: the protocol-evaluation surfaces the formulary-and-pharmacy mapping and the bot routes the prescription to the correct dispensing channel.</li>
+<li><strong>Patients reporting non-adherence or misuse during the conversation.</strong> &quot;I've been doubling up because the pain has been bad&quot; is a clinical signal, not a refill question. Mitigation: the bot's intent classification has explicit detection for adherence and misuse signals, and the routing path packages the patient's stated context for clinical follow-up.</li>
+<li><strong>Patients reporting side effects or new symptoms.</strong> &quot;I want to refill the metformin but it's been giving me terrible diarrhea&quot; is a clinical question disguised as a refill request. Mitigation: explicit clinical-content detection in the patient's stated context, with the response acknowledging the side effect and routing to clinical staff with the context preserved.</li>
+<li><strong>Multilingual deployment friction.</strong> Patients in non-English languages experience higher friction in identity verification, medication-name resolution, and protocol-language phrasing if the per-language assets are weak. Mitigation: invest in native-speaker review of per-language medication names (especially brand-name versus generic-name conventions, which vary by language), per-language identity-verification phrasings, per-language protocol-decision phrasings, and per-language equity monitoring.</li>
+<li><strong>Voice-channel ASR errors propagating into medication resolution.</strong> &quot;Levothyroxine&quot; misheard by ASR can result in resolution to a different medication. Mitigation: explicit confirmation step that reads the resolved medication back to the patient, ASR error rates monitored and tuned for the patient population, voice-specific phrasings that emphasize unambiguous medication identification.</li>
+<li><strong>The patient asks about a medication that is on the chart but not taken in practice.</strong> &quot;Refill my hydrochlorothiazide&quot; when the patient stopped taking it three years ago and the chart never updated. Mitigation: the medication-reconciliation prompt is built into the conversation, and the resolution-with-discontinued-context routes to clinical staff for chart cleanup.</li>
+<li><strong>Cross-channel state coordination.</strong> A patient sends a refill message through the portal at 9 AM, calls the office at 10 AM and gets the refill from a nurse, then comes back to the bot at 11 AM. Mitigation: the bot's status-check tool returns the most current state from the e-prescribing platform and the EHR, not the bot's own state.</li>
+<li><strong>Patients impersonating other patients.</strong> The identity-verification floor is the defense, but it is not perfect. Mitigation: the assurance level required for refill actions is correspondingly high (many institutions require authenticated portal sessions), the audit trail is complete, abuse-detection telemetry flags suspicious patterns including unusual-fill-cadence and unusual-pharmacy patterns.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Refill protocol formalization as a pre-deployment program.</strong> The most valuable engineering work for a refill bot is done before the engineering work starts: formalizing the practice's refill protocol. Each medication class needs a clear auto-approval criterion, a clear monitoring requirement, a clear dosing rule, a clear prescriber-authority rule, and clear exception handling. The formalization is a clinical-leadership project, supported by the engineering team. Skipping the formalization and shipping the bot on top of an informal protocol produces a bot that auto-approves things that should not have been auto-approved, which is worse than not having a bot.</p>
+<p><strong>Prescriber-delegation governance.</strong> The bot operates under a delegation arrangement from the prescriber, formalized as a standing order or as a protocol-driven medical-staff bylaw. The delegation has scope (which medication classes, which patient categories, which conditions) and a co-signature SLA (within how many hours the prescriber must review the auto-approved refill). The delegation is reviewed by the medical staff committee, signed by the prescribers, and renewed annually. Without explicit delegation, the bot has no clinical authority.</p>
+<p><strong>Co-signature workflow operationalization.</strong> The auto-approved refills queue for prescriber co-signature. The queue has SLA monitoring, escalation, and reporting. Prescribers complete co-signature in their normal workflow (a queue in the EHR's inbox or a dedicated review interface). When the prescriber flags a co-signature for retrospective review, the flag feeds the protocol-improvement loop. Build the workflow with a clear ownership and a clear measurement: percentage of auto-approvals co-signed within SLA, percentage flagged, percentage of flags resulting in protocol updates.</p>
+<p><strong>EHR integration as a stable contract.</strong> The bot's tools wrap the institution's EHR. The wrapper is the bot's stability surface. When the EHR upgrades, when the FHIR endpoints change, when new MedicationRequest fields appear, the wrapper absorbs the change. The wrapper is owned and maintained by the integration team. Building it carefully (with versioned contracts, with thorough test coverage, with explicit handling of every documented edge case in the EHR's API) is the operational floor for the bot.</p>
+<p><strong>E-prescribing platform integration with the institution's existing setup.</strong> The bot's e-prescribe tool routes through the practice's existing e-prescribing infrastructure. The integration includes: prescriber-authentication for transmissions (the bot acts under the prescriber's delegated authority but the transmission is properly attributed), pharmacy directory synchronization, transmission-error handling, retry policy, and Surescripts conformance verification.</p>
+<p><strong>Medication-information corpus curation.</strong> The bot's medication-information knowledge base is sourced from a clinical reference (the practice's preferred source: First Databank, Lexicomp, RxNorm-sourced summaries). The corpus is curated to the practice's voice and scope (no clinical advice, no dose-change recommendations, no conflict-of-interest content). The corpus is reviewed quarterly and updated as the medication landscape changes.</p>
+<p><strong>Patient-rights workflow for refill conversations and refill records.</strong> Conversation logs are PHI by association. Refill events are clinical records. Patients have rights to access both. The institution has retention obligations that vary by state and by record class. Build the workflow: how a patient requests their refill conversation history and their refill records, how the requests are authenticated, how the data is produced, how deletion requests interact with retention obligations.</p>
+<p><strong>Per-cohort accuracy and equity monitoring with launch gates.</strong> Auto-approval rate, time-to-completion, and patient-feedback distribution all vary by cohort. Per-language, per-channel, per-age-cohort, per-medication-class. Build the monitoring as a launch gate: each cohort must meet the threshold before the cohort goes live. A cohort with materially lower auto-approval rate (after controlling for protocol-relevant clinical factors) signals an equity issue that aggregate metrics hide.</p>
+<p><strong>Voice-channel deployment for accessibility.</strong> Building the voice channel on top of the same refill logic makes the bot accessible to patients without smartphones, without high-speed internet, or with disabilities that make text input difficult. The architectural extension is the ASR/TTS layer (recipe 10.5 patterns) plus voice-specific design (slower pacing, explicit confirmations, voice-friendly phrasings of medication names).</p>
+<p><strong>Disaster-recovery and degraded-mode operation.</strong> When upstream dependencies fail (Bedrock outage, EHR unreachable, e-prescribing platform down), the bot must degrade gracefully. The minimum behavior is &quot;we are having trouble right now, please call the office at the number.&quot; Better is a graceful warm handoff to live agents with the conversation context preserved. Document the per-mode behavior, test the failure modes in staging, and exercise the failover paths quarterly.</p>
+<p><strong>Compensation operations for refilled-but-wrong medications.</strong> When the bot auto-approves a refill that turns out to be wrong (wrong medication identification, protocol applied to incomplete data, prescriber-flagged retrospectively), the operations team needs operational tooling to compensate: contact the patient, contact the pharmacy if the medication has not been picked up, document the event, surface it for clinical review. The compensation path is explicit, audited, and exercised in tabletop drills.</p>
+<p><strong>Operational ownership across multiple teams.</strong> The bot sits at the intersection of patient experience (voice persona, conversational design), clinical leadership (refill protocol, delegation arrangement), pharmacy operations (pharmacy directory, e-prescribing setup), IT (EHR and e-prescribing-platform integration), compliance (audit retention, identity-verification policy, refill-event-journal governance), and the contact center (handoff queues, agent training). Establish clear ownership at the start. Without it, the bot drifts and the metrics are not reviewed.</p>
+<p><strong>Build-vs-buy rigor for institutions evaluating commercial alternatives.</strong> Several commercial vendors offer healthcare-specific refill management products integrated with the major EHRs and e-prescribing platforms. The buy path is faster and comes with EHR-integration maintenance. The build path makes sense for institutions with unusual protocols, with research interest in the technology, or with already-significant in-house conversational AI infrastructure. Either way, a rigorous vendor evaluation is required.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Voice channel deployment.</strong> The same refill logic, served through ASR and TTS over Amazon Connect, gives patients a phone-equivalent refill experience without hold time. The conversation logic is shared; the channel adapter handles ASR and TTS. Voice-specific design considerations: slower pacing, explicit medication-name read-back (&quot;you said metformin, the diabetes medication, is that right?&quot;), voice-friendly phrasings of medication names that are difficult to pronounce, tighter latency budgets. Recipe 10.5 (patient-facing voice assistant) covers the voice-channel patterns this variation builds on.</p>
+<p><strong>Authenticated patient-portal embed with proactive prompts.</strong> When the bot is embedded inside the patient portal and the patient navigates to the medication-list page, the bot can offer to refill medications that are running low (&quot;I see your metformin has 4 days left and no refills authorized; want me to request a refill?&quot;). The architectural extension is the proactive-prompt logic against the medication-list state and the patient's recent fill history.</p>
+<p><strong>Pharmacy-side integration for richer status updates.</strong> The bot's status-check tool currently queries the e-prescribing platform. Pharmacies that expose APIs (some retail chains, most mail-order pharmacies) provide richer status updates: in queue, in fill, ready for pickup, on hold for clarification, delivered. The architectural extension is the per-pharmacy integration with appropriate normalization across pharmacy systems.</p>
+<p><strong>Refill reminders as proactive outreach.</strong> The bot can proactively remind patients about upcoming refill needs based on the medication's days-supply and the patient's last-fill date. The architectural extension is the asynchronous outreach pipeline (which is recipe 4.1 patterns), with the bot as the conversation surface when the patient responds.</p>
+<p><strong>Medication-adherence coaching tightly coupled with the refill bot.</strong> When the patient's fill history shows adherence gaps, the bot can ask about adherence (&quot;I notice your metformin has had some gaps; is there anything that's been making it hard to take regularly?&quot;) and route to adherence-coaching pathways (recipe 4.5 and recipe 11.7 patterns). The architectural extension is the adherence-detection logic and the integration with the adherence-coaching workflow.</p>
+<p><strong>Therapeutic-substitution support under formulary changes.</strong> When the insurance changes formulary and a covered medication is no longer covered, the bot can route the change request to a clinical workflow that proposes a therapeutic substitution. The bot does not propose the substitution; the clinical workflow does. The architectural extension is the formulary-change detection and the routing path.</p>
+<p><strong>Prior-authorization integration.</strong> When a refill requires prior authorization, the bot can initiate the prior-authorization workflow (recipe 2.4 patterns for prior-auth letter generation), surface the status to the patient transparently, and follow through on the prior-authorization outcome. The architectural extension is the prior-authorization workflow integration.</p>
+<p><strong>Multi-language operation with native-language refill conversations.</strong> The bot operates natively in the languages of the institution's patient population. Per-language work: medication-name resolution that handles brand-name versus generic-name conventions in each language, identity-verification phrasings, protocol-decision phrasings, medication-information content from native-language sources. The architectural extension is the per-language asset management and the per-language equity monitoring.</p>
+<p><strong>Caregiver and authorized-representative flows.</strong> A caregiver requests a refill on behalf of a patient (a daughter for an elderly parent, a parent for a child, a guardian for a person under their authority). The bot's identity verification has to handle the dependent-and-authorizer pattern: who is talking to the bot, who is the medication for, what is the authorization relationship. The architectural extension is the multi-identity-verification with appropriate authorization checks, plus the privacy considerations around what the caregiver can and cannot see.</p>
+<p><strong>Integration with the FAQ bot, scheduling bot, and other transactional bots behind a unified chat surface.</strong> The patient asks &quot;can I get my metformin refilled and also schedule my next visit?&quot; The unified surface routes the refill request to the refill bot and the scheduling request to the scheduling bot, with shared identity context and a unified conversation log. The architectural extension is the cross-bot routing layer and the shared session state.</p>
+<p><strong>Continuous-improvement loop with structured failure-mode labeling.</strong> Beyond the per-conversation thumbs-up and thumbs-down, the institution runs a structured labeling program where reviewers tag failure modes (medication-resolution error, protocol-evaluation error, routing-disposition error, lab-reconciliation gap, controlled-substance handling correctness). The labels feed the protocol-improvement workflow, the prompt-tuning workflow, and the medication-information-corpus workflow.</p>
+<p><strong>Specialty-pharmacy and limited-distribution-drug coordination.</strong> Some medications (biologics, specialty drugs, limited-distribution drugs) require specialty-pharmacy fulfillment with different workflows than retail. The bot can identify these medications and route the refill through the specialty-pharmacy coordinator with the appropriate context. The architectural extension is the specialty-pharmacy-aware routing.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html">Amazon Bedrock Agents</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html">Amazon Bedrock Knowledge Bases</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/waf/latest/developerguide/waf-chapter.html">AWS WAF Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">Amazon S3 Object Lock</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html">Amazon Connect Administrator Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-samples"><code>aws-samples/amazon-bedrock-samples</code></a>: Bedrock invocation patterns including Agents, Knowledge Bases, and Guardrails</li>
+<li><a href="https://github.com/aws-samples/aws-genai-llm-chatbot"><code>aws-samples/aws-genai-llm-chatbot</code></a>: reference architecture for a multi-model chatbot on AWS</li>
+<li><a href="https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks"><code>aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks</code></a>: broader healthcare AI/ML sample notebooks</li>
+<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-samples"><code>aws-samples/amazon-comprehend-medical-samples</code></a>: Comprehend Medical usage patterns including medication entity extraction</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences plus AI/ML): browse for medication-management and patient-engagement reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;Bedrock Agents,&quot; &quot;medication,&quot; &quot;patient engagement&quot; for relevant pattern posts</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: search &quot;medication management,&quot; &quot;refill,&quot; &quot;conversational AI&quot; for relevant content</li>
+<li><a href="https://aws.amazon.com/blogs/big-data/">AWS Big Data Blog</a>: search &quot;HealthLake,&quot; &quot;FHIR,&quot; &quot;medication&quot; for data-side patterns relevant to the chart-context tools</li>
+</ul>
+<p><strong>External References (Standards and Frameworks):</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/fhir/medication-module.html">HL7 FHIR Medication Module</a>: the FHIR specification for Medication, MedicationRequest, MedicationDispense, and related resources</li>
+<li><a href="https://www.hl7.org/fhir/medicationrequest.html">HL7 FHIR MedicationRequest Resource</a>: the FHIR MedicationRequest resource specification</li>
+<li><a href="https://cds-hooks.org/">CDS Hooks Specification</a>: the standard for clinical-decision-support invocation</li>
+<li><a href="https://www.nlm.nih.gov/research/umls/rxnorm/index.html">RxNorm</a>: the standardized nomenclature for clinical drugs</li>
+<li><a href="https://www.deadiversion.usdoj.gov/ecomm/e_rx/">DEA EPCS (Electronic Prescribing of Controlled Substances)</a>: DEA requirements for controlled-substance e-prescribing</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/index.html">HIPAA Privacy Rule</a>: governs PHI in conversational logs and refill records</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/security/index.html">HIPAA Security Rule</a>: governs technical and administrative safeguards</li>
+<li><a href="https://988lifeline.org/">988 Suicide and Crisis Lifeline</a>: the national crisis line for crisis routing</li>
+<li><a href="https://www.w3.org/WAI/standards-guidelines/wcag/">WCAG 2.1 Accessibility Guidelines</a>: accessibility standards relevant to chat-widget surfaces</li>
+<li><a href="https://www.section508.gov/">Section 508</a>: federal accessibility requirements relevant for institutional deployments</li>
+<li><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">OWASP Top 10 for Large Language Model Applications</a>: security framework for LLM-backed applications</li>
+</ul>
+<p><strong>Industry Resources:</strong></p>
+<ul>
+<li><a href="https://surescripts.com/">Surescripts</a>: the predominant U.S. e-prescribing network</li>
+<li><a href="https://www.ama-assn.org/">American Medical Association (AMA)</a>: industry-association content on physician burden and ambulatory practice operations including refill management</li>
+<li><a href="https://www.aafp.org/">American Academy of Family Physicians (AAFP)</a>: family-medicine-specific content on refill workflow and standing orders</li>
+<li><a href="https://www.mgma.com/">Medical Group Management Association (MGMA)</a>: operational benchmarking for practice operations including refill volume</li>
+<li><a href="https://www.healthit.gov/">Office of the National Coordinator for Health IT (ONC)</a>: U.S. federal coordinator for health IT including medication interoperability standards</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Authenticated portal embed only, single language (English), narrow scope (refills for the most common chronic-disease maintenance medications in a single primary-care practice), formal protocol coverage for the pilot medication classes, prescriber delegation arrangement signed for the pilot prescribers, basic identity verification (authenticated session), single EHR integration with FHIR MedicationRequest, basic Surescripts e-prescribing setup, basic audit pipeline, pilot with a single practice or service line</td>
+<td>4-7 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Multi-channel (web chat plus authenticated patient portal), multi-language (English plus Spanish at minimum), expanded scope (full medication-class coverage with formal protocol for chronic-disease maintenance medications across the institution's prescribers), protocol formalization with named clinical-leadership ownership and review cadence, prescriber delegation arrangement signed by all participating prescribers with annual renewal, graduated identity-verification policy, full EHR integration with graceful error handling, e-prescribe transactional contract with retry and recovery, lab-reconciliation pipeline integration, drug-interaction screening through the institutional CDS layer, co-signature workflow with SLA monitoring, compensation operations, full audit and per-cohort equity monitoring, full HIPAA-grade compliance review with controlled-substance handling certified, named operational owners across patient experience, clinical leadership, pharmacy operations, IT, compliance, and contact center</td>
+<td>8-14 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Voice channel (drawing from recipe 10.5 patterns), additional languages beyond English plus Spanish, proactive refill reminders integration, adherence-coaching integration with recipe 11.7, prior-authorization integration with recipe 2.4 patterns, specialty-pharmacy coordination, caregiver and authorized-representative flows, deep pharmacy-side integration for richer status updates, integration with the FAQ bot from recipe 11.1 and the scheduling bot from recipe 11.2 behind a unified chat surface, continuous-improvement loop with structured failure-mode labeling</td>
+<td>6-12 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter11.03-prescription-refill-request-bot.html">Main Recipe 11.3</a> · <a href="chapter11.03-python-example.html">Python Example</a> · <a href="chapter11-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

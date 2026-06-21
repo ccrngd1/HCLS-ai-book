@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 8.7: Adverse Event Detection in Clinical Text - Python Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-87-adverse-event-detection-in-clinical-text---python-example">Recipe 8.7: Adverse Event Detection in Clinical Text - Python Example</h1>
+<blockquote>
+<p><strong>This is an illustrative implementation, not a production-ready deployment.</strong>
+It demonstrates the patterns from the pseudocode walkthrough using boto3.
+A real deployment needs the additions listed in the &quot;Gap to Production&quot; section at the end.
+Start here to understand the concepts. Don't ship this as-is.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3
+</pre></div>
+
+<p>You'll also need:</p>
+<ul>
+<li>An AWS account with Amazon Comprehend Medical configured</li>
+<li>A signed AWS BAA covering PHI processing</li>
+<li>IAM permissions: <code>comprehend-medical:DetectEntitiesV2</code>, <code>comprehend-medical:InferRxNorm</code>,
+<code>dynamodb:PutItem</code>, <code>dynamodb:Query</code>, <code>s3:PutObject</code>, <code>s3:GetObject</code>, <code>sns:Publish</code></li>
+</ul>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Retry configuration</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Comprehend Medical throttles under burst load. Adaptive mode uses exponential</span>
+<span class="c1"># backoff with jitter automatically. Apply this to every boto3 client.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span>
+    <span class="n">retries</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Clients</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="n">comprehend_medical</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;comprehendmedical&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">sns</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sns&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Constants</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="n">ADVERSE_EVENTS_TABLE</span> <span class="o">=</span> <span class="s2">&quot;adverse-events&quot;</span>
+<span class="n">NOTES_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;clinical-notes-archive&quot;</span>
+<span class="n">SNS_CRITICAL_TOPIC</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:sns:us-east-1:123456789012:ae-critical-alerts&quot;</span>
+
+<span class="c1"># Minimum combined evidence score to flag a drug-event pair as a potential AE.</span>
+<span class="n">AE_EVIDENCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.4</span>
+
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Causal language patterns</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># These phrases, when appearing between a medication mention and a clinical</span>
+<span class="c1"># event, strongly suggest the clinician intended a causal link.</span>
+<span class="c1"># High precision, moderate recall: they catch explicit attributions but miss</span>
+<span class="c1"># implicit ones (which are the majority in practice).</span>
+<span class="n">CAUSAL_PATTERNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="sa">r</span><span class="s2">&quot;due to&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;caused by&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;secondary to&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;related to&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;attributed to&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;as a result of&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;likely from&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;suspect(?:ed)? reaction to&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;discontinue.*because&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;hold.*due to&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;adverse effect of&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;side effect&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;after starting&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;since (?:starting|beginning|initiating)&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Severity indicators</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Ordered from most to least severe. First match wins.</span>
+<span class="n">SEVERITY_INDICATORS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;grade_4_life_threatening&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;icu&quot;</span><span class="p">,</span> <span class="s2">&quot;intubated&quot;</span><span class="p">,</span> <span class="s2">&quot;code blue&quot;</span><span class="p">,</span> <span class="s2">&quot;life-threatening&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;anaphylaxis&quot;</span><span class="p">,</span> <span class="s2">&quot;cardiac arrest&quot;</span><span class="p">,</span> <span class="s2">&quot;emergency&quot;</span><span class="p">,</span> <span class="s2">&quot;resuscitat&quot;</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;grade_3_severe&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;admitted&quot;</span><span class="p">,</span> <span class="s2">&quot;hospitalized&quot;</span><span class="p">,</span> <span class="s2">&quot;transfusion&quot;</span><span class="p">,</span> <span class="s2">&quot;surgical intervention&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;disability&quot;</span><span class="p">,</span> <span class="s2">&quot;prolonged hospitalization&quot;</span><span class="p">,</span> <span class="s2">&quot;transferred to&quot;</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;grade_2_moderate&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;medication change&quot;</span><span class="p">,</span> <span class="s2">&quot;dose reduction&quot;</span><span class="p">,</span> <span class="s2">&quot;additional treatment&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;limits activities&quot;</span><span class="p">,</span> <span class="s2">&quot;switched to&quot;</span><span class="p">,</span> <span class="s2">&quot;discontinued&quot;</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;grade_1_mild&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;mild&quot;</span><span class="p">,</span> <span class="s2">&quot;self-limited&quot;</span><span class="p">,</span> <span class="s2">&quot;resolved&quot;</span><span class="p">,</span> <span class="s2">&quot;no intervention&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tolerable&quot;</span><span class="p">,</span> <span class="s2">&quot;asymptomatic&quot;</span><span class="p">,</span> <span class="s2">&quot;transient&quot;</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Known adverse drug reactions (simplified lookup)</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># In production, this would be a database populated from FDA labels, SIDER,</span>
+<span class="c1"># or FAERS data. Here we use a small sample for demonstration.</span>
+<span class="c1"># Keys are RxNorm CUIs. Values are sets of normalized event terms.</span>
+<span class="n">KNOWN_ADR_DATABASE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;329526&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dizziness&quot;</span><span class="p">,</span> <span class="s2">&quot;orthostatic hypotension&quot;</span><span class="p">,</span> <span class="s2">&quot;edema&quot;</span><span class="p">,</span> <span class="s2">&quot;fatigue&quot;</span><span class="p">,</span> <span class="s2">&quot;flushing&quot;</span><span class="p">},</span>   <span class="c1"># amlodipine</span>
+    <span class="s2">&quot;161&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;rash&quot;</span><span class="p">,</span> <span class="s2">&quot;diarrhea&quot;</span><span class="p">,</span> <span class="s2">&quot;nausea&quot;</span><span class="p">,</span> <span class="s2">&quot;allergic reaction&quot;</span><span class="p">,</span> <span class="s2">&quot;anaphylaxis&quot;</span><span class="p">},</span>            <span class="c1"># amoxicillin</span>
+    <span class="s2">&quot;36567&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;myalgia&quot;</span><span class="p">,</span> <span class="s2">&quot;rhabdomyolysis&quot;</span><span class="p">,</span> <span class="s2">&quot;hepatotoxicity&quot;</span><span class="p">,</span> <span class="s2">&quot;muscle weakness&quot;</span><span class="p">},</span>          <span class="c1"># atorvastatin</span>
+    <span class="s2">&quot;32968&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;nausea&quot;</span><span class="p">,</span> <span class="s2">&quot;insomnia&quot;</span><span class="p">,</span> <span class="s2">&quot;sexual dysfunction&quot;</span><span class="p">,</span> <span class="s2">&quot;weight gain&quot;</span><span class="p">,</span> <span class="s2">&quot;serotonin syndrome&quot;</span><span class="p">},</span>  <span class="c1"># sertraline</span>
+    <span class="s2">&quot;7052&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;gi bleed&quot;</span><span class="p">,</span> <span class="s2">&quot;nausea&quot;</span><span class="p">,</span> <span class="s2">&quot;renal impairment&quot;</span><span class="p">,</span> <span class="s2">&quot;hypertension&quot;</span><span class="p">},</span>                   <span class="c1"># naproxen</span>
+<span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="synthetic-clinical-notes">Synthetic Clinical Notes</h2>
+<div class="code"><pre><span></span><span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># Synthetic test data: clinical notes with planted adverse events</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># These are entirely synthetic. They simulate real documentation patterns</span>
+<span class="c1"># without containing any actual patient information.</span>
+
+<span class="n">SYNTHETIC_NOTES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="s2">&quot;NOTE-20260304-11422&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PAT-882710&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-04&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_type&quot;</span><span class="p">:</span> <span class="s2">&quot;progress_note&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">&quot;Assessment and Plan:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;1. Hypertension - Patient started on amlodipine 10mg daily two weeks ago. &quot;</span>
+            <span class="s2">&quot;Reports orthostatic dizziness every morning since starting medication. &quot;</span>
+            <span class="s2">&quot;Dizziness is worst upon standing from bed, lasting 30-60 seconds. &quot;</span>
+            <span class="s2">&quot;No syncope. BP today 128/78 sitting, 110/68 standing. &quot;</span>
+            <span class="s2">&quot;Likely related to new amlodipine. Will reduce to 5mg and recheck in 2 weeks. &quot;</span>
+            <span class="s2">&quot;If symptoms persist at lower dose, will switch to ACE inhibitor.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;2. Diabetes type 2 - A1c stable at 7.1%. Continue metformin 1000mg BID.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;3. Hyperlipidemia - Continue atorvastatin 40mg. Denies muscle pain.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="s2">&quot;NOTE-20260305-08831&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PAT-551203&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-05&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_type&quot;</span><span class="p">:</span> <span class="s2">&quot;telephone_encounter&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">&quot;Patient called to report rash on trunk and arms, onset 3 days after &quot;</span>
+            <span class="s2">&quot;starting amoxicillin for sinus infection. Rash is maculopapular, non-pruritic, &quot;</span>
+            <span class="s2">&quot;no mucosal involvement, no respiratory difficulty. No prior antibiotic allergies. &quot;</span>
+            <span class="s2">&quot;Suspect drug reaction to amoxicillin. Advised to discontinue amoxicillin immediately. &quot;</span>
+            <span class="s2">&quot;Switched to azithromycin 250mg. If rash worsens or develops hives, &quot;</span>
+            <span class="s2">&quot;proceed to emergency department. Follow up in 3 days.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="s2">&quot;NOTE-20260306-14209&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PAT-339847&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-06&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_type&quot;</span><span class="p">:</span> <span class="s2">&quot;progress_note&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">&quot;Follow up visit. Patient doing well on current medications.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Medications reviewed: lisinopril 20mg daily, metformin 500mg BID, &quot;</span>
+            <span class="s2">&quot;aspirin 81mg daily.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;No new complaints. Denies chest pain, shortness of breath, or dizziness. &quot;</span>
+            <span class="s2">&quot;No peripheral edema. Labs from last week within normal limits.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Continue current regimen. Return in 3 months.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="s2">&quot;NOTE-20260307-09155&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PAT-447291&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-07&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note_type&quot;</span><span class="p">:</span> <span class="s2">&quot;progress_note&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">&quot;Patient presents with diffuse muscle aches for the past 10 days. &quot;</span>
+            <span class="s2">&quot;Started atorvastatin 40mg approximately 3 weeks ago for hyperlipidemia. &quot;</span>
+            <span class="s2">&quot;Myalgia is bilateral, affecting thighs and calves, worse with exertion. &quot;</span>
+            <span class="s2">&quot;CK level today: 890 U/L (elevated; normal &lt; 200). &quot;</span>
+            <span class="s2">&quot;Suspect statin-induced myopathy. Discontinuing atorvastatin. &quot;</span>
+            <span class="s2">&quot;Will recheck CK in one week. Consider alternative lipid-lowering therapy &quot;</span>
+            <span class="s2">&quot;once symptoms resolve. Patient advised to report dark urine immediately &quot;</span>
+            <span class="s2">&quot;as this could indicate rhabdomyolysis requiring hospitalization.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-archive-the-clinical-note">Step 1: Archive the Clinical Note</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">archive_note</span><span class="p">(</span><span class="n">note</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Archive raw note to S3 before processing.</span>
+
+<span class="sd">    Maps to pseudocode Step 1. Every note gets stored in durable storage before</span>
+<span class="sd">    we touch it with NLP. This gives us an immutable audit trail and enables</span>
+<span class="sd">    reprocessing when models improve.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">note_date</span> <span class="o">=</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_date&quot;</span><span class="p">]</span>
+    <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">note_date</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="n">archive_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;notes-archive/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">month</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">note</span><span class="p">[</span><span class="s1">&#39;note_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.json&quot;</span>
+
+    <span class="n">archive_record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="n">note_date</span><span class="p">,</span>
+        <span class="s2">&quot;note_type&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_type&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;received_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="n">s3</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">NOTES_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">archive_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">archive_record</span><span class="p">),</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">archive_key</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-extract-medical-entities">Step 2: Extract Medical Entities</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">extract_entities</span><span class="p">(</span><span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Call Comprehend Medical DetectEntitiesV2 to extract medications, conditions,</span>
+<span class="sd">    and temporal expressions.</span>
+
+<span class="sd">    Maps to pseudocode Step 2. Comprehend Medical handles the biomedical NER:</span>
+<span class="sd">    drug names, symptoms, diagnoses, and time references. Each entity comes back</span>
+<span class="sd">    with confidence scores and trait attributes (negation, hypothetical, etc.)</span>
+<span class="sd">    that we use in the assertion filtering step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Comprehend Medical has a 20,000 character limit per call.</span>
+    <span class="c1"># Most progress notes are well under this. Truncate if needed.</span>
+    <span class="n">truncated_text</span> <span class="o">=</span> <span class="n">note_text</span><span class="p">[:</span><span class="mi">20000</span><span class="p">]</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">truncated_text</span><span class="p">)</span>
+
+    <span class="n">medications</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">conditions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">temporals</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Entities&quot;</span><span class="p">]:</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Text&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;begin_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;BeginOffset&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;end_offset&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;EndOffset&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;traits&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Attributes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;MEDICATION&quot;</span><span class="p">:</span>
+            <span class="n">medications</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;MEDICAL_CONDITION&quot;</span><span class="p">:</span>
+            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;Category&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;TIME_EXPRESSION&quot;</span><span class="p">:</span>
+            <span class="n">temporals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+
+    <span class="c1"># Normalize medication names to RxNorm codes.</span>
+    <span class="c1"># This enables cross-note aggregation: &quot;amlodipine&quot; and &quot;Norvasc&quot; map to the same CUI.</span>
+    <span class="k">for</span> <span class="n">med</span> <span class="ow">in</span> <span class="n">medications</span><span class="p">:</span>
+        <span class="n">rxnorm_response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">infer_rx_norm</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">med</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span>
+        <span class="n">concepts</span> <span class="o">=</span> <span class="n">rxnorm_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">concepts</span><span class="p">:</span>
+            <span class="n">top_concept</span> <span class="o">=</span> <span class="n">concepts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;RxNormConcepts&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="n">top_concept</span> <span class="ow">and</span> <span class="n">top_concept</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;Score&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span>
+                <span class="n">med</span><span class="p">[</span><span class="s2">&quot;rxnorm_code&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">top_concept</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span>
+                <span class="n">med</span><span class="p">[</span><span class="s2">&quot;rxnorm_description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">top_concept</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;Description&quot;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;medications&quot;</span><span class="p">:</span> <span class="n">medications</span><span class="p">,</span>
+        <span class="s2">&quot;conditions&quot;</span><span class="p">:</span> <span class="n">conditions</span><span class="p">,</span>
+        <span class="s2">&quot;temporals&quot;</span><span class="p">:</span> <span class="n">temporals</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-filter-by-assertion-status">Step 3: Filter by Assertion Status</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">filter_active_conditions</span><span class="p">(</span><span class="n">conditions</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove negated, hypothetical, and family-history conditions.</span>
+
+<span class="sd">    Maps to pseudocode Step 3. Comprehend Medical attaches Traits to each entity</span>
+<span class="sd">    that indicate context. &quot;Denies chest pain&quot; gets a NEGATION trait. &quot;If rash</span>
+<span class="sd">    develops&quot; gets a HYPOTHETICAL trait (when supported by the model).</span>
+
+<span class="sd">    This single step typically removes 30-50% of extracted conditions, dramatically</span>
+<span class="sd">    cutting false positives downstream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">active</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="n">conditions</span><span class="p">:</span>
+        <span class="n">trait_names</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;traits&quot;</span><span class="p">]}</span>
+
+        <span class="c1"># Skip negated conditions: &quot;denies dizziness&quot;, &quot;no rash&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;NEGATION&quot;</span> <span class="ow">in</span> <span class="n">trait_names</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Skip hypothetical/conditional: &quot;if patient develops rash&quot;</span>
+        <span class="c1"># Note: Comprehend Medical uses &quot;HYPOTHETICAL&quot; for conditional mentions</span>
+        <span class="k">if</span> <span class="s2">&quot;HYPOTHETICAL&quot;</span> <span class="ow">in</span> <span class="n">trait_names</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Keep everything else. Comprehend Medical does not currently expose a</span>
+        <span class="c1"># dedicated &quot;FAMILY_HISTORY&quot; trait on MEDICAL_CONDITION entities, so we</span>
+        <span class="c1"># rely on section detection or manual rules for that in production.</span>
+        <span class="c1"># TODO: verify trait coverage in latest Comprehend Medical API version</span>
+        <span class="n">active</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">active</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-detect-adverse-event-relationships">Step 4: Detect Adverse Event Relationships</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">detect_adverse_events</span><span class="p">(</span>
+    <span class="n">medications</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">active_conditions</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">temporals</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Core relation extraction: link clinical events to medications using layered evidence.</span>
+
+<span class="sd">    Maps to pseudocode Step 4. For each (medication, condition) pair, we accumulate</span>
+<span class="sd">    evidence from four layers:</span>
+<span class="sd">      1. Explicit causal language (highest signal)</span>
+<span class="sd">      2. Temporal plausibility</span>
+<span class="sd">      3. Text proximity</span>
+<span class="sd">      4. Known ADR match from knowledge base</span>
+
+<span class="sd">    The combined score determines whether we flag the pair.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">detected_events</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="n">active_conditions</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">medication</span> <span class="ow">in</span> <span class="n">medications</span><span class="p">:</span>
+            <span class="n">evidence_score</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">evidence_reasons</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># ----- Layer 1: Explicit causal language -----</span>
+            <span class="c1"># Extract text between (or near) the two entity mentions and search</span>
+            <span class="c1"># for phrases that explicitly link them.</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">medication</span><span class="p">[</span><span class="s2">&quot;end_offset&quot;</span><span class="p">],</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;end_offset&quot;</span><span class="p">])</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">medication</span><span class="p">[</span><span class="s2">&quot;begin_offset&quot;</span><span class="p">],</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;begin_offset&quot;</span><span class="p">])</span>
+            <span class="c1"># Expand window slightly to catch phrases before/after the entities</span>
+            <span class="n">window_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">medication</span><span class="p">[</span><span class="s2">&quot;begin_offset&quot;</span><span class="p">],</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;begin_offset&quot;</span><span class="p">])</span> <span class="o">-</span> <span class="mi">50</span><span class="p">)</span>
+            <span class="n">window_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">note_text</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">medication</span><span class="p">[</span><span class="s2">&quot;end_offset&quot;</span><span class="p">],</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;end_offset&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">50</span><span class="p">)</span>
+            <span class="n">text_window</span> <span class="o">=</span> <span class="n">note_text</span><span class="p">[</span><span class="n">window_start</span><span class="p">:</span><span class="n">window_end</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">CAUSAL_PATTERNS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">text_window</span><span class="p">):</span>
+                    <span class="n">evidence_score</span> <span class="o">+=</span> <span class="mf">0.6</span>
+                    <span class="n">evidence_reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;explicit_causal_language: </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">break</span>  <span class="c1"># one match is sufficient</span>
+
+            <span class="c1"># ----- Layer 2: Temporal plausibility -----</span>
+            <span class="c1"># Check if any temporal expression near the condition suggests</span>
+            <span class="c1"># the event followed the medication.</span>
+            <span class="n">temporal_keywords</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;since starting&quot;</span><span class="p">,</span> <span class="s2">&quot;after beginning&quot;</span><span class="p">,</span> <span class="s2">&quot;after starting&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;since initiating&quot;</span><span class="p">,</span> <span class="s2">&quot;days after&quot;</span><span class="p">,</span> <span class="s2">&quot;weeks after&quot;</span><span class="p">,</span> <span class="s2">&quot;onset after&quot;</span>
+            <span class="p">]</span>
+            <span class="k">for</span> <span class="n">temporal</span> <span class="ow">in</span> <span class="n">temporals</span><span class="p">:</span>
+                <span class="n">temporal_text</span> <span class="o">=</span> <span class="n">temporal</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">temporal_keywords</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">temporal_text</span><span class="p">:</span>
+                        <span class="n">evidence_score</span> <span class="o">+=</span> <span class="mf">0.3</span>
+                        <span class="n">evidence_reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;temporal_association: </span><span class="si">{</span><span class="n">temporal</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">evidence_score</span> <span class="o">&gt;=</span> <span class="mf">0.3</span> <span class="ow">and</span> <span class="s2">&quot;temporal_association&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">evidence_reasons</span><span class="p">):</span>
+                    <span class="k">break</span>
+
+            <span class="c1"># ----- Layer 3: Text proximity -----</span>
+            <span class="c1"># Entities in the same sentence or adjacent sentences are more likely</span>
+            <span class="c1"># to be intentionally connected by the documenting clinician.</span>
+            <span class="n">char_distance</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">condition</span><span class="p">[</span><span class="s2">&quot;begin_offset&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">medication</span><span class="p">[</span><span class="s2">&quot;end_offset&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">char_distance</span> <span class="o">&lt;</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="n">evidence_score</span> <span class="o">+=</span> <span class="mf">0.1</span>
+                <span class="n">evidence_reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;text_proximity&quot;</span><span class="p">)</span>
+
+            <span class="c1"># ----- Layer 4: Known ADR match -----</span>
+            <span class="c1"># Check if this drug-event pair appears in our knowledge base.</span>
+            <span class="n">rxnorm_code</span> <span class="o">=</span> <span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rxnorm_code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rxnorm_code</span> <span class="ow">in</span> <span class="n">KNOWN_ADR_DATABASE</span><span class="p">:</span>
+                <span class="n">known_events</span> <span class="o">=</span> <span class="n">KNOWN_ADR_DATABASE</span><span class="p">[</span><span class="n">rxnorm_code</span><span class="p">]</span>
+                <span class="n">condition_lower</span> <span class="o">=</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">known_event</span> <span class="ow">in</span> <span class="n">known_events</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">known_event</span> <span class="ow">in</span> <span class="n">condition_lower</span> <span class="ow">or</span> <span class="n">condition_lower</span> <span class="ow">in</span> <span class="n">known_event</span><span class="p">:</span>
+                        <span class="n">evidence_score</span> <span class="o">+=</span> <span class="mf">0.2</span>
+                        <span class="n">evidence_reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;known_adr_match&quot;</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+            <span class="c1"># ----- Threshold decision -----</span>
+            <span class="k">if</span> <span class="n">evidence_score</span> <span class="o">&gt;=</span> <span class="n">AE_EVIDENCE_THRESHOLD</span><span class="p">:</span>
+                <span class="n">detected_events</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;medication&quot;</span><span class="p">:</span> <span class="n">medication</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;rxnorm_code&quot;</span><span class="p">:</span> <span class="n">rxnorm_code</span><span class="p">,</span>
+                    <span class="s2">&quot;rxnorm_description&quot;</span><span class="p">:</span> <span class="n">medication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rxnorm_description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;evidence_score&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">evidence_score</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                    <span class="s2">&quot;evidence_reasons&quot;</span><span class="p">:</span> <span class="n">evidence_reasons</span><span class="p">,</span>
+                    <span class="s2">&quot;medication_offset&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">medication</span><span class="p">[</span><span class="s2">&quot;begin_offset&quot;</span><span class="p">],</span> <span class="n">medication</span><span class="p">[</span><span class="s2">&quot;end_offset&quot;</span><span class="p">]),</span>
+                    <span class="s2">&quot;condition_offset&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">condition</span><span class="p">[</span><span class="s2">&quot;begin_offset&quot;</span><span class="p">],</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;end_offset&quot;</span><span class="p">]),</span>
+                <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">detected_events</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-classify-severity">Step 5: Classify Severity</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">classify_severity</span><span class="p">(</span><span class="n">detected_event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assign a CTCAE-style severity grade based on contextual clues.</span>
+
+<span class="sd">    Maps to pseudocode Step 5. We look at text surrounding the adverse event</span>
+<span class="sd">    mention for severity indicators. Clinical text rarely uses explicit grades,</span>
+<span class="sd">    so we infer from outcome language: &quot;hospitalized&quot; implies Grade 3+,</span>
+<span class="sd">    &quot;self-limited&quot; implies Grade 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract a window around the condition mention for context.</span>
+    <span class="n">cond_start</span><span class="p">,</span> <span class="n">cond_end</span> <span class="o">=</span> <span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;condition_offset&quot;</span><span class="p">]</span>
+    <span class="n">window_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cond_start</span> <span class="o">-</span> <span class="mi">300</span><span class="p">)</span>
+    <span class="n">window_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">note_text</span><span class="p">),</span> <span class="n">cond_end</span> <span class="o">+</span> <span class="mi">300</span><span class="p">)</span>
+    <span class="n">context_window</span> <span class="o">=</span> <span class="n">note_text</span><span class="p">[</span><span class="n">window_start</span><span class="p">:</span><span class="n">window_end</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="c1"># Check from most severe to least. First match wins.</span>
+    <span class="k">for</span> <span class="n">grade</span><span class="p">,</span> <span class="n">indicators</span> <span class="ow">in</span> <span class="n">SEVERITY_INDICATORS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">indicators</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">context_window</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">grade</span><span class="p">,</span> <span class="n">indicator</span>
+
+    <span class="c1"># Default: if documented at all, assume moderate. Grade 1 events are</span>
+    <span class="c1"># often not documented. Absence of severity language suggests the clinician</span>
+    <span class="c1"># found it noteworthy enough to write down.</span>
+    <span class="k">return</span> <span class="s2">&quot;grade_2_moderate&quot;</span><span class="p">,</span> <span class="s2">&quot;default_no_indicators&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-store-and-alert">Step 6: Store and Alert</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_adverse_event</span><span class="p">(</span>
+    <span class="n">note</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">detected_event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">severity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">severity_indicator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write detected AE to DynamoDB and alert on high-severity events.</span>
+
+<span class="sd">    Maps to pseudocode Step 6. The DynamoDB schema supports three access patterns:</span>
+<span class="sd">      - By patient (partition key) for clinical review</span>
+<span class="sd">      - By medication (GSI) for drug-level surveillance</span>
+<span class="sd">      - By time (sort key) for trend detection</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ae_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ae-</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">ae_record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;ae_id&quot;</span><span class="p">:</span> <span class="n">ae_id</span><span class="p">,</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_date&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;medication&quot;</span><span class="p">:</span> <span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;medication&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;rxnorm_code&quot;</span><span class="p">:</span> <span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;rxnorm_code&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;event_description&quot;</span><span class="p">:</span> <span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;event&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">severity</span><span class="p">,</span>
+        <span class="s2">&quot;severity_indicator&quot;</span><span class="p">:</span> <span class="n">severity_indicator</span><span class="p">,</span>
+        <span class="s2">&quot;evidence_score&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;evidence_score&quot;</span><span class="p">])),</span>
+        <span class="s2">&quot;evidence_reasons&quot;</span><span class="p">:</span> <span class="n">detected_event</span><span class="p">[</span><span class="s2">&quot;evidence_reasons&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;detection_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;pending_review&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Write to DynamoDB.</span>
+    <span class="c1"># Partition key: patient_id. Sort key: detection_timestamp.</span>
+    <span class="c1"># GSI on rxnorm_code + note_date for medication-level queries.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">ADVERSE_EVENTS_TABLE</span><span class="p">)</span>
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">ae_record</span><span class="p">)</span>
+
+    <span class="c1"># High-severity: Grade 3+ triggers immediate notification.</span>
+    <span class="k">if</span> <span class="n">severity</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;grade_3_severe&quot;</span><span class="p">,</span> <span class="s2">&quot;grade_4_life_threatening&quot;</span><span class="p">):</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">TopicArn</span><span class="o">=</span><span class="n">SNS_CRITICAL_TOPIC</span><span class="p">,</span>
+            <span class="n">Subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;High-severity adverse event detected: </span><span class="si">{</span><span class="n">severity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ae_record</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+                <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ** ALERT: High-severity event published to SNS **&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ae_record</span>
+</pre></div>
+
+<hr />
+<h2 id="step-7-aggregate-for-signal-detection">Step 7: Aggregate for Signal Detection</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">aggregate_signals</span><span class="p">(</span><span class="n">time_window_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Query recent AEs and apply basic disproportionality analysis.</span>
+
+<span class="sd">    Maps to pseudocode Step 7. This runs as a scheduled batch job (daily or weekly).</span>
+<span class="sd">    It queries all detected events in a time window, groups by drug-event pair,</span>
+<span class="sd">    and flags combinations occurring at &gt;2x the expected rate with 3+ patients.</span>
+
+<span class="sd">    In production, this would query DynamoDB with a GSI scan or export to Athena</span>
+<span class="sd">    for efficient aggregation. Here we demonstrate the logic.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># In a real system, you&#39;d query DynamoDB or export to S3/Athena.</span>
+    <span class="c1"># This simulates reading recent events from the database.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">ADVERSE_EVENTS_TABLE</span><span class="p">)</span>
+    <span class="n">cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">time_window_days</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="c1"># Scan is expensive at scale. In production, use a GSI with detection_timestamp</span>
+    <span class="c1"># as the sort key, or export to S3 + Athena for analytical queries.</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+        <span class="n">FilterExpression</span><span class="o">=</span><span class="s2">&quot;detection_timestamp &gt; :cutoff&quot;</span><span class="p">,</span>
+        <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;:cutoff&quot;</span><span class="p">:</span> <span class="n">cutoff</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">recent_events</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Items&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="c1"># Group by normalized drug-event pair.</span>
+    <span class="n">pair_counts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">recent_events</span><span class="p">:</span>
+        <span class="n">pair_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rxnorm_code&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;event_description&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">pair_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pair_counts</span><span class="p">:</span>
+            <span class="n">pair_counts</span><span class="p">[</span><span class="n">pair_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;patients&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;total_mentions&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="n">pair_counts</span><span class="p">[</span><span class="n">pair_key</span><span class="p">][</span><span class="s2">&quot;patients&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">])</span>
+        <span class="n">pair_counts</span><span class="p">[</span><span class="n">pair_key</span><span class="p">][</span><span class="s2">&quot;total_mentions&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Apply simple disproportionality analysis.</span>
+    <span class="c1"># Expected rates would come from historical baseline or literature.</span>
+    <span class="c1"># Here we use a placeholder of 4.0 events per 30-day window.</span>
+    <span class="n">DEFAULT_EXPECTED_RATE</span> <span class="o">=</span> <span class="mf">4.0</span>
+    <span class="n">signals</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">rxnorm_code</span><span class="p">,</span> <span class="n">event_term</span><span class="p">),</span> <span class="n">counts</span> <span class="ow">in</span> <span class="n">pair_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">unique_patients</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;patients&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">unique_patients</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">ratio</span> <span class="o">=</span> <span class="n">unique_patients</span> <span class="o">/</span> <span class="n">DEFAULT_EXPECTED_RATE</span>
+            <span class="k">if</span> <span class="n">ratio</span> <span class="o">&gt;</span> <span class="mf">2.0</span><span class="p">:</span>
+                <span class="n">signals</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;rxnorm_code&quot;</span><span class="p">:</span> <span class="n">rxnorm_code</span><span class="p">,</span>
+                    <span class="s2">&quot;event_term&quot;</span><span class="p">:</span> <span class="n">event_term</span><span class="p">,</span>
+                    <span class="s2">&quot;unique_patients&quot;</span><span class="p">:</span> <span class="n">unique_patients</span><span class="p">,</span>
+                    <span class="s2">&quot;total_mentions&quot;</span><span class="p">:</span> <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;total_mentions&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;expected_rate&quot;</span><span class="p">:</span> <span class="n">DEFAULT_EXPECTED_RATE</span><span class="p">,</span>
+                    <span class="s2">&quot;observed_to_expected_ratio&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                    <span class="s2">&quot;time_window_days&quot;</span><span class="p">:</span> <span class="n">time_window_days</span><span class="p">,</span>
+                    <span class="s2">&quot;signal_status&quot;</span><span class="p">:</span> <span class="s2">&quot;investigation_required&quot;</span><span class="p">,</span>
+                <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">signals</span>
+</pre></div>
+
+<hr />
+<h2 id="full-pipeline">Full Pipeline</h2>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">process_note</span><span class="p">(</span><span class="n">note</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full adverse event detection pipeline on a single clinical note.</span>
+
+<span class="sd">    This assembles Steps 1-6 into one callable function. In production, each step</span>
+<span class="sd">    would be a separate Lambda function orchestrated by Step Functions. Here we</span>
+<span class="sd">    run them sequentially for clarity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing note: </span><span class="si">{</span><span class="n">note</span><span class="p">[</span><span class="s1">&#39;note_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">note</span><span class="p">[</span><span class="s1">&#39;note_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Patient: </span><span class="si">{</span><span class="n">note</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Date: </span><span class="si">{</span><span class="n">note</span><span class="p">[</span><span class="s1">&#39;note_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Archive</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 1] Archiving note to S3...&quot;</span><span class="p">)</span>
+    <span class="n">archive_key</span> <span class="o">=</span> <span class="n">archive_note</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Archived to: </span><span class="si">{</span><span class="n">archive_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Extract entities</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 2] Extracting medical entities (Comprehend Medical)...&quot;</span><span class="p">)</span>
+    <span class="n">entities</span> <span class="o">=</span> <span class="n">extract_entities</span><span class="p">(</span><span class="n">note</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Medications found: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">entities</span><span class="p">[</span><span class="s1">&#39;medications&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Conditions found: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">entities</span><span class="p">[</span><span class="s1">&#39;conditions&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Temporal expr: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">entities</span><span class="p">[</span><span class="s1">&#39;temporals&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">med</span> <span class="ow">in</span> <span class="n">entities</span><span class="p">[</span><span class="s2">&quot;medications&quot;</span><span class="p">]:</span>
+        <span class="n">rxnorm</span> <span class="o">=</span> <span class="n">med</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rxnorm_code&quot;</span><span class="p">,</span> <span class="s2">&quot;N/A&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Med: </span><span class="si">{</span><span class="n">med</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (RxNorm: </span><span class="si">{</span><span class="n">rxnorm</span><span class="si">}</span><span class="s2">, confidence: </span><span class="si">{</span><span class="n">med</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cond</span> <span class="ow">in</span> <span class="n">entities</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]:</span>
+        <span class="n">traits</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">cond</span><span class="p">[</span><span class="s2">&quot;traits&quot;</span><span class="p">]]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Condition: </span><span class="si">{</span><span class="n">cond</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (traits: </span><span class="si">{</span><span class="n">traits</span><span class="si">}</span><span class="s2">, confidence: </span><span class="si">{</span><span class="n">cond</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Filter assertions</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 3] Filtering by assertion status...&quot;</span><span class="p">)</span>
+    <span class="n">active_conditions</span> <span class="o">=</span> <span class="n">filter_active_conditions</span><span class="p">(</span><span class="n">entities</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">])</span>
+    <span class="n">filtered_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entities</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">])</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_conditions</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Active conditions: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">active_conditions</span><span class="p">)</span><span class="si">}</span><span class="s2"> (filtered out </span><span class="si">{</span><span class="n">filtered_count</span><span class="si">}</span><span class="s2"> negated/hypothetical)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Detect adverse event relationships</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 4] Detecting adverse event relationships...&quot;</span><span class="p">)</span>
+    <span class="n">detected_events</span> <span class="o">=</span> <span class="n">detect_adverse_events</span><span class="p">(</span>
+        <span class="n">entities</span><span class="p">[</span><span class="s2">&quot;medications&quot;</span><span class="p">],</span>
+        <span class="n">active_conditions</span><span class="p">,</span>
+        <span class="n">entities</span><span class="p">[</span><span class="s2">&quot;temporals&quot;</span><span class="p">],</span>
+        <span class="n">note</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Detected AEs: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">detected_events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Steps 5-6: Classify severity and store</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ae</span> <span class="ow">in</span> <span class="n">detected_events</span><span class="p">:</span>
+        <span class="n">severity</span><span class="p">,</span> <span class="n">indicator</span> <span class="o">=</span> <span class="n">classify_severity</span><span class="p">(</span><span class="n">ae</span><span class="p">,</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  AE: </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;medication&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;event&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Evidence score: </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;evidence_score&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Evidence: </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;evidence_reasons&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Severity: </span><span class="si">{</span><span class="n">severity</span><span class="si">}</span><span class="s2"> (indicator: </span><span class="si">{</span><span class="n">indicator</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Step 6: Store (in a real run with actual AWS resources)</span>
+        <span class="c1"># ae_record = store_adverse_event(note, ae, severity, indicator)</span>
+        <span class="c1"># results.append(ae_record)</span>
+
+        <span class="c1"># For demonstration, build the record without writing to DynamoDB</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;ae_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;ae-demo-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">[</span><span class="s2">&quot;note_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;medication&quot;</span><span class="p">:</span> <span class="n">ae</span><span class="p">[</span><span class="s2">&quot;medication&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;rxnorm_code&quot;</span><span class="p">:</span> <span class="n">ae</span><span class="p">[</span><span class="s2">&quot;rxnorm_code&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="n">ae</span><span class="p">[</span><span class="s2">&quot;event&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">severity</span><span class="p">,</span>
+            <span class="s2">&quot;evidence_score&quot;</span><span class="p">:</span> <span class="n">ae</span><span class="p">[</span><span class="s2">&quot;evidence_score&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;evidence_reasons&quot;</span><span class="p">:</span> <span class="n">ae</span><span class="p">[</span><span class="s2">&quot;evidence_reasons&quot;</span><span class="p">],</span>
+        <span class="p">})</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">detected_events</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  No adverse events detected in this note.&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_demo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Process all synthetic notes and display results.</span>
+
+<span class="sd">    This simulates what would happen when notes arrive in the SQS queue</span>
+<span class="sd">    and trigger the Lambda pipeline.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adverse Event Detection Pipeline - Demo Run&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SYNTHETIC_NOTES</span><span class="p">)</span><span class="si">}</span><span class="s2"> synthetic clinical notes</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">all_results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">SYNTHETIC_NOTES</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">process_note</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+        <span class="n">all_results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="c1"># Summary</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PIPELINE SUMMARY&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Notes processed: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SYNTHETIC_NOTES</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adverse events detected: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_results</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">all_results</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Detected adverse events:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ae</span> <span class="ow">in</span> <span class="n">all_results</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;medication&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;event&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Patient: </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, Severity: </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;severity&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Score: </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;evidence_score&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, Reasons: </span><span class="si">{</span><span class="n">ae</span><span class="p">[</span><span class="s1">&#39;evidence_reasons&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">run_demo</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="gap-to-production">Gap to Production</h2>
+<p>This example demonstrates the core concepts. Here's the distance between this code and something you'd deploy.</p>
+<p><strong>Error handling and retries.</strong> Every Comprehend Medical call needs robust error handling. <code>ThrottlingException</code> is expected at batch volumes. The <code>botocore.config.Config(retries={&quot;max_attempts&quot;: 3, &quot;mode&quot;: &quot;adaptive&quot;})</code> shown here is the minimum. Add a dead-letter queue on each Lambda, and implement circuit-breaker patterns for downstream services. A note that fails processing should not disappear silently.</p>
+<p><strong>Input validation and text normalization.</strong> Clinical notes arrive in varied encodings, with embedded formatting, control characters, and sometimes corrupted Unicode from legacy EHR systems. Validate and normalize input text before sending to Comprehend Medical. Strip control characters, normalize whitespace, and handle the 20,000-character limit gracefully by chunking long notes with overlap (especially discharge summaries, which routinely exceed 20,000 characters).</p>
+<p><strong>Structured logging.</strong> Replace all <code>print</code> statements with structured JSON logging (Python's <code>logging</code> module with a JSON formatter, or AWS Lambda Powertools). Every log entry should include note_id, patient_id, step name, and duration. Never log raw note text or extracted clinical content (that's PHI). Log only metadata: entity counts, confidence scores, severity grades, and processing status.</p>
+<p><strong>Expected-effects filtering.</strong> The demo flags all drug-event pairs above the evidence threshold. A production system needs a comprehensive &quot;expected and acceptable&quot; database to filter out known dose-dependent effects that are clinically unremarkable: nausea with SSRIs, constipation with opioids, fatigue with beta-blockers. Without this filter, the safety team drowns in noise within the first week.</p>
+<p><strong>DynamoDB Decimal handling.</strong> DynamoDB requires <code>Decimal</code> for numeric values, not <code>float</code>. The <code>store_adverse_event</code> function converts <code>evidence_score</code> using <code>Decimal(str(value))</code>. Any additional numeric fields you add (latency metrics, confidence scores from aggregation) must use the same pattern. The <code>str()</code> wrapper avoids floating-point representation issues (<code>Decimal(0.1)</code> is not the same as <code>Decimal(&quot;0.1&quot;)</code>).</p>
+<p><strong>VPC and VPC endpoints.</strong> All Lambdas should run in a VPC for HIPAA deployments. You need interface VPC endpoints for: Comprehend Medical (<code>com.amazonaws.REGION.comprehendmedical</code>), DynamoDB (gateway endpoint), S3 (gateway endpoint), SNS, SQS, and CloudWatch Logs. Without these, Lambda functions in a no-egress VPC cannot reach AWS services. Test connectivity for each endpoint independently during deployment.</p>
+<p><strong>IAM least-privilege.</strong> The example uses broad service permissions for clarity. In production, scope <code>comprehend-medical:DetectEntitiesV2</code> and <code>comprehend-medical:InferRxNorm</code> to specific resources. Scope DynamoDB permissions to the exact table ARN. Scope S3 permissions to the specific bucket and prefix. Each Lambda in the Step Functions pipeline should have only the permissions needed for its specific step.</p>
+<p><strong>KMS encryption.</strong> Use customer-managed KMS keys (CMKs) for all data stores: S3 bucket encryption, DynamoDB table encryption, SQS queue encryption, SNS topic encryption, and CloudWatch Logs log group encryption. Lambda does not encrypt CloudWatch log groups by default. Create the log group with KMS encryption before the Lambda first writes to it.</p>
+<p><strong>Deduplication and idempotency.</strong> Notes can arrive multiple times (at-least-once delivery from EHR integration feeds). Use conditional DynamoDB writes (<code>ConditionExpression='attribute_not_exists(ae_id)'</code>) or build an idempotency key from (note_id, medication, event_description) to prevent duplicate AE records. Duplicate signals in the aggregation layer inflate observed-to-expected ratios and can trigger false alerts.</p>
+<p><strong>Cross-note reasoning.</strong> This example processes each note independently. The highest-value false negatives require connecting information across notes: a medication started in one note and a symptom reported in a subsequent note. Building cross-note reasoning requires maintaining a patient medication timeline (from pharmacy data or previous extraction results) and checking new symptoms against recently started medications. This is architecturally significant and should be a Phase 2 feature.</p>
+<p><strong>Aggregation at scale.</strong> The <code>aggregate_signals</code> function uses a DynamoDB Scan, which is expensive and slow at scale. In production, export AE records to S3 on a schedule (DynamoDB Export to S3 feature), then use Athena or Spark for analytical aggregation queries. The disproportionality analysis (PRR, ROR, BCPNN) requires statistical methods beyond the simple ratio shown here.</p>
+<p><strong>Testing.</strong> Build a test suite with annotated clinical notes (synthetic) where you know the ground truth. Measure precision and recall independently. Track these metrics over time as you tune thresholds and add new causal patterns. A regression test suite protects against threshold changes that improve one metric while degrading the other.</p>
+<hr />
+<p><em><a href="chapter08.07-adverse-event-detection-clinical-text.html">Recipe 8.7: Adverse Event Detection in Clinical Text</a> | <a href="chapter08-preface.html">Chapter 8 Index</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

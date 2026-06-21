@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 5.3 Architecture and Implementation: Address Standardization and Household Linkage</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested nav-active" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-53-architecture-and-implementation-address-standardization-and-household-linkage">Recipe 5.3 Architecture and Implementation: Address Standardization and Household Linkage</h1>
+<p><em>Companion to <a href="chapter05.03-address-standardization-household-linkage.html">Recipe 5.3: Address Standardization and Household Linkage</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon S3 for the address-standardization data lake.</strong> Three zones: raw (the source-system extracts of patient addresses, partitioned by source system and extract date), curated (the standardized addresses keyed by <code>address_hash</code> with full provenance and metadata), and derived (household-membership tables, geocode-augmented records, SDOH-joined records, drift-event archives). S3 is HIPAA-eligible under BAA with SSE-KMS encryption, and the partitioning pattern supports cohort-stratified analytics through Athena. Standardized addresses are PHI in their structured form; the encryption and access-control posture matches the rest of the patient demographics.</p>
+<p><strong>Amazon DynamoDB for the standardized-address table and the household-membership table.</strong> Two main tables. <code>patient-address</code> keyed on <code>(patient_id, address_role)</code> (where <code>address_role</code> is <code>physical</code>, <code>mailing</code>, <code>historical</code>, etc.) holds the current standardized address per role per patient, with the structured components, the validation status, the metadata, and the last-validated timestamp. <code>household-membership</code> keyed on <code>(household_id, patient_id)</code> holds the patient-to-household mappings with the inference confidence, the inference basis, and the privacy-suppression flag. DynamoDB's single-digit-millisecond reads support real-time household lookups for clinical context queries; the on-demand capacity handles the bursty pattern of registration-driven updates and quarterly batch refreshes.</p>
+<p><strong>Amazon Location Service or a CASS-certified third-party vendor for standardization and geocoding.</strong> AWS Location Service provides geocoding through partner data providers (Esri, HERE, Grab) but does not currently provide CASS-certified USPS-conformant standardization for the United States.  The most common production pattern is to use a CASS-certified vendor (Smarty, Melissa, Loqate, Experian) for standardization, then either Location Service or the same vendor for geocoding. Vendor APIs are called from a Lambda with the API key stored in AWS Secrets Manager, the call made through a VPC endpoint or NAT Gateway with allow-listed egress, and the response cached against the input hash to avoid duplicate API calls. The architecture treats the standardization vendor as a swappable component: the standardized-record schema is the contract, and the implementation behind it can be any CASS-certified provider.</p>
+<p><strong>AWS Lambda for the per-record standardization, the household-inference scoring, and the drift detection.</strong> Lambda is the right substrate for these because each task is short-lived, mostly I/O-bound (vendor API call plus DynamoDB write), and benefits from on-demand scaling for bursty workloads. Standardization Lambdas are in VPC with VPC endpoints for downstream services. The split between Glue (batch, large-scale refresh) and Lambda (real-time, single-record) lets each workload run on the right substrate.</p>
+<p><strong>AWS Glue for the batch refresh and the household-inference batch job.</strong> The monthly USPS-reference-data refresh and the quarterly NCOA processing run as Glue jobs because they operate over the entire patient address population at once. The household-inference job also runs as Glue: it groups standardized addresses by canonical hash, evaluates per-group evidence, and writes household-membership rows. Glue Data Catalog tracks the schema across raw, curated, and derived zones. Athena queries the catalog for cohort-stratified accuracy monitoring, address-quality reporting, and ad-hoc operational questions.</p>
+<p><strong>AWS Step Functions for orchestration.</strong> Three workflows: a real-time-update workflow (run on a per-record basis when a new patient registers or an address changes; standardize, validate, persist, recompute household membership for the affected addresses), a monthly-USPS-refresh workflow (re-standardize the entire population against the latest USPS reference data; detect drifts; recompute household membership where addresses changed), and a quarterly-NCOA workflow (submit the population to NCOA; receive updates; merge into the address store; recompute household membership where movers were detected).</p>
+<p><strong>Amazon EventBridge for address and household drift events.</strong> When a standardized address changes (DPV failure, ZIP+4 change, NCOA mover) or a household membership changes (new patient at an existing household, household member moved out), an event flows out to downstream consumers: the outreach pipeline for mailing-list updates, the SDOH analytics pipeline for geocode refresh, the patient-portal for verification prompts, the matcher (recipe 5.1) for re-evaluation of any duplicate-detection candidates that depend on address signals.</p>
+<p><strong>Amazon API Gateway plus Lambda for the real-time standardization API.</strong> Patient registration workflows call the API at the moment a patient is registering or updating their address, get back a structured standardized address, and present any corrections or ambiguity warnings to the registration clerk for confirmation. The API also handles the household-lookup pattern (given a patient ID, return the household membership records). API Gateway provides authentication, rate-limiting, and request logging; Lambda handles the orchestration of the standardization vendor call and the persist-to-DynamoDB step. Latency budget is sub-second for the registration-clerk experience; vendor API calls typically fit in that budget, with caching for repeat addresses helping the common case.</p>
+<p><strong>Amazon Athena and AWS Glue Data Catalog for analytics.</strong> Cohort-stratified standardization-success rates, household-inference confidence distributions, drift-event volumes, mover detection rates from NCOA processing. Athena queries the catalog over the curated and derived S3 zones; QuickSight on top of Athena provides the dashboards for the address-data-quality team and for the population-health and SDOH analytics teams.</p>
+<p><strong>Amazon QuickSight for the operational and quality dashboards.</strong> Per-cohort standardization-success rates (validated vs corrected vs ambiguous vs not-validated), household-inference confidence distribution by building type and by cohort, drift-event rates, NCOA mover rates, geocoding success rates, SDOH-indicator coverage by census tract.</p>
+<p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Customer-managed keys for the S3 buckets, the DynamoDB tables, and the Lambda log groups. CloudTrail data events on the address and household tables and on the standardization-audit S3 bucket. CloudWatch alarms on standardization-vendor-API failure rates, on drift-event volumes (a sudden spike often indicates a USPS reference-data anomaly worth investigating), on NCOA-processing-latency breaches, and on cohort-stratified standardization-success-rate disparities.</p>
+<p><strong>AWS Secrets Manager for the standardization-vendor API key and the NCOA-vendor credentials.</strong> Vendor credentials are sensitive and should not appear in code or in environment variables. Secrets Manager stores them with KMS encryption at rest, IAM-controlled access, and rotation support where the vendor supports rotation.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Sources
+      A1[Registration System]
+      A2[Insurance Subscriber Files]
+      A3[HIE / Referral Feeds]
+      A4[Patient Portal Self-Update]
+    end
+
+    A1 --&gt;|Real-time event| L1[Lambda&lt;br/&gt;standardize-on-update]
+    A2 --&gt;|Periodic extract| S1[S3&lt;br/&gt;address-raw]
+    A3 --&gt;|Periodic extract| S1
+    A4 --&gt;|Real-time event| L1
+
+    S1 --&gt; GL1[Glue Job&lt;br/&gt;batch-standardize]
+
+    L1 --&gt; SM1[Secrets Manager&lt;br/&gt;vendor API key]
+    GL1 --&gt; SM1
+
+    L1 --&gt;|API call via VPC endpoint /&lt;br/&gt;NAT with allow-list| V1[CASS-Certified&lt;br/&gt;Vendor API]
+    GL1 --&gt;|Bulk API| V1
+
+    L1 --&gt; S2[S3&lt;br/&gt;address-curated]
+    GL1 --&gt; S2
+
+    S2 --&gt; D1[DynamoDB&lt;br/&gt;patient-address]
+    S2 --&gt; GL2[Glue Job&lt;br/&gt;household-inference]
+
+    GL2 --&gt; S3[S3&lt;br/&gt;household-derived]
+    S3 --&gt; D2[DynamoDB&lt;br/&gt;household-membership]
+
+    subgraph Geocode and SDOH
+      L2[Lambda&lt;br/&gt;geocode-on-demand]
+      GL3[Glue Job&lt;br/&gt;sdoh-join]
+      L2 --&gt; AL1[Amazon Location Service&lt;br/&gt;or vendor geocoder]
+      L2 --&gt; S4[S3&lt;br/&gt;geocode-cache]
+      GL3 --&gt; S5[S3&lt;br/&gt;sdoh-derived]
+    end
+
+    D1 --&gt; L2
+    S2 --&gt; GL3
+    GL3 --&gt;|Census tract /&lt;br/&gt;SDOH index| S5
+
+    subgraph Real-Time API
+      AG1[API Gateway&lt;br/&gt;standardize / household-lookup]
+      L3[Lambda&lt;br/&gt;api-handler]
+      AG1 --&gt; CG1[Cognito]
+      AG1 --&gt; L3
+      L3 --&gt; D1
+      L3 --&gt; D2
+      L3 --&gt; L1
+    end
+
+    subgraph Refresh and Drift
+      SF1[Step Functions&lt;br/&gt;monthly USPS refresh]
+      SF2[Step Functions&lt;br/&gt;quarterly NCOA]
+      L4[Lambda&lt;br/&gt;drift-detector]
+      SF1 --&gt; GL1
+      SF1 --&gt; L4
+      SF2 --&gt; V2[NCOA-Certified&lt;br/&gt;Vendor]
+      SF2 --&gt; L4
+      L4 --&gt; EB1[EventBridge&lt;br/&gt;address-and-household-drift]
+    end
+
+    EB1 --&gt;|FanOut| C1[Outreach Pipeline]
+    EB1 --&gt;|FanOut| C2[SDOH Analytics]
+    EB1 --&gt;|FanOut| C3[Patient Portal&lt;br/&gt;verify prompt]
+    EB1 --&gt;|FanOut| C4[Patient Matcher 5.1&lt;br/&gt;re-evaluate]
+
+    S2 --&gt; GC1[Glue Catalog]
+    S3 --&gt; GC1
+    S5 --&gt; GC1
+    GC1 --&gt; AT1[Athena]
+    AT1 --&gt; QS1[QuickSight&lt;br/&gt;Quality Dashboards]
+
+    style D1 fill:#9ff,stroke:#333
+    style D2 fill:#9ff,stroke:#333
+    style S1 fill:#cfc,stroke:#333
+    style S2 fill:#cfc,stroke:#333
+    style S3 fill:#cfc,stroke:#333
+    style S4 fill:#cfc,stroke:#333
+    style S5 fill:#cfc,stroke:#333
+    style EB1 fill:#f9f,stroke:#333
+    style V1 fill:#fc9,stroke:#333
+    style V2 fill:#fc9,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon S3, Amazon DynamoDB, AWS Lambda, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon API Gateway, Amazon Cognito, Amazon Location Service (optional), Amazon QuickSight, AWS Secrets Manager, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>External Services</strong></td>
+<td>A CASS-certified address-standardization vendor (Smarty, Melissa, Loqate, Experian, or equivalent). An NCOAlink-certified vendor for periodic mover detection (often the same vendor as standardization). A geocoding source (Amazon Location Service partner providers, or the same address-quality vendor).</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: <code>dynamodb:GetItem</code> / <code>PutItem</code> / <code>UpdateItem</code> scoped to specific tables; <code>s3:GetObject</code> / <code>PutObject</code> scoped to specific bucket prefixes; <code>secretsmanager:GetSecretValue</code> scoped to the vendor-API-key secret; <code>events:PutEvents</code> on the drift bus; <code>kms:Decrypt</code> on relevant CMKs. Glue jobs need scoped catalog and S3 permissions. Never use <code>*</code> actions or <code>*</code> resources in production.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. The standardization vendor must also be willing to sign a BAA, since you will be sending PHI (the address combined with patient identifier) to their API. Most major address-quality vendors offer healthcare-tier service plans with BAAs available.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with bucket-level keys. DynamoDB: customer-managed KMS at rest. Lambda log groups KMS-encrypted. Secrets Manager: KMS-encrypted secrets. EventBridge: server-side encryption. Glue jobs: KMS for connection passwords. TLS 1.2 or higher for all in-transit traffic, including the vendor-API call.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas in VPC. Glue jobs in VPC connections. VPC endpoints for S3 (gateway), DynamoDB (gateway), KMS, Secrets Manager, CloudWatch Logs, EventBridge, Step Functions, Glue, Athena, STS. NAT Gateway for the vendor API call (vendor APIs typically do not have AWS PrivateLink endpoints) with an outbound HTTPS proxy and an allow-list of vendor domains.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the patient-address and household-membership tables; data events on the audit S3 buckets. API Gateway and Lambda invocations logged. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy.</td>
+</tr>
+<tr>
+<td><strong>Vendor Selection</strong></td>
+<td>Vet the standardization vendor for: CASS certification (current cycle), NCOAlink certification, BAA availability, healthcare-customer references, API rate limits and bulk-processing options, response-time SLAs, geographic coverage (US-only or international), pricing model (per-record, monthly subscription, or annual license), uptime SLA, and data-handling commitments (do they retain submissions, for how long, with what controls). The vendor selection is consequential because the vendor sees PHI; treat the procurement as a privacy and security review, not just a feature comparison.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Use synthetic patient address records that exercise the full range of standardization outcomes (clean, corrected, ambiguous, missing-secondary, not-validated, invalid). The USPS provides public reference data and the major vendors typically provide test endpoints with known-test addresses. Never use real patient addresses in development environments.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a medium-sized health system with ~500,000 patients and ~10,000 new addresses per month plus quarterly refresh: vendor standardization costs roughly $0.005-0.02 per address validated (typically billed in batches; healthcare-tier with BAA is at the higher end of that range), so monthly throughput at ~520,000 addresses (10K new plus 510K quarterly-refresh share) ≈ $2,500-10,000/month for the vendor. AWS infrastructure: S3, DynamoDB, Lambda, Glue, Step Functions, EventBridge, API Gateway, Athena, QuickSight, KMS combined typically $300-1,500/month. Estimated total: $2,800-11,500/month, dominated by the vendor cost. NCOA processing typically adds $1,000-3,000/quarter for the cross-check submission.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Hosts raw address extracts, standardized records, household-membership tables, geocode cache, SDOH-joined records, and drift archives</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores the current standardized address per patient per role (<code>patient-address</code>) and the patient-to-household mappings (<code>household-membership</code>) for low-latency real-time access</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Per-record standardization on registration-time events, household-inference for affected groups on address change, drift-detection on refresh cycles, real-time API handler</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Batch standardization refresh against new USPS reference data, batch household-inference over the full patient population, SDOH-indicator joining</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena</strong></td>
+<td>SQL access to the address data lake for cohort-stratified accuracy monitoring, quality reporting, and ad-hoc operations questions</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the monthly USPS refresh, the quarterly NCOA processing, and the per-record real-time update workflows</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Fans out address and household drift events to downstream consumers (outreach, SDOH analytics, patient portal, patient matcher)</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Exposes the real-time standardization endpoint for registration workflows and the household-lookup endpoint for clinical-context queries</td>
+</tr>
+<tr>
+<td><strong>Amazon Cognito</strong></td>
+<td>Authenticates real-time API consumers (registration system, clinical applications)</td>
+</tr>
+<tr>
+<td><strong>Amazon Location Service</strong></td>
+<td>(Optional) Geocoding, when not handled by the address-quality vendor; partners provide the underlying mapping data</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Quality dashboards (standardization success rate by cohort, household-inference confidence distribution, drift volume, mover detection rate)</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Stores vendor API keys and credentials with KMS encryption and rotation support</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all address-data stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics and alarms (vendor API failures, standardization latency, drift spike detection, cohort disparities)</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all API calls on the address and household tables and on the audit S3 buckets</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful aws-samples, vendor SDKs, and open-source patterns for this recipe:</p>
+<ul>
+<li><a href="https://github.com/jminuse/pyusps"><code>pyusps</code></a> and similar small libraries: lightweight USPS API wrappers; useful for development environments where you cannot use a CASS-certified vendor. Note the USPS Web Tools API is not CASS-certified and is rate-limited; not appropriate for production.</li>
+<li><a href="https://github.com/openvenues/libpostal"><code>libpostal</code></a>: an open-source library for address parsing trained on OpenStreetMap data; useful for the parsing piece even when the validation is delegated to a CASS-certified vendor.</li>
+<li><a href="https://github.com/datamade/usaddress"><code>usaddress</code></a>: a Python library for parsing US addresses into structured components using probabilistic methods; less heavyweight than libpostal, useful for the parsing piece in development.</li>
+<li>The major CASS-certified vendors (Smarty, Melissa, Loqate) publish official SDKs for Python, Java, .NET, and Node.js; use the official SDK rather than rolling your own HTTP client.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest patient address records.</strong> Address records arrive from registration events (real-time), insurance feeds (periodic batch), HIE referrals (per-event), and patient-portal updates (real-time). Each source produces a raw address with source-specific field formatting. Capture the source, the timestamp, the patient identifier, the address role (physical, mailing, historical), and the raw fields. Skip this and you lose the audit trail you'll need when the standardization changes the address and you need to explain why.</p>
+<pre class="code code-plain"><code>FUNCTION ingest_address_record(source_event):
+    raw = {
+        patient_id: source_event.patient_id,
+        address_role: source_event.address_role,
+            // &quot;physical&quot;, &quot;mailing&quot;, &quot;historical_&lt;n&gt;&quot;
+        line1: source_event.address_line_1,
+        line2: source_event.address_line_2,
+        city: source_event.city,
+        state: source_event.state,
+        zip: source_event.postal_code,
+        country: source_event.country OR &quot;US&quot;,
+        source: source_event.source_system,
+            // &quot;registration&quot;, &quot;insurance_feed&quot;, &quot;hie&quot;, &quot;portal&quot;
+        source_record_id: source_event.source_record_id,
+        ingested_at: current UTC timestamp
+    }
+
+    // Persist the raw input for audit and for re-standardization
+    // after vendor-software upgrades.
+    write_to_s3(raw, s3_bucket=&quot;address-raw&quot;,
+                key=&quot;{source}/{date}/{patient_id}_{role}.json&quot;)
+
+    RETURN raw
+</code></pre>
+<p><strong>Step 2: Standardize against the USPS reference data via the vendor API.</strong> The CASS-certified vendor takes the raw input and returns a structured, validated, USPS-conformant standardized record. The vendor handles the heavy lifting: parsing, USPS rule application, DPV validation, correction logic, and metadata enrichment. Skip this and you'll be implementing CASS yourself, which is a multi-quarter project that you'll then have to maintain through every USPS reference-data update.</p>
+<pre class="code code-plain"><code>FUNCTION standardize_address(raw):
+    // Step 2A: short-circuit for non-US addresses. The CASS vendor
+    // covers US addresses only; international addresses go through
+    // a different validator path (or no validator at all if no
+    // international vendor is licensed).
+    IF raw.country != &quot;US&quot; AND raw.country != &quot;USA&quot;:
+        RETURN {
+            standardization_status: &quot;INTERNATIONAL_NOT_PROCESSED&quot;,
+            international_address_raw: raw,
+            standardized_at: current UTC timestamp
+        }
+
+    // Step 2B: call the CASS-certified vendor API.
+    // The vendor SDK handles authentication, retries, and the
+    // structured response. Idempotency is on (raw_input_hash) so
+    // repeated calls for the same input return the same result.
+    raw_input_hash = sha256(canonical_form(raw))
+
+    // Check the cache first; many addresses are repeats across
+    // patient records (family members at the same address, address
+    // copied from one record to another).
+    cached = check_standardization_cache(raw_input_hash)
+    IF cached IS NOT NULL AND cached.cache_age &lt; CACHE_TTL:
+        RETURN cached.standardized
+    // CACHE_TTL is bounded by the USPS reference-data update
+    // cadence (monthly): 30 days aligns with the monthly refresh.
+    // TODO (TechWriter): Expert review A12 (LOW). Specify the
+    // cache TTL policy: 30 days bounded by the USPS monthly
+    // reference-data update cadence; cache entries stored in
+    // DynamoDB with a TTL attribute so DynamoDB auto-evicts.
+    // Cache invalidation on USPS reference-data update is handled
+    // by the change-driven refresh (see Step 5A TODO A3): if the
+    // refresh re-standardizes a record, the cache for the
+    // underlying raw_input_hash is updated as a side effect.
+
+    vendor_response = vendor_sdk.validate(
+        line1: raw.line1,
+        line2: raw.line2,
+        city: raw.city,
+        state: raw.state,
+        zip: raw.zip
+    )
+    // The vendor response contains: parsed components, the
+    // standardized form, the DPV result, and any footnotes
+    // explaining corrections or warnings.
+
+    // Step 2C: classify the result by USPS-defined outcome.
+    standardized = {}
+    IF vendor_response.dpv == &quot;Y&quot; AND vendor_response.was_corrected == false:
+        standardized.status = &quot;VALIDATED&quot;
+            // clean, USPS-confirmed, no corrections
+    ELIF vendor_response.dpv == &quot;Y&quot; AND vendor_response.was_corrected == true:
+        standardized.status = &quot;CORRECTED&quot;
+            // input had errors, vendor applied a correction
+        standardized.correction_confidence = vendor_response.correction_confidence
+        standardized.original_input = raw  // for audit
+    ELIF vendor_response.dpv == &quot;S&quot;:
+        standardized.status = &quot;MISSING_SECONDARY&quot;
+            // valid building, but a secondary unit is required
+            // and missing
+    ELIF vendor_response.dpv == &quot;D&quot;:
+        standardized.status = &quot;AMBIGUOUS&quot;
+            // multiple valid corrections, no high-confidence answer
+        standardized.candidate_addresses = vendor_response.candidates
+    ELIF vendor_response.dpv == &quot;N&quot; OR vendor_response.match_code == &quot;no_match&quot;:
+        standardized.status = &quot;NOT_VALIDATED&quot;
+            // not in USPS database; might still be real (new
+            // construction) or invalid
+    ELSE:
+        standardized.status = &quot;INVALID&quot;
+            // cannot be parsed or matched
+
+    // Step 2D: capture the structured form and the metadata.
+    IF standardized.status IN [&quot;VALIDATED&quot;, &quot;CORRECTED&quot;, &quot;MISSING_SECONDARY&quot;]:
+        standardized.delivery_line_1 = vendor_response.delivery_line_1
+        standardized.last_line = vendor_response.last_line
+        standardized.components = {
+            primary_number: vendor_response.components.primary_number,
+            street_predirection: vendor_response.components.street_predirection,
+            street_name: vendor_response.components.street_name,
+            street_suffix: vendor_response.components.street_suffix,
+            street_postdirection: vendor_response.components.street_postdirection,
+            secondary_designator: vendor_response.components.secondary_designator,
+            secondary_number: vendor_response.components.secondary_number,
+            city: vendor_response.components.city,
+            state: vendor_response.components.state,
+            zipcode: vendor_response.components.zipcode,
+            plus4_code: vendor_response.components.plus4_code
+        }
+        standardized.metadata = {
+            record_type: vendor_response.metadata.record_type,
+                // &quot;Street&quot;, &quot;PO Box&quot;, &quot;Highway Contract&quot;,
+                // &quot;Firm&quot; (commercial), etc.
+            is_residential: vendor_response.metadata.is_residential,
+            is_business: vendor_response.metadata.is_business,
+            is_vacant: vendor_response.metadata.is_vacant,
+            is_po_box: vendor_response.metadata.is_po_box,
+            congressional_district: vendor_response.metadata.congressional_district,
+            county_name: vendor_response.metadata.county_name,
+            county_fips: vendor_response.metadata.county_fips,
+            census_block: vendor_response.metadata.census_block,
+            carrier_route: vendor_response.metadata.carrier_route,
+            dpv_footnotes: vendor_response.metadata.dpv_footnotes
+        }
+        standardized.canonical_hash = sha256(
+            canonical_form(standardized.delivery_line_1,
+                            standardized.components.secondary_number,
+                            standardized.last_line))
+            // Used for grouping in household inference; same
+            // physical address with same unit produces same hash.
+
+    // Step 2E: provenance.
+    standardized.raw_input_hash = raw_input_hash
+    standardized.original_input = raw
+    standardized.standardized_at = current UTC timestamp
+    standardized.vendor = VENDOR_NAME
+    standardized.vendor_software_version = vendor_response.software_version
+    standardized.cass_certification_cycle = vendor_response.cass_cycle
+    standardized.usps_reference_data_release = vendor_response.usps_reference_release
+
+    // Step 2F: cache and return.
+    write_to_standardization_cache(raw_input_hash, standardized)
+    RETURN standardized
+</code></pre>
+<p><strong>Step 3: Persist the standardized record and emit events.</strong> Write the structured standardized record to DynamoDB keyed on <code>(patient_id, address_role)</code> so downstream consumers can look up the current address per role. Also write to S3 for the audit trail and for analytics. If the standardization changed the address, emit an <code>address_standardized</code> event so downstream consumers can refresh their copies.</p>
+<pre class="code code-plain"><code>FUNCTION persist_standardized_record(patient_id, raw, standardized):
+    // Step 3A: read the previous record for this (patient_id,
+    // address_role) so we can detect changes.
+    previous = DynamoDB.GetItem(&quot;patient-address&quot;,
+        key={patient_id: patient_id, address_role: raw.address_role})
+
+    // TODO (TechWriter): Expert review A1 (HIGH). Wrap the
+    // DynamoDB write, the S3 archive write, and the EventBridge
+    // emit in a TransactWriteItems plus an outbox row drained by
+    // a separate Lambda or DynamoDB Streams consumer so partial
+    // failures do not leave the address table out of sync with
+    // downstream consumers. Apply the same wrapping pattern to
+    // infer_household_for_address (Step 4) so the per-member
+    // household-membership PutItems plus the household-inferred
+    // event are atomic; for households exceeding the
+    // TransactWriteItems 100-item limit, use a saga pattern keyed
+    // on a household_update_id. Regulatory consequence here is
+    // sharper than 5.1/5.2 because the address store feeds
+    // outreach (mailing-list scrubbing breaks if the address
+    // persisted but the household-inference event was not
+    // emitted) and the financial-assistance workflow (eligibility
+    // re-determination reads household membership). Same chapter
+    // pattern as 5.1 Finding A1, 5.2 Finding A1.
+
+    // Step 3B: write the current standardized record.
+    DynamoDB.PutItem(&quot;patient-address&quot;, {
+        patient_id: patient_id,
+        address_role: raw.address_role,
+        standardized: standardized,
+        previous_canonical_hash: previous.standardized.canonical_hash
+            IF previous IS NOT NULL ELSE NULL,
+        last_updated_at: current UTC timestamp,
+        next_revalidation_due_at: today() + REVALIDATION_CADENCE_DAYS
+    })
+
+    // Step 3C: archive to S3.
+    write_to_s3(standardized,
+                s3_bucket=&quot;address-curated&quot;,
+                key=&quot;{patient_id}/{role}/{timestamp}.json&quot;)
+
+    // Step 3D: emit an event if the canonical address changed.
+    IF previous IS NULL OR
+       previous.standardized.canonical_hash != standardized.canonical_hash:
+        EventBridge.PutEvents([{
+            source: &quot;address-standardization&quot;,
+            detail_type: &quot;address_standardized&quot;,
+            detail: {
+                patient_id: patient_id,
+                address_role: raw.address_role,
+                previous_canonical_hash: previous.standardized.canonical_hash
+                    IF previous IS NOT NULL ELSE NULL,
+                new_canonical_hash: standardized.canonical_hash,
+                standardization_status: standardized.status,
+                standardized_at: standardized.standardized_at
+            }
+        }])
+
+    // Step 3E: trigger household re-inference for affected
+    // canonical addresses. The previous-address group loses this
+    // patient; the new-address group gains them.
+    IF previous IS NOT NULL AND
+       previous.standardized.canonical_hash != standardized.canonical_hash:
+        invoke_household_inference(previous.standardized.canonical_hash)
+    invoke_household_inference(standardized.canonical_hash)
+</code></pre>
+<p><strong>Step 4: Infer household membership for a co-location group.</strong> Group all patient records sharing a canonical address hash. Apply privacy suppression. Evaluate corroborating evidence (last-name overlap, insurance-subscriber overlap, age patterns). Emit graded household-membership records. Skip this and you have a list of co-located patients but no usable household structure for downstream consumers.</p>
+<pre class="code code-plain"><code>FUNCTION infer_household_for_address(canonical_hash):
+    // Step 4A: pull all patient records sharing the canonical hash.
+    co_located_records = DynamoDB.Query(&quot;patient-address&quot;,
+        index=&quot;canonical_hash_index&quot;,
+        key={canonical_hash: canonical_hash})
+
+    IF len(co_located_records) &lt;= 1:
+        // Single patient at this address; no household to infer.
+        // Persist a single-patient household record for consistency.
+        persist_single_patient_household(co_located_records[0])
+        RETURN
+
+    // Step 4B: apply privacy suppression. If any record has a
+    // privacy flag, the system either suppresses the household
+    // for everyone in the group, or excludes the suppressed
+    // patient from the group, depending on policy.
+    //
+    // TODO (TechWriter): Expert review S4 (MEDIUM). Specify the
+    // audit posture for the privacy-suppression decision path.
+    // Every household-membership row should record the policy
+    // version active at inference time (privacy_policy_version)
+    // and the policy decision (privacy_decision: none,
+    // suppressed_record_excluded, suppressed_group_entirely). A
+    // separate privacy_suppression_audit table keyed on
+    // (canonical_hash, suppression_event_timestamp) records every
+    // encounter with a suppression flag during inference, with
+    // the suppressed patient_id, the action taken, and the
+    // resulting household state. A change in the institutional
+    // privacy policy emits a privacy_policy_changed event on
+    // EventBridge that triggers re-inference for every canonical
+    // hash with at least one suppressed record. Without these,
+    // forensic reconstruction (a domestic-violence-survivor
+    // patient asks the institution to investigate whether the
+    // household graph leaked her location) cannot reconstruct the
+    // policy state at the time of the inference.
+    suppressed_patients = []
+    FOR each record in co_located_records:
+        patient_privacy = get_patient_privacy_flags(record.patient_id)
+        IF patient_privacy.suppress_household_linkage:
+            suppressed_patients.append(record.patient_id)
+
+    IF PRIVACY_POLICY == &quot;suppress_entire_group_if_any_suppressed&quot;:
+        IF len(suppressed_patients) &gt; 0:
+            persist_suppressed_household(canonical_hash, co_located_records,
+                                            suppressed_patients)
+            RETURN
+    ELIF PRIVACY_POLICY == &quot;exclude_suppressed_from_group&quot;:
+        co_located_records = [r FOR r in co_located_records
+                                 WHERE r.patient_id NOT IN suppressed_patients]
+
+    // Step 4C: identify the building type from the standardization
+    // metadata. Some building types do not produce meaningful
+    // household groupings (commercial, PO Box, shelter, nursing
+    // home).
+    sample_metadata = co_located_records[0].standardized.metadata
+    building_type = classify_building_type(sample_metadata,
+                                              co_located_records)
+        // returns: &quot;single_family&quot;, &quot;multi_unit_with_unit&quot;,
+        //          &quot;multi_unit_no_unit&quot;, &quot;commercial&quot;, &quot;po_box&quot;,
+        //          &quot;shelter&quot;, &quot;nursing_home&quot;, &quot;unknown&quot;
+
+    IF building_type IN [&quot;commercial&quot;, &quot;po_box&quot;, &quot;shelter&quot;,
+                          &quot;nursing_home&quot;]:
+        // These building types do not produce household inferences
+        // (or need workflow-specific handling, e.g., shelters need
+        // case-management linkage rather than household linkage).
+        persist_co_located_only(canonical_hash, co_located_records,
+                                  building_type)
+        RETURN
+
+    // Step 4D: apply corroborating-evidence assessment to assign
+    // confidence.
+    //
+    // TODO (TechWriter): Expert review A7 (MEDIUM). Specify the
+    // configuration-and-governance posture for the household-
+    // inference confidence assignment. The thresholds (last-name
+    // overlap fraction, age-pattern consistency criteria,
+    // insurance-subscriber match weight, secondary-unit
+    // completeness weight) live in a versioned configuration
+    // table; re-calibration runs annually or on detection of
+    // cohort-stratified disparity above 0.10, whichever first;
+    // re-calibration produces a candidate threshold set;
+    // institutional review (data-quality team, privacy office,
+    // clinical leadership) reviews the confusion matrix and the
+    // cohort-disparity impact before promoting the candidate to
+    // production; each household-membership row records the
+    // configuration version and threshold values active at
+    // inference time. Reference 5.1 Finding A11, 5.2 Finding A11
+    // as chapter pattern.
+    household_id = derive_household_id(canonical_hash)
+        // stable household_id derived from the canonical hash so
+        // re-runs produce the same id
+
+    confidence_assessment = {
+        building_type: building_type,
+        unit_completeness: all_records_have_secondary_unit(co_located_records),
+        last_name_overlap: compute_last_name_overlap(co_located_records),
+        insurance_subscriber_overlap: compute_subscriber_overlap(co_located_records),
+        age_pattern_consistency: assess_age_patterns(co_located_records),
+        emergency_contact_links: check_emergency_contact_links(co_located_records)
+    }
+
+    confidence = assign_confidence_level(confidence_assessment, building_type)
+        // returns: &quot;HIGH&quot;, &quot;MEDIUM&quot;, &quot;CO_LOCATED&quot;
+
+    inference_basis = enumerate_supporting_evidence(confidence_assessment)
+        // human-readable list for the audit trail and for the
+        // review interface when downstream consumers need it
+
+    // Step 4E: persist the household-membership records. One row
+    // per (household_id, patient_id), so downstream consumers can
+    // efficiently look up household membership by patient or by
+    // household.
+    FOR each record in co_located_records:
+        DynamoDB.PutItem(&quot;household-membership&quot;, {
+            household_id: household_id,
+            patient_id: record.patient_id,
+            confidence_level: confidence,
+            inference_basis: inference_basis,
+            building_type: building_type,
+            canonical_hash: canonical_hash,
+            inferred_at: current UTC timestamp,
+            inference_version: HOUSEHOLD_INFERENCE_VERSION
+        })
+
+    // Step 4F: emit a household-changed event if the membership
+    // changed.
+    EventBridge.PutEvents([{
+        source: &quot;household-inference&quot;,
+        detail_type: &quot;household_inferred&quot;,
+        detail: {
+            household_id: household_id,
+            canonical_hash: canonical_hash,
+            patient_ids: [r.patient_id FOR r in co_located_records],
+            confidence: confidence,
+            building_type: building_type,
+            inferred_at: current UTC timestamp
+        }
+    }])
+</code></pre>
+<p><strong>Step 5: Periodic refresh against the latest USPS reference data and NCOA.</strong> USPS reference data updates monthly. NCOA processing typically runs quarterly. Both can change a previously-validated address: a building gets demolished, a ZIP+4 changes due to a postal-route restructure, a patient is detected as a mover via NCOA. The refresh re-standardizes the population, detects drifts, and updates the address store. Skip the refresh and your address data decays; outreach campaigns get worse over time, SDOH analytics drift from reality, the patient matcher loses signal it should have.</p>
+<pre class="code code-plain"><code>FUNCTION monthly_usps_refresh():
+    // Step 5A: pull the entire population of standardized addresses.
+    all_addresses = DynamoDB.Scan(&quot;patient-address&quot;)
+        // For large populations, this is a Glue/Spark job over
+        // S3-archived snapshots rather than a DynamoDB scan.
+
+    // TODO (TechWriter): Expert review A3 (HIGH). Replace the
+    // entire-population pattern with a change-driven refresh.
+    // Step 5A pulls the USPS reference-data change manifest for
+    // the cycle (which ZIP+4 ranges, DPV records, and building-
+    // type metadata changed since the last processed release);
+    // a Glue/Spark job filters the patient-address snapshot to
+    // records whose canonical-hash prefix maps to a changed range
+    // plus records whose cache TTL expired independent of
+    // reference-data changes (catches vendor software updates and
+    // correction-logic improvements); only those records are
+    // re-standardized. At a 500K-patient system this typically
+    // processes 5-15% of the population per cycle vs the 100%
+    // implied by the current pseudocode, with the corresponding
+    // cost reduction (current cost estimate $2,800-11,500/month
+    // does not square with full-population monthly throughput at
+    // the higher per-record vendor pricing tier; change-driven
+    // baseline is roughly $2,000-6,000/month, with full-population
+    // available as an architectural alternative for institutions
+    // that prefer simplicity over cost optimization at roughly
+    // 3-5x the change-driven baseline). Vendor-side change feeds
+    // (where the vendor offers them) eliminate the need for the
+    // full re-validation pass entirely. Update the Cost Estimate
+    // row in Prerequisites to match the change-driven throughput.
+
+    drift_events = []
+
+    FOR each address_record in all_addresses:
+        // Step 5B: re-standardize against the latest USPS data.
+        new_standardized = standardize_address(address_record.standardized.original_input)
+
+        // Step 5C: compare the new standardization to the previous.
+        IF new_standardized.canonical_hash != address_record.standardized.canonical_hash OR
+           new_standardized.status != address_record.standardized.status:
+            // A meaningful change occurred.
+            drift_events.append({
+                patient_id: address_record.patient_id,
+                address_role: address_record.address_role,
+                previous_status: address_record.standardized.status,
+                new_status: new_standardized.status,
+                previous_canonical_hash: address_record.standardized.canonical_hash,
+                new_canonical_hash: new_standardized.canonical_hash,
+                drift_type: classify_drift(address_record.standardized,
+                                              new_standardized)
+                    // &quot;became_invalid&quot;, &quot;zip4_changed&quot;,
+                    // &quot;secondary_unit_now_required&quot;,
+                    // &quot;building_type_changed&quot;, &quot;validated_now&quot;
+            })
+
+            // Step 5D: persist the updated standardized record.
+            persist_standardized_record(address_record.patient_id,
+                                          address_record.standardized.original_input,
+                                          new_standardized)
+
+            // Step 5E: re-run household inference for the affected
+            // canonical hashes (old and new).
+            invoke_household_inference(address_record.standardized.canonical_hash)
+            IF new_standardized.canonical_hash != address_record.standardized.canonical_hash:
+                invoke_household_inference(new_standardized.canonical_hash)
+
+    // Step 5F: emit drift events to downstream consumers.
+    FOR each event in drift_events:
+        EventBridge.PutEvents([{
+            source: &quot;address-standardization&quot;,
+            detail_type: &quot;address_drift_detected&quot;,
+            detail: event
+        }])
+
+    // Step 5G: surface a summary metric for monitoring.
+    emit_cloudwatch_metric(&quot;usps_refresh_drift_count&quot;, len(drift_events))
+    emit_cloudwatch_metric(&quot;usps_refresh_processed_count&quot;, len(all_addresses))
+
+FUNCTION quarterly_ncoa_processing():
+    // Step 5H: assemble the patient address list in the format
+    // the NCOA-certified vendor expects.
+    address_list = build_ncoa_submission_file()
+
+    // Step 5I: submit to the vendor (typically a secure file
+    // exchange rather than a real-time API; NCOA processing is
+    // batch-oriented).
+    submission_id = ncoa_vendor_sdk.submit(address_list)
+
+    // Step 5J: wait for the result. Vendors typically process
+    // within hours for healthcare-tier accounts.
+    result = ncoa_vendor_sdk.poll_for_result(submission_id)
+
+    // Step 5K: process movers. Each mover record has the previous
+    // address, the new address, the move date, and the source of
+    // the change-of-address record.
+    FOR each mover in result.movers:
+        update_address_with_ncoa_match(
+            patient_id: mover.patient_id,
+            new_address: mover.new_address,
+            move_date: mover.move_date,
+            ncoa_match_type: mover.match_type)
+                // &quot;individual&quot;, &quot;family&quot;, &quot;business&quot;,
+                // &quot;moved_left_no_address&quot;
+
+        // Emit an event for each mover; downstream consumers
+        // (outreach, patient portal) often want to act promptly.
+        EventBridge.PutEvents([{
+            source: &quot;address-standardization&quot;,
+            detail_type: &quot;ncoa_mover_detected&quot;,
+            detail: {
+                patient_id: mover.patient_id,
+                previous_canonical_hash: ...,
+                new_canonical_hash: ...,
+                move_date: mover.move_date,
+                match_type: mover.match_type
+            }
+        }])
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter05.03-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample standardized address record:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient-internal-00874&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;address_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;physical&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;standardized&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CORRECTED&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;delivery_line_1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1421 ELM ST APT 3B&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;last_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ANYTOWN ST 12345-1234&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;components&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;primary_number&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1421&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;street_predirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;street_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ELM&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;street_suffix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ST&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;street_postdirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;secondary_designator&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;APT&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;secondary_number&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3B&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;city&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ANYTOWN&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ST&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;zipcode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12345&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;plus4_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1234&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;record_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Street&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;is_residential&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;is_business&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;is_vacant&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;is_po_box&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;congressional_district&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;county_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EXAMPLE&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;county_fips&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12345&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;census_block&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1234567890123&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;carrier_route&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;C001&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;dpv_footnotes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;AA&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;BB&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;canonical_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a3f5b8c2d1e9f4a7...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;correction_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.97</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;original_input&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;line1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1421 elm st apt 3b&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;line2&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;city&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anytown&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ST&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;zip&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12345&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;raw_input_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;f1e2d3c4b5a6...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;standardized_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T10:14:18Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;vendor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ExampleAddressVendor&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;vendor_software_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v3.21.4&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cass_certification_cycle&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Cycle O&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;usps_reference_data_release&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-01&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;previous_canonical_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;last_updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T10:14:18Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;next_revalidation_due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-07-22&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample household-membership record:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;household_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hh-2026-04-a3f5b8c2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient-internal-00874&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;confidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HIGH&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_basis&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;single_family_residential_building&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;all_records_have_secondary_unit_match&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;last_name_overlap_3_of_4_records&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;insurance_subscriber_overlap_present&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;age_pattern_consistent_with_two_adults_two_children&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;building_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;multi_unit_with_unit&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;canonical_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a3f5b8c2d1e9f4a7...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inferred_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T10:14:25Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;household-inf-v1.2&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample drift event:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;drift_event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;drift-2026-07-15-00000041&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient-internal-00874&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;address_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;physical&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;drift_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ncoa_mover_detected&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;previous_canonical_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a3f5b8c2d1e9f4a7...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;new_canonical_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;b4c6d2e1f3a8b9c5...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;previous_address&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;delivery_line_1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1421 ELM ST APT 3B&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;last_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ANYTOWN ST 12345-1234&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;new_address&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;delivery_line_1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;789 OAK AVE&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;last_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OTHERTOWN ST 23456-7890&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;move_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-06-30&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ncoa_match_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;family&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-07-15T03:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;downstream_actions_emitted&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;outreach_pipeline_address_refresh&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;patient_portal_verify_prompt&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;household_re_inference_old_address&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;household_re_inference_new_address&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Status quo (raw addresses)</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Percent of addresses USPS-validated</td>
+<td>50-75%</td>
+<td>92-98%</td>
+</tr>
+<tr>
+<td>Percent of addresses geocoded successfully</td>
+<td>60-85%</td>
+<td>95-99%</td>
+</tr>
+<tr>
+<td>Direct mail undeliverable rate</td>
+<td>10-25%</td>
+<td>3-8%</td>
+</tr>
+<tr>
+<td>SDOH-indicator coverage (patients with valid census-tract assignment)</td>
+<td>60-80%</td>
+<td>92-98%</td>
+</tr>
+<tr>
+<td>Household-inference precision (confidence=HIGH inferences correct on review)</td>
+<td>n/a</td>
+<td>95-99%</td>
+</tr>
+<tr>
+<td>Household-inference recall (true households captured at any confidence)</td>
+<td>30-60% (deterministic on raw)</td>
+<td>75-90%</td>
+</tr>
+<tr>
+<td>Address-data freshness (median age of validated address)</td>
+<td>varies, often 18+ months</td>
+<td>&lt;90 days (with quarterly NCOA)</td>
+</tr>
+<tr>
+<td>Standardization latency (real-time API)</td>
+<td>n/a</td>
+<td>&lt;300ms typical, &lt;1s worst-case</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Multi-unit buildings without unit numbers.</strong> A 200-unit apartment complex where registration captures only the street address produces a &quot;household&quot; of 200 unrelated patients. The pipeline correctly classifies these as <code>multi_unit_no_unit</code> and assigns <code>CO_LOCATED</code> rather than <code>HOUSEHOLD</code>, but the downstream consumer has to handle the co-location category appropriately. The mitigation is upstream data capture: the registration form should require the unit number for multi-unit addresses, and the standardization status <code>MISSING_SECONDARY</code> should trigger a registration-time prompt.</li>
+<li><strong>Patients with unstable housing.</strong> Shelter addresses, transitional housing, &quot;no fixed address&quot; patients. The standardization layer accepts the shelter as a valid address; the household-inference layer correctly classifies as <code>shelter</code> and declines household inference. But the underlying SDOH and outreach workflows have to be designed for these patients explicitly, and they often are not. Mailing notices to a shelter where the patient may no longer be is not a useful outreach. The workflow has to integrate with the case-management system (often a separate vendor) to know where the patient is reachable.</li>
+<li><strong>PO Box addresses presented as residences.</strong> Patients sometimes give a PO Box because they do not want their residential address known. The metadata correctly flags <code>is_po_box</code>; downstream SDOH analytics has to suppress the geocode-derived metrics for these patients because the PO Box geocodes to the post office, not the patient's residence. The mitigation is to capture both <code>physical_address</code> and <code>mailing_address</code> and use the right one for the right purpose.</li>
+<li><strong>Newly built addresses not yet in USPS reference data.</strong> New construction comes online before the USPS database is updated. The standardization status returns <code>NOT_VALIDATED</code>; the address might still be the patient's actual address. The mitigation is to allow <code>NOT_VALIDATED</code> addresses to be retained with appropriate downstream filtering, with a re-validation pass after the next USPS reference-data update.</li>
+<li><strong>Vendor API failures and rate limits.</strong> The CASS-certified vendor has a published SLA, but real-world tail latency and occasional API outages happen. The mitigation is local caching of the standardization result (a hash-keyed cache catches most repeats), exponential-backoff retry for transient failures, and a degraded path that accepts the raw address with a <code>pending_standardization</code> flag and re-tries asynchronously when the vendor recovers.</li>
+<li><strong>NCOA misses on intra-household moves.</strong> NCOA captures change-of-address records filed with the USPS. Patients who move without filing a forwarding request (which happens a lot in younger and lower-income populations) are missed by NCOA. The pipeline detects them only when they re-register with a new address. The mitigation is layered: NCOA for the easy case, registration-time updates for the rest, and periodic patient-portal verification prompts to surface address changes the patient never reported.</li>
+<li><strong>Privacy suppressions cascading awkwardly.</strong> A domestic-violence-survivor patient at the same address as the spouse they fled produces a privacy suppression on the survivor's record. The household-inference logic has to decide whether the spouse's record (with no suppression) shows the household membership or whether the entire household is suppressed for both records. This is a policy decision the institution has to make explicitly, and the policy has consequences either way (suppress entirely and risk the spouse's records not flowing to coordinated care; suppress only the survivor and risk leaking the survivor's location through the household).</li>
+<li><strong>Cohort-specific quality issues.</strong> Rural addresses with non-traditional formatting standardize at lower rates than urban addresses with conventional formatting. Patients with names from naming conventions outside the dominant culture have addresses keyed in by registration staff with culturally-influenced typo patterns that the standardization software's correction logic is less good at fixing. Cohort-stratified accuracy monitoring is required to catch these, and the mitigation is per-cohort vendor tuning where the vendor supports it, plus targeted training for registration staff on common problem patterns.</li>
+<li><strong>International addresses.</strong> US-only CASS standardization simply does not handle them. Patients with international addresses are tagged <code>INTERNATIONAL_NOT_PROCESSED</code> and excluded from US-specific analytics. If the institution serves a population with significant international addresses, license a multi-country address-quality service rather than leaving these records uncovered.</li>
+<li><strong>Address standardization changing the address.</strong> A patient's record before standardization says &quot;1421 elm street&quot; and after standardization says &quot;1421 ELM ST APT 3B.&quot; The unit number was inferred by the corrector. Some institutions are uncomfortable with the system silently adding components the patient did not provide. The mitigation is to make the correction confidence and the original input visible at every layer that displays the address, so a clinician or registration clerk can confirm the correction is real (often by asking the patient).</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Vendor selection and BAA execution.</strong> The vendor is not a swappable commodity at the level of pricing alone. The vendor sees PHI (patient identifier plus address). The BAA, the data-handling commitments, the rate limits, the response-time SLAs, and the geographic coverage all matter. Run a real procurement: short-list two or three CASS-certified vendors with healthcare references, run a proof-of-concept with synthetic and a small slice of real PHI under a temporary BAA, evaluate accuracy on a labeled gold set covering your population's cohort distribution (urban vs rural, multi-unit vs single-family, common vs uncommon naming conventions), and pick on the combination of accuracy, BAA terms, and pricing rather than on pricing alone.</p>
+<p><strong>Privacy policy decisions for household inference.</strong> The recipe presents two policy options (suppress the entire group when any record is suppressed, vs exclude suppressed records from the group). Either is defensible; the right one depends on the institution's legal and clinical context. The decision has to be made by the privacy office and the clinical leadership, documented in the institution's privacy policy, and surfaced in the household-inference audit trail. Do not leave this as an implementation detail.</p>
+<p><strong>Cohort-stratified accuracy thresholds and remediation.</strong> Like recipes 5.1 and 5.2, the cohort-stratified monitoring needs operational thresholds (suggested: per-cohort standardization-success-rate disparity threshold of 0.05, household-inference HIGH-confidence-rate disparity threshold of 0.10, geocoding-success-rate disparity of 0.05), per-cohort gold-set construction discipline, and a documented remediation pathway for threshold crossings. The remediation is often per-cohort vendor tuning (where the vendor supports it), supplementary correction logic, and registration-staff training on cohort-specific data-quality patterns.</p>
+<p><strong>Patient-facing address-update workflow.</strong> The patient portal should let patients see and update their on-file address. The update flows through the same standardization pipeline that registration uses. The portal should also surface the institution's standardized version of the address back to the patient (&quot;we have you at 1421 ELM ST APT 3B, ANYTOWN ST 12345-1234, is this still right?&quot;) and capture the patient's confirmation as a higher-trust update than registration-clerk-entered changes. This is a downstream of the matcher but one that significantly improves data quality over time.</p>
+<p><strong>Outreach-list scrubbing pipeline.</strong> Most of the value of standardization is realized by downstream consumers, especially direct mail outreach. Build a periodic Glue job that produces outreach-ready mailing lists: filter to validated addresses, exclude vacant and PO Box addresses for residential outreach, exclude shelter addresses for routine mailing (route to case-manager outreach instead), exclude patients with privacy-suppression flags. The scrubbed list is the artifact the outreach team consumes; the standardized address store is the upstream substrate.</p>
+<p><strong>SDOH-indicator integration as a downstream pipeline.</strong> The standardized address geocoded to census tract is the substrate for the SDOH analytics consumed by population health, value-based care, and equity reporting. Build the SDOH-join pipeline (Area Deprivation Index, Social Vulnerability Index, food access scores, region-specific indicators) as a separate Glue job that runs after standardization-and-geocoding. The pipeline should track which SDOH indicator each patient was assigned, with the version of the underlying census data and the geocoding confidence.</p>
+<p><strong>Re-standardization on USPS reference-data updates.</strong> USPS reference data updates monthly. A previously-validated address might now be invalid (building demolished) or might have a different ZIP+4 (postal route restructured) after the update. The architecture re-standardizes on a monthly cadence, but the actual logistics matter: which subset of addresses to re-standardize each cycle (entire population is expensive; only-changed-in-USPS-reference is hard to identify; sample-and-extrapolate is wrong), how to detect drift cheaply, and how to throttle the resulting downstream-event volume so the consumers do not get flooded. Plan this explicitly.</p>
+<p><strong>NCOA processing logistics.</strong> NCOA is a USPS-licensed product with specific access controls based on intended use. The institution must qualify for NCOAlink access, the submission must be properly formatted, the response must be processed within a defined window, and the resulting address updates must be applied with appropriate provenance and downstream-event emission. Most institutions outsource the NCOA submission to a vendor that handles the licensing and the submission logistics. The Glue/Step Functions orchestration assembles the submission file, hands off to the vendor, and processes the response.</p>
+<p><strong>International address handling.</strong> The recipe explicitly does not standardize international addresses. If the institution's population includes a meaningful number of international patients (border-region health systems, academic medical centers serving international students, snowbird populations with Canadian winter residences), license a multi-country address-quality service and run a parallel pipeline. The data model should support international addresses without forcing them through the US-specific schema; the canonical hash for international addresses should be derived appropriately for the country's addressing conventions.</p>
+<p><strong>Audit trail retention.</strong> Address records and household memberships are PHI, and they are referenced in care-coordination, financial-assistance, and equity-reporting contexts. Apply the institution's records-retention policy. Keep the original input on every standardization event so the system can be re-run with newer reference data or newer correction logic and the lineage can be reconstructed.</p>
+<p><strong>Idempotency and retry semantics.</strong> Like the other recipes in this chapter, the pipeline must handle duplicate-event delivery without producing duplicate work or inconsistent state. Use the <code>(patient_id, address_role)</code> as the idempotency key for standardization-and-persist. Use the <code>canonical_hash</code> as the idempotency key for household-inference. Use the <code>(patient_id, ncoa_submission_id)</code> for NCOA-result processing. Lambda invocations should be idempotent at these keys; DLQs should be configured on every Lambda path; Step Functions Catch states should route to the DLQ so terminal failures are visible.</p>
+<p><strong>Cost monitoring and per-vendor-call accounting.</strong> Vendor calls are the dominant cost. Tag every vendor call with the workflow that originated it (registration, batch-refresh, NCOA, household-re-inference). Aggregate the calls per workflow per month. Detect cost anomalies (a runaway re-inference job, a registration-system change that re-validates already-validated addresses unnecessarily). Alert on cost thresholds. The vendor cost can spiral fast if a downstream system starts looping.</p>
+<p><strong>The standardization-result confidence threshold for auto-acceptance.</strong> A <code>CORRECTED</code> result with 0.99 confidence is fine to auto-accept; a <code>CORRECTED</code> result with 0.65 confidence might be fine and might be subtly wrong. The institution has to set a confidence threshold above which corrections are accepted silently and below which the registration-time UI surfaces the correction for clerk-or-patient confirmation. The threshold is calibrated against a labeled gold set, and it is institution-specific (a hospital with a sophisticated registration team can set it lower than a clinic with high-turnover front-desk staff).</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>International address standardization.</strong> License a multi-country address-quality service (Loqate, Melissa Global, Experian) and run a parallel pipeline for non-US addresses. The data model and the household-inference logic carry over with country-specific adjustments to the canonical-hash derivation and to the metadata fields.</p>
+<p><strong>Privacy-preserving household linkage across organizations.</strong> For HIE and cross-organization care coordination, sharing standardized addresses across organizations carries the same data-sharing concerns as sharing other PHI. Bloom-filter-based and hash-based household-equivalence techniques (analogous to the privacy-preserving record linkage techniques in recipe 5.8) let two organizations identify shared households without exchanging raw addresses. The pattern is more operationally complex than direct sharing and produces lower accuracy, but it is the right tool when direct sharing is not legally available.</p>
+<p><strong>Census-tract-derived SDOH integration.</strong> Build a separate pipeline that joins each standardized address (geocoded to census tract) to a curated set of SDOH indicators: Area Deprivation Index, Social Vulnerability Index, USDA food-access score, walkability index, primary-care-access index, environmental risk indicators. The output is a per-patient SDOH-context record that population health, value-based care, and equity reporting consume. The pipeline should track the version of each underlying SDOH index, since the indices update on different cadences.</p>
+<p><strong>Address-based fraud detection.</strong> Some healthcare fraud schemes exploit address patterns: phantom patients at specific staged addresses, providers billing for patients who all live at a single address, organized billing rings using a small set of mailing addresses. Cross-reference the standardized-address store with claims data to detect these patterns, with attention to the false-positive risk (a multi-generational household, a group home, a long-term care facility legitimately has many patients at one address). Recipe 3.6 (fraud, waste, abuse) is the natural home for the detection logic; the address store is the substrate.</p>
+<p><strong>USPS Informed Delivery integration.</strong> USPS Informed Delivery provides electronic preview of incoming mail. For institutions that send a lot of patient mail (statements, appointment letters, lab-result notices), Informed Delivery integration improves the patient experience and provides an additional address-validity signal: deliveries that consistently bounce despite a USPS-validated address might indicate a mover not yet in NCOA.</p>
+<p><strong>Address-based household-fairness auditing.</strong> Apply the cohort-stratified accuracy framework specifically to household-inference outcomes. Are HIGH-confidence household inferences distributed proportionally across cohorts, or do certain cohorts (urban multi-unit, rural, naming-convention-defined) end up at lower confidence levels disproportionately? Disparities in household-inference confidence translate to disparities in the downstream workflows that gate on confidence (financial assistance, coordinated care). The fairness audit catches this.</p>
+<p><strong>Active-learning-driven correction tuning.</strong> As the standardizer encounters ambiguous and corrected addresses, prioritize the borderline cases for human review and use the review labels to tune the correction-confidence threshold. Active learning concentrates the review effort on the cases that most improve the downstream accuracy.</p>
+<p><strong>Reverse-geocoding for unaddressed locations.</strong> Some encounters happen at locations without a postal address (the scene of an accident, an event venue, a work site). Capture the latitude and longitude when available and reverse-geocode to the nearest standardized address (or to a &quot;no postal address available&quot; sentinel). The pattern extends the standardization pipeline to ambient-location workflows like care delivered in non-clinical settings.</p>
+<p><strong>Address-confidence-aware patient matching.</strong> The patient matcher (recipe 5.1) uses address as one of several similarity signals. The matcher's confidence in an address-based match should be weighted by the standardization confidence: a <code>VALIDATED</code> address is a stronger signal than a <code>NOT_VALIDATED</code> one. Pass the standardization status through to the matcher's per-field comparator and let the matcher's probabilistic combiner weight accordingly.</p>
+<p><strong>Patient-portal address self-service.</strong> Build the portal feature that shows the patient their on-file address with a confirm-or-update flow. Capture the patient's confirmation timestamp as a freshness signal. For updates, route them through the standardization pipeline and surface any corrections to the patient for re-confirmation. Surface the address-update prompt on every portal session (or every Nth session) until confirmation is received. Pair the prompt with related self-service items (insurance update, emergency contact update) so the experience feels coherent rather than nag-y.</p>
+<p><strong>Multi-source address reconciliation.</strong> Some patients have addresses captured from multiple sources (registration, insurance subscriber file, HIE referral, portal self-update). The reconciler picks the most authoritative source per address role with explicit precedence rules (portal &gt; registration &gt; insurance &gt; HIE; or per-role variations). The architecture supports this with the <code>address_role</code> partition key and per-role-source provenance.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html">Amazon S3 User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/athena/latest/ug/what-is.html">Amazon Athena User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html">Amazon Cognito Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/location/latest/developerguide/welcome.html">Amazon Location Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html">AWS Secrets Manager User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/aws-glue-samples"><code>aws-samples/aws-glue-samples</code></a>: Glue ETL patterns applicable to the batch standardization-refresh and household-inference pipelines</li>
+<li><a href="https://github.com/aws-samples/serverless-patterns"><code>aws-samples/serverless-patterns</code></a>: Step Functions + Lambda + DynamoDB orchestration patterns applicable to the real-time standardization API and the periodic refresh workflows</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences): browse for healthcare data-quality and master-data-management reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: search &quot;patient demographics,&quot; &quot;data quality,&quot; and &quot;SDOH&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/big-data/">AWS Big Data Blog</a>: search &quot;address validation,&quot; &quot;data quality,&quot; and &quot;geocoding&quot; for relevant pipeline patterns</li>
+</ul>
+<p><strong>External References (Authoritative Sources):</strong></p>
+<ul>
+<li><a href="https://pe.usps.com/cpim/ftp/pubs/Pub28/pub28.pdf">USPS Publication 28: Postal Addressing Standards</a>: the foundational USPS document for US address formatting</li>
+<li><a href="https://postalpro.usps.com/certifications/cass">USPS CASS Certification Program</a>: the certification program for address-matching software</li>
+<li><a href="https://postalpro.usps.com/address-quality/ncoalink">USPS NCOAlink Service</a>: the National Change of Address service for mover detection</li>
+<li><a href="https://geocoding.geo.census.gov/">Census Bureau Geocoder</a>: public geocoding service tied to census-tract assignment</li>
+<li><a href="https://www.huduser.gov/portal/datasets/usps_crosswalk.html">HUD USPS ZIP Code Crosswalk Files</a>: mapping ZIP codes to census tracts and other geographic units</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/special-topics/de-identification/index.html">HIPAA Privacy Rule § 164.514 (De-Identification)</a>: the regulatory framework treating address components above state-or-three-digit-ZIP as identifiers</li>
+</ul>
+<p><strong>External References (SDOH Indicators):</strong></p>
+<ul>
+<li><a href="https://www.neighborhoodatlas.medicine.wisc.edu/">University of Wisconsin Neighborhood Atlas: Area Deprivation Index</a>: the ADI methodology and downloadable data</li>
+<li><a href="https://www.atsdr.cdc.gov/placeandhealth/svi/index.html">CDC Social Vulnerability Index</a>: the SVI methodology and downloadable data</li>
+<li><a href="https://health.gov/healthypeople/priority-areas/social-determinants-health">Healthy People 2030: Social Determinants of Health</a>: the federal SDOH framework</li>
+</ul>
+<p><strong>External References (Vendor Landscape):</strong></p>
+<ul>
+<li>The major CASS-certified address-quality vendors include Smarty (formerly SmartyStreets), Melissa Data, Loqate (GBG), Experian Address Validation, and Pitney Bowes. Each publishes documentation, SDKs, and pricing at their corporate websites; healthcare-tier offerings with BAA support vary by vendor and account tier.</li>
+</ul>
+<p><strong>External References (Methodology):</strong></p>
+<ul>
+<li><a href="https://github.com/openvenues/libpostal"><code>libpostal</code></a>: open-source address parsing library</li>
+<li><a href="https://github.com/datamade/usaddress"><code>usaddress</code></a>: Python US-address parsing library</li>
+<li><a href="https://pypi.org/project/pypostalcode/"><code>pypostalcode</code></a>: Python postal code utilities</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>CASS-certified vendor integration via Lambda + DynamoDB persistence + simple S3 archive + monthly batch refresh + manual outreach-list scrubbing</td>
+<td>4-8 weeks</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Real-time standardization API + monthly USPS refresh + quarterly NCOA processing + drift detection and event fan-out + graded household inference + privacy-suppression policy + cohort-stratified quality monitoring + integration with patient matcher (5.1) and outreach pipelines + complete CloudTrail and audit-retention posture</td>
+<td>3-5 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add international address standardization, privacy-preserving cross-organization household linkage, SDOH-indicator integration pipeline, address-based fraud detection cross-reference, USPS Informed Delivery integration, patient-portal self-service confirmation flow, active-learning-driven correction tuning</td>
+<td>3-6 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter05.03-address-standardization-household-linkage.html">Main Recipe 5.3</a> · <a href="chapter05.03-python-example.html">Python Example</a> · <a href="chapter05-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

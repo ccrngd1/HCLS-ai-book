@@ -1,0 +1,2498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 11.9 Architecture and Implementation: Care Coordination Assistant</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested nav-active" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-119-architecture-and-implementation-care-coordination-assistant">Recipe 11.9 Architecture and Implementation: Care Coordination Assistant</h1>
+<p><em>Companion to <a href="chapter11.09-care-coordination-assistant.html">Recipe 11.9: Care Coordination Assistant</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Bedrock for the LLM and embeddings.</strong> Same selection criteria as recipes 11.1 through 11.8. The care coordination assistant specifically benefits from a model with strong instruction-following for scope discipline across many adjacent topics, strong tool-use for orchestrating retrieval across heterogeneous coordination data, citation-grounding discipline for state assertions, and good multilingual support. Claude Sonnet-class models or comparable frontier models for the orchestration; smaller models for intent classification, seam-detection-rule pre-filtering, and routine summarization. Bedrock provides HIPAA-eligible deployment under BAA. The coordination assistant's longitudinal-relationship pattern across months and years places a premium on consistency of voice and on grounded citation behavior, both of which are attributes of the orchestration model selection.</p>
+<p><strong>Amazon Bedrock Knowledge Bases for the coordination-protocol corpus and the patient-education library.</strong> The institution's curated coordination-protocol library (transition-of-care protocols by destination setting, referral-tracking protocols by specialty and urgency, post-discharge protocols by admission type, post-procedure protocols by procedure category, medication-reconciliation protocols, condition-specific coordination playbooks) and the patient-education library are the assistant's grounded retrieval sources. Knowledge Bases provides the managed RAG layer with metadata-filtered retrieval (transition type, specialty, urgency tier, audience, language, reading level, version).</p>
+<p><strong>Amazon Bedrock Agents for tool orchestration.</strong> Same selection rationale as recipes 11.2 through 11.8. The assistant's tools (coordination_state_retrieve, referral_lifecycle_retrieve, encounter_retrieve, medication_list_reconcile, open_followups_retrieve, seam_flags_retrieve, protocol_retrieve, patient_education_content_retrieve, care_team_alert_propose, patient_action_propose, follow_up_schedule, escalation_propose, provenance_retrieve) are defined as Agents action groups with OpenAPI schemas. The Agent's traces preserve tool-call audit trails for the coordination-decision-record journal.</p>
+<p><strong>Amazon Bedrock Guardrails for scope and content filtering.</strong> Configured with denied topics including diagnosis-attempted, prescription-attempted, dose-titration-attempted, treatment-recommendation-beyond-existing-orders, therapy-attempted (which routes to recipe 11.8 pathway), triage-attempted (which routes to recipe 11.6 pathway), benefits-quote-attempted (which routes to recipe 11.5 pathway), and similar scope violations. The coordination assistant's scope discipline is broad because the assistant interacts with adjacent topics constantly and must defer cleanly across them.</p>
+<p><strong>Amazon OpenSearch Serverless for the retrieval indices.</strong> The coordination-protocol corpus, the patient-education library, and the longitudinal conversation history all benefit from vector retrieval with metadata filtering.</p>
+<p><strong>AWS HealthLake for FHIR-native chart-context data.</strong> HealthLake provides a managed FHIR data store the assistant queries for Patient, Encounter, Condition, MedicationRequest, MedicationStatement, Observation, DiagnosticReport, ServiceRequest, CarePlan, AllergyIntolerance, Immunization, Coverage, and related resources. Where the institution's primary EHR exposes a FHIR API directly, the assistant can query it directly; where multiple sources contribute, HealthLake serves as a normalization layer with consistent FHIR semantics across heterogeneous source data.</p>
+<p><strong>AWS HealthLake Imaging and AWS HealthOmics are not in scope</strong> for the coordination assistant; the assistant operates on encounter, medication, and observation data, not on imaging or genomics primary data, though the assistant references imaging and genomic test results at the report level when they are part of the patient's longitudinal record.</p>
+<p><strong>AWS HealthLake Bulk Data Export and FHIR Bulk Data Access for population workflows.</strong> Where the institution's coordination program operates over a population (a Medicare Advantage book of business; a primary-care panel; a transitions-of-care program from a participating hospital), bulk-data flows feed the program-wide analytics and the population-level seam detection.</p>
+<p><strong>Amazon DynamoDB for state, longitudinal store, and provenance journal.</strong> Multiple tables supporting the assistant's longitudinal pattern: <code>patient-coordination-store</code> (per-patient stable state including stated preferences, designated caregivers, integration coverage, consent posture), <code>coordination-state-store</code> (active conditions, medications, referrals, encounters, results, care events, seam-flags), <code>referral-lifecycle-store</code> (per-referral state machine), <code>transition-of-care-store</code> (per-transition state machine), <code>seam-flag-store</code> (detected gaps with status), <code>caregiver-store</code> (per-caregiver identity, proxy-access scope, message preferences), <code>conversation-state</code> (per-conversation transient state), <code>conversation-metadata</code> (per-conversation turn-by-turn data), <code>tool-call-ledger</code> (audited tool invocations), <code>coordination-decision-record-journal</code> (durable record of coordination events with citations), <code>provenance-journal</code> (per-data-point provenance chain), and <code>consent-record</code> (consent posture per data source and per sharing relationship).</p>
+<p><strong>Amazon S3 for the protocol corpus, patient-education library, conversation archive, coordination-decision-record journal, provenance journal, and outcome-correlation data.</strong> Object Lock in compliance mode for the retention window, with retention sized to the longest of HIPAA's six-year minimum, state-specific medical-record retention, and any FDA SaMD post-market obligations.</p>
+<p><strong>AWS Lambda for the conversation handler, ingestion adapters, seam-detection workers, protocol-trigger workers, tool implementations, care-team reporting, and outcome correlation.</strong> Same pattern as the previous chapter 11 recipes, with additional Lambda functions for each ingestion adapter (HL7 listener, FHIR poller, claims-batch processor, pharmacy-API consumer, vendor-API consumer) and each seam-detection rule.</p>
+<p><strong>Amazon API Gateway and AWS WAF for the public chat endpoint.</strong> Same as the other recipes.</p>
+<p><strong>AWS HealthLake plus AWS HealthLake Bulk Data, plus optional integration via AWS Lake Formation for data-sharing across organizations under TEFCA participation.</strong> Cross-organizational data flows operate within the legal framework specified by the regulatory team.</p>
+<p><strong>Amazon EventBridge for the coordination-event bus.</strong> Events including patient_enrolled, caregiver_designated, integration_connected, encounter_ingested, referral_ordered, referral_scheduled, referral_completed, transition_initiated, transition_completed, medication_filled, medication_discontinued, lab_result_posted, seam_flag_raised, seam_flag_resolved, care_team_alert_generated, escalation_routed, coordination_decision_recorded.</p>
+<p><strong>AWS Step Functions for transition-of-care orchestration workflows.</strong> Each transition (hospital-to-home, hospital-to-SNF, ED-to-primary-care follow-up, surgery-to-home, etc.) runs as a Step Functions workflow with states for the protocol-defined steps (medication reconciliation, follow-up-appointment scheduling, home-health or DME orders, patient education, red-flag warning instructions, completion verification). The state machines are version-controlled and audited.</p>
+<p><strong>Amazon MWAA (Managed Workflows for Apache Airflow) or AWS Step Functions for population-scale data ingestion and seam-detection batch jobs.</strong> Where bulk-data ingestion and population-level seam detection run on schedules rather than per-event, MWAA or Step Functions orchestrates the batch workloads.</p>
+<p><strong>Amazon Pinpoint for proactive engagement messaging.</strong> Care-event-triggered messages (post-discharge welcome-home check-in, referral-scheduling reminders, appointment-prep nudges, lab-result acknowledgement prompts, missed-appointment follow-ups) are delivered via Pinpoint with delivery-status tracking, channel-preference enforcement, and quiet-hours discipline.</p>
+<p><strong>Amazon Connect for warm-handoff to human care managers and clinical staff.</strong> When the assistant escalates to a human (high-acuity gap, sensitive disclosure, conflicting-order resolution that requires clinical judgment), Connect routes to the appropriate queue with conversation context attached. Care managers are reachable via Connect's chat and voice queues.</p>
+<p><strong>AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena.</strong> Same operational and audit primitives as the previous recipes, with coordination-specific KMS key separation for the cross-organizational ingestion surface, the provenance journal, and the coordination-decision-record store.</p>
+<p><strong>Amazon QuickSight for clinical, operational, and outcome dashboards.</strong> Per-cohort coordination dashboards (referral closure rate, transition-of-care completion rate, medication-reconciliation accuracy, seam-detection rate, seam-resolution rate, escalation rate, patient-and-caregiver-reported coordination experience), engagement dashboards, and outcome-correlation dashboards.</p>
+<p><strong>Amazon SageMaker (optional) for custom seam-detection model hosting.</strong> Several seam-detection rules (patterns suggestive of decompensation, complex medication-discrepancy cases that require nuanced reasoning, caregiver-burden trajectory) benefit from custom-trained classifiers; SageMaker provides the hosted-inference endpoint where deployed.</p>
+<p><strong>Amazon Comprehend Medical (optional) for medical-named-entity recognition over patient-and-caregiver-reported text.</strong> When the patient or caregiver reports a medication name, a symptom, a clinician name, or a related entity in conversation, Comprehend Medical can extract structured terms for matching against the coordination state.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Channels
+      WEB[Web Chat]
+      APP[Institution App]
+      SMS[SMS via Pinpoint/Connect]
+      VOICE[Voice via Connect]
+      CGAPP[Caregiver App]
+    end
+
+    subgraph Edge
+      WAF[AWS WAF]
+      APIGW[API Gateway]
+    end
+
+    subgraph Conversation_Core
+      L_CHAT[Lambda&lt;br/&gt;chat handler]
+      L_INPUT[Lambda&lt;br/&gt;input screening&lt;br/&gt;+ continuous emergency screen]
+      L_OUTPUT[Lambda&lt;br/&gt;output safety&lt;br/&gt;+ provenance verify]
+      L_IDENTITY[Lambda&lt;br/&gt;identity + role +&lt;br/&gt;coordination context loading]
+    end
+
+    subgraph LLM_and_Agent
+      AGENT[Bedrock Agents]
+      BEDROCK[Bedrock&lt;br/&gt;LLM generation]
+      KB_PROTOCOL[Bedrock Knowledge Bases&lt;br/&gt;coordination protocols]
+      KB_EDU[Bedrock Knowledge Bases&lt;br/&gt;patient education]
+      KB_HIST[Bedrock Knowledge Bases&lt;br/&gt;conversation history]
+      GUARDRAILS[Bedrock Guardrails]
+      OS[OpenSearch Serverless]
+      COMP_MED[Comprehend Medical]
+    end
+
+    subgraph Coordination_Tools
+      L_STATE[Lambda&lt;br/&gt;coordination_state_retrieve]
+      L_REFERRAL[Lambda&lt;br/&gt;referral_lifecycle_retrieve]
+      L_ENCOUNTER[Lambda&lt;br/&gt;encounter_retrieve]
+      L_MEDREC[Lambda&lt;br/&gt;medication_list_reconcile]
+      L_FOLLOWUP[Lambda&lt;br/&gt;open_followups_retrieve]
+      L_SEAM[Lambda&lt;br/&gt;seam_flags_retrieve]
+      L_PROTOCOL[Lambda&lt;br/&gt;protocol_retrieve]
+      L_EDU[Lambda&lt;br/&gt;patient_education_retrieve]
+      L_ALERT[Lambda&lt;br/&gt;care_team_alert_propose]
+      L_ACTION[Lambda&lt;br/&gt;patient_action_propose]
+      L_SCHED[Lambda&lt;br/&gt;follow_up_schedule]
+      L_ESC[Lambda&lt;br/&gt;escalation_propose]
+      L_PROV[Lambda&lt;br/&gt;provenance_retrieve]
+    end
+
+    subgraph Cross_Org_Ingestion
+      L_HL7[Lambda&lt;br/&gt;HL7 v2 listener]
+      L_FHIR[Lambda&lt;br/&gt;FHIR poller/&lt;br/&gt;subscription]
+      L_CLAIMS[Lambda&lt;br/&gt;claims-feed processor]
+      L_PHARM[Lambda&lt;br/&gt;pharmacy-API consumer]
+      L_HOMEHEALTH[Lambda&lt;br/&gt;home-health vendor]
+      L_HIE[Lambda&lt;br/&gt;HIE/TEFCA adapter]
+      MWAA[MWAA&lt;br/&gt;batch ingestion]
+    end
+
+    subgraph Seam_Detection_and_Triggers
+      L_SEAM_ENG[Lambda&lt;br/&gt;seam-detection&lt;br/&gt;rule engine]
+      L_TRIGGER[Lambda&lt;br/&gt;protocol-trigger&lt;br/&gt;evaluator]
+      SAGEMAKER[SageMaker&lt;br/&gt;custom seam&lt;br/&gt;classifiers]
+    end
+
+    subgraph Transition_Orchestration
+      SFN[Step Functions&lt;br/&gt;transition-of-care&lt;br/&gt;workflows]
+      L_TRANS[Lambda&lt;br/&gt;transition state&lt;br/&gt;machine workers]
+    end
+
+    subgraph External_Integrations
+      EHRS[(Multiple EHRs&lt;br/&gt;via FHIR)]
+      HEALTHLAKE[(AWS HealthLake)]
+      HIE[(HIE / TEFCA QHIN)]
+      PAYER[(Payer claims feed)]
+      PHARM[(Pharmacies&lt;br/&gt;NCPDP / vendor APIs)]
+      HOMEHEALTH_EXT[(Home-health&lt;br/&gt;agencies)]
+      LAB[(Lab feeds)]
+      CARE_TEAM[(Patient&#x27;s care team&lt;br/&gt;across organizations)]
+      CARE_MGMT[(Institutional&lt;br/&gt;care-management)]
+      TRIAGE[(Recipe 11.6 triage)]
+      MH[(Recipe 11.8 mental&lt;br/&gt;health pathway)]
+      EMERG[(911 / 988)]
+      NAV[(Care navigation /&lt;br/&gt;social services)]
+    end
+
+    subgraph State_and_Audit
+      DDB_PT[(DynamoDB&lt;br/&gt;patient coordination&lt;br/&gt;store)]
+      DDB_STATE[(DynamoDB&lt;br/&gt;coordination state)]
+      DDB_REFERRAL[(DynamoDB&lt;br/&gt;referral lifecycle)]
+      DDB_TRANS[(DynamoDB&lt;br/&gt;transition of care)]
+      DDB_SEAM[(DynamoDB&lt;br/&gt;seam flags)]
+      DDB_CG[(DynamoDB&lt;br/&gt;caregivers)]
+      DDB_SESS[(DynamoDB&lt;br/&gt;conversation state)]
+      DDB_META[(DynamoDB&lt;br/&gt;conversation&lt;br/&gt;metadata)]
+      DDB_TOOL[(DynamoDB&lt;br/&gt;tool-call ledger)]
+      DDB_DECISION[(DynamoDB&lt;br/&gt;coordination&lt;br/&gt;decision journal)]
+      DDB_PROV[(DynamoDB&lt;br/&gt;provenance journal)]
+      DDB_CONSENT[(DynamoDB&lt;br/&gt;consent record)]
+      S3_PROTOCOL[(S3&lt;br/&gt;coordination&lt;br/&gt;protocols)]
+      S3_EDU[(S3&lt;br/&gt;patient education)]
+      S3_AUDIT[(S3&lt;br/&gt;audit archive)]
+      S3_DECISION[(S3&lt;br/&gt;decision-record&lt;br/&gt;journal)]
+      S3_PROV[(S3&lt;br/&gt;provenance&lt;br/&gt;archive)]
+    end
+
+    subgraph Reporting_and_Analytics
+      L_REPORT[Lambda&lt;br/&gt;care-team reporting]
+      L_OUTCOME[Lambda&lt;br/&gt;outcome correlation]
+      EB[EventBridge]
+      KIN[Kinesis Firehose]
+      ATH[Athena]
+      QS[QuickSight]
+      CW[CloudWatch]
+      CT[CloudTrail]
+      PIN[Pinpoint&lt;br/&gt;proactive engagement]
+      CONNECT[Amazon Connect&lt;br/&gt;warm handoff]
+    end
+
+    subgraph Secrets_and_Keys
+      SM_SEC[(Secrets Manager)]
+      KMS[(AWS KMS)]
+      KMS_PROV[(KMS&lt;br/&gt;provenance key)]
+      KMS_DECISION[(KMS&lt;br/&gt;decision-record key)]
+    end
+
+    WEB --&gt; WAF
+    APP --&gt; WAF
+    CGAPP --&gt; WAF
+    SMS --&gt; APIGW
+    VOICE --&gt; APIGW
+    WAF --&gt; APIGW
+    APIGW --&gt; L_CHAT
+
+    EHRS --&gt; L_FHIR
+    EHRS --&gt; L_HL7
+    HIE --&gt; L_HIE
+    PAYER --&gt; L_CLAIMS
+    PHARM --&gt; L_PHARM
+    HOMEHEALTH_EXT --&gt; L_HOMEHEALTH
+    LAB --&gt; L_HL7
+    L_HL7 --&gt; HEALTHLAKE
+    L_FHIR --&gt; HEALTHLAKE
+    L_CLAIMS --&gt; DDB_STATE
+    L_PHARM --&gt; DDB_STATE
+    L_HOMEHEALTH --&gt; DDB_STATE
+    L_HIE --&gt; HEALTHLAKE
+    MWAA --&gt; L_FHIR
+    MWAA --&gt; L_CLAIMS
+
+    L_HL7 --&gt; DDB_PROV
+    L_FHIR --&gt; DDB_PROV
+    L_CLAIMS --&gt; DDB_PROV
+    L_PHARM --&gt; DDB_PROV
+    L_HOMEHEALTH --&gt; DDB_PROV
+    L_HIE --&gt; DDB_PROV
+
+    L_HL7 --&gt; EB
+    L_FHIR --&gt; EB
+    L_CLAIMS --&gt; EB
+    L_PHARM --&gt; EB
+    L_HOMEHEALTH --&gt; EB
+    EB --&gt; L_SEAM_ENG
+    EB --&gt; L_TRIGGER
+    L_SEAM_ENG --&gt; SAGEMAKER
+    L_SEAM_ENG --&gt; DDB_SEAM
+    L_TRIGGER --&gt; SFN
+    SFN --&gt; L_TRANS
+    L_TRIGGER --&gt; PIN
+    L_TRIGGER --&gt; L_ALERT
+
+    L_CHAT --&gt; L_INPUT
+    L_INPUT --&gt; TRIAGE
+    L_INPUT --&gt; MH
+    L_INPUT --&gt; EMERG
+    L_CHAT --&gt; L_IDENTITY
+    L_IDENTITY --&gt; DDB_PT
+    L_IDENTITY --&gt; DDB_CG
+    L_IDENTITY --&gt; DDB_STATE
+    L_IDENTITY --&gt; DDB_CONSENT
+    L_CHAT --&gt; AGENT
+    AGENT --&gt; BEDROCK
+    AGENT --&gt; KB_PROTOCOL
+    AGENT --&gt; KB_EDU
+    AGENT --&gt; KB_HIST
+    KB_PROTOCOL --&gt; OS
+    KB_EDU --&gt; OS
+    KB_HIST --&gt; OS
+    AGENT --&gt; GUARDRAILS
+    AGENT --&gt; COMP_MED
+    AGENT --&gt; L_STATE
+    AGENT --&gt; L_REFERRAL
+    AGENT --&gt; L_ENCOUNTER
+    AGENT --&gt; L_MEDREC
+    AGENT --&gt; L_FOLLOWUP
+    AGENT --&gt; L_SEAM
+    AGENT --&gt; L_PROTOCOL
+    AGENT --&gt; L_EDU
+    AGENT --&gt; L_ALERT
+    AGENT --&gt; L_ACTION
+    AGENT --&gt; L_SCHED
+    AGENT --&gt; L_ESC
+    AGENT --&gt; L_PROV
+    L_STATE --&gt; DDB_STATE
+    L_REFERRAL --&gt; DDB_REFERRAL
+    L_ENCOUNTER --&gt; HEALTHLAKE
+    L_MEDREC --&gt; DDB_STATE
+    L_FOLLOWUP --&gt; DDB_STATE
+    L_SEAM --&gt; DDB_SEAM
+    L_PROTOCOL --&gt; KB_PROTOCOL
+    L_EDU --&gt; KB_EDU
+    L_ALERT --&gt; CONNECT
+    L_ALERT --&gt; CARE_MGMT
+    L_ESC --&gt; CONNECT
+    L_PROV --&gt; DDB_PROV
+    L_CHAT --&gt; L_OUTPUT
+    L_OUTPUT --&gt; DDB_DECISION
+    L_OUTPUT --&gt; S3_DECISION
+    AGENT --&gt; DDB_TOOL
+    L_CHAT --&gt; DDB_SESS
+    L_CHAT --&gt; DDB_META
+
+    L_REPORT --&gt; CARE_TEAM
+    L_REPORT --&gt; CARE_MGMT
+    L_OUTCOME --&gt; S3_AUDIT
+    EB --&gt; KIN
+    KIN --&gt; S3_AUDIT
+    S3_AUDIT --&gt; ATH
+    S3_DECISION --&gt; ATH
+    S3_PROV --&gt; ATH
+    ATH --&gt; QS
+    L_CHAT --&gt; CW
+    APIGW --&gt; CT
+    L_FHIR --&gt; SM_SEC
+    L_CLAIMS --&gt; SM_SEC
+    L_PHARM --&gt; SM_SEC
+    L_HOMEHEALTH --&gt; SM_SEC
+    KMS --&gt; S3_AUDIT
+    KMS --&gt; S3_PROTOCOL
+    KMS --&gt; S3_EDU
+    KMS_DECISION --&gt; S3_DECISION
+    KMS_DECISION --&gt; DDB_DECISION
+    KMS_PROV --&gt; DDB_PROV
+    KMS_PROV --&gt; S3_PROV
+    KMS --&gt; DDB_PT
+    KMS --&gt; DDB_STATE
+    KMS --&gt; DDB_REFERRAL
+    KMS --&gt; DDB_TRANS
+    KMS --&gt; DDB_SEAM
+    KMS --&gt; DDB_CG
+    KMS --&gt; DDB_SESS
+    KMS --&gt; DDB_META
+    KMS --&gt; DDB_TOOL
+    KMS --&gt; DDB_CONSENT
+    KMS --&gt; SM_SEC
+
+    style AGENT fill:#fcf,stroke:#333
+    style BEDROCK fill:#fcf,stroke:#333
+    style KB_PROTOCOL fill:#fcf,stroke:#333
+    style KB_EDU fill:#fcf,stroke:#333
+    style GUARDRAILS fill:#fcf,stroke:#333
+    style L_INPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_OUTPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_SEAM_ENG fill:#fcc,stroke:#900,stroke-width:3px
+    style EHRS fill:#ccf,stroke:#333
+    style HIE fill:#ccf,stroke:#333
+    style PAYER fill:#ccf,stroke:#333
+    style PHARM fill:#ccf,stroke:#333
+    style EMERG fill:#ccf,stroke:#900,stroke-width:3px
+    style TRIAGE fill:#ccf,stroke:#333
+    style MH fill:#ccf,stroke:#333
+    style HEALTHLAKE fill:#ccf,stroke:#333
+    style CARE_TEAM fill:#ccf,stroke:#333
+    style CARE_MGMT fill:#ccf,stroke:#333
+    style DDB_STATE fill:#9ff,stroke:#333,stroke-width:3px
+    style DDB_PROV fill:#9ff,stroke:#900,stroke-width:3px
+    style DDB_DECISION fill:#9ff,stroke:#333
+    style DDB_REFERRAL fill:#9ff,stroke:#333
+    style DDB_TRANS fill:#9ff,stroke:#333
+    style DDB_SEAM fill:#9ff,stroke:#333
+    style S3_DECISION fill:#cfc,stroke:#333
+    style S3_PROV fill:#cfc,stroke:#900,stroke-width:3px
+    style KMS_PROV fill:#fcc,stroke:#900,stroke-width:3px
+    style KMS_DECISION fill:#fcc,stroke:#900,stroke-width:3px
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Bedrock (Agents, Knowledge Bases, Guardrails, foundation model with strong tool-use, embedding model), Amazon OpenSearch Serverless, AWS HealthLake, AWS Lambda, AWS Step Functions, Amazon MWAA (or AWS Step Functions for batch ingestion), Amazon API Gateway, AWS WAF, Amazon DynamoDB, Amazon S3, AWS KMS (with separate keys for the provenance journal and the coordination-decision-record store), AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon Pinpoint, Amazon Connect (warm-handoff to human care managers and clinical staff), Amazon QuickSight (dashboards), Amazon Comprehend Medical (medical NER over patient-and-caregiver-reported text). Optionally: Amazon SageMaker (custom seam-detection classifier hosting).</td>
+</tr>
+<tr>
+<td><strong>External Inputs</strong></td>
+<td>Multiple EHRs via FHIR APIs (USCDI v3 or later) for participating organizations (Patient, Encounter, Condition, MedicationRequest, MedicationStatement, Observation, DiagnosticReport, ServiceRequest, CarePlan, AllergyIntolerance, Immunization, Coverage). HL7 v2 ADT and ORU feeds from participating hospitals. HIE and TEFCA QHIN integration where the institution participates. Payer claims feeds where the institution has a claims-data partnership. Pharmacy data via NCPDP standards or vendor APIs (CVS, Walgreens, Walmart, regional chains, mail-order, specialty pharmacies). Home-health vendor APIs from connected agencies. Lab feeds from connected labs (LabCorp, Quest, regional reference labs, hospital labs). Coordination-protocol corpus curated and version-controlled by clinical leadership including transition-of-care protocols (hospital-to-home, hospital-to-SNF, ED-to-primary-care follow-up, surgery-to-home, oncology-treatment cycles), referral-tracking protocols by specialty and urgency, post-discharge protocols, post-procedure protocols, medication-reconciliation protocols, condition-specific coordination playbooks for high-prevalence multi-condition combinations. Patient-education library reviewed by clinical leadership and patient-experience leadership, multilingual and multi-reading-level. Care-management workforce capacity (employed or contracted) sized to expected escalation volume. Identity-and-proxy-access infrastructure with state-specific caregiver-consent compliance. Consent-management infrastructure with per-data-source and per-sharing-relationship tracking.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege roles. The HL7 listener and FHIR poller Lambdas have read access to the connected EHR endpoints with credentials in Secrets Manager. The claims-feed processor has read access to the payer's claims-feed endpoint. The pharmacy-API consumer has read access to connected pharmacy APIs. The home-health vendor Lambda has read access to connected agency APIs. Each ingestion Lambda has write access to the provenance journal and to the relevant coordination-state tables. The seam-detection rule engine has read access to coordination-state tables and write access to the seam-flag store. The coordination-decision-record-recording Lambda has write access to the decision-record store. The escalation Lambda has write access to the Connect queue. None of the assistant's Lambdas have write access to the clinical record except for institutionally-approved coordination-event records (e.g., FHIR Communication resources for the conversation log; FHIR ServiceRequest resources for follow-up scheduling where the institution permits assistant-originated requests; with explicit patient consent and institutional clinical-leadership signoff). Resource-based policies pin invoking principals to the production agent and API Gateway stage ARNs.</td>
+</tr>
+<tr>
+<td><strong>BAA and Compliance</strong></td>
+<td>AWS BAA signed. Verify all services in scope are HIPAA-eligible at build time. The assistant is patient-and-caregiver-facing PHI from multiple organizations, with cross-organizational data integration and data-sharing implications. Legal counsel familiar with HIPAA, the Information Blocking and Interoperability rules, TEFCA participation requirements, state-specific medical-record statutes, state-specific caregiver-consent and proxy-access laws, 42 CFR Part 2 (substance-use treatment), state-specific mental-health-record protections, state-specific HIV-record and genetic-test-result protections, state-specific adolescent confidentiality, and (where the assistant produces clinical recommendations) the FDA SaMD framework reviews the data-handling posture. The institutional regulatory team reviews the FDA-strategy positioning before launch and on each material scope change. The institutional malpractice insurer is part of the policy review. State-specific regulations on AI-mediated patient communication, on telehealth, and on care-management may apply.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Coordination-protocol corpus, patient-education library, conversation archive, coordination-decision-record journal: SSE-KMS with customer-managed keys. Provenance journal: SSE-KMS with separately-managed customer key for blast-radius containment and for separate-access-control discipline. Coordination-decision-record journal: SSE-KMS with separately-managed customer key. S3 archives: Object Lock in compliance mode for the retention window. DynamoDB tables: customer-managed KMS at rest, with sensitive tables (provenance journal, coordination-decision-record journal) on separate keys. Lambda environment variables: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all integrations with external systems including HL7 and FHIR endpoints.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: ingestion Lambdas (HL7 listener, FHIR poller, claims-feed processor, pharmacy-API consumer, home-health vendor, HIE adapter), tool Lambdas that call EHRs, care-management workflows, escalation pathways, and care-navigation systems run in VPC with controlled egress. PrivateLink to vendor-hosted endpoints where supported; tightly-scoped NAT path with allow-list otherwise. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, OpenSearch Serverless, HealthLake, Step Functions, MWAA, Pinpoint, Connect, Comprehend Medical, and SageMaker (where used). The patient-and-caregiver-facing edge is public; the back-office and cross-organizational-integration traffic is private.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on all sensitive S3 buckets (audit-archive, coordination-decision-record-journal, provenance-archive, coordination-protocol corpus, patient-education library) and DynamoDB tables (coordination-state, provenance journal, coordination-decision-record journal, referral-lifecycle, transition-of-care, seam-flag, caregiver, consent record, etc.), Secrets Manager secrets, and customer-managed KMS keys. Bedrock and Bedrock Agents invocations logged. Lambda invocations logged. API Gateway access logs enabled. Step Functions execution logs enabled. MWAA execution logs enabled. Connect interactions logged with appropriate retention. Pinpoint message-status logs preserved. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode. Audit retention sized to the longest of HIPAA's six-year minimum, state-specific medical-record retention rules, FDA SaMD post-market obligations where applicable, and litigation-hold obligations.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthetic patient profiles stratified by chronic-condition mix, by post-discharge episode type, by post-procedure recovery, by oncology-treatment-cycle phase, by caregiver presence, by integration coverage profile (well-instrumented vs. partially-instrumented vs. poorly-instrumented), by language, by socioeconomic context, by social-determinant flags. Synthetic FHIR bundles, HL7 v2 messages, claims feeds, pharmacy fills, and home-health visit notes. Synthetic conversation histories covering enrollment, post-discharge windows, referral-tracking lifecycles, transition-of-care orchestration, medication-reconciliation episodes, caregiver-burden disclosures, and escalation scenarios. Coordination-protocol corpus reviewed by clinical leadership across primary care, hospital medicine, specialty practice, pharmacy, home health, and care management. Patient-education library reviewed by clinical leadership and patient-experience leadership in multiple languages and reading levels. Test EHRs, HIEs, payer claims, pharmacy, home-health, and care-management systems with synthetic data. Test caregiver-proxy-access scenarios across multiple state-law jurisdictions.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a mid-sized payer or integrated-delivery-network scale (50,000 enrolled members across multiple acuity tiers; average 1-4 conversational engagements per week per active member; average 4-10 turns per engagement; average 2,500 tokens of prompt and 500 tokens of response per turn for the orchestration model plus tool-call overhead; plus ingestion processing across HL7, FHIR, claims, pharmacy, home-health, HIE; plus seam-detection and protocol-trigger evaluation): Bedrock LLM invocations typically $3-8 per active member per month for a Sonnet-class orchestration model, totaling approximately $1.8M-4.8M per year. Bedrock Agents and Knowledge Bases hosting plus the OpenSearch Serverless retrieval indices typically $80,000-300,000 per year. Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Step Functions, MWAA total approximately $200,000-700,000 per year combined (the cross-organizational ingestion volume is the dominant driver among these). AWS HealthLake typically $80,000-400,000 per year (varies with FHIR-resource volume and population size). Pinpoint typically $30,000-150,000 per year. Connect typically $80,000-400,000 per year. Comprehend Medical typically $20,000-100,000 per year. SageMaker (when used) typically $20,000-80,000 per year. Total AWS infrastructure typically $2.3M-7.0M per year at this scale (approximately $4-12 per active member per month). The care-management workforce cost (employed or contracted nurse case managers, social workers, care coordinators) is typically larger than the AWS infrastructure cost and is the dominant operational expense; a deployment that under-invests in human care-management capacity is a deployment with safety gaps and missed coordination value.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>LLM for orchestration and conversational response generation; embedding model for the coordination-protocol corpus, patient-education library, and conversation history</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Agents</strong></td>
+<td>Tool orchestration: define coordination tools as action groups, manage the multi-step LLM-and-tool flow</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Knowledge Bases</strong></td>
+<td>Managed RAG over (a) coordination protocols, (b) patient-education library, (c) longitudinal conversation history. Metadata-filtered retrieval (transition type, specialty, urgency tier, audience, language, reading level, version)</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Serverless</strong></td>
+<td>Vector and lexical retrieval index backing each Knowledge Base</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Guardrails</strong></td>
+<td>Content filtering for diagnosis-attempted, prescription-attempted, dose-titration-attempted, treatment-recommendation-beyond-existing-orders, therapy-attempted (route to recipe 11.8), triage-attempted (route to recipe 11.6), benefits-quote-attempted (route to recipe 11.5)</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Chat handler, input/output safety, identity-role-and-coordination-context loading, ingestion adapters (HL7, FHIR, claims, pharmacy, home-health, HIE), seam-detection rule engine, protocol-trigger evaluator, transition-of-care state-machine workers, care-team reporting, outcome correlation, and tool implementations (coordination_state_retrieve, referral_lifecycle_retrieve, encounter_retrieve, medication_list_reconcile, open_followups_retrieve, seam_flags_retrieve, protocol_retrieve, patient_education_content_retrieve, care_team_alert_propose, patient_action_propose, follow_up_schedule, escalation_propose, provenance_retrieve)</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Transition-of-care workflows with states for protocol-defined steps; transition state machines version-controlled and audited</td>
+</tr>
+<tr>
+<td><strong>Amazon MWAA</strong></td>
+<td>Population-scale batch ingestion (FHIR Bulk Data exports, claims-feed periodic refresh, population-level seam-detection runs)</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Public-facing chat endpoint for web, app, SMS, voice, and caregiver-app channels</td>
+</tr>
+<tr>
+<td><strong>AWS WAF</strong></td>
+<td>Rate limiting, bot detection, common attack patterns</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>patient-coordination-store, coordination-state-store, referral-lifecycle-store, transition-of-care-store, seam-flag-store, caregiver-store, conversation-state, conversation-metadata, tool-call-ledger, coordination-decision-record-journal, provenance-journal, consent-record</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Coordination-protocol corpus, patient-education library, conversation archive, coordination-decision-record journal, provenance archive, outcome-correlation data</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake</strong></td>
+<td>FHIR-native data store normalizing data from multiple EHRs and HIE feeds (Patient, Encounter, Condition, MedicationRequest, MedicationStatement, Observation, DiagnosticReport, ServiceRequest, CarePlan, AllergyIntolerance, Immunization, Coverage)</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys per data class, with separate keys for the provenance journal and the coordination-decision-record journal</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Credentials for EHRs, HIE/TEFCA endpoints, payer claims feeds, pharmacy APIs, home-health vendor APIs, care-management workflow systems, escalation pathways</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics (referral closure rate, transition-of-care completion rate, medication-reconciliation accuracy, seam-detection rate, seam-resolution rate, escalation rate, citation-coverage rate, per-cohort slices); alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>API-level audit logging</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Coordination-event bus (patient_enrolled, caregiver_designated, integration_connected, encounter_ingested, referral_ordered, referral_scheduled, referral_completed, transition_initiated, transition_completed, medication_filled, medication_discontinued, lab_result_posted, seam_flag_raised, seam_flag_resolved, care_team_alert_generated, escalation_routed, coordination_decision_recorded)</td>
+</tr>
+<tr>
+<td><strong>Amazon Pinpoint</strong></td>
+<td>Proactive care-event-triggered messaging (post-discharge welcome-home check-in, referral-scheduling reminders, appointment-prep nudges, lab-result acknowledgement prompts, missed-appointment follow-ups) with delivery-status tracking, channel-preference enforcement, and quiet-hours discipline</td>
+</tr>
+<tr>
+<td><strong>Amazon Connect</strong></td>
+<td>Warm-handoff queue for human care managers and clinical staff (chat and voice), routing integration with care-management leadership</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Streaming audit and telemetry delivery</td>
+</tr>
+<tr>
+<td><strong>AWS Glue Data Catalog + Amazon Athena</strong></td>
+<td>SQL access to audit, decision-record, provenance, and telemetry data</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Medical NER over patient-and-caregiver-reported text for matching against the coordination state</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker (where used)</strong></td>
+<td>Hosted custom seam-detection classifiers (decompensation patterns, complex medication-discrepancy reasoning, caregiver-burden trajectory)</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Clinical, operational, and outcome dashboards with per-cohort slices</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Enroll the patient and capture cross-organizational consent with caregiver setup.</strong> Enrollment is more involved than for the previous chapter 11 bots because the consent posture covers multiple data sources, multiple sharing relationships, and (often) one or more caregivers with proxy-access scope. The consent flow has been reviewed by legal counsel familiar with HIPAA, the Information Blocking rule, state-specific medical-record statutes, state-specific caregiver-consent rules, and (where applicable) 42 CFR Part 2, state-specific mental-health-record protections, and other sensitive-record rules. Skip this step or treat it as boilerplate, and the deployment's regulatory posture is compromised before the first conversation.</p>
+<pre class="code code-plain"><code>ON enroll_patient(patient_id, enrollment_program_id,
+                  legal_consent_form_signed,
+                  caregiver_designations,
+                  state_of_residence):
+    // Step 1A: validate the patient is eligible for the
+    // institution&#x27;s deployment scope.
+    eligibility = check_eligibility({
+        patient_id: patient_id,
+        program: enrollment_program_id,
+        excluded_populations: INSTITUTION_EXCLUDED_POPULATIONS
+            // typically: patients in active hospice (where a
+            // hospice-specific coordination tool is more
+            // appropriate); patients whose primary coordination
+            // is delivered by a contracted external care
+            // navigator (where the coordination relationship is
+            // already owned by another entity); minors in
+            // adult-only deployments; others per institutional
+            // clinical-leadership policy
+    })
+
+    IF NOT eligibility.eligible:
+        return {
+            action: &quot;enrollment_declined&quot;,
+            reason: eligibility.reason,
+            referral: eligibility.recommended_alternative
+        }
+
+    // Step 1B: capture cross-organizational consent posture.
+    // Consent is per data source and per sharing relationship.
+    // The consent record is the operational gate the
+    // architecture enforces; it is not optional and not
+    // bypass-able from the assistant.
+    consent_record = capture_consent({
+        patient_id: patient_id,
+        data_sources: enumerate_known_sources(patient_id),
+            // primary care EHR, hospital EHR(s), specialty
+            // EHR(s), HIE participation, payer claims feed,
+            // pharmacies (each), home-health agency, lab(s)
+        sharing_relationships: [
+            &quot;with_primary_care&quot;,
+            &quot;with_specialists&quot;,
+            &quot;with_care_management&quot;,
+            &quot;with_designated_caregivers&quot;
+        ],
+        sensitive_record_categories: [
+            // each requires explicit category-specific consent
+            // per state and federal rules
+            &quot;mental_health_records&quot;,
+            &quot;substance_use_records_42_cfr_part_2&quot;,
+            &quot;hiv_records&quot;,
+            &quot;genetic_test_results&quot;,
+            &quot;adolescent_confidential_records&quot;
+        ],
+        revocability: &quot;revocable_at_any_time_per_category&quot;,
+        state_of_residence: state_of_residence
+    })
+
+    // Step 1C: capture caregiver designations.
+    // Each caregiver gets a separate identity, separate
+    // authentication, separate proxy-access scope, and
+    // separate state-law access posture.
+    caregiver_records = []
+    FOR each cg IN caregiver_designations:
+        proxy_scope = capture_proxy_access_scope({
+            patient_id: patient_id,
+            caregiver_identity: cg,
+            access_level: cg.requested_access,
+                // values: &quot;full&quot;, &quot;scheduling_only&quot;,
+                // &quot;medications_only&quot;, &quot;education_only&quot;,
+                // &quot;emergency_contact_only&quot;
+            sensitive_record_carve_outs: cg.sensitive_carve_outs,
+                // patient may withhold mental-health records
+                // from a caregiver while granting other access
+            state_law_check: check_state_caregiver_law(
+                state_of_residence, cg.relationship)
+                // some states require notarized HCP/POA
+                // documentation, others have specific rules for
+                // adolescents and aging adults
+        })
+        caregiver_records.append(proxy_scope)
+
+    // Step 1D: identify the patient&#x27;s known clinicians,
+    // pharmacies, payers, and ancillary services.
+    known_relationships = capture_known_relationships({
+        patient_id: patient_id,
+        clinicians: enumerate_clinicians(patient_id),
+        pharmacies: enumerate_pharmacies(patient_id),
+        payers: enumerate_payers(patient_id),
+        ancillary_services: enumerate_ancillary(patient_id)
+    })
+
+    // Step 1E: capture preferences (channels, quiet hours,
+    // language, preferred name, what to discuss with whom).
+    preferences = capture_preferences({
+        patient_id: patient_id,
+        channels: [&quot;app&quot;, &quot;sms&quot;, &quot;voice&quot;, &quot;email&quot;],
+        quiet_hours: prompt_for_quiet_hours(),
+        language: prompt_for_language(),
+        preferred_name: prompt_for_preferred_name(),
+        caregiver_routing_preferences:
+            prompt_for_caregiver_routing()
+    })
+
+    // Step 1F: persist enrollment artifacts.
+    persist_enrollment({
+        patient_id: patient_id,
+        consent_record: consent_record,
+        caregiver_records: caregiver_records,
+        known_relationships: known_relationships,
+        preferences: preferences,
+        program: enrollment_program_id,
+        state_of_residence: state_of_residence,
+        enrollment_timestamp: now(),
+        consent_versions: snapshot_consent_versions(),
+        enrolling_user: signing_user
+    })
+
+    // Step 1G: emit enrollment event for downstream systems.
+    emit_event(&quot;patient_enrolled&quot;, {patient_id, program})
+    FOR each cg IN caregiver_records:
+        emit_event(&quot;caregiver_designated&quot;,
+                   {patient_id, caregiver_id: cg.id})
+
+    return {
+        action: &quot;enrolled&quot;,
+        patient_id: patient_id,
+        coordination_state_initialized: true
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the assistant operates without a defensible consent posture across organizations, the caregiver-access model is ad-hoc, the patient's preferences are not captured, the assistant cannot reason about its own integration coverage, and the regulatory and patient-trust postures are both broken. Investments here pay back across every subsequent conversation.</p>
+<hr />
+<p><strong>Step 2: Ingest cross-organizational data with provenance discipline.</strong> The ingestion layer is the architectural floor for the coordination assistant. Every data point ingested is recorded with its source, its timestamp, its ingestion path, and its integrity hash. The ingestion pipeline is composed of per-source adapters; each adapter handles authentication, rate limiting, format translation, sensitive-record classification, and provenance recording.</p>
+<pre class="code code-plain"><code>ON ingest_event(source_type, raw_message, ingestion_metadata):
+    // Step 2A: route to the appropriate per-source adapter.
+    adapter = select_adapter(source_type)
+        // values: &quot;hl7_v2_adt&quot;, &quot;hl7_v2_oru&quot;,
+        // &quot;fhir_subscription&quot;, &quot;fhir_polling&quot;,
+        // &quot;claims_batch&quot;, &quot;pharmacy_ncpdp&quot;,
+        // &quot;pharmacy_vendor_api&quot;, &quot;home_health_vendor_api&quot;,
+        // &quot;hie_query&quot;, &quot;tefca_query&quot;, &quot;patient_reported&quot;
+
+    // Step 2B: validate and parse.
+    parsed = adapter.parse(raw_message)
+    validation = adapter.validate(parsed)
+    IF NOT validation.valid:
+        log_failed_ingestion(parsed, validation.errors)
+        return {action: &quot;rejected&quot;, reason: validation.errors}
+
+    // Step 2C: classify sensitive-record categories.
+    // Some categories trigger separate handling per
+    // state and federal rules; this is operational, not
+    // optional.
+    sensitivity = classify_sensitivity(parsed)
+        // categories: &quot;general&quot;, &quot;mental_health&quot;,
+        // &quot;substance_use_42_cfr_part_2&quot;, &quot;hiv&quot;,
+        // &quot;genetic&quot;, &quot;adolescent_confidential&quot;
+
+    // Step 2D: enforce per-source consent posture.
+    // If the patient has not consented to ingestion from
+    // this source, or has revoked consent, the data is
+    // dropped and the revocation is honored.
+    consent_check = verify_consent({
+        patient_id: parsed.patient_id,
+        source_type: source_type,
+        sensitivity_category: sensitivity.category
+    })
+    IF NOT consent_check.allowed:
+        log_consent_denied_ingestion(parsed, consent_check)
+        return {action: &quot;consent_denied&quot;}
+
+    // Step 2E: write to the provenance journal.
+    // Provenance records are append-only and separately
+    // keyed for blast-radius containment.
+    provenance_id = write_provenance({
+        patient_id: parsed.patient_id,
+        source_type: source_type,
+        source_message_id: ingestion_metadata.message_id,
+        source_timestamp: parsed.source_timestamp,
+        ingestion_timestamp: now(),
+        ingestion_path: ingestion_metadata.path,
+        integrity_hash: hash_message(raw_message),
+        sensitivity_category: sensitivity.category,
+        adapter_version: adapter.version
+    })
+
+    // Step 2F: normalize to the coordination-state schema.
+    // For FHIR-native sources, the data lands in HealthLake
+    // and the assistant&#x27;s coordination-state-store has
+    // pointers. For HL7 and other non-FHIR sources, the
+    // data is mapped to FHIR-aligned shapes for consistency.
+    normalized = adapter.normalize(parsed)
+
+    // Step 2G: reconcile against existing coordination state.
+    // Reconciliation may detect duplicates, conflicts, or
+    // updates to existing entries.
+    reconciliation = reconcile_with_state({
+        patient_id: parsed.patient_id,
+        normalized_event: normalized,
+        provenance_id: provenance_id
+    })
+
+    // Step 2H: update the coordination-state-store with
+    // provenance references preserved.
+    update_coordination_state({
+        patient_id: parsed.patient_id,
+        update_type: reconciliation.update_type,
+            // values: &quot;new_entry&quot;, &quot;update_existing&quot;,
+            // &quot;conflict_detected&quot;, &quot;duplicate_dropped&quot;
+        normalized_event: normalized,
+        provenance_id: provenance_id,
+        reconciliation_details: reconciliation
+    })
+
+    // Step 2I: emit care-event triggers for downstream
+    // protocol and seam-detection processing.
+    triggers = derive_triggers(normalized, reconciliation)
+    FOR each trigger IN triggers:
+        emit_event(trigger.type, trigger.payload)
+            // common triggers: &quot;encounter_ingested&quot;,
+            // &quot;referral_ordered&quot;, &quot;discharge_event&quot;,
+            // &quot;lab_result_posted&quot;, &quot;medication_filled&quot;,
+            // &quot;appointment_scheduled&quot;, &quot;appointment_missed&quot;
+
+    return {
+        action: &quot;ingested&quot;,
+        provenance_id: provenance_id,
+        triggers_emitted: triggers.length
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the assistant has no provenance for its assertions, the consent posture is unenforceable per data source, the sensitive-record categories are mishandled, the reconciliation is ad-hoc, and the seam-detection layer has no signal to operate on. The ingestion layer is multi-quarter engineering work for any institution that takes the assistant seriously.</p>
+<hr />
+<p><strong>Step 3: Run the seam-detection rule engine and the protocol-trigger evaluator.</strong> Seam detection is the assistant's distinctive value layer. The rules and the protocols are institutional content with named clinical-leadership ownership; the engine runs them deterministically (or with calibrated heuristic models) and routes detected gaps to the appropriate human or to the patient-and-caregiver engagement scheduler.</p>
+<pre class="code code-plain"><code>ON care_event_or_periodic_tick(patient_id, event):
+    // Step 3A: load the patient&#x27;s coordination state and
+    // the relevant protocol context.
+    state = load_coordination_state(patient_id)
+    context = load_protocol_context({
+        patient_id: patient_id,
+        active_care_events: state.active_care_events
+    })
+
+    // Step 3B: run the seam-detection rule set.
+    // Each rule is owned by a named clinical leader; rules
+    // have effective dates and version histories.
+    seam_findings = []
+    FOR each rule IN ENABLED_SEAM_RULES:
+        IF rule.applies_to(state, event):
+            finding = rule.evaluate({
+                state: state,
+                event: event,
+                context: context
+            })
+            IF finding.detected:
+                seam_findings.append({
+                    rule_id: rule.id,
+                    rule_version: rule.version,
+                    rule_owner: rule.owner,
+                    finding: finding,
+                    confidence: finding.confidence,
+                    suggested_resolver:
+                        finding.suggested_resolver
+                        // values: &quot;patient&quot;, &quot;caregiver&quot;,
+                        // &quot;care_team&quot;, &quot;clinician&quot;,
+                        // &quot;patient_and_care_team&quot;
+                })
+
+    // Step 3C: persist seam-flags to the seam-flag-store.
+    FOR each finding IN seam_findings:
+        seam_flag_id = persist_seam_flag(patient_id, finding)
+        emit_event(&quot;seam_flag_raised&quot;, {
+            patient_id: patient_id,
+            seam_flag_id: seam_flag_id,
+            rule_id: finding.rule_id,
+            suggested_resolver: finding.suggested_resolver
+        })
+
+    // Step 3D: evaluate protocol triggers.
+    // Triggers come from the protocol library, not from LLM
+    // judgment. Examples: post-discharge welcome-home
+    // conversation within 48 hours; referral-tracking
+    // check-in 1 week after order if not scheduled; lab-
+    // result acknowledgement after clinician sign-off;
+    // medication-fill check after new prescription.
+    protocol_triggers = []
+    FOR each protocol IN ACTIVE_PROTOCOLS_FOR_PATIENT(state):
+        triggered = protocol.evaluate_triggers({
+            state: state,
+            event: event,
+            now: now()
+        })
+        protocol_triggers.extend(triggered)
+
+    // Step 3E: schedule patient-and-caregiver engagements
+    // for resolvable items.
+    FOR each trigger IN protocol_triggers:
+        IF trigger.action_type == &quot;engage_patient_or_caregiver&quot;:
+            schedule_engagement({
+                patient_id: patient_id,
+                trigger: trigger,
+                target_role:
+                    determine_target_role(trigger, state),
+                channel:
+                    select_channel(state.preferences, trigger),
+                quiet_hours_check:
+                    state.preferences.quiet_hours,
+                window: trigger.window
+            })
+
+    // Step 3F: route care-team-resolvable items to alerts.
+    FOR each finding IN seam_findings:
+        IF finding.suggested_resolver IN [
+            &quot;care_team&quot;, &quot;clinician&quot;, &quot;patient_and_care_team&quot;]:
+            create_care_team_alert({
+                patient_id: patient_id,
+                finding: finding,
+                priority:
+                    derive_priority(finding, state),
+                routing:
+                    determine_routing(finding, state)
+            })
+
+    // Step 3G: handle high-acuity events.
+    // Some seam findings or protocol triggers are
+    // immediately escalation-worthy (e.g., post-discharge
+    // symptoms suggestive of decompensation reported by
+    // the patient or caregiver; conflicting orders for
+    // a high-risk medication class; missed critical
+    // medication for an active condition).
+    FOR each finding IN seam_findings:
+        IF finding.priority == &quot;high_acuity&quot;:
+            escalate_immediately({
+                patient_id: patient_id,
+                finding: finding,
+                pathway: finding.escalation_pathway
+                    // values: &quot;care_management_immediate&quot;,
+                    // &quot;clinical_callback_within_2_hours&quot;,
+                    // &quot;triage_pathway&quot;, &quot;911_routed&quot;
+            })
+
+    return {
+        seam_findings: seam_findings.length,
+        protocol_triggers: protocol_triggers.length,
+        engagements_scheduled: count_scheduled,
+        alerts_created: count_alerts,
+        escalations: count_escalations
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the assistant cannot detect the gaps that are its distinctive value, the protocol-driven engagement cadence is missing, the care-team feedback loop is broken, and the assistant degrades to a glorified FAQ bot over coordination data. The seam-detection-rule library and the protocol library together are the largest non-LLM engineering investment in the system.</p>
+<hr />
+<p><strong>Step 4: Initiate the conversation surface with input safety, identity, and coordination context.</strong> A conversation can be patient-initiated, caregiver-initiated, or assistant-initiated (from a care-event trigger or a protocol-driven engagement). Whichever the entry point, the conversation handler runs the same input-safety pipeline as the previous chapter 11 bots, plus the continuous emergency-screening pass that every patient-or-caregiver utterance receives, plus identity-verification with the speaker-role distinction (patient vs. caregiver), plus the coordination-state context loading.</p>
+<pre class="code code-plain"><code>ON conversation_turn(session_id, utterance, channel,
+                     auth_context, speaker_role):
+    // Step 4A: input safety with continuous emergency screen.
+    // Same primitives as recipes 11.1-11.8, with one
+    // coordination-specific addition: the continuous
+    // emergency screen runs on every utterance regardless
+    // of conversation context.
+    safety = run_input_safety({
+        utterance: utterance,
+        channel: channel,
+        speaker_role: speaker_role,
+        prompt_injection_check: true,
+        phi_minimization_check: true,
+        crisis_classifier: true,
+        coordination_acuity_classifier: true
+            // detects post-discharge symptoms suggestive of
+            // decompensation, missed critical medications,
+            // reported caregiver crisis, etc.
+    })
+
+    IF safety.crisis_flag:
+        return route_to_crisis_pathway({
+            session_id: session_id,
+            utterance: utterance,
+            crisis_type: safety.crisis_type
+                // values: &quot;self_harm_or_suicide&quot; -&gt; 988 + recipe 11.8;
+                // &quot;acute_medical&quot; -&gt; 911 + recipe 11.6;
+                // &quot;intimate_partner_violence&quot; -&gt; NDV hotline +
+                //   institutional pathway;
+                // &quot;elder_abuse&quot; -&gt; APS + institutional pathway;
+                // &quot;child_abuse&quot; -&gt; mandatory-reporter pathway
+        })
+
+    IF safety.coordination_acuity_flag:
+        return route_to_acuity_pathway({
+            session_id: session_id,
+            utterance: utterance,
+            acuity_type: safety.acuity_type
+        })
+
+    IF NOT safety.passes:
+        return safe_template_response(safety.failure_reason)
+
+    // Step 4B: identity-and-role verification.
+    // The session conveys the verified identity (patient or
+    // caregiver). Caregiver identity carries proxy-access
+    // scope.
+    identity = verify_identity_and_role(auth_context)
+    IF NOT identity.verified:
+        return identity_required_response()
+
+    // Step 4C: coordination-context loading scoped by
+    // speaker role.
+    coordination_context = load_coordination_context({
+        patient_id: identity.patient_id,
+        speaker_role: identity.role,
+            // values: &quot;patient&quot;, &quot;caregiver&quot;,
+            // &quot;caregiver_with_full_proxy&quot;,
+            // &quot;caregiver_with_scheduling_only_proxy&quot;,
+            // etc.
+        proxy_access_scope: identity.proxy_scope,
+        sensitive_record_carve_outs:
+            identity.sensitive_carve_outs,
+        recent_window_days: 90
+            // longitudinal context window; older context is
+            // reachable on demand via tools but not pre-loaded
+    })
+
+    // Step 4D: assemble the prompt context.
+    prompt_context = {
+        system_prompt: SYSTEM_PROMPT_VERSION_X,
+            // versioned, signed-off by clinical leadership;
+            // includes the assistant&#x27;s role, scope discipline,
+            // speaker-role-aware behavior, citation discipline,
+            // not-a-clinician disclosure, and protocol
+            // citation expectations
+        coordination_context: coordination_context,
+        recent_conversation_history:
+            load_recent_history(session_id, max_turns=20),
+        long_term_summary:
+            load_long_term_summary(identity.patient_id),
+        speaker_role: identity.role,
+        utterance: utterance
+    }
+
+    // Step 4E: invoke the agent with tool-use.
+    // The agent decides which tools to call, in what
+    // order, with what arguments. The agent&#x27;s traces are
+    // preserved for the coordination-decision-record
+    // journal.
+    agent_response = invoke_agent({
+        prompt_context: prompt_context,
+        tools: COORDINATION_TOOL_SURFACE,
+        guardrails_config: GUARDRAILS_VERSION_X,
+        knowledge_bases: [
+            &quot;coordination_protocols&quot;,
+            &quot;patient_education&quot;,
+            &quot;conversation_history&quot;
+        ],
+        trace: true
+    })
+
+    return agent_response
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the assistant treats every conversation as a fresh start, the speaker role is conflated, the proxy-access scope is not enforced, the continuous emergency screen is missed, and the conversation handler degrades to a stateless FAQ bot.</p>
+<hr />
+<p><strong>Step 5: Run the agent's tool-use loop with citation discipline.</strong> The agent's job is to take the user's utterance, decide what coordination tools to call, retrieve the necessary state and protocols, and compose a grounded response. Each tool call is recorded in the tool-call ledger; each retrieved citation is preserved in the response trace. The LLM does not fabricate coordination-state assertions; if a tool call returns &quot;unknown&quot; or &quot;not in coordination state,&quot; the assistant says so honestly.</p>
+<pre class="code code-plain"><code>ON agent_invocation(prompt_context, tools, guardrails, kbs):
+    // Step 5A: model produces an initial plan and tool-call
+    // sequence. The LLM is instructed to call tools to
+    // retrieve coordination state before making any
+    // assertion about that state, and to retrieve protocol
+    // content before delivering any coordination
+    // instruction.
+    plan = model.generate_plan({
+        system: prompt_context.system_prompt,
+        context: prompt_context,
+        tools_available: tools.schemas
+    })
+
+    tool_results = []
+    citations_collected = []
+
+    // Step 5B: execute the tool-call sequence with audit.
+    FOR each tool_call IN plan.tool_calls:
+        // Validate the tool call is permitted in scope.
+        IF NOT scope_validator.permits(tool_call,
+                                       prompt_context):
+            tool_results.append({
+                tool_call: tool_call,
+                result: {error: &quot;out_of_scope_tool_call&quot;}
+            })
+            continue
+
+        // Validate the tool&#x27;s patient_id argument matches
+        // the verified session. Defense-in-depth against
+        // prompt-injection attempts to reach other patients&#x27;
+        // data.
+        IF tool_call.args.patient_id !=
+                prompt_context.coordination_context.patient_id:
+            log_security_event(
+                &quot;patient_id_mismatch_tool_call&quot;,
+                tool_call)
+            tool_results.append({
+                tool_call: tool_call,
+                result: {error: &quot;patient_id_mismatch&quot;}
+            })
+            continue
+
+        // Validate the tool&#x27;s access scope honors the
+        // speaker-role proxy posture.
+        IF NOT proxy_scope_validator.permits(
+                tool_call,
+                prompt_context.speaker_role,
+                prompt_context.coordination_context):
+            tool_results.append({
+                tool_call: tool_call,
+                result: {error: &quot;proxy_scope_denied&quot;}
+            })
+            continue
+
+        result = execute_tool(tool_call)
+
+        // Persist the tool call in the ledger with audit.
+        persist_tool_call_ledger({
+            session_id:
+                prompt_context.session_id,
+            tool: tool_call.name,
+            args: tool_call.args,
+            result_summary: summarize(result),
+            timestamp: now(),
+            speaker_role: prompt_context.speaker_role,
+            tool_version: tool_call.tool_version
+        })
+
+        // Collect citations for grounded assertions.
+        IF result.citations:
+            citations_collected.extend(result.citations)
+
+        tool_results.append({
+            tool_call: tool_call,
+            result: result
+        })
+
+    // Step 5C: model composes the response grounded in
+    // tool results and citations.
+    composed_response = model.compose_response({
+        prompt_context: prompt_context,
+        tool_results: tool_results,
+        citations: citations_collected,
+        instruction:
+            &quot;Compose a response that answers the user&#x27;s &quot;
+            &quot;question or performs the requested coordination &quot;
+            &quot;task. Ground every coordination-state assertion &quot;
+            &quot;in cited provenance. Ground every protocol &quot;
+            &quot;instruction in cited protocol. Where a fact is &quot;
+            &quot;not in the coordination state or in cited &quot;
+            &quot;protocol, say so honestly. Do not produce &quot;
+            &quot;diagnostic or prescriptive recommendations &quot;
+            &quot;beyond what the patient&#x27;s existing clinicians &quot;
+            &quot;have ordered. Defer to the care team for any &quot;
+            &quot;clinical-judgment question.&quot;
+    })
+
+    return {
+        response: composed_response,
+        tool_calls: tool_results,
+        citations: citations_collected,
+        plan: plan
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the tool-call audit trail is incomplete, the patient_id-cross-check defense-in-depth is missing, the proxy-scope discipline is bypassable, and the citation discipline is unenforced. The agent's reasoning is hard to audit when something goes wrong.</p>
+<hr />
+<p><strong>Step 6: Run output safety with protocol-faithfulness verification.</strong> Output safety has the standard primitives from recipe 11.1 (scope filter, vendor-managed guardrail layer, persona-and-tone check). The coordination-specific addition is a faithfulness verifier that confirms the response's coordination-state assertions cite preserved provenance and the response's protocol instructions cite preserved protocol content. A response that asserts coordination facts without citation, or delivers protocol instructions without citation, is regenerated with a stricter constraint or replaced with a safe-fallback template.</p>
+<pre class="code code-plain"><code>ON output_safety(composed_response, tool_results, citations,
+                 prompt_context):
+    // Step 6A: standard output-safety primitives.
+    scope_check = scope_filter.evaluate(composed_response)
+    IF scope_check.violation:
+        return regenerate_with_stricter_scope({
+            response: composed_response,
+            violation: scope_check.violation
+        })
+
+    guardrail_check =
+        bedrock_guardrails.evaluate(composed_response)
+    IF guardrail_check.blocked:
+        return safe_fallback_template(guardrail_check.reason)
+
+    persona_check = persona_and_tone.evaluate(composed_response)
+    IF persona_check.violation:
+        return regenerate_with_persona_constraint(
+            composed_response, persona_check.violation)
+
+    // Step 6B: faithfulness verification (coordination-
+    // specific). Validates that every coordination-state
+    // assertion in the response is grounded in the
+    // tool_results, that every protocol instruction is
+    // grounded in cited protocol, and that the citation
+    // chain back to provenance is intact.
+    faithfulness = verify_faithfulness({
+        response: composed_response,
+        tool_results: tool_results,
+        citations: citations,
+        verifier_model: VERIFIER_MODEL_VERSION_X
+            // independent verifier model, distinct from the
+            // orchestration model, with structured-output
+            // schema validation
+    })
+
+    IF faithfulness.coordination_state_assertion_unverified:
+        // Response asserts something about the patient&#x27;s
+        // coordination state that is not in the retrieved
+        // tool results. Regenerate with stricter
+        // grounding constraint.
+        return regenerate_with_grounding_constraint({
+            response: composed_response,
+            issue: &quot;coordination_state_assertion_unverified&quot;,
+            unverified_claims:
+                faithfulness.unverified_claims
+        })
+
+    IF faithfulness.protocol_instruction_uncited:
+        return regenerate_with_grounding_constraint({
+            response: composed_response,
+            issue: &quot;protocol_instruction_uncited&quot;
+        })
+
+    IF faithfulness.provenance_chain_broken:
+        return safe_fallback_template(
+            &quot;provenance_chain_broken&quot;)
+
+    // Step 6C: speaker-role-appropriate disclosure check.
+    // A caregiver speaking on behalf of the patient may
+    // have restricted access to certain categories per the
+    // patient&#x27;s preference; the response must honor those
+    // carve-outs.
+    role_check = speaker_role_disclosure_check({
+        response: composed_response,
+        speaker_role: prompt_context.speaker_role,
+        sensitive_carve_outs:
+            prompt_context.coordination_context
+                .sensitive_record_carve_outs
+    })
+    IF role_check.violation:
+        return regenerate_with_carve_out_constraint(
+            composed_response, role_check.violation)
+
+    // Step 6D: conservative-bias check. Where the response
+    // could plausibly involve clinical judgment beyond the
+    // coordination scope, did the response defer to the
+    // care team?
+    conservative_check = conservative_bias_check({
+        response: composed_response,
+        prompt_context: prompt_context
+    })
+    IF conservative_check.violation:
+        return regenerate_with_deference_constraint(
+            composed_response,
+            conservative_check.violation)
+
+    // Step 6E: persist the coordination-decision-record.
+    persist_coordination_decision_record({
+        session_id: prompt_context.session_id,
+        patient_id:
+            prompt_context.coordination_context.patient_id,
+        speaker_role: prompt_context.speaker_role,
+        utterance: prompt_context.utterance,
+        composed_response: composed_response,
+        tool_calls: tool_results,
+        citations: citations,
+        faithfulness_score: faithfulness.score,
+        scope_check: scope_check,
+        guardrail_check: guardrail_check,
+        persona_check: persona_check,
+        role_check: role_check,
+        conservative_check: conservative_check,
+        timestamp: now(),
+        model_version: ACTIVE_MODEL_VERSION,
+        prompt_version: ACTIVE_PROMPT_VERSION,
+        protocol_corpus_version:
+            ACTIVE_PROTOCOL_CORPUS_VERSION,
+        coordination_state_version:
+            ACTIVE_COORDINATION_STATE_VERSION
+    })
+
+    return composed_response
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the assistant produces coordination assertions without provenance, delivers protocol instructions without citation, ignores speaker-role carve-outs, drifts out of conservative-bias scope, and the coordination-decision-record journal lacks the structured trace needed for retrospective review.</p>
+<hr />
+<p><strong>Step 7: Orchestrate transitions of care with Step Functions.</strong> When a discharge event arrives (the institution's hospital sends an HL7 ADT-A03 discharge message; or the receiving home-health agency confirms admission to home health; or the SNF confirms admission), the assistant initiates the appropriate transition-of-care workflow. The workflow is a Step Functions state machine, version-controlled, signed off by clinical leadership, with deterministic state transitions and explicit completion criteria. The LLM operates on top of the state machine as the conversational interface; the state machine drives the protocol.</p>
+<pre class="code code-plain"><code>ON discharge_event(patient_id, discharge_event):
+    // Step 7A: identify the appropriate transition protocol
+    // based on the discharge destination and the admission
+    // type.
+    transition_protocol =
+        select_transition_protocol({
+            patient_id: patient_id,
+            admission_type: discharge_event.admission_type,
+            discharge_destination:
+                discharge_event.destination,
+                // values: &quot;home&quot;, &quot;home_with_home_health&quot;,
+                // &quot;snf&quot;, &quot;ltac&quot;, &quot;rehab&quot;,
+                // &quot;hospice&quot;, &quot;other&quot;
+            patient_population:
+                derive_population(patient_id),
+                // affects protocol calibration; e.g.,
+                // post-CABG vs post-CAP vs post-stroke
+            insurance_population:
+                derive_insurance_population(patient_id)
+                // affects benefits-related steps
+        })
+
+    // Step 7B: instantiate the transition workflow.
+    workflow_execution = step_functions.start_execution({
+        state_machine: TRANSITION_OF_CARE_STATE_MACHINE,
+        input: {
+            patient_id: patient_id,
+            discharge_event: discharge_event,
+            transition_protocol: transition_protocol,
+            instantiated_at: now()
+        }
+    })
+
+    // The state machine encodes the protocol-defined steps:
+    //
+    // Step 7B-1: Welcome-home check-in within 48 hours
+    //   (step calls Pinpoint to send the message;
+    //    schedules a follow-up if no response within
+    //    24 hours; escalates if no response within 48
+    //    hours)
+    //
+    // Step 7B-2: Medication reconciliation between the
+    //   discharge medication list and the pre-admit list
+    //   (step calls medication_list_reconcile; if a
+    //    discrepancy is detected, surfaces to seam-flag
+    //    queue for clinical review)
+    //
+    // Step 7B-3: Follow-up appointment validation within
+    //   the protocol window (step calls referral_lifecycle
+    //   tooling; if the appointment is not scheduled within
+    //    the discharge protocol&#x27;s window, surfaces to
+    //    engagement scheduler for patient outreach plus
+    //    care-team alert)
+    //
+    // Step 7B-4: Home-health or DME order validation
+    //   (step verifies that the receiving agency has
+    //    received and accepted the order)
+    //
+    // Step 7B-5: Patient and caregiver education delivery
+    //   (step calls patient_education content retrieval
+    //    grounded in the discharge-instructions and the
+    //    institution&#x27;s reviewed library)
+    //
+    // Step 7B-6: Red-flag warning instructions
+    //   (step delivers the clinically-reviewed warning
+    //    instructions for the specific admission type and
+    //    discharge destination)
+    //
+    // Step 7B-7: Symptom-monitoring engagement
+    //   (step schedules check-ins per the discharge
+    //    protocol&#x27;s cadence, with escalation thresholds)
+    //
+    // Step 7B-8: Closure verification
+    //   (step verifies all protocol items are satisfied;
+    //    if any are open past their windows, escalates to
+    //    care-management for resolution; closes the
+    //    transition workflow with the closure summary
+    //    delivered to the care team)
+
+    return {
+        workflow_execution_id:
+            workflow_execution.execution_id,
+        transition_protocol_version:
+            transition_protocol.version,
+        expected_completion_window:
+            transition_protocol.completion_window
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the discharge-to-home gap (the 48-hour-to-72-hour window where most preventable readmissions originate) is unmanaged, medication reconciliation is left to chance, follow-up appointments are not validated against the protocol window, red-flag warnings are not delivered, and the transition closure is silent. Transitions of care are the single most consequential coordination event class for this assistant, and they are best run through a deterministic state-machine orchestration rather than left to LLM judgment.</p>
+<hr />
+<p><strong>Step 8: Track referral lifecycles to closure.</strong> Referrals are first-class coordination objects with a structured lifecycle (ordered, communicated, scheduled, attended, consult-note-received, closed). Each transition has specified time windows. The referral-lifecycle subsystem is a state machine; the LLM operates on top of it.</p>
+<pre class="code code-plain"><code>ON referral_event(patient_id, referral_event):
+    // Step 8A: classify the event type.
+    event_type = classify_referral_event(referral_event)
+        // values: &quot;ordered&quot;, &quot;communicated_to_patient&quot;,
+        // &quot;scheduled&quot;, &quot;rescheduled&quot;, &quot;attended&quot;,
+        // &quot;no_showed&quot;, &quot;cancelled&quot;,
+        // &quot;consult_note_received&quot;, &quot;closed&quot;
+
+    // Step 8B: load the referral&#x27;s current state.
+    referral_state =
+        load_referral_state(referral_event.referral_id)
+
+    // Step 8C: validate the state transition.
+    transition = referral_state_machine.validate({
+        current_state: referral_state.state,
+        event: event_type
+    })
+
+    IF NOT transition.valid:
+        log_invalid_referral_transition(
+            referral_event, referral_state, transition)
+        return {action: &quot;rejected&quot;}
+
+    // Step 8D: persist the new state with provenance.
+    new_state = referral_state_machine.transition({
+        current: referral_state,
+        event_type: event_type,
+        event_payload: referral_event
+    })
+    persist_referral_state({
+        referral_id: referral_event.referral_id,
+        new_state: new_state,
+        transition_at: now(),
+        provenance_id: referral_event.provenance_id
+    })
+
+    // Step 8E: emit downstream events.
+    emit_event(&quot;referral_state_changed&quot;, {
+        patient_id: patient_id,
+        referral_id: referral_event.referral_id,
+        previous_state: referral_state.state,
+        new_state: new_state.state
+    })
+
+    // Step 8F: schedule the next protocol-driven action.
+    next_action = referral_protocol.next_action(
+        new_state, referral_event)
+
+    IF next_action.type == &quot;engage_patient&quot;:
+        // E.g., 1 week after order if not yet scheduled,
+        // walk the patient through the scheduling step,
+        // including known barriers (specialty wait time,
+        // insurance acceptance).
+        schedule_engagement({
+            patient_id: patient_id,
+            trigger: next_action,
+            channel:
+                load_preferences(patient_id).preferred_channel,
+            window: next_action.window
+        })
+
+    IF next_action.type == &quot;alert_care_team&quot;:
+        // E.g., referral has aged out of its protocol
+        // window; surface for care-management resolution.
+        create_care_team_alert({
+            patient_id: patient_id,
+            alert_type:
+                &quot;referral_aged_past_protocol_window&quot;,
+            referral_id: referral_event.referral_id,
+            priority:
+                derive_priority_from_referral_urgency(
+                    new_state)
+        })
+
+    IF next_action.type == &quot;close_referral&quot;:
+        // Consult note received and ordering clinician has
+        // acknowledged; close the referral.
+        close_referral(referral_event.referral_id)
+        emit_event(&quot;referral_closed&quot;, {
+            patient_id: patient_id,
+            referral_id: referral_event.referral_id
+        })
+
+    return {
+        action: &quot;transitioned&quot;,
+        new_state: new_state.state,
+        next_action: next_action
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: referrals stay open indefinitely without resolution, the patient does not get the specialty consult that was ordered, the ordering clinician does not get the consult note feedback that was needed, the referral-closure rate (a leading indicator of coordination quality) collapses, and the most easily-measured coordination outcome is silently degrading.</p>
+<hr />
+<p><strong>Step 9: Handle medication-reconciliation seams across pharmacies and clinicians.</strong> Medication reconciliation is one of the most consequential and most data-quality-sensitive coordination tasks. The assistant maintains the patient's medication list as a single source of truth synthesized from all known pharmacy fills, all known clinician orders, and all patient-reported medications. The reconciliation logic is robust to the data-quality issues common in pharmacy and clinician feeds (inconsistent medication-naming, inconsistent dose representation, inconsistent dosing-instruction parsing, incomplete coverage). When a discrepancy is detected, the assistant flags it for human reconciliation rather than attempting clinical judgment.</p>
+<pre class="code code-plain"><code>ON medication_event(patient_id, medication_event):
+    // Step 9A: classify the source.
+    source_type = medication_event.source_type
+        // values: &quot;pharmacy_fill&quot;, &quot;clinician_order&quot;,
+        // &quot;patient_reported&quot;, &quot;discharge_med_list&quot;,
+        // &quot;hl7_rde&quot;, &quot;fhir_medicationrequest&quot;,
+        // &quot;fhir_medicationstatement&quot;
+
+    // Step 9B: normalize the medication entry.
+    // The normalization layer canonicalizes drug name
+    // (RxNorm), dose representation (UCUM), and dosing
+    // instructions where possible.
+    normalized = normalize_medication({
+        raw_event: medication_event,
+        rxnorm_lookup: true,
+        ucum_normalization: true,
+        sig_parser: true
+            // best-effort parser for free-text dosing
+            // instructions; falls back to preserved
+            // free-text when parsing is uncertain
+    })
+
+    // Step 9C: load the patient&#x27;s current synthesized
+    // medication list.
+    current_med_list =
+        load_synthesized_medication_list(patient_id)
+
+    // Step 9D: reconcile.
+    reconciliation = reconcile_medication({
+        normalized_event: normalized,
+        current_med_list: current_med_list,
+        rules: MEDICATION_RECONCILIATION_RULES
+            // institutional rules signed off by pharmacy
+            // informatics; e.g., &quot;if a clinician orders a
+            // medication that was previously discontinued
+            // by another clinician, surface for clinical
+            // review&quot;; &quot;if two clinicians order
+            // interacting medications without recorded
+            // coordination, surface for clinical review&quot;;
+            // &quot;if a pharmacy fills a medication the patient
+            // says they were told to stop, surface for
+            // clinical review&quot;; &quot;if the discharge med list
+            // does not reconcile with the pre-admit list
+            // plus expected changes, surface for clinical
+            // review&quot;
+    })
+
+    // Step 9E: update the synthesized medication list with
+    // provenance preserved.
+    update_synthesized_medication_list({
+        patient_id: patient_id,
+        update: reconciliation.update,
+        provenance_id: medication_event.provenance_id
+    })
+
+    // Step 9F: surface seams.
+    FOR each seam IN reconciliation.seams:
+        seam_flag_id = persist_seam_flag({
+            patient_id: patient_id,
+            rule_id: seam.rule_id,
+            description: seam.description,
+            suggested_resolver: seam.suggested_resolver,
+            priority: seam.priority,
+            confidence: seam.confidence
+        })
+        emit_event(&quot;seam_flag_raised&quot;, {
+            patient_id: patient_id,
+            seam_flag_id: seam_flag_id
+        })
+
+    return {
+        action: &quot;reconciled&quot;,
+        seams_raised: reconciliation.seams.length,
+        synthesized_list_version:
+            current_med_list.version + 1
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the patient's medication list across systems remains contradictory, the assistant's medication assertions are not trustworthy, the seam-detection layer does not catch the discrepancies that lead to medication-related adverse events, and the assistant degrades into a tool that surfaces medication confusion rather than resolving it. The pharmacy-informatics partnership is the operational owner here; the assistant is the surfacing layer, not the reconciler.</p>
+<hr />
+<p><strong>Step 10: Generate care-team reporting and outcome correlation.</strong> The care team has visibility into the assistant's activity through structured summaries (real-time alerts for high-priority gaps; weekly digests; monthly summaries; transition-of-care closure reports; quarterly clinical-review packets). The reporting is designed for the care team's workflow and is reviewed by clinical leadership before launch. Outcome-correlation runs against coordination-specific outcomes (referral closure rate, transition-of-care completion rate, medication-reconciliation accuracy, avoidable-readmission rate, avoidable-ED-utilization rate, patient-and-caregiver-reported coordination experience) on multi-quarter windows.</p>
+<pre class="code code-plain"><code>ON reporting_tick(reporting_window):
+    // Step 10A: real-time alerts (already streamed during
+    // operations). This step produces the periodic-summary
+    // artifacts.
+
+    // Step 10B: weekly digest per active member.
+    FOR each patient IN ACTIVE_PATIENT_COHORT:
+        digest = compose_weekly_digest({
+            patient_id: patient.id,
+            window: last_7_days,
+            sections: [
+                &quot;open_referrals_status&quot;,
+                &quot;transition_of_care_status&quot;,
+                &quot;seam_flag_status&quot;,
+                &quot;medication_reconciliation_findings&quot;,
+                &quot;key_disclosures_caregiver_burden_etc&quot;,
+                &quot;patient_and_caregiver_reported_experience&quot;,
+                &quot;open_followups&quot;,
+                &quot;recommended_care_team_actions&quot;
+            ]
+        })
+        deliver_to_care_team({
+            patient_id: patient.id,
+            digest: digest,
+            delivery_channel:
+                care_team_workflow.delivery_channel
+        })
+
+    // Step 10C: monthly summary with longitudinal trends.
+    FOR each patient IN ACTIVE_PATIENT_COHORT:
+        summary = compose_monthly_summary({
+            patient_id: patient.id,
+            window: last_30_days,
+            sections: [
+                &quot;longitudinal_trends&quot;,
+                &quot;open_issues&quot;,
+                &quot;recommendation_for_care_team_action&quot;,
+                &quot;care_management_promotion_candidate&quot;
+                    // patients whose coordination needs
+                    // have grown beyond what the assistant
+                    // alone can address; promote to nurse
+                    // case management or other higher-touch
+                    // service
+            ]
+        })
+        deliver_to_care_team({
+            patient_id: patient.id,
+            summary: summary,
+            delivery_channel:
+                care_team_workflow.delivery_channel
+        })
+
+    // Step 10D: transition-of-care closure reports.
+    FOR each completed_transition IN
+            transitions_completed_in_window:
+        report = compose_transition_closure_report({
+            transition_id: completed_transition.id,
+            closure_summary:
+                completed_transition.closure_summary,
+            protocol_compliance:
+                completed_transition.protocol_compliance,
+            seam_flags_raised_during:
+                completed_transition.seams,
+            patient_and_caregiver_experience:
+                completed_transition.experience_summary
+        })
+        deliver_to_care_team(report)
+
+    // Step 10E: quarterly clinical-review packets.
+    // Clinical leadership reviews assistant performance:
+    // sampled conversations, sampled seam-flag resolutions,
+    // outcome trends, per-cohort metrics, equity
+    // disparities, protocol revisions.
+    IF reporting_window.is_quarter_end:
+        clinical_review_packet =
+            compose_clinical_review_packet({
+                quarter: reporting_window.quarter,
+                sampled_conversations:
+                    sample_conversations(
+                        reporting_window, sample_size=200),
+                sampled_seam_resolutions:
+                    sample_seam_resolutions(
+                        reporting_window, sample_size=100),
+                outcome_metrics:
+                    compute_outcome_metrics(
+                        reporting_window),
+                per_cohort_metrics:
+                    compute_per_cohort_metrics(
+                        reporting_window),
+                equity_disparity_findings:
+                    compute_equity_disparities(
+                        reporting_window),
+                protocol_revision_proposals:
+                    aggregate_revision_proposals(
+                        reporting_window)
+            })
+        deliver_to_clinical_leadership(
+            clinical_review_packet)
+
+    // Step 10F: outcome-correlation pipeline.
+    // Multi-quarter and multi-year correlation against
+    // utilization and clinical outcomes. Results are
+    // observational, not causal.
+    outcome_correlation = compute_outcome_correlation({
+        window: reporting_window,
+        outcome_metrics: [
+            &quot;referral_closure_rate&quot;,
+            &quot;transition_of_care_completion_rate&quot;,
+            &quot;medication_reconciliation_accuracy&quot;,
+            &quot;avoidable_readmission_rate&quot;,
+            &quot;avoidable_ed_utilization_rate&quot;,
+            &quot;duplicate_service_rate&quot;,
+            &quot;patient_and_caregiver_reported_coordination_experience&quot;,
+            &quot;caregiver_burden_trajectory&quot;,
+            &quot;total_cost_of_care_for_engaged_cohort&quot;
+        ],
+        comparison_cohort:
+            propensity_matched_unenrolled_cohort()
+                // observational; not a randomized trial
+    })
+    deliver_outcome_summary(outcome_correlation)
+
+    return {
+        digests_delivered: count_digests,
+        summaries_delivered: count_summaries,
+        closure_reports_delivered: count_closure_reports,
+        review_packet_delivered:
+            reporting_window.is_quarter_end,
+        outcome_correlation_window:
+            reporting_window
+    }
+</code></pre>
+<p>What can go wrong if you skip or shortcut this: the care team has no visibility into the assistant's activity, the assistant operates as a parallel system rather than as an extension of the care team, the outcome-correlation evidence is missing when leadership asks for it, the equity-disparity findings are not surfaced, and the protocol-revision feedback loop does not close. Care-team reporting is not a phase-2 enhancement; it is the operating-room visibility that makes the assistant a tool the care team trusts.</p>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample conversation (illustrative, abbreviated, post-discharge welcome-home check-in):</strong></p>
+<pre class="code code-plain"><code>Bot:     Hi Mr. Chen, this is the coordination tool from
+         your primary care home, checking in two days
+         after your hospital discharge. I&#x27;m a chat tool,
+         not a person, and I work alongside your care
+         team. How are things at home?
+
+Patient: tired but okay. taking the new pills.
+
+Bot:     Glad you made it home. Quick check on the
+         medications: I have, from the discharge list,
+         metoprolol 50 mg twice a day, lisinopril 10 mg
+         once a day, and the new one, furosemide 40 mg
+         once a day in the morning. Does that match what
+         you have at home?
+
+Patient: yes those are the bottles i have. but my wife
+         says the cardiologist&#x27;s office told her on the
+         phone yesterday to go up to 60 mg of furosemide.
+
+Bot:     Thanks for letting me know. That kind of
+         change between the discharge plan and what an
+         outside clinician told your wife is exactly the
+         kind of thing I should flag for your care team
+         to confirm. Two things I&#x27;m doing right now:
+
+         1. I&#x27;m logging this and sending an alert to
+            your primary care nurse so she can call the
+            cardiologist&#x27;s office and confirm the dose
+            change. You should hear from her later
+            today.
+
+         2. Until your nurse confirms, please stay on
+            the dose your wife heard from the
+            cardiologist (60 mg) only if your wife has
+            written down what they told her, and the
+            person on the call was someone from
+            Dr. Patel&#x27;s office. If there is any doubt,
+            it is safer to stay on the discharge dose
+            (40 mg) until the dose is confirmed. I am
+            not making the dose decision; the
+            clinicians are. I&#x27;m only flagging the
+            seam.
+
+         Is your wife around to tell me whether she
+         wrote down who she spoke with and what they
+         said?
+
+Patient: she&#x27;s here. she says it was the nurse at
+         dr. patel&#x27;s office, kim, and she wrote it on
+         the calendar.
+
+Bot:     Good. I&#x27;m noting that. Your nurse will follow
+         up. While I have you, let me make sure your
+         follow-up cardiology appointment is on the
+         calendar. The discharge plan called for a
+         follow-up within 7-10 days, which would be by
+         next Monday. Has that been scheduled?
+
+Patient: nothing on my calendar.
+
+Bot:     Okay, that one is on me to surface to the
+         scheduling team. I&#x27;ll send a request now to
+         have someone call you to set it up. Their
+         number for any questions is on the after-visit
+         summary the hospital sent home with you. While
+         you&#x27;re recovering, three things to watch for
+         that mean call your care team or 911 right
+         away:
+
+         - Sudden worsening shortness of breath at rest
+         - Weight gain of more than 3 pounds in 24
+           hours, or 5 pounds in a week
+         - Swelling in your legs or feet getting
+           noticeably worse
+
+         If any of those happen, call your care team&#x27;s
+         line or 911. The number for the cardiology
+         after-hours line is in your discharge papers.
+
+         How are you feeling otherwise? Any of those
+         things going on now?
+
+Patient: no none of those. just tired.
+
+Bot:     Tiredness for a few days after a hospital
+         stay is normal, especially with the medication
+         changes. I&#x27;ll check back tomorrow afternoon
+         once we&#x27;ve heard from the nurse about the
+         dose. Take care.
+
+[Behind the scenes: the assistant has raised a seam-flag
+ (medication discrepancy between discharge list and
+ reported dose change), routed the seam to the primary
+ care nurse with the patient&#x27;s wife&#x27;s recollection of the
+ source, scheduled a follow-up appointment scheduling
+ task for the scheduling team, and recorded the
+ conversation in the coordination-decision-record journal
+ with full citations to the discharge medication list
+ (provenance: hospital EHR), the cardiology referral
+ (provenance: primary care EHR), the institution&#x27;s
+ post-discharge protocol for the patient&#x27;s admission type
+ (citation: protocol library v3.2), and the heart-failure
+ red-flag warnings (citation: patient-education library
+ v8.7). The wife&#x27;s call recollection is recorded as
+ patient-and-caregiver-reported and is not yet validated
+ against a source.]
+</code></pre>
+<p><strong>Sample care-team alert (illustrative, generated from the conversation above):</strong></p>
+<pre class="code code-plain"><code>ALERT: Medication discrepancy seam, priority MEDIUM
+       (clinical-judgment required)
+
+Patient: Chen, [redacted ID]
+Date: [timestamp]
+Source of seam: post-discharge welcome-home conversation
+Conversation ID: [conv ID]
+
+Description:
+Patient (with caregiver present) reports that
+cardiology nurse Kim at Dr. Patel&#x27;s office instructed
+the patient&#x27;s wife by phone yesterday to titrate
+furosemide from 40 mg to 60 mg once daily. This
+contradicts the discharge medication list (40 mg once
+daily, hospital EHR provenance, signed off by
+discharging hospitalist Dr. Garcia 2 days ago).
+
+The conversation has been documented; the patient was
+told to remain on the discharge dose until the dose is
+confirmed, with the alternative path of staying on the
+60 mg dose if the wife is confident in the source. The
+assistant did not make the dose decision.
+
+Suggested action:
+1. Call Dr. Patel&#x27;s office to confirm the dose change
+2. If confirmed, update the discharge medication list
+   in the patient&#x27;s chart and emit a patient-facing
+   confirmation
+3. If unconfirmed, instruct the patient on the correct
+   dose
+
+Provenance chain attached:
+- Discharge medication list (hospital EHR, message ID
+  ABC-123, ingested 2 days ago)
+- Patient and caregiver report (conversation ID
+  XYZ-789, captured today)
+
+Care-team owner: assigned to primary care nurse C.
+Lopez (queue: PCMH-coordination-medium)
+SLA: 4 business hours
+</code></pre>
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Pre-bot baseline (existing care alone)</th>
+<th>Post-bot (engaged members)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Referral closure rate (within protocol window)</td>
+<td>30-55% (varies by specialty and program)</td>
+<td>60-85% (after multi-quarter ramp)</td>
+</tr>
+<tr>
+<td>Transition-of-care completion rate (per institutional protocol)</td>
+<td>40-65%</td>
+<td>70-90%</td>
+</tr>
+<tr>
+<td>Medication-reconciliation discrepancy detection rate</td>
+<td>Variable, often low</td>
+<td>Substantially higher (the assistant's distinctive value)</td>
+</tr>
+<tr>
+<td>30-day readmission rate for engaged transitions</td>
+<td>Baseline</td>
+<td>5-25% relative reduction (where outcomes mature)</td>
+</tr>
+<tr>
+<td>Avoidable ED utilization rate</td>
+<td>Baseline</td>
+<td>5-20% relative reduction (where outcomes mature)</td>
+</tr>
+<tr>
+<td>Duplicate-service rate</td>
+<td>Variable</td>
+<td>Modest reduction in detected duplicates</td>
+</tr>
+<tr>
+<td>Caregiver-burden trajectory (Zarit Burden Interview or similar)</td>
+<td>Variable</td>
+<td>Modest improvement in engaged caregivers</td>
+</tr>
+<tr>
+<td>Patient-and-caregiver-reported coordination experience</td>
+<td>Variable</td>
+<td>Generally positive, varies by program design</td>
+</tr>
+<tr>
+<td>Engagement attrition by 6 months</td>
+<td>N/A</td>
+<td>25-50% (operational risk, similar to other longitudinal bots)</td>
+</tr>
+<tr>
+<td>Citation-coverage rate</td>
+<td>N/A</td>
+<td>95%+ as launch-gate target</td>
+</tr>
+<tr>
+<td>Seam-detection precision (sampled review)</td>
+<td>N/A</td>
+<td>80-95% target across rules</td>
+</tr>
+<tr>
+<td>Seam-detection recall (sampled review)</td>
+<td>N/A</td>
+<td>70-90% target across rules</td>
+</tr>
+<tr>
+<td>Per-active-member infrastructure cost</td>
+<td>N/A</td>
+<td>$4-12 per member per month</td>
+</tr>
+<tr>
+<td>Per-active-member total cost (including care-management workforce)</td>
+<td>N/A</td>
+<td>$30-100 per member per month</td>
+</tr>
+<tr>
+<td>Per-cohort outcome disparity</td>
+<td>Often invisible</td>
+<td>Monitored explicitly</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Integration coverage gaps.</strong> The assistant operates only as well as its ingestion. Patients whose primary care, hospital, pharmacy, and home-health are all integrated have a different experience than patients with partial coverage. Mitigation: explicit per-source coverage tracking, per-patient confidence calibration, transparent disclosure to the patient and caregiver about what the assistant does and does not know.</li>
+<li><strong>Provenance gaps.</strong> When the assistant cannot trace an assertion back to a specific source, the assertion is suspect. Mitigation: provenance-as-architectural-primitive; faithfulness verification; safe-fallback templates when provenance is missing.</li>
+<li><strong>Seam-detection-rule-engine maturity.</strong> The first rules deployed catch the most common, well-understood seams (medication discrepancies, referral non-scheduling, transition-of-care incompleteness). The harder cases (subtle conflicting orders, complex cross-organizational coordination patterns) require multi-quarter rule-development with clinical-leadership ownership.</li>
+<li><strong>Care-team adoption and trust.</strong> A coordination assistant the care team does not trust or use is a coordination assistant whose value is invisible. Mitigation: clinical-leadership co-design, care-team-workflow integration, sampled-review with care-team feedback, structured failure-mode labeling.</li>
+<li><strong>Engagement attrition over months.</strong> Patients and caregivers who initially engage may attrit over time as the immediate post-discharge or post-procedure pressure recedes. Mitigation: relationship-quality engineering, low-pressure check-in cadence, caregiver-burden-aware engagement timing, gentle re-engagement after silence, per-cohort attrition monitoring.</li>
+<li><strong>Cross-organizational consent friction.</strong> Patients enrolling in coordination across organizations encounter consent friction that is genuinely confusing. Mitigation: plain-language consent UX, multilingual consent forms, cohort-specific guidance, opt-in granularity for sensitive categories.</li>
+<li><strong>Equity gaps in integration coverage.</strong> Patients in well-resourced practices and well-resourced markets are better instrumented than patients in under-resourced practices and markets, who often have greater coordination needs. Mitigation: per-cohort monitoring as launch-gate; targeted integration investment for under-resourced sites; alternative integration paths (patient-mediated SMART on FHIR; HIE participation; payer-provided claims feeds).</li>
+<li><strong>Outcome attribution.</strong> Engaged patients are not a random sample, and coordination outcomes have many confounders. Mitigation: matched-cohort or quasi-experimental analysis; recognition that observational correlation is suggestive, not causal; long-time-horizon commitment.</li>
+<li><strong>Caregiver-burden interventions remain limited.</strong> The assistant can take routine work off the caregiver's plate but cannot address the underlying caregiver-burden drivers (financial constraints, social isolation, the caregiver's own health needs). Mitigation: respite-and-support resource surfacing; integration with care-management for high-burden cases; explicit caregiver-burden tracking with care-management routing.</li>
+<li><strong>Cross-organizational data quality remains uneven.</strong> Pharmacy data feeds carry inconsistent medication-naming and dose representation. FHIR APIs from different EHRs return different shapes for the same clinical concept. Claims feeds lag clinical events by weeks to months. Mitigation: institutional-pharmacy-informatics partnership; FHIR normalization layer; per-source data-quality tracking; transparent disclosure of data-quality limitations.</li>
+<li><strong>Sensitive-record handling complexity.</strong> 42 CFR Part 2, state-specific mental-health record protections, state-specific HIV-record protections, genetic-test-result protections, and adolescent confidentiality each have category-specific rules. Mitigation: sensitive-record-classification at ingestion; per-category consent enforcement; legal-counsel review of state-specific rules; institutional policy with named ownership.</li>
+<li><strong>Information Blocking rule navigation.</strong> The Information Blocking rule requires certain data sharing; state-specific privacy regulations may limit it. Mitigation: legal-counsel-reviewed institutional posture; operational enforcement through the consent layer; documented decision rationale for any apparent tension.</li>
+<li><strong>Adversarial inputs.</strong> Patients (or bad actors) attempting to extract information about other patients, manipulate seam-flag routing, bypass scope discipline, or test the system. Mitigation: input-safety pipeline with prompt-injection detection; output-safety pipeline; tool-Lambda patient_id-cross-check; per-language adversarial test corpus including coordination-specific injection cases.</li>
+<li><strong>Liability exposure for missed seams or mishandled escalations.</strong> A coordination assistant that fails to detect a seam (e.g., a critical medication conflict; an overlooked discharge follow-up; a miscommunicated dose change) and a patient is subsequently harmed is a foreseeable liability exposure. Mitigation: rigorous seam-detection-rule sign-off; sampled review by clinical leadership; named clinical-leadership ownership per rule; FDA-strategy artifact maintained where applicable; institutional malpractice carrier involvement.</li>
+<li><strong>Build-vs-buy positioning.</strong> Several mature commercial coordination platforms offer adjacent capabilities. Mitigation: evaluate build-vs-buy explicitly; most major institutions run a hybrid that combines a thin orchestration layer in-house with vendor-supplied integration substrate.</li>
+<li><strong>Long-term protocol drift.</strong> Over years, coordination protocols evolve as clinical evidence accumulates and institutional practice changes. Mitigation: protocol-as-code with version control; annual review cycles; clinical-leadership signoff; deprecation policy.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Cross-organizational ingestion layer is multi-quarter engineering work.</strong> The HL7 listener, FHIR poller, claims-feed processor, pharmacy-API consumer, home-health vendor adapter, and HIE/TEFCA adapter are each non-trivial integrations. Each has authentication, rate-limiting, error-handling, idempotency, format-translation, sensitive-record-classification, and provenance-recording. Most institutions discover the integration layer is the largest single engineering investment in the system and is multi-quarter work for any meaningful coverage profile.</p>
+<p><strong>Coordination-protocol corpus is multi-quarter clinical work.</strong> Transition-of-care protocols by destination setting, referral-tracking protocols by specialty and urgency, post-discharge protocols by admission type, post-procedure protocols by procedure category, medication-reconciliation protocols, condition-specific coordination playbooks, each with effective dates, version histories, named clinical-leadership ownership, and annual review cycles. Most institutions discover their coordination-protocol library is implicit in their care-managers' heads and needs substantial work to be made explicit and operational.</p>
+<p><strong>Seam-detection rule library with named clinical-leadership ownership per rule.</strong> The rules that catch the gaps that human coordinators catch through experience are institutional content. Each rule has named ownership (patient safety officer, pharmacy director, care-management director, post-discharge care coordinator director, etc.), an effective date, a version history, sampled review for precision and recall, and clinical-leadership signoff before deployment. Multi-quarter work to mature.</p>
+<p><strong>Caregiver-as-first-class-participant identity model with state-law compliance.</strong> Caregiver designation, proxy-access scope, sensitive-record carve-outs, state-specific consent requirements, and operationally-enforced access scoping. Some states require specific caregiver-consent forms (notarized HCP/POA documentation, institution-specific proxy-access forms), others have specific rules for adolescents and aging adults. Legal counsel reviews state-specific variations.</p>
+<p><strong>Cross-organizational consent posture with regulatory review.</strong> Per-data-source and per-sharing-relationship consent tracking, with state-specific variations enforced for sensitive categories. Legal counsel familiar with HIPAA, the Information Blocking and Interoperability rules, TEFCA, state-specific medical-record statutes, 42 CFR Part 2, state-specific mental-health-record protections, state-specific HIV and genetic-test-result protections, and adolescent confidentiality reviews the consent posture before launch.</p>
+<p><strong>Provenance journal with separate KMS keying and access controls.</strong> Every entry in the coordination state has a recorded source, timestamp, and provenance chain. The provenance journal is separately keyed (KMS), separately retained, and separately access-controlled for blast-radius containment. Audit-friendly retrieval is part of production scope.</p>
+<p><strong>Coordination-decision-record journal with structured retention.</strong> Every assistant-generated decision (response delivered, seam detected, alert created, transition initiated, escalation routed) is recorded in a durable, separately-governed journal. Retention sized to the longest of HIPAA's six-year minimum, state-specific medical-record retention, and any FDA SaMD post-market obligations. Reviewable by clinical leadership, compliance, regulatory, and legal.</p>
+<p><strong>Step Functions transition-of-care state machines version-controlled and audited.</strong> Each transition workflow is a state machine with clinical-leadership signoff, version control, deterministic state transitions, and explicit completion criteria. The state machine is versioned alongside the protocol corpus; updates are reviewed before promotion.</p>
+<p><strong>Referral-lifecycle state machine with deterministic logic.</strong> Referrals move through specified lifecycle states with specified time windows. The state machine is institutional content with clinical-leadership signoff; the LLM operates on top of it and does not invent transitions.</p>
+<p><strong>Medication-reconciliation rules with pharmacy-informatics partnership.</strong> Medication-naming canonicalization (RxNorm), dose representation (UCUM), dosing-instruction parsing, and discrepancy-detection rules are owned by pharmacy informatics and signed off by pharmacy leadership. Multi-quarter work to mature.</p>
+<p><strong>Per-cohort monitoring with launch-gate discipline.</strong> Coordination metrics, engagement metrics, outcome metrics, and patient-and-caregiver experience vary by language, channel, condition mix, age cohort, sex, social-determinant flags, caregiver presence, and integration coverage. Per-cohort dashboards reviewed by clinical leadership, operations, compliance, and patient-experience teams. Single-cohort threshold metrics including referral closure rate, transition completion rate, medication-reconciliation accuracy, seam-detection precision and recall, faithfulness rate, citation-coverage rate, equity-disparity flags. Launch-gate institution-wide-average informational only; each cohort meets threshold.</p>
+<p><strong>Outcome-correlation pipeline as multi-quarter to multi-year post-launch commitment.</strong> Coordination outcomes show up over weeks to years depending on the metric. Multi-window correlation (30-day, 90-day, 6-month, 12-month, 24-month, 36-month) against utilization (readmission rate, ED-utilization rate, total cost of care, duplicate-service rate), clinical (HEDIS gap closure, condition-specific outcome trajectories), and patient-experience (PROM trajectories, coordination-experience scores) outcomes. Pipeline ownership jointly held by clinical leadership, data science, operations, compliance, and the participating payer's quality and analytics teams.</p>
+<p><strong>Care-team workflow integration designed jointly with care-management leadership.</strong> The assistant is not a parallel data stream; it is an extension of the care team. The integration with care management's existing workflow tooling (case management platforms, EHR-based care plans, internal alert queues) is designed jointly with the care-management leadership and is reviewed by them before launch.</p>
+<p><strong>Disaster-recovery topology with per-stage failover policy.</strong> Bedrock LLM outage, Bedrock Knowledge Bases outage, Bedrock Agents outage, Bedrock Guardrails outage with stricter scope enforcement, OpenSearch Serverless outage, DynamoDB outage, S3 outage, HealthLake outage, Step Functions outage, MWAA outage, Pinpoint outage, Connect outage, and per-source ingestion outage. Failover-detection thresholds, failover-back triggers, quarterly testing cadence. Crisis-pathway integrity preserved across all degraded states. Graceful-degradation paths exercised in tabletop drills.</p>
+<p><strong>Multi-language deployment with validated translations.</strong> Per-language asset development including validated coordination-protocol translations, validated patient-education translations, validated regulatory-disclaimer translations, per-language tone and persona calibration, per-language asset versioning, per-language launch-gate. Cultural-context adaptation for major populations served.</p>
+<p><strong>Accessibility conformance.</strong> WCAG 2.1 AA conformance for the chat widget; per-channel accessibility considerations for SMS-friendly rendering for low-literacy patients, voice-channel availability, cognitive-load adaptations, screen-reader compatibility. Accessibility launch-gate criteria.</p>
+<p><strong>Per-event idempotency keys for the EventBridge coordination-event bus.</strong> Suggested keys: <code>patient_enrolled (patient_id, &quot;enrolled&quot;)</code>; <code>caregiver_designated (patient_id, caregiver_id, &quot;designated&quot;)</code>; <code>integration_connected (patient_id, source_id, &quot;connected&quot;)</code>; <code>encounter_ingested (patient_id, encounter_id, &quot;ingested&quot;)</code>; <code>referral_ordered (referral_id, &quot;ordered&quot;)</code>; <code>referral_scheduled (referral_id, &quot;scheduled&quot;)</code>; <code>referral_completed (referral_id, &quot;completed&quot;)</code>; <code>transition_initiated (transition_id, &quot;initiated&quot;)</code>; <code>transition_completed (transition_id, &quot;completed&quot;)</code>; <code>medication_filled (fill_id, &quot;filled&quot;)</code>; <code>medication_discontinued (med_id, &quot;discontinued&quot;)</code>; <code>lab_result_posted (result_id, &quot;posted&quot;)</code>; <code>seam_flag_raised (seam_id, &quot;raised&quot;)</code>; <code>seam_flag_resolved (seam_id, &quot;resolved&quot;)</code>; <code>care_team_alert_generated (alert_id, &quot;generated&quot;)</code>; <code>escalation_routed (escalation_id, &quot;routed&quot;)</code>; <code>coordination_decision_recorded (decision_id, &quot;recorded&quot;)</code>. Downstream consumers maintain a deduplication store.</p>
+<p><strong>Tool-surface contract management as architectural primitive.</strong> Per-tool versioned schemas, semantic versioning, deprecation policy, backward-compatibility discipline, change-management process owned jointly by engineering, clinical leadership, and compliance.</p>
+<p><strong>IAM resource-based policy and defense-in-depth Lambda authentication.</strong> Each Lambda's resource-based policy pinned to the production API Gateway stage ARN, the production Bedrock Agents action-group ARN, or the production EventBridge rule ARN. Defense-in-depth event-payload validation. Tool-Lambda patient_id-cross-check audit logging.</p>
+<p><strong>Prompt-injection defense to architectural primitive.</strong> Delimited-input framing, tool-Lambda enforcement that every tool validates patient_id arguments against the verified session, per-language jailbreak-test corpus including coordination-specific injection cases (manipulate seam-flag routing, manipulate referral-lifecycle transitions, manipulate scope discipline to elicit clinical recommendations, manipulate proxy-scope to reach restricted records), Bedrock Guardrails configuration with denied topics specific to coordination scope.</p>
+<p><strong>Cross-region failover for the production stack.</strong> Bedrock, Bedrock Agents, Bedrock Knowledge Bases, Lambda, DynamoDB, Step Functions, MWAA, Pinpoint, Connect, and the institutional integrations (EHRs, HIE, payer claims, pharmacies, home-health, care-team-workflow). High-acuity-event integrity preserved across regions.</p>
+<p><strong>Per-channel authentication and encryption.</strong> Per-channel data-in-transit posture, per-channel session-token TTL, per-channel access-control scope, per-channel BAA scope, per-channel TCPA/10DLC compliance for SMS, per-channel voice-recording retention compliance, audit-record propagation of per-channel authentication context.</p>
+<p><strong>Build-vs-buy rigor.</strong> Several mature commercial vendors offer care-coordination platforms with FHIR integration, claims-feed processing, transition-of-care workflows, and (in some cases) hybrid-coordination workforces. Most major institutions run a hybrid that builds a thin orchestration layer in-house and partners with vendors for the cross-organizational integration substrate.</p>
+<p><strong>Operational ownership across multiple teams.</strong> The assistant sits at the intersection of clinical leadership across primary care, hospital medicine, specialty practice, pharmacy, home health, and care management; the care-management workforce; compliance; regulatory; IT; the call center; patient experience; the malpractice carrier; the institutional regulatory team; and the participating payer's analytics and quality teams.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Post-discharge coordination assistant (transitional-care focus).</strong> A focused variant for the immediate post-discharge window (typically 30-90 days), with intensive engagement around medication reconciliation, follow-up-appointment scheduling, red-flag warning instructions, and readmission prevention. Often deployed as the first variant because the time window is short, the protocol is well-established, and the readmission-prevention outcome is well-measured.</p>
+<p><strong>Chronic-multi-condition coordination assistant (the David case from the opening).</strong> A variant for patients with multiple chronic conditions across multiple specialties and multiple organizations, with longer-term engagement (months to years), heavier focus on cross-clinician coordination and medication reconciliation across pharmacies, and tight integration with the patient's primary care home. The use case the recipe opens with.</p>
+<p><strong>Oncology coordination assistant.</strong> A variant for oncology patients in active treatment, with treatment-cycle-aware engagement (chemotherapy infusion sequences, radiation therapy regimens, surgical recovery, immunotherapy cycles), tight integration with the oncology team's care navigators, and side-effect-management content alongside the coordination work. Often deployed in parallel with a dedicated human oncology nurse navigator who handles complex coordination; the assistant handles routine touches.</p>
+<p><strong>Transplant coordination assistant.</strong> A variant for transplant recipients (kidney, liver, heart, lung, stem cell) with phase-specific protocols (waitlist, peri-transplant, immediate post-transplant, long-term post-transplant), tight integration with the transplant team, intensive medication-reconciliation focus given the immunosuppression regimen complexity, and high-acuity-event sensitivity given the catastrophic consequences of missed coordination.</p>
+<p><strong>Heart-failure-focused coordination assistant.</strong> A variant for the heart-failure population with disease-specific monitoring (weight, symptoms, medication adherence), tight integration with the cardiology team, GDMT-titration support that surfaces guideline-directed-medical-therapy progress, and decompensation-risk monitoring. Frequently deployed alongside heart-failure-specific care management.</p>
+<p><strong>Pediatric complex-care coordination assistant.</strong> A variant for children with medical complexity (multiple specialists, durable medical equipment, home nursing, school-based care), with caregiver-as-primary-participant identity model, school-based-care integration, and pediatric-specific protocols. Subject to additional consent considerations given the patient is a minor.</p>
+<p><strong>Older-adult coordination assistant with dementia-mediated communication.</strong> A variant for older adults including patients with cognitive impairment, with caregiver-mediated communication patterns, dementia-specific protocols, fall-risk and elder-abuse screening integration, and tight integration with geriatric care management.</p>
+<p><strong>Maternal-and-postpartum coordination assistant.</strong> A variant for the prenatal-through-postpartum window, with pregnancy-trimester-aware engagement, postpartum-specific protocols including postpartum-depression screening (recipe 11.8 pathway), newborn-care coordination, and lactation-support coordination.</p>
+<p><strong>Behavioral-health-medical integrated coordination assistant.</strong> A variant for the population with comorbid behavioral-health and medical conditions, with tight integration to recipe 11.8 (mental health) and recipe 11.7 (chronic disease), 42 CFR Part 2 compliance for substance-use treatment data where applicable, and state-specific mental-health-record privacy compliance.</p>
+<p><strong>Population-management coordination overlay.</strong> A variant deployed at the population level (a Medicare Advantage book of business; a primary-care panel; an ACO attribution list) with population-wide bulk-data ingestion, population-level seam-detection runs, risk-stratified engagement intensity, and integration with the institution's quality-measurement and value-based-contract reporting.</p>
+<p><strong>Specialty-referral-management variant.</strong> A variant focused on the referral-tracking workflow, with intensive referral-lifecycle management, specialty-acceptance-and-wait-time tracking, alternative-specialist surfacing when barriers are encountered, and tight integration with the referring practice's care managers.</p>
+<p><strong>Care-navigation variant for under-resourced populations.</strong> A variant adapted for patients in markets with limited integration coverage, limited specialty access, and significant social-determinant barriers, with heavier reliance on patient-mediated SMART on FHIR data flows, deeper social-services integration, and culturally-and-linguistically-adapted content.</p>
+<p><strong>Emergency-department-to-primary-care-follow-up variant.</strong> A variant focused on the ED-discharge-to-primary-care transition, with intensive engagement in the 24-72 hour post-ED-discharge window, medication-reconciliation against the ED visit's new prescriptions, follow-up-appointment validation within the protocol window, and red-flag-warning delivery.</p>
+<p><strong>Hospital-at-home coordination assistant.</strong> A variant for patients in hospital-at-home programs, with tight integration to the hospital-at-home care team, daily check-ins on biometric monitoring, medication-administration verification, and acute-event-escalation pathways.</p>
+<p><strong>Voice-channel deployment for accessibility.</strong> A voice-channel variant for patients without smartphones, patients with disabilities affecting written communication, and patients who prefer voice. Voice-specific design includes slower pacing, briefer responses, and accessibility considerations. High-acuity-event integrity is preserved across channels.</p>
+<p><strong>Multi-language deployment beyond English plus Spanish.</strong> Per-language asset development reviewed by clinical leadership and language-services teams, with per-language equity monitoring and culturally-adapted protocol content where appropriate.</p>
+<p><strong>Hybrid AI-plus-licensed-coach deployment.</strong> The assistant handles routine engagement; a licensed nurse coach is available for between-touch support beyond the assistant's scope. The architectural extension is the licensed-coach scheduling and case-load management, plus the differentiation between assistant-scope and coach-scope topics.</p>
+<p><strong>High-risk-tier deployment with intensive nurse case management.</strong> A higher-touch variant for the highest-risk slice of the population, with daily assistant engagement, weekly nurse-case-manager touches, and aggressive escalation pathways. The assistant's scope is the same; the operational integration with case management is deeper.</p>
+<p><strong>Population-health overlay with quality-measure focus.</strong> The assistant's outputs feed an institutional population-health dashboard tracking patterns of coordination quality across the population for HEDIS, Star Ratings, ACO quality-measure reporting, and value-based-contract performance.</p>
+<p><strong>Build-on-FHIR-only variant for institutions without HL7 v2 sources.</strong> A variant deployed in markets where FHIR is the dominant interchange standard, with simpler integration architecture (FHIR-only ingestion), tighter coupling to FHIR-native semantic models, and reduced integration complexity at the cost of partial coverage where HL7 v2 is the modal interchange.</p>
+<p><strong>Continuous-improvement loop with structured failure-mode labeling.</strong> Beyond per-conversation feedback, the institution runs a structured labeling program where reviewers (RNs, care managers, clinical leadership) tag failure modes (out-of-scope, off-protocol, seam-detection-miss, seam-detection-false-positive, provenance-gap, citation-gap, scope-violation, equity-disparity, integration-coverage-gap). The labels feed the protocol-library, seam-detection-rule, prompt-tuning, and policy-revision workflows.</p>
+<p><strong>Specialty-specific protocol-library variants.</strong> Cardiology-specific, oncology-specific, transplant-specific, behavioral-health-medical-integrated, pediatric-complex-care-specific protocol libraries with named clinical-leadership ownership and annual review cycles. The variant pattern: a base coordination architecture plus specialty-specific overlays.</p>
+<p><strong>Provider-side coordination assistant.</strong> A variant deployed not for the patient but for the patient's care team, providing the same coordination state and seam-detection layer with a provider-facing surface (instead of, or in addition to, the patient-facing surface). The provider variant is often easier to deploy because the consent and identity model is simpler, but the patient-facing variant is where the broader population-scale coordination value lives.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html">Amazon Bedrock Agents</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html">Amazon Bedrock Knowledge Bases</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless.html">Amazon OpenSearch Serverless</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/export-datastore.html">AWS HealthLake Bulk Data Export</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/mwaa/latest/userguide/what-is-mwaa.html">Amazon MWAA User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/waf/latest/developerguide/waf-chapter.html">AWS WAF Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">Amazon S3 Object Lock</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/pinpoint/latest/developerguide/welcome.html">Amazon Pinpoint Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html">Amazon Connect Administrator Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-samples"><code>aws-samples/amazon-bedrock-samples</code></a>: Bedrock invocation patterns including Agents, Knowledge Bases, Guardrails</li>
+<li><a href="https://github.com/aws-samples/aws-genai-llm-chatbot"><code>aws-samples/aws-genai-llm-chatbot</code></a>: reference architecture for a multi-model chatbot on AWS</li>
+<li><a href="https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks"><code>aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks</code></a>: broader healthcare AI/ML sample notebooks</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences plus AI/ML): browse for care-coordination, transitions-of-care, and patient-engagement reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;Bedrock Agents,&quot; &quot;healthcare conversational AI,&quot; &quot;care coordination&quot;</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: search &quot;care coordination,&quot; &quot;transitions of care,&quot; &quot;patient engagement,&quot; &quot;interoperability&quot;</li>
+</ul>
+<p><strong>External References (Standards, Frameworks, and Clinical Guidelines):</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185">HL7 v2 Messaging Standard</a>: legacy clinical-event messaging standard widely deployed for ADT and ORU</li>
+<li><a href="https://www.hl7.org/fhir/R4/">HL7 FHIR R4 Specification</a>: the modern interchange standard</li>
+<li><a href="https://hl7.org/fhir/us/core/">HL7 FHIR US Core Implementation Guide</a>: U.S. baseline FHIR profiles</li>
+<li><a href="https://www.healthit.gov/isa/united-states-core-data-interoperability-uscdi">USCDI (United States Core Data for Interoperability)</a>: minimum data set required by ONC certification</li>
+<li><a href="https://hl7.org/fhir/uv/bulkdata/">FHIR Bulk Data Access Specification</a>: population-level data export specification</li>
+<li><a href="https://docs.smarthealthit.org/">SMART on FHIR</a>: authorization and app-launch framework for FHIR-based applications</li>
+<li><a href="https://www.healthit.gov/topic/information-blocking">21st Century Cures Act and ONC Information Blocking Final Rule</a>: U.S. federal information-blocking regulation</li>
+<li><a href="https://www.healthit.gov/topic/interoperability/policy/trusted-exchange-framework-and-common-agreement-tefca">TEFCA (Trusted Exchange Framework and Common Agreement)</a>: U.S. national interoperability framework</li>
+<li><a href="https://www.ecfr.gov/current/title-42/chapter-I/subchapter-A/part-2">42 CFR Part 2</a>: U.S. federal confidentiality regulation for substance-use treatment records</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/index.html">HIPAA Privacy Rule</a>: governs PHI in coordination state, conversation logs, and longitudinal records</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/security/index.html">HIPAA Security Rule</a>: governs technical and administrative safeguards</li>
+<li><a href="https://www.ncpdp.org/Standards">NCPDP SCRIPT and Telecommunication Standards</a>: pharmacy data interchange standards</li>
+<li><a href="https://www.ahrq.gov/ncepcr/care/coordination/atlas.html">Care Coordination Measures Atlas (AHRQ)</a>: published catalog of care-coordination measurement frameworks</li>
+<li><a href="https://www.bu.edu/fammed/projectred/">Project RED (Re-Engineered Discharge)</a>: published transitions-of-care intervention with measured outcomes</li>
+<li><a href="https://caretransitions.health/">Care Transitions Intervention (Coleman)</a>: published transitions-of-care intervention model</li>
+<li><a href="https://www.transitionalcare.info/">Transitional Care Model (Naylor)</a>: published transitions-of-care nurse-led model</li>
+<li><a href="https://www.ncqa.org/programs/health-care-providers-practices/patient-centered-medical-home-pcmh/">Patient-Centered Medical Home (NCQA)</a>: primary-care coordination framework</li>
+<li><a href="https://www.cms.gov/Outreach-and-Education/Medicare-Learning-Network-MLN/MLNProducts/Downloads/ChronicCareManagement.pdf">Centers for Medicare and Medicaid Services Chronic Care Management</a>: CMS framework for billable chronic-care-management services</li>
+<li><a href="https://www.cms.gov/outreach-and-education/medicare-learning-network-mln/mlnproducts/downloads/transitional-care-management-services-fact-sheet-icn908628.pdf">Centers for Medicare and Medicaid Services Transitional Care Management</a>: CMS framework for billable transitional-care-management services</li>
+<li><a href="https://www.dementiapathways.ie/_filecache/04a/ddd/98-zbi.pdf">Zarit Burden Interview</a>: widely used and validated caregiver-burden assessment instrument</li>
+<li><a href="https://www.americangeriatrics.org/publications-tools/beers-criteria-american-geriatrics-society">American Geriatrics Society Beers Criteria</a>: potentially-inappropriate-medication criteria for older adults, relevant for medication-reconciliation seam detection</li>
+<li><a href="https://academic.oup.com/ageing/article/44/2/213/2812233">STOPP/START Criteria</a>: explicit criteria for prescribing in older adults</li>
+<li><a href="https://www.fda.gov/medical-devices/digital-health-center-excellence/software-medical-device-samd">FDA Software as a Medical Device (SaMD)</a>: FDA SaMD framework</li>
+<li><a href="https://www.fda.gov/medical-devices/digital-health-center-excellence">FDA Digital Health Center of Excellence</a>: central resource for digital-health regulatory updates</li>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software">FDA Clinical Decision Support Software Final Guidance (2022)</a>: FDA framework distinguishing regulated and non-regulated CDS</li>
+<li><a href="https://www.w3.org/WAI/standards-guidelines/wcag/">WCAG 2.1 Accessibility Guidelines</a>: accessibility standards for chat-widget surfaces</li>
+<li><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">OWASP Top 10 for Large Language Model Applications</a>: security framework for LLM-backed applications</li>
+<li><a href="https://www.fcc.gov/general/telephone-consumer-protection-act-1991">TCPA and 10DLC for SMS</a>: U.S. SMS-messaging regulation, relevant for coordination-related text outreach</li>
+</ul>
+<p><strong>Industry and Research Resources:</strong></p>
+<ul>
+<li><a href="https://www.acponline.org/">American College of Physicians (ACP)</a>: internal-medicine specialty association including care-coordination resources</li>
+<li><a href="https://www.aafp.org/">American Academy of Family Physicians (AAFP)</a>: family-medicine specialty association including care-coordination resources</li>
+<li><a href="https://www.aha.org/">American Hospital Association (AHA)</a>: hospital industry association including transitions-of-care resources</li>
+<li><a href="https://www.cmsa.org/">Case Management Society of America (CMSA)</a>: case-management professional association</li>
+<li><a href="https://www.acmaweb.org/">American Case Management Association (ACMA)</a>: case-management professional association</li>
+<li><a href="https://www.npsf.org/">National Patient Safety Foundation (NPSF)</a>: patient-safety research and advocacy</li>
+<li><a href="https://www.ihi.org/">Institute for Healthcare Improvement (IHI)</a>: quality-improvement resources including transitions-of-care toolkits</li>
+<li><a href="https://www.ashp.org/">American Society of Health-System Pharmacists (ASHP)</a>: medication-reconciliation resources</li>
+<li><a href="https://sequoiaproject.org/">Sequoia Project</a>: TEFCA Recognized Coordinating Entity, interoperability resources</li>
+<li><a href="https://www.himss.org/">HIMSS Interoperability Showcase</a>: industry interoperability showcase</li>
+<li><a href="https://www.healthit.gov/">Office of the National Coordinator for Health Information Technology (ONC)</a>: U.S. federal interoperability and information-blocking authority</li>
+<li><a href="https://www.ama-assn.org/practice-management/digital/augmented-intelligence-medicine">American Medical Association (AMA) Augmented Intelligence Resources</a>: AMA position statements on AI in medical practice including coordination applications</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Single transition type (typically post-discharge from inpatient stay), single language (English), single channel (in-app chat plus SMS for proactive engagement), single primary EHR integration via FHIR with one secondary HIE integration, single primary pharmacy integration, basic coordination-protocol library (post-discharge protocols only) reviewed by clinical leadership, basic seam-detection rule library (medication discrepancy plus referral non-scheduling plus transition-of-care incompleteness only) with named clinical-leadership ownership, basic caregiver identity model with one or two state-law jurisdictions covered, basic provenance journal, basic transition-of-care Step Functions workflow for the single transition type, basic care-team alert and weekly digest reporting, basic FDA-strategy artifact reviewed by regulatory counsel, basic per-cohort monitoring at the institutional-aggregate level, basic audit pipeline with coordination-specific retention, named clinical-leadership ownership across primary care and hospital medicine and care management, multi-quarter clinical-content development and integration work</td>
+<td>18-24 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Multi-transition (post-discharge from inpatient, post-procedure, ED-to-PCP follow-up, surgery-to-home, oncology-treatment cycles), multi-channel (web chat, app embed, SMS with TCPA/10DLC compliance, voice via Connect), multi-language (English plus Spanish at minimum with clinically-validated translations), multi-source integration including multiple EHRs via FHIR with USCDI v3 conformance, HL7 v2 ADT and ORU feeds, HIE/TEFCA participation, payer claims feed (where applicable), multiple pharmacies (NCPDP and major-chain APIs), home-health vendor APIs, lab feeds, full coordination-protocol library across primary care, hospital medicine, specialty practice, pharmacy, home health, and care management with annual review cycles, full seam-detection rule library with named clinical-leadership ownership per rule, full caregiver identity model with state-specific compliance, full provenance journal with separate KMS keying, full transition-of-care Step Functions workflows for the institution's full transition portfolio, full care-team workflow integration with case management's existing tooling, full FDA-strategy artifact and (where applicable) SaMD registration, full HIPAA-grade compliance review including state-specific medical-record retention compliance and 42 CFR Part 2 compliance where applicable, full per-cohort equity monitoring with launch-gate discipline, mandatory-reporting routing per state, outcome-correlation pipeline with multi-window correlation against utilization, clinical, and patient-experience outcomes, named operational owners across clinical leadership in primary care and hospital medicine and specialty practice and pharmacy and home health and care management, the care-management workforce, compliance, regulatory, IT, the call center, and patient experience</td>
+<td>36-60 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Post-discharge variant deep deployment, chronic-multi-condition variant, oncology coordination variant, transplant coordination variant, heart-failure-focused variant, pediatric-complex-care variant, older-adult-with-dementia variant, maternal-and-postpartum variant, behavioral-health-medical-integrated variant with 42 CFR Part 2 compliance, population-management overlay variant, specialty-referral-management variant, care-navigation variant for under-resourced populations, ED-to-PCP-follow-up variant, hospital-at-home variant, voice-channel variant with accessibility considerations, multi-language deployment beyond English plus Spanish with native-speaker review, hybrid AI-plus-licensed-coach variant, high-risk-tier variant with intensive case management, population-health overlay with quality-measure focus, build-on-FHIR-only variant, continuous-improvement loop with structured failure-mode labeling, specialty-specific protocol-library variants, provider-side coordination variant</td>
+<td>24-48 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter11.09-care-coordination-assistant.html">Main Recipe 11.9</a> · <a href="chapter11.09-python-example.html">Python Example</a> · <a href="chapter11-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

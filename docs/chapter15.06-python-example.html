@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 15.6: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-156-python-implementation-example">Recipe 15.6: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the RL concepts from Recipe 15.6. It demonstrates the shape of an ICU glucose control RL system: environment definition, state construction, reward shaping, offline policy learning, safety constraint enforcement, and clinical decision support integration. It is not production-ready. Real offline RL for insulin dosing requires extensive retrospective validation, simulation testing, IRB approval, and prospective clinical trials before any patient-facing deployment. Consider this a learning tool, not a deployment artifact.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the following packages:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy
+</pre></div>
+
+<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs <code>sagemaker:InvokeEndpoint</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>, <code>dynamodb:Query</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, and <code>sagemaker:CreateTrainingJob</code>.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before the logic, here's the configuration that defines the clinical domain. These constants encode medical knowledge about ICU glucose management: what glucose ranges are safe, how to score outcomes, and what actions are never acceptable. In a real system, these would be developed with intensivists and endocrinologists, validated against clinical guidelines, and reviewed by your institution's pharmacy and therapeutics committee.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. In production, use JSON format for CloudWatch Logs Insights.</span>
+<span class="c1"># Never log actual patient identifiers or PHI values.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Retry config for AWS calls. Adaptive mode handles throttling gracefully.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># --- Glucose Target Range ---</span>
+<span class="c1"># These define what &quot;good control&quot; means. The target range is 80-180 mg/dL,</span>
+<span class="c1"># with the sweet spot at 120-140 mg/dL. These numbers come from the NICE-SUGAR</span>
+<span class="c1"># trial and subsequent guidelines that backed off from aggressive tight control</span>
+<span class="c1"># (which caused too much hypoglycemia) toward a more moderate target.</span>
+<span class="n">GLUCOSE_TARGET_LOW</span> <span class="o">=</span> <span class="mi">80</span>       <span class="c1"># mg/dL: below this is concerning</span>
+<span class="n">GLUCOSE_TARGET_HIGH</span> <span class="o">=</span> <span class="mi">180</span>     <span class="c1"># mg/dL: above this is hyperglycemic</span>
+<span class="n">GLUCOSE_SWEET_SPOT</span> <span class="o">=</span> <span class="mi">130</span>      <span class="c1"># mg/dL: ideal center of target range</span>
+<span class="n">GLUCOSE_HYPO_THRESHOLD</span> <span class="o">=</span> <span class="mi">70</span>   <span class="c1"># mg/dL: below this is hypoglycemia (dangerous)</span>
+<span class="n">GLUCOSE_SEVERE_HYPO</span> <span class="o">=</span> <span class="mi">40</span>      <span class="c1"># mg/dL: below this is severe hypoglycemia (life-threatening)</span>
+<span class="n">GLUCOSE_SEVERE_HYPER</span> <span class="o">=</span> <span class="mi">250</span>    <span class="c1"># mg/dL: above this risks osmotic complications</span>
+
+<span class="c1"># --- Action Space ---</span>
+<span class="c1"># Discretized insulin doses in units. The agent picks one of these.</span>
+<span class="c1"># In practice, you might use a continuous action space (actor-critic methods),</span>
+<span class="c1"># but discrete actions are simpler to implement and easier to constrain.</span>
+<span class="c1"># These bins cover the typical range of subcutaneous insulin doses in an ICU.</span>
+<span class="n">ACTION_SPACE</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">20</span><span class="p">]</span>
+<span class="n">NUM_ACTIONS</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ACTION_SPACE</span><span class="p">)</span>
+
+<span class="c1"># --- State Features ---</span>
+<span class="c1"># The state vector captures everything the RL agent needs to make a dosing decision.</span>
+<span class="c1"># Each feature has a name, expected range (for normalization), and a description</span>
+<span class="c1"># of why it matters for insulin dosing.</span>
+<span class="n">STATE_FEATURES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># Current glucose and recent history</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;glucose_current&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;The primary measurement driving the decision&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Previous reading (4h ago) for trend calculation&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;glucose_prev_2&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Two readings ago (8h ago) for acceleration detection&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;glucose_velocity&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Rate of change in mg/dL per hour; negative means dropping&quot;</span><span class="p">},</span>
+    <span class="c1"># Insulin state</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;insulin_on_board&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Total insulin given in last 4h; still pharmacologically active&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;insulin_infusion_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Current drip rate (units/hr); 0 if subcutaneous only&quot;</span><span class="p">},</span>
+    <span class="c1"># Nutrition (major glucose driver)</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;nutrition_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Enteral/parenteral nutrition in mL/hr; directly raises glucose&quot;</span><span class="p">},</span>
+    <span class="c1"># Medications that affect insulin sensitivity</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;vasopressor_dose&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Norepinephrine equivalent (mcg/kg/min); high doses impair sensitivity&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;steroid_flag&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Binary: corticosteroids dramatically increase insulin resistance&quot;</span><span class="p">},</span>
+    <span class="c1"># Patient factors</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;creatinine&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Renal function; impaired kidneys clear insulin more slowly&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Body mass index; higher BMI generally means more insulin resistance&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;apache_score&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+     <span class="s2">&quot;why&quot;</span><span class="p">:</span> <span class="s2">&quot;Illness severity; sicker patients have more erratic glucose dynamics&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="n">NUM_STATE_FEATURES</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">STATE_FEATURES</span><span class="p">)</span>
+
+<span class="c1"># --- Safety Constraints ---</span>
+<span class="c1"># Hard limits that override the RL policy. These are non-negotiable.</span>
+<span class="n">SAFETY_CONSTRAINTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;max_single_dose&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>              <span class="c1"># units: absolute cap on any single dose</span>
+    <span class="s2">&quot;no_insulin_threshold&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>        <span class="c1"># mg/dL: no insulin if glucose below this</span>
+    <span class="s2">&quot;rapid_decline_threshold&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">30</span><span class="p">,</span>     <span class="c1"># mg/dL/hr: halve dose if dropping this fast</span>
+    <span class="s2">&quot;max_dose_change&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>               <span class="c1"># units: max change from previous dose</span>
+    <span class="s2">&quot;renal_impairment_threshold&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>  <span class="c1"># mg/dL creatinine: reduce dose by 30%</span>
+<span class="p">}</span>
+
+<span class="c1"># --- Reward Function Parameters ---</span>
+<span class="c1"># These weights define the asymmetric penalty structure.</span>
+<span class="c1"># Hypoglycemia is penalized much more heavily than hyperglycemia because</span>
+<span class="c1"># it&#39;s immediately dangerous (seizures, brain damage) vs. gradually harmful.</span>
+<span class="n">REWARD_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;severe_hypo_penalty&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span>    <span class="c1"># glucose &lt; 40: catastrophic</span>
+    <span class="s2">&quot;hypo_penalty_scale&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">50</span><span class="p">,</span>      <span class="c1"># glucose 40-70: scaled by severity</span>
+    <span class="s2">&quot;below_target_penalty&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span>     <span class="c1"># glucose 70-80: mild concern</span>
+    <span class="s2">&quot;in_range_max_reward&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>      <span class="c1"># glucose 80-180: positive, peaks at center</span>
+    <span class="s2">&quot;mild_hyper_scale&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span>         <span class="c1"># glucose 180-250: scaled penalty</span>
+    <span class="s2">&quot;severe_hyper_base&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span>       <span class="c1"># glucose &gt; 250: base penalty plus scaled</span>
+<span class="p">}</span>
+
+<span class="c1"># --- AWS Resource Names ---</span>
+<span class="c1"># In production, pull these from environment variables or SSM Parameter Store.</span>
+<span class="n">SAGEMAKER_ENDPOINT</span> <span class="o">=</span> <span class="s2">&quot;glucose-rl-policy-v2&quot;</span>
+<span class="n">DYNAMODB_TABLE</span> <span class="o">=</span> <span class="s2">&quot;patient-glucose-state&quot;</span>
+<span class="n">S3_TRAINING_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;glucose-rl-training-episodes&quot;</span>
+<span class="n">S3_EPISODE_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;episodes/v3/&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-reward-function">Step 1: Reward Function</h2>
+<p><em>Maps to pseudocode Step 2 in the main recipe. This is the most consequential design decision in the system. The reward function encodes what &quot;good glucose control&quot; means numerically, with asymmetric penalties reflecting the clinical reality that hypoglycemia kills faster than hyperglycemia.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_reward</span><span class="p">(</span><span class="n">glucose_mg_dl</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the reward signal for a given glucose outcome.</span>
+
+<span class="sd">    The reward function is asymmetric by design:</span>
+<span class="sd">    - Hypoglycemia (&lt; 70 mg/dL) gets steep penalties because it&#39;s immediately dangerous.</span>
+<span class="sd">      A glucose of 50 can cause seizures. A glucose of 35 can cause brain damage.</span>
+<span class="sd">    - Hyperglycemia (&gt; 180 mg/dL) gets milder penalties because it&#39;s harmful over hours,</span>
+<span class="sd">      not minutes. You have time to correct it.</span>
+<span class="sd">    - The target range (80-180 mg/dL) gets positive reward, peaking at the sweet spot</span>
+<span class="sd">      of ~130 mg/dL.</span>
+
+<span class="sd">    This shape was informed by the NICE-SUGAR trial results: aggressive glucose targets</span>
+<span class="sd">    increased mortality because protocols caused too much hypoglycemia. The reward</span>
+<span class="sd">    function must make the agent deeply afraid of lows while still encouraging</span>
+<span class="sd">    reasonable control of highs.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        glucose_mg_dl: The glucose measurement following the insulin action.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A float reward value. Negative is bad, positive is good.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">glucose_mg_dl</span> <span class="o">&lt;</span> <span class="n">GLUCOSE_SEVERE_HYPO</span><span class="p">:</span>
+        <span class="c1"># Severe hypoglycemia. Seizures, brain damage, death.</span>
+        <span class="c1"># Maximum penalty. If your agent ever causes this, something is very wrong.</span>
+        <span class="k">return</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;severe_hypo_penalty&quot;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">glucose_mg_dl</span> <span class="o">&lt;</span> <span class="n">GLUCOSE_HYPO_THRESHOLD</span><span class="p">:</span>
+        <span class="c1"># Hypoglycemia. Dangerous. Requires immediate intervention (dextrose push).</span>
+        <span class="c1"># Penalty scales with severity: glucose of 45 is worse than glucose of 65.</span>
+        <span class="n">severity_fraction</span> <span class="o">=</span> <span class="p">(</span><span class="n">GLUCOSE_HYPO_THRESHOLD</span> <span class="o">-</span> <span class="n">glucose_mg_dl</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="n">GLUCOSE_HYPO_THRESHOLD</span> <span class="o">-</span> <span class="n">GLUCOSE_SEVERE_HYPO</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;hypo_penalty_scale&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">severity_fraction</span>
+
+    <span class="k">elif</span> <span class="n">glucose_mg_dl</span> <span class="o">&lt;</span> <span class="n">GLUCOSE_TARGET_LOW</span><span class="p">:</span>
+        <span class="c1"># Below target but not hypoglycemic. The &quot;yellow zone.&quot;</span>
+        <span class="c1"># Mild penalty to discourage the agent from riding the edge.</span>
+        <span class="k">return</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;below_target_penalty&quot;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">glucose_mg_dl</span> <span class="o">&lt;=</span> <span class="n">GLUCOSE_TARGET_HIGH</span><span class="p">:</span>
+        <span class="c1"># Target range. This is where we want to be.</span>
+        <span class="c1"># Reward peaks at the sweet spot (130 mg/dL) and tapers toward edges.</span>
+        <span class="n">distance_from_center</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">glucose_mg_dl</span> <span class="o">-</span> <span class="n">GLUCOSE_SWEET_SPOT</span><span class="p">)</span>
+        <span class="n">max_distance</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">GLUCOSE_SWEET_SPOT</span> <span class="o">-</span> <span class="n">GLUCOSE_TARGET_LOW</span><span class="p">,</span>
+            <span class="n">GLUCOSE_TARGET_HIGH</span> <span class="o">-</span> <span class="n">GLUCOSE_SWEET_SPOT</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Linear taper from max reward at center to ~half reward at edges</span>
+        <span class="k">return</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;in_range_max_reward&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">distance_from_center</span> <span class="o">/</span> <span class="n">max_distance</span>
+        <span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">glucose_mg_dl</span> <span class="o">&lt;=</span> <span class="n">GLUCOSE_SEVERE_HYPER</span><span class="p">:</span>
+        <span class="c1"># Mild hyperglycemia. Harmful over time but not acutely dangerous.</span>
+        <span class="c1"># Linear penalty scaling with how far above target.</span>
+        <span class="n">overshoot</span> <span class="o">=</span> <span class="n">glucose_mg_dl</span> <span class="o">-</span> <span class="n">GLUCOSE_TARGET_HIGH</span>
+        <span class="n">range_width</span> <span class="o">=</span> <span class="n">GLUCOSE_SEVERE_HYPER</span> <span class="o">-</span> <span class="n">GLUCOSE_TARGET_HIGH</span>
+        <span class="k">return</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;mild_hyper_scale&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">overshoot</span> <span class="o">/</span> <span class="n">range_width</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Severe hyperglycemia. Osmotic complications, DKA risk.</span>
+        <span class="c1"># Base penalty plus additional scaling for extreme values.</span>
+        <span class="n">extra</span> <span class="o">=</span> <span class="p">(</span><span class="n">glucose_mg_dl</span> <span class="o">-</span> <span class="n">GLUCOSE_SEVERE_HYPER</span><span class="p">)</span> <span class="o">/</span> <span class="mf">50.0</span>
+        <span class="k">return</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;severe_hyper_base&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">extra</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-state-construction">Step 2: State Construction</h2>
+<p><em>Maps to pseudocode Step 1 in the main recipe. Transforms raw clinical data from DynamoDB into a normalized state vector suitable for the RL model.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">normalize_feature</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">feature_def</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalize a raw clinical value to [0, 1] range using the feature&#39;s defined bounds.</span>
+
+<span class="sd">    Why normalize? Neural network-based RL algorithms work better when all inputs</span>
+<span class="sd">    are on similar scales. Without normalization, a glucose of 200 would dominate</span>
+<span class="sd">    a vasopressor dose of 0.3 simply because of magnitude differences.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value: The raw clinical measurement.</span>
+<span class="sd">        feature_def: Dict with &#39;min&#39; and &#39;max&#39; defining the expected range.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Value scaled to [0, 1], clipped to bounds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">min_val</span> <span class="o">=</span> <span class="n">feature_def</span><span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">]</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="n">feature_def</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Clip to expected range. Values outside bounds are physiologically extreme.</span>
+    <span class="n">clipped</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_val</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_val</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">max_val</span> <span class="o">==</span> <span class="n">min_val</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.5</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">clipped</span> <span class="o">-</span> <span class="n">min_val</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_val</span> <span class="o">-</span> <span class="n">min_val</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_state_vector</span><span class="p">(</span><span class="n">patient_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a normalized state vector from raw patient data.</span>
+
+<span class="sd">    The input is a dictionary of current clinical values keyed by feature name.</span>
+<span class="sd">    Missing values are imputed as the midpoint (0.5 after normalization). In</span>
+<span class="sd">    production, you&#39;d forward-fill from the last known value and include a</span>
+<span class="sd">    &quot;staleness&quot; feature so the model can learn to be uncertain about old data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_data: Dict mapping feature names to current values.</span>
+<span class="sd">                      Example: {&quot;glucose_current&quot;: 195, &quot;insulin_on_board&quot;: 4.0, ...}</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy array of shape (NUM_STATE_FEATURES,) with values in [0, 1].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">NUM_STATE_FEATURES</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">feature_def</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">STATE_FEATURES</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">feature_def</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">patient_data</span> <span class="ow">and</span> <span class="n">patient_data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">normalize_feature</span><span class="p">(</span><span class="n">patient_data</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">feature_def</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Missing value: midpoint imputation. Naive but functional.</span>
+            <span class="c1"># Production systems should forward-fill and flag staleness.</span>
+            <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Missing feature &#39;</span><span class="si">%s</span><span class="s2">&#39;, using midpoint imputation&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">state</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-safety-constraint-layer">Step 3: Safety Constraint Layer</h2>
+<p><em>Maps to pseudocode Step 5 in the main recipe. This is the last line of defense. Regardless of what the RL policy recommends, certain actions are never allowed. The safety layer encodes decades of clinical knowledge about what's dangerous.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_safety_constraints</span><span class="p">(</span>
+    <span class="n">recommended_dose</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">patient_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">previous_dose</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply hard safety constraints to the RL policy&#39;s recommended dose.</span>
+
+<span class="sd">    Think of this as a safety envelope around the policy. The RL agent operates</span>
+<span class="sd">    freely within the envelope; anything outside gets clipped. These constraints</span>
+<span class="sd">    are non-negotiable clinical rules that should never be violated, even if the</span>
+<span class="sd">    data-driven policy disagrees.</span>
+
+<span class="sd">    The honest truth: a simple PID controller with good safety constraints can</span>
+<span class="sd">    outperform a sophisticated RL policy with weak constraints. The constraints</span>
+<span class="sd">    encode what keeps patients alive. The RL policy adds value at the margins.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        recommended_dose: What the RL policy wants to give (units of insulin).</span>
+<span class="sd">        patient_data: Current clinical state (raw values, not normalized).</span>
+<span class="sd">        previous_dose: The dose given at the last decision point (units).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with final_dose, original_recommendation, and list of activated constraints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">safe_dose</span> <span class="o">=</span> <span class="n">recommended_dose</span>
+    <span class="n">activated</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Constraint 1: Absolute maximum dose cap.</span>
+    <span class="c1"># No single dose should ever exceed this, period.</span>
+    <span class="c1"># Clinical rationale: prevents catastrophic hypoglycemia from a single error.</span>
+    <span class="n">max_dose</span> <span class="o">=</span> <span class="n">SAFETY_CONSTRAINTS</span><span class="p">[</span><span class="s2">&quot;max_single_dose&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">safe_dose</span> <span class="o">&gt;</span> <span class="n">max_dose</span><span class="p">:</span>
+        <span class="n">safe_dose</span> <span class="o">=</span> <span class="n">max_dose</span>
+        <span class="n">activated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_dose_cap: </span><span class="si">{</span><span class="n">recommended_dose</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">safe_dose</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Constraint 2: No insulin if glucose is already low.</span>
+    <span class="c1"># If glucose is below 100 mg/dL, giving insulin is reckless.</span>
+    <span class="c1"># The patient needs carbs, not more insulin.</span>
+    <span class="n">glucose</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_current&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">glucose</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">glucose</span> <span class="o">&lt;</span> <span class="n">SAFETY_CONSTRAINTS</span><span class="p">[</span><span class="s2">&quot;no_insulin_threshold&quot;</span><span class="p">]:</span>
+        <span class="n">safe_dose</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">activated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;hypo_prevention_hold: glucose=</span><span class="si">{</span><span class="n">glucose</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, dose zeroed&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Constraint 3: Halve dose if glucose is dropping rapidly.</span>
+    <span class="c1"># Insulin already on board will continue lowering glucose for hours.</span>
+    <span class="c1"># A rapid decline means the previous dose is still working.</span>
+    <span class="n">velocity</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_velocity&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">velocity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">velocity</span> <span class="o">&lt;</span> <span class="n">SAFETY_CONSTRAINTS</span><span class="p">[</span><span class="s2">&quot;rapid_decline_threshold&quot;</span><span class="p">]:</span>
+        <span class="n">safe_dose</span> <span class="o">=</span> <span class="n">safe_dose</span> <span class="o">*</span> <span class="mf">0.5</span>
+        <span class="n">activated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;rapid_decline_reduction: velocity=</span><span class="si">{</span><span class="n">velocity</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mg/dL/hr, dose halved&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Constraint 4: Maximum dose change between intervals.</span>
+    <span class="c1"># Prevents wild swings in dosing that confuse the patient&#39;s physiology.</span>
+    <span class="n">max_change</span> <span class="o">=</span> <span class="n">SAFETY_CONSTRAINTS</span><span class="p">[</span><span class="s2">&quot;max_dose_change&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">safe_dose</span> <span class="o">-</span> <span class="n">previous_dose</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_change</span><span class="p">:</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">safe_dose</span> <span class="o">&gt;</span> <span class="n">previous_dose</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">safe_dose</span> <span class="o">=</span> <span class="n">previous_dose</span> <span class="o">+</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">max_change</span>
+        <span class="n">activated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;max_change_cap: limited to </span><span class="si">{</span><span class="n">max_change</span><span class="si">}</span><span class="s2"> unit change from previous&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Constraint 5: Renal dose adjustment.</span>
+    <span class="c1"># Kidneys clear insulin. Impaired kidneys mean insulin hangs around longer.</span>
+    <span class="c1"># Reduce dose by 30% if creatinine is elevated.</span>
+    <span class="n">creatinine</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;creatinine&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">creatinine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">creatinine</span> <span class="o">&gt;</span> <span class="n">SAFETY_CONSTRAINTS</span><span class="p">[</span><span class="s2">&quot;renal_impairment_threshold&quot;</span><span class="p">]:</span>
+        <span class="n">safe_dose</span> <span class="o">=</span> <span class="n">safe_dose</span> <span class="o">*</span> <span class="mf">0.7</span>
+        <span class="n">activated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;renal_adjustment: creatinine=</span><span class="si">{</span><span class="n">creatinine</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, dose reduced 30%&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Floor at zero. You can&#39;t give negative insulin.</span>
+    <span class="n">safe_dose</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">safe_dose</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;final_dose&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">safe_dose</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;original_recommendation&quot;</span><span class="p">:</span> <span class="n">recommended_dose</span><span class="p">,</span>
+        <span class="s2">&quot;constraints_activated&quot;</span><span class="p">:</span> <span class="n">activated</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-episode-construction">Step 4: Episode Construction</h2>
+<p><em>Maps to pseudocode Step 1 in the main recipe. Transforms raw EHR data into RL episodes (sequences of state-action-reward tuples) suitable for offline training. This is where 70% of the engineering effort lives in practice.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_episode_from_icu_stay</span><span class="p">(</span><span class="n">icu_stay_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">timestep_hours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a single ICU stay&#39;s data into an RL episode.</span>
+
+<span class="sd">    An episode is a sequence of (state, action, reward, next_state) tuples,</span>
+<span class="sd">    one per decision interval. The decision interval is typically 4 hours,</span>
+<span class="sd">    matching the frequency of glucose checks in most ICU protocols.</span>
+
+<span class="sd">    The hard part here (which this simplified version glosses over) is temporal</span>
+<span class="sd">    alignment. In real EHR data:</span>
+<span class="sd">    - Glucose measurements arrive at irregular intervals</span>
+<span class="sd">    - Insulin orders don&#39;t always match administration times</span>
+<span class="sd">    - Nutrition changes happen asynchronously</span>
+<span class="sd">    - Lab values update every 4-12 hours</span>
+
+<span class="sd">    You need to bin everything into consistent time windows and handle missing</span>
+<span class="sd">    data gracefully. This function assumes the data has already been cleaned</span>
+<span class="sd">    and aligned into regular intervals.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        icu_stay_data: Dict with keys:</span>
+<span class="sd">            - &quot;glucose_readings&quot;: list of (timestamp, value) tuples</span>
+<span class="sd">            - &quot;insulin_doses&quot;: list of (timestamp, units) tuples</span>
+<span class="sd">            - &quot;nutrition_rates&quot;: list of (timestamp, ml_per_hr) tuples</span>
+<span class="sd">            - &quot;medications&quot;: dict of current medication states per interval</span>
+<span class="sd">            - &quot;labs&quot;: dict of lab values per interval</span>
+<span class="sd">            - &quot;patient_info&quot;: static patient demographics (BMI, etc.)</span>
+<span class="sd">        timestep_hours: Decision interval length in hours.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of dicts, each containing: state, action, reward, next_state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">episode</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">readings</span> <span class="o">=</span> <span class="n">icu_stay_data</span><span class="p">[</span><span class="s2">&quot;glucose_readings&quot;</span><span class="p">]</span>
+    <span class="n">insulin</span> <span class="o">=</span> <span class="n">icu_stay_data</span><span class="p">[</span><span class="s2">&quot;insulin_doses&quot;</span><span class="p">]</span>
+    <span class="n">patient_info</span> <span class="o">=</span> <span class="n">icu_stay_data</span><span class="p">[</span><span class="s2">&quot;patient_info&quot;</span><span class="p">]</span>
+
+    <span class="c1"># We need at least 3 readings to compute velocity and have a next_state.</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">readings</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">episode</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">readings</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Current and historical glucose values</span>
+        <span class="n">glucose_current</span> <span class="o">=</span> <span class="n">readings</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">glucose_prev_1</span> <span class="o">=</span> <span class="n">readings</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">glucose_prev_2</span> <span class="o">=</span> <span class="n">readings</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">glucose_next</span> <span class="o">=</span> <span class="n">readings</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># outcome of the action</span>
+
+        <span class="c1"># Glucose velocity: rate of change in mg/dL per hour</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">glucose_current</span> <span class="o">-</span> <span class="n">glucose_prev_1</span><span class="p">)</span> <span class="o">/</span> <span class="n">timestep_hours</span>
+
+        <span class="c1"># Insulin given during this interval (the action the clinician took)</span>
+        <span class="n">interval_insulin</span> <span class="o">=</span> <span class="n">_get_insulin_in_interval</span><span class="p">(</span><span class="n">insulin</span><span class="p">,</span> <span class="n">readings</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">timestep_hours</span><span class="p">)</span>
+
+        <span class="c1"># Build state dict</span>
+        <span class="n">state_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;glucose_current&quot;</span><span class="p">:</span> <span class="n">glucose_current</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">:</span> <span class="n">glucose_prev_1</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_prev_2&quot;</span><span class="p">:</span> <span class="n">glucose_prev_2</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_velocity&quot;</span><span class="p">:</span> <span class="n">velocity</span><span class="p">,</span>
+            <span class="s2">&quot;insulin_on_board&quot;</span><span class="p">:</span> <span class="n">_get_recent_insulin</span><span class="p">(</span><span class="n">insulin</span><span class="p">,</span> <span class="n">readings</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hours</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;insulin_infusion_rate&quot;</span><span class="p">:</span> <span class="n">icu_stay_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;infusion_rate&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;nutrition_rate&quot;</span><span class="p">:</span> <span class="n">_get_nutrition_at_time</span><span class="p">(</span>
+                <span class="n">icu_stay_data</span><span class="p">[</span><span class="s2">&quot;nutrition_rates&quot;</span><span class="p">],</span> <span class="n">readings</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;vasopressor_dose&quot;</span><span class="p">:</span> <span class="n">icu_stay_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;medications&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;vasopressor_dose&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;steroid_flag&quot;</span><span class="p">:</span> <span class="n">icu_stay_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;medications&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;steroid_flag&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;creatinine&quot;</span><span class="p">:</span> <span class="n">icu_stay_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;labs&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;creatinine&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+            <span class="s2">&quot;bmi&quot;</span><span class="p">:</span> <span class="n">patient_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+            <span class="s2">&quot;apache_score&quot;</span><span class="p">:</span> <span class="n">patient_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;apache_score&quot;</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="n">state_vector</span> <span class="o">=</span> <span class="n">construct_state_vector</span><span class="p">(</span><span class="n">state_data</span><span class="p">)</span>
+
+        <span class="c1"># Discretize the action: find the closest bin in ACTION_SPACE</span>
+        <span class="n">action_index</span> <span class="o">=</span> <span class="n">_discretize_dose</span><span class="p">(</span><span class="n">interval_insulin</span><span class="p">)</span>
+
+        <span class="c1"># Reward: based on the glucose outcome at the next interval</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">compute_reward</span><span class="p">(</span><span class="n">glucose_next</span><span class="p">)</span>
+
+        <span class="c1"># Next state (for Bellman backup during training)</span>
+        <span class="n">next_velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">glucose_next</span> <span class="o">-</span> <span class="n">glucose_current</span><span class="p">)</span> <span class="o">/</span> <span class="n">timestep_hours</span>
+        <span class="n">next_state_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">state_data</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_current&quot;</span><span class="p">:</span> <span class="n">glucose_next</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">:</span> <span class="n">glucose_current</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_prev_2&quot;</span><span class="p">:</span> <span class="n">glucose_prev_1</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_velocity&quot;</span><span class="p">:</span> <span class="n">next_velocity</span><span class="p">,</span>
+            <span class="s2">&quot;insulin_on_board&quot;</span><span class="p">:</span> <span class="n">interval_insulin</span> <span class="o">+</span> <span class="n">state_data</span><span class="p">[</span><span class="s2">&quot;insulin_on_board&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">next_state_vector</span> <span class="o">=</span> <span class="n">construct_state_vector</span><span class="p">(</span><span class="n">next_state_data</span><span class="p">)</span>
+
+        <span class="n">episode</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="n">state_vector</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="n">action_index</span><span class="p">,</span>
+            <span class="s2">&quot;reward&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">,</span>
+            <span class="s2">&quot;next_state&quot;</span><span class="p">:</span> <span class="n">next_state_vector</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">episode</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_discretize_dose</span><span class="p">(</span><span class="n">dose_units</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map a continuous dose to the nearest discrete action index.&quot;&quot;&quot;</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">dose_units</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ACTION_SPACE</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">distances</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_insulin_in_interval</span><span class="p">(</span>
+    <span class="n">insulin_records</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">interval_start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hours</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum insulin doses within the interval. Simplified: assumes aligned data.&quot;&quot;&quot;</span>
+    <span class="c1"># In production, this handles timestamp math and partial overlaps.</span>
+    <span class="c1"># Here we assume pre-aligned interval totals.</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">ts</span><span class="p">,</span> <span class="n">units</span> <span class="ow">in</span> <span class="n">insulin_records</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">interval_start</span> <span class="o">&lt;=</span> <span class="n">ts</span> <span class="o">&lt;</span> <span class="n">interval_start</span> <span class="o">+</span> <span class="n">hours</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">:</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">units</span>
+    <span class="k">return</span> <span class="n">total</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_recent_insulin</span><span class="p">(</span><span class="n">insulin_records</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">current_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">hours</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum insulin given in the last N hours (insulin on board).&quot;&quot;&quot;</span>
+    <span class="n">cutoff</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">hours</span> <span class="o">*</span> <span class="mi">3600</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">units</span> <span class="k">for</span> <span class="n">ts</span><span class="p">,</span> <span class="n">units</span> <span class="ow">in</span> <span class="n">insulin_records</span> <span class="k">if</span> <span class="n">ts</span> <span class="o">&gt;=</span> <span class="n">cutoff</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_nutrition_at_time</span><span class="p">(</span><span class="n">nutrition_records</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">current_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the most recent nutrition rate before current_time.&quot;&quot;&quot;</span>
+    <span class="n">latest</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">ts</span><span class="p">,</span> <span class="n">rate</span> <span class="ow">in</span> <span class="n">nutrition_records</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ts</span> <span class="o">&lt;=</span> <span class="n">current_time</span><span class="p">:</span>
+            <span class="n">latest</span> <span class="o">=</span> <span class="n">rate</span>
+    <span class="k">return</span> <span class="n">latest</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-offline-rl-training-conservative-q-learning">Step 5: Offline RL Training (Conservative Q-Learning)</h2>
+<p><em>Maps to pseudocode Step 3 in the main recipe. This implements a simplified version of Conservative Q-Learning (CQL), which learns a policy from historical data while penalizing actions that deviate too far from what clinicians actually did. The conservatism penalty is what prevents the agent from recommending untested, potentially dangerous doses.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">train_cql_policy</span><span class="p">(</span>
+    <span class="n">episodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">num_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span><span class="p">,</span>
+    <span class="n">discount</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.99</span><span class="p">,</span>
+    <span class="n">cql_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train a Conservative Q-Learning policy from historical episodes.</span>
+
+<span class="sd">    CQL addresses the core challenge of offline RL: distributional shift. If</span>
+<span class="sd">    historical clinicians never gave 20 units to a patient with glucose of 150,</span>
+<span class="sd">    a naive Q-learning agent might still recommend it because the Q-function</span>
+<span class="sd">    extrapolates incorrectly into unseen state-action regions.</span>
+
+<span class="sd">    CQL fixes this by adding a penalty that pushes down Q-values for actions</span>
+<span class="sd">    NOT observed in the training data. The result is a policy that stays close</span>
+<span class="sd">    to historical behavior (conservative) while still improving where the data</span>
+<span class="sd">    supports it.</span>
+
+<span class="sd">    The alpha parameter controls how conservative the policy is:</span>
+<span class="sd">    - High alpha (2-5): stays very close to historical clinician behavior</span>
+<span class="sd">    - Low alpha (0.1-0.5): more willing to deviate (potentially better but riskier)</span>
+<span class="sd">    - For safety-critical applications like insulin dosing, start conservative.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        episodes: List of episode dicts from build_episode_from_icu_stay.</span>
+<span class="sd">        num_iterations: Training iterations.</span>
+<span class="sd">        batch_size: Transitions per training batch.</span>
+<span class="sd">        discount: Future reward discount factor (gamma).</span>
+<span class="sd">        cql_alpha: Conservatism penalty weight.</span>
+<span class="sd">        learning_rate: Optimizer step size.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict containing the trained Q-table (for this simplified tabular version).</span>
+<span class="sd">        In production, this would be a neural network saved as a SageMaker model artifact.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Flatten all episodes into a single replay buffer of transitions.</span>
+    <span class="c1"># Each transition is (state, action, reward, next_state).</span>
+    <span class="n">replay_buffer</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="n">episodes</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">transition</span> <span class="ow">in</span> <span class="n">ep</span><span class="p">:</span>
+            <span class="n">replay_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">replay_buffer</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No transitions in replay buffer. Check episode construction.&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Training CQL policy: </span><span class="si">%d</span><span class="s2"> transitions, </span><span class="si">%d</span><span class="s2"> iterations, alpha=</span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">),</span> <span class="n">num_iterations</span><span class="p">,</span> <span class="n">cql_alpha</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># For this illustrative example, we use a tabular Q-function.</span>
+    <span class="c1"># We discretize the state space into bins. In production, you&#39;d use a neural</span>
+    <span class="c1"># network Q-function (e.g., 2-layer MLP with 256 hidden units).</span>
+    <span class="c1">#</span>
+    <span class="c1"># State discretization: bin each normalized feature into N_BINS levels.</span>
+    <span class="c1"># This is crude but makes the example self-contained without PyTorch/TensorFlow.</span>
+    <span class="n">N_BINS</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">q_table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N_BINS</span> <span class="o">**</span> <span class="mi">3</span><span class="p">,</span> <span class="n">NUM_ACTIONS</span><span class="p">))</span>  <span class="c1"># simplified: use 3 key features</span>
+    <span class="n">visit_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">q_table</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iterations</span><span class="p">):</span>
+        <span class="c1"># Sample a random batch of transitions</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">replay_buffer</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">transition</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">transition</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">])</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="n">transition</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span>
+            <span class="n">reward</span> <span class="o">=</span> <span class="n">transition</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">transition</span><span class="p">[</span><span class="s2">&quot;next_state&quot;</span><span class="p">])</span>
+
+            <span class="c1"># Discretize state to table index (using first 3 features: glucose, prev, velocity)</span>
+            <span class="n">state_idx</span> <span class="o">=</span> <span class="n">_state_to_index</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">N_BINS</span><span class="p">)</span>
+            <span class="n">next_state_idx</span> <span class="o">=</span> <span class="n">_state_to_index</span><span class="p">(</span><span class="n">next_state</span><span class="p">,</span> <span class="n">N_BINS</span><span class="p">)</span>
+
+            <span class="c1"># Standard Q-learning target: r + gamma * max_a&#39; Q(s&#39;, a&#39;)</span>
+            <span class="n">next_q_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">q_table</span><span class="p">[</span><span class="n">next_state_idx</span><span class="p">])</span>
+            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="n">discount</span> <span class="o">*</span> <span class="n">next_q_max</span>
+
+            <span class="c1"># CQL penalty: push down Q-values for actions not taken.</span>
+            <span class="c1"># For the action that WAS taken, update toward the TD target.</span>
+            <span class="c1"># For all other actions at this state, push Q-values down slightly.</span>
+            <span class="n">visit_counts</span><span class="p">[</span><span class="n">state_idx</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">lr</span> <span class="o">=</span> <span class="n">learning_rate</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.001</span> <span class="o">*</span> <span class="n">visit_counts</span><span class="p">[</span><span class="n">state_idx</span><span class="p">,</span> <span class="n">action</span><span class="p">])</span>
+
+            <span class="c1"># Update Q-value for the observed action (standard Bellman backup)</span>
+            <span class="n">q_table</span><span class="p">[</span><span class="n">state_idx</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="n">lr</span> <span class="o">*</span> <span class="p">(</span><span class="n">td_target</span> <span class="o">-</span> <span class="n">q_table</span><span class="p">[</span><span class="n">state_idx</span><span class="p">,</span> <span class="n">action</span><span class="p">])</span>
+
+            <span class="c1"># CQL penalty: reduce Q-values for unobserved actions at this state.</span>
+            <span class="c1"># This is the key insight: make the agent pessimistic about actions</span>
+            <span class="c1"># it hasn&#39;t seen data for.</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NUM_ACTIONS</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="n">action</span><span class="p">:</span>
+                    <span class="n">q_table</span><span class="p">[</span><span class="n">state_idx</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span> <span class="o">-=</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">cql_alpha</span> <span class="o">*</span> <span class="n">q_table</span><span class="p">[</span><span class="n">state_idx</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Training complete. Q-table shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">q_table</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;q_table&quot;</span><span class="p">:</span> <span class="n">q_table</span><span class="p">,</span> <span class="s2">&quot;n_bins&quot;</span><span class="p">:</span> <span class="n">N_BINS</span><span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_state_to_index</span><span class="p">(</span><span class="n">state_vector</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Discretize a normalized state vector into a table index.</span>
+
+<span class="sd">    Uses the first 3 features (glucose_current, glucose_prev_1, glucose_velocity)</span>
+<span class="sd">    as the key state dimensions. This is a massive simplification; real systems</span>
+<span class="sd">    use all features via neural network function approximation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Bin each of the 3 key features into n_bins levels</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">((</span><span class="n">state_vector</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_bins</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_bins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Convert to a single index (base-N encoding)</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_bins</span> <span class="o">*</span> <span class="n">n_bins</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_bins</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-off-policy-evaluation">Step 6: Off-Policy Evaluation</h2>
+<p><em>Maps to pseudocode Step 4 in the main recipe. Before deploying any learned policy, you need to estimate how it would have performed on historical patients. This is off-policy evaluation (OPE): the best tool available for safety validation without live experimentation.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">evaluate_policy_offline</span><span class="p">(</span>
+    <span class="n">policy</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">test_episodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">discount</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.99</span><span class="p">,</span>
+    <span class="n">clip_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate how the learned policy would have performed using importance sampling.</span>
+
+<span class="sd">    The core idea: if the learned policy would have recommended the same action</span>
+<span class="sd">    the clinician took, we can directly use the observed outcome. If it would</span>
+<span class="sd">    have recommended a different action, we reweight the observation.</span>
+
+<span class="sd">    OPE is imperfect. It has high variance (especially when the learned policy</span>
+<span class="sd">    disagrees with clinicians frequently) and relies on overlap between policies.</span>
+<span class="sd">    But it&#39;s the best tool available for safety validation without live experimentation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        policy: Trained policy dict from train_cql_policy.</span>
+<span class="sd">        test_episodes: Held-out episodes NOT used for training.</span>
+<span class="sd">        discount: Reward discount factor.</span>
+<span class="sd">        clip_ratio: Maximum importance weight (variance reduction).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with estimated policy value, time-in-range, and hypoglycemia rate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q_table</span> <span class="o">=</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;q_table&quot;</span><span class="p">]</span>
+    <span class="n">n_bins</span> <span class="o">=</span> <span class="n">policy</span><span class="p">[</span><span class="s2">&quot;n_bins&quot;</span><span class="p">]</span>
+
+    <span class="n">weighted_returns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Track clinical metrics</span>
+    <span class="n">total_readings</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">in_range_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">hypo_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="n">test_episodes</span><span class="p">:</span>
+        <span class="n">cumulative_weight</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">episode_return</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">transition</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ep</span><span class="p">):</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">transition</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">])</span>
+            <span class="n">action_taken</span> <span class="o">=</span> <span class="n">transition</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span>
+            <span class="n">reward</span> <span class="o">=</span> <span class="n">transition</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span>
+
+            <span class="c1"># What would the learned policy have done?</span>
+            <span class="n">state_idx</span> <span class="o">=</span> <span class="n">_state_to_index</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)</span>
+            <span class="n">policy_action</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">q_table</span><span class="p">[</span><span class="n">state_idx</span><span class="p">]))</span>
+
+            <span class="c1"># Importance ratio: how much does the learned policy agree with</span>
+            <span class="c1"># what the clinician actually did?</span>
+            <span class="c1"># Simplified: if policy agrees, ratio = 1. If disagrees, ratio is small.</span>
+            <span class="c1"># In production, you&#39;d estimate actual probabilities from both policies.</span>
+            <span class="k">if</span> <span class="n">policy_action</span> <span class="o">==</span> <span class="n">action_taken</span><span class="p">:</span>
+                <span class="n">ratio</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># The learned policy would have done something different.</span>
+                <span class="c1"># Assign a small probability to the clinician&#39;s action under our policy.</span>
+                <span class="n">q_values</span> <span class="o">=</span> <span class="n">q_table</span><span class="p">[</span><span class="n">state_idx</span><span class="p">]</span>
+                <span class="c1"># Softmax probability of the taken action under learned policy</span>
+                <span class="n">exp_q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">q_values</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">q_values</span><span class="p">))</span>
+                <span class="n">probs</span> <span class="o">=</span> <span class="n">exp_q</span> <span class="o">/</span> <span class="n">exp_q</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">pi_prob</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">action_taken</span><span class="p">],</span> <span class="mf">1e-6</span><span class="p">)</span>
+                <span class="c1"># Assume uniform behavior policy (crude approximation)</span>
+                <span class="n">mu_prob</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">NUM_ACTIONS</span>
+                <span class="n">ratio</span> <span class="o">=</span> <span class="n">pi_prob</span> <span class="o">/</span> <span class="n">mu_prob</span>
+
+            <span class="n">ratio</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="n">clip_ratio</span><span class="p">)</span>
+            <span class="n">cumulative_weight</span> <span class="o">*=</span> <span class="n">ratio</span>
+            <span class="n">episode_return</span> <span class="o">+=</span> <span class="p">(</span><span class="n">discount</span> <span class="o">**</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">reward</span>
+
+            <span class="c1"># Track glucose metrics from the reward (reverse-engineer glucose range)</span>
+            <span class="n">total_readings</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">reward</span> <span class="o">&gt;=</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;in_range_max_reward&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">:</span>
+                <span class="n">in_range_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">reward</span> <span class="o">&lt;=</span> <span class="n">REWARD_PARAMS</span><span class="p">[</span><span class="s2">&quot;hypo_penalty_scale&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">:</span>
+                <span class="n">hypo_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">weighted_returns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cumulative_weight</span> <span class="o">*</span> <span class="n">episode_return</span><span class="p">)</span>
+        <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cumulative_weight</span><span class="p">)</span>
+
+    <span class="c1"># Self-normalized importance sampling estimate</span>
+    <span class="n">total_weight</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">total_weight</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">estimated_value</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">estimated_value</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weighted_returns</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_weight</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;estimated_policy_value&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">estimated_value</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;estimated_time_in_range&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">in_range_count</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_readings</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;estimated_hypo_rate&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">hypo_count</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_readings</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;num_test_episodes&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_episodes</span><span class="p">),</span>
+        <span class="s2">&quot;num_transitions&quot;</span><span class="p">:</span> <span class="n">total_readings</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-7-clinical-decision-support-real-time-inference">Step 7: Clinical Decision Support (Real-Time Inference)</h2>
+<p><em>Maps to pseudocode Step 6 in the main recipe. This is the integration point: when a nurse enters a new glucose reading, the system constructs the current state, queries the policy, applies safety constraints, and returns a recommendation for clinician review.</em></p>
+<div class="code"><pre><span></span><span class="c1"># AWS clients (created once, reused across invocations in Lambda)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">sagemaker_runtime</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker-runtime&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">state_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">DYNAMODB_TABLE</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">fetch_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve the patient&#39;s recent glucose history and clinical state from DynamoDB.</span>
+
+<span class="sd">    The state table stores the last N readings and current clinical context</span>
+<span class="sd">    for each active ICU patient. Updated every time a new glucose reading arrives.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: Unique patient identifier (e.g., &quot;ICU-2026-04821&quot;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with recent glucose readings, insulin history, and clinical context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">state_table</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">})</span>
+
+    <span class="k">if</span> <span class="s2">&quot;Item&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No state found for patient </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="n">item</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Item&quot;</span><span class="p">]</span>
+
+    <span class="c1"># DynamoDB stores numbers as Decimal. Convert to float for numpy compatibility.</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;glucose_current&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_current&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;glucose_prev_2&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_prev_2&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;glucose_velocity&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_velocity&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;insulin_on_board&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;insulin_on_board&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;insulin_infusion_rate&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;insulin_infusion_rate&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;nutrition_rate&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nutrition_rate&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;vasopressor_dose&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vasopressor_dose&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;steroid_flag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steroid_flag&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">&quot;creatinine&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;creatinine&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
+        <span class="s2">&quot;bmi&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="mi">25</span><span class="p">)),</span>
+        <span class="s2">&quot;apache_score&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;apache_score&quot;</span><span class="p">,</span> <span class="mi">15</span><span class="p">)),</span>
+        <span class="s2">&quot;previous_dose&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;previous_dose&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">patient_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update the patient&#39;s state in DynamoDB with the new glucose reading.</span>
+
+<span class="sd">    Shifts the glucose history forward and recomputes velocity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Shift history: current becomes prev_1, prev_1 becomes prev_2</span>
+    <span class="n">prev_1</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_current&quot;</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">)</span>
+    <span class="n">prev_2</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">,</span> <span class="n">prev_1</span><span class="p">)</span>
+
+    <span class="c1"># Velocity: rate of change in mg/dL per hour (assuming 4-hour intervals)</span>
+    <span class="n">velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_glucose</span> <span class="o">-</span> <span class="n">prev_1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.0</span> <span class="k">if</span> <span class="n">prev_1</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+    <span class="n">state_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+        <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_current&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">new_glucose</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span>
+            <span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">prev_1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span>
+            <span class="s2">&quot;glucose_prev_2&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">prev_2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span>
+            <span class="s2">&quot;glucose_velocity&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="mi">2</span><span class="p">))),</span>
+            <span class="s2">&quot;insulin_on_board&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span>
+                <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;insulin_on_board&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span>
+            <span class="p">))),</span>
+            <span class="s2">&quot;insulin_infusion_rate&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span>
+                <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;insulin_infusion_rate&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span>
+            <span class="p">))),</span>
+            <span class="s2">&quot;nutrition_rate&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span>
+                <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nutrition_rate&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span>
+            <span class="p">))),</span>
+            <span class="s2">&quot;vasopressor_dose&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span>
+                <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vasopressor_dose&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">3</span>
+            <span class="p">))),</span>
+            <span class="s2">&quot;steroid_flag&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steroid_flag&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))),</span>
+            <span class="s2">&quot;creatinine&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;creatinine&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="mi">1</span><span class="p">))),</span>
+            <span class="s2">&quot;bmi&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="mi">1</span><span class="p">))),</span>
+            <span class="s2">&quot;apache_score&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;apache_score&quot;</span><span class="p">,</span> <span class="mi">15</span><span class="p">)))),</span>
+            <span class="s2">&quot;previous_dose&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span>
+                <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;previous_dose&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span>
+            <span class="p">))),</span>
+            <span class="s2">&quot;updated_at&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()))),</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_policy_recommendation</span><span class="p">(</span><span class="n">state_vector</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Call the SageMaker endpoint to get the RL policy&#39;s recommended dose.</span>
+
+<span class="sd">    The endpoint hosts the trained CQL model. It takes a state vector and</span>
+<span class="sd">    returns Q-values for each action, from which we pick the best.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        state_vector: Normalized state array from construct_state_vector.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with recommended_dose (units) and confidence score.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="n">state_vector</span><span class="o">.</span><span class="n">tolist</span><span class="p">()})</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">sagemaker_runtime</span><span class="o">.</span><span class="n">invoke_endpoint</span><span class="p">(</span>
+        <span class="n">EndpointName</span><span class="o">=</span><span class="n">SAGEMAKER_ENDPOINT</span><span class="p">,</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+
+    <span class="c1"># The endpoint returns Q-values for each discrete action</span>
+    <span class="n">q_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;q_values&quot;</span><span class="p">])</span>
+    <span class="n">best_action_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">q_values</span><span class="p">))</span>
+    <span class="n">recommended_dose</span> <span class="o">=</span> <span class="n">ACTION_SPACE</span><span class="p">[</span><span class="n">best_action_idx</span><span class="p">]</span>
+
+    <span class="c1"># Confidence: how much better is the best action vs. the second best?</span>
+    <span class="c1"># Large gap = high confidence. Small gap = uncertain.</span>
+    <span class="n">sorted_q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">q_values</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_q</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">sorted_q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="n">sorted_q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">sorted_q</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sorted_q</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;recommended_dose&quot;</span><span class="p">:</span> <span class="n">recommended_dose</span><span class="p">,</span>
+        <span class="s2">&quot;action_index&quot;</span><span class="p">:</span> <span class="n">best_action_idx</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">confidence</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;q_values&quot;</span><span class="p">:</span> <span class="n">q_values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="full-pipeline-generate-recommendation">Full Pipeline: Generate Recommendation</h2>
+<p>This assembles all the steps into a single callable function. In production, this would be the Lambda handler invoked when a new glucose reading arrives from the EHR integration.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_insulin_recommendation</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    End-to-end pipeline: new glucose reading in, insulin recommendation out.</span>
+
+<span class="sd">    This is the function that gets called when a nurse enters a new glucose</span>
+<span class="sd">    measurement. It:</span>
+<span class="sd">    1. Fetches the patient&#39;s recent history</span>
+<span class="sd">    2. Updates state with the new reading</span>
+<span class="sd">    3. Constructs the RL state vector</span>
+<span class="sd">    4. Gets the policy&#39;s recommendation</span>
+<span class="sd">    5. Applies safety constraints</span>
+<span class="sd">    6. Returns a recommendation for clinician review</span>
+
+<span class="sd">    The clinician always has the final say. This is decision support, not</span>
+<span class="sd">    autonomous control.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: Unique patient identifier.</span>
+<span class="sd">        new_glucose: The new glucose reading in mg/dL.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with the recommendation, reasoning, and safety information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GLUCOSE CONTROL RL: New reading for </span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Fetch current patient state</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[1/5] Fetching patient state from DynamoDB...&quot;</span><span class="p">)</span>
+    <span class="n">patient_data</span> <span class="o">=</span> <span class="n">fetch_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">patient_data</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  WARNING: No prior state found. Using defaults.&quot;</span><span class="p">)</span>
+        <span class="n">patient_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;glucose_current&quot;</span><span class="p">:</span> <span class="n">new_glucose</span><span class="p">,</span> <span class="s2">&quot;previous_dose&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="c1"># Step 2: Update state with new reading</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[2/5] Updating state: new glucose = </span><span class="si">{</span><span class="n">new_glucose</span><span class="si">}</span><span class="s2"> mg/dL&quot;</span><span class="p">)</span>
+    <span class="n">update_patient_state</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">,</span> <span class="n">patient_data</span><span class="p">)</span>
+
+    <span class="c1"># Refresh patient_data with the new glucose as current</span>
+    <span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;glucose_prev_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">)</span>
+    <span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glucose_current&quot;</span><span class="p">,</span> <span class="n">new_glucose</span><span class="p">)</span>
+    <span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;glucose_current&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_glucose</span>
+    <span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;glucose_velocity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">new_glucose</span> <span class="o">-</span> <span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;glucose_prev_1&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mf">4.0</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Step 3: Construct state vector</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[3/5] Constructing state vector...&quot;</span><span class="p">)</span>
+    <span class="n">state_vector</span> <span class="o">=</span> <span class="n">construct_state_vector</span><span class="p">(</span><span class="n">patient_data</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  State vector (first 4 features): </span><span class="si">{</span><span class="n">state_vector</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Get policy recommendation</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[4/5] Querying RL policy endpoint...&quot;</span><span class="p">)</span>
+    <span class="n">policy_result</span> <span class="o">=</span> <span class="n">get_policy_recommendation</span><span class="p">(</span><span class="n">state_vector</span><span class="p">)</span>
+    <span class="n">raw_dose</span> <span class="o">=</span> <span class="n">policy_result</span><span class="p">[</span><span class="s2">&quot;recommended_dose&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Raw recommendation: </span><span class="si">{</span><span class="n">raw_dose</span><span class="si">}</span><span class="s2"> units (confidence: </span><span class="si">{</span><span class="n">policy_result</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Apply safety constraints</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[5/5] Applying safety constraints...&quot;</span><span class="p">)</span>
+    <span class="n">previous_dose</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;previous_dose&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">safe_result</span> <span class="o">=</span> <span class="n">apply_safety_constraints</span><span class="p">(</span><span class="n">raw_dose</span><span class="p">,</span> <span class="n">patient_data</span><span class="p">,</span> <span class="n">previous_dose</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">safe_result</span><span class="p">[</span><span class="s2">&quot;constraints_activated&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">safe_result</span><span class="p">[</span><span class="s2">&quot;constraints_activated&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  CONSTRAINT: </span><span class="si">{</span><span class="n">constraint</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  No constraints activated.&quot;</span><span class="p">)</span>
+
+    <span class="n">final_dose</span> <span class="o">=</span> <span class="n">safe_result</span><span class="p">[</span><span class="s2">&quot;final_dose&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  FINAL RECOMMENDATION: </span><span class="si">{</span><span class="n">final_dose</span><span class="si">}</span><span class="s2"> units insulin&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Package the recommendation</span>
+    <span class="n">recommendation</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()),</span>
+        <span class="s2">&quot;glucose_reading&quot;</span><span class="p">:</span> <span class="n">new_glucose</span><span class="p">,</span>
+        <span class="s2">&quot;recommended_dose&quot;</span><span class="p">:</span> <span class="n">final_dose</span><span class="p">,</span>
+        <span class="s2">&quot;dose_units&quot;</span><span class="p">:</span> <span class="s2">&quot;units insulin (regular)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">policy_result</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;reasoning&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;current_glucose&quot;</span><span class="p">:</span> <span class="n">new_glucose</span><span class="p">,</span>
+            <span class="s2">&quot;glucose_trend&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;glucose_velocity&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;insulin_on_board&quot;</span><span class="p">:</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;insulin_on_board&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;raw_policy_dose&quot;</span><span class="p">:</span> <span class="n">raw_dose</span><span class="p">,</span>
+            <span class="s2">&quot;constraints_activated&quot;</span><span class="p">:</span> <span class="n">safe_result</span><span class="p">[</span><span class="s2">&quot;constraints_activated&quot;</span><span class="p">],</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;clinician_action&quot;</span><span class="p">:</span> <span class="s2">&quot;PENDING&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Recommendation packaged. Awaiting clinician decision.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">recommendation</span>
+
+<span class="c1"># --- Example usage ---</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Simulate a sequence of glucose readings for a patient</span>
+    <span class="c1"># In production, each call would be triggered by an EHR event.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DEMO: Simulating glucose control recommendations&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="c1"># Note: This will fail without actual AWS resources configured.</span>
+    <span class="c1"># It&#39;s here to show the calling pattern.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">generate_insulin_recommendation</span><span class="p">(</span><span class="s2">&quot;ICU-2026-04821&quot;</span><span class="p">,</span> <span class="mf">195.0</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Expected error (no AWS resources): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;In production, this connects to real DynamoDB and SageMaker endpoints.&quot;</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="gap-to-production">Gap to Production</h2>
+<p>This example demonstrates the shape of an RL-based glucose control system. Here's the distance between this code and something you'd deploy in an ICU:</p>
+<p><strong>Data pipeline (the real 70% of the work):</strong></p>
+<ul>
+<li>EHR integration via HL7 FHIR or proprietary APIs to pull glucose, insulin, nutrition, and medication data in real time</li>
+<li>Temporal alignment of irregularly-sampled clinical data into consistent decision intervals</li>
+<li>Handling of missing data (forward-fill, learned imputation, staleness flags)</li>
+<li>Data validation: reject physiologically impossible values (glucose of 5000 is a meter error, not a reading)</li>
+<li>De-identification pipeline for training data; BAA-covered access for production inference</li>
+</ul>
+<p><strong>Model training:</strong></p>
+<ul>
+<li>Replace the tabular Q-function with a neural network (2-layer MLP with 256 hidden units is standard)</li>
+<li>Use a proper CQL implementation (e.g., d3rlpy library or custom PyTorch)</li>
+<li>Hyperparameter tuning: CQL alpha, discount factor, network architecture, batch size</li>
+<li>Train on thousands of ICU stays (this example works with toy data)</li>
+<li>Cross-validation across patient subpopulations (surgical, medical, cardiac)</li>
+</ul>
+<p><strong>Safety and validation:</strong></p>
+<ul>
+<li>Extensive off-policy evaluation on held-out data with confidence intervals</li>
+<li>Physiological simulator testing (glucose-insulin dynamics models)</li>
+<li>Comparison against existing sliding scale protocols on retrospective data</li>
+<li>Formal safety analysis: worst-case hypoglycemia rates under the learned policy</li>
+<li>IRB approval for any prospective evaluation</li>
+<li>FDA regulatory pathway assessment (likely Class II medical device)</li>
+</ul>
+<p><strong>Deployment:</strong></p>
+<ul>
+<li>Shadow mode: run the system in parallel with existing protocols for months, logging recommendations without displaying them, to validate against actual clinician decisions</li>
+<li>Clinician education and trust-building before any recommendations are shown</li>
+<li>Gradual rollout: start with a single ICU, expand after demonstrating safety</li>
+<li>Real-time monitoring: alert on recommendation patterns that deviate from expected distributions</li>
+<li>Drift detection: retrain when patient population or clinical practice changes</li>
+<li>Override logging and analysis: learn from clinician disagreements</li>
+</ul>
+<p><strong>Infrastructure hardening:</strong></p>
+<ul>
+<li>Error handling and retries for all AWS API calls (already partially shown)</li>
+<li>Input validation: reject malformed glucose readings, out-of-range values</li>
+<li>Structured JSON logging with correlation IDs (never log PHI values)</li>
+<li>IAM least-privilege: separate roles for training vs. inference vs. state management</li>
+<li>VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch</li>
+<li>KMS customer-managed keys for all PHI-containing resources</li>
+<li>DynamoDB point-in-time recovery and S3 versioning for audit trail</li>
+<li>Load testing: ensure the inference path completes within the clinical workflow timeout (&lt; 5 seconds)</li>
+</ul>
+<p><strong>The honest gap:</strong> This example is maybe 5% of a production system. The RL algorithm is the intellectually interesting part, but the data pipeline, safety validation, regulatory pathway, and clinician trust-building are what determine whether this ever helps a patient. Plan for 12-18 months from &quot;working prototype&quot; to &quot;shadow mode in one ICU.&quot;</p>
+<hr />
+<table>
+<thead>
+<tr>
+<th style="text-align:left"><a href="chapter15.06-glucose-control-icu.html">← Recipe 15.6: Glucose Control in ICU</a></th>
+<th style="text-align:center"><a href="chapter15-preface.html">Chapter 15 Index</a></th>
+<th style="text-align:right"><a href="chapter15.07-chronic-disease-treatment-personalization.html">15.7: Chronic Disease Treatment Personalization →</a></th>
+</tr>
+</thead>
+</table>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 11.6 Architecture and Implementation: Symptom Checker / Triage Bot</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested nav-active" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-116-architecture-and-implementation-symptom-checker--triage-bot">Recipe 11.6 Architecture and Implementation: Symptom Checker / Triage Bot</h1>
+<p><em>Companion to <a href="chapter11.06-symptom-checker-triage-bot.html">Recipe 11.6: Symptom Checker / Triage Bot</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Bedrock for the LLM and the embeddings.</strong> Same selection criteria as recipes 11.1 through 11.5. The triage bot specifically benefits from a model with strong tool-use, strong instruction-following for the protocol-grounding and conservative-bias discipline, and conversational warmth for distress-context conversations. Claude Sonnet-class models or comparable frontier models for the orchestration; smaller models for intent classification, emergency screening, and clinical-decision-rule input parsing. Bedrock provides HIPAA-eligible deployment under BAA.</p>
+<p><strong>Amazon Bedrock Knowledge Bases for the clinical-protocol corpus.</strong> The clinical triage protocols (whether licensed Schmitt-Thompson, an institutional adaptation, or institution-built) are the bot's grounded retrieval source. Knowledge Bases provides the managed RAG layer with vector indexing and filtered retrieval. The chunking is per-protocol-section with metadata (protocol_id, protocol_version, decision_point_id, pediatric_vs_adult, special_population_flags, effective_date) to support precise protocol-and-version-scoped retrieval.</p>
+<p><strong>Amazon Bedrock Agents for tool orchestration.</strong> Same selection rationale as the previous chapter 11 recipes. The bot's tools (chart_context_lookup, intent_classify, emergency_screen, protocol_select, protocol_retrieve, clinical_rule_compute, recommendation_compose, nurse_line_escalate, telehealth_book, urgent_care_locate, and others) are defined as Agents action groups with OpenAPI schemas.</p>
+<p><strong>Amazon Bedrock Guardrails for scope and content filtering.</strong> Configured with denied topics including diagnosis-attempted, treatment-recommendation-attempted, drug-prescription-attempted, and off-protocol clinical claims. The triage bot's scope discipline is critical because patients frequently ask the bot to diagnose them or prescribe them, and the bot's regulatory positioning depends on staying out of those domains.</p>
+<p><strong>Amazon OpenSearch Service (or Bedrock-managed vector store) for the retrieval index.</strong> The clinical-protocol corpus is the institution's protocol library plus any reference materials cited within it. OpenSearch Serverless is the typical default for managed vector workloads on AWS.</p>
+<p><strong>AWS HealthLake (optional) for FHIR-native chart-context data.</strong> Where the institution stores patient demographics, problem list, medication list, allergies, and encounter history in FHIR resources, HealthLake provides a managed FHIR data store the chart-context tool queries directly.</p>
+<p><strong>AWS Lambda for the chat handler, tool implementations, and clinical-decision-rule computation.</strong> Same pattern as the previous chapter 11 recipes. The clinical-decision-rule Lambdas implement HEART, Wells, Centor, Ottawa, and other rules as deterministic functions.</p>
+<p><strong>Amazon API Gateway and AWS WAF for the public chat endpoint.</strong> Same as the other recipes. Rate limits tuned for the triage use case (patients sometimes type rapidly when in distress; rate limits should not block legitimate fast-typing).</p>
+<p><strong>Amazon Connect for SMS, voice, and nurse-line handoff.</strong> Patients on phones, patients preferring SMS, and patients escalating to a live nurse are served through Connect. The handoff payload includes the conversation transcript, the protocol used, the answer set, and the computed recommendation.</p>
+<p><strong>Amazon Lex for IVR-style voice channel intent and slot management (optional).</strong> When the triage bot is deployed on a voice channel, Lex handles the speech-recognition front-end while Bedrock handles the conversational reasoning. The voice channel includes accessibility considerations for patients who cannot use chat.</p>
+<p><strong>Amazon DynamoDB for state.</strong> Six tables: <code>conversation-state</code>, <code>conversation-metadata</code>, <code>tool-call-ledger</code>, <code>triage-decision-record-journal</code> (durable record of every recommendation with citations), <code>protocol-version-registry</code> (tracks which protocol version was active for any conversation), and <code>outcome-correlation-pending</code> (pending records awaiting outcome correlation).</p>
+<p><strong>Amazon S3 for protocol-corpus storage, audit archive, triage-decision-record journal, and outcome-correlation data.</strong> Object Lock in compliance mode for the retention window.</p>
+<p><strong>AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena.</strong> Same operational and audit primitives as the previous recipes.</p>
+<p><strong>Amazon SageMaker (optional) for emergency-screening classifier hosting.</strong> When the institution trains a custom emergency-presentation classifier (rather than relying solely on prompt-based detection), SageMaker provides the hosted-inference endpoint.</p>
+<p><strong>Amazon QuickSight (optional) for compliance, clinical-quality, and operational dashboards.</strong> Per-protocol over-triage and under-triage rate, per-cohort recommendation accuracy, citation-coverage rate, escalation rate, and outcome-correlation dashboards.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Channels
+      WEB[Web Chat Widget]
+      APP[Institution App Embed]
+      SMS[SMS via Connect]
+      VOICE[Voice via Connect + Lex]
+    end
+
+    subgraph Edge
+      WAF[AWS WAF]
+      APIGW[API Gateway]
+    end
+
+    subgraph Conversation_Core
+      L_CHAT[Lambda&lt;br/&gt;chat handler]
+      L_INPUT[Lambda&lt;br/&gt;input screening&lt;br/&gt;+ continuous emergency]
+      L_OUTPUT[Lambda&lt;br/&gt;output screening&lt;br/&gt;+ conservative-bias]
+      L_HANDOFF[Lambda&lt;br/&gt;nurse-line&lt;br/&gt;escalation]
+      L_IDENTITY[Lambda&lt;br/&gt;identity + chart&lt;br/&gt;context]
+    end
+
+    subgraph LLM_and_Agent
+      AGENT[Bedrock Agents&lt;br/&gt;tool orchestration]
+      BEDROCK[Bedrock&lt;br/&gt;LLM generation]
+      KB[Bedrock Knowledge Bases&lt;br/&gt;clinical-protocol corpus]
+      GUARDRAILS[Bedrock Guardrails]
+      OS[OpenSearch Serverless&lt;br/&gt;retrieval index]
+    end
+
+    subgraph Triage_Tools
+      L_CHART[Lambda&lt;br/&gt;chart_context_lookup]
+      L_INTENT[Lambda&lt;br/&gt;intent_classify]
+      L_EMERGENCY[Lambda&lt;br/&gt;emergency_screen]
+      L_PROTOCOL_SEL[Lambda&lt;br/&gt;protocol_select]
+      L_PROTOCOL_RET[Lambda&lt;br/&gt;protocol_retrieve]
+      L_RULE[Lambda&lt;br/&gt;clinical_rule_compute]
+      L_REC[Lambda&lt;br/&gt;recommendation_compose]
+      L_TELEHEALTH[Lambda&lt;br/&gt;telehealth_book]
+      L_URGENT[Lambda&lt;br/&gt;urgent_care_locate]
+      L_OUTCOME[Lambda&lt;br/&gt;outcome_correlation]
+    end
+
+    subgraph External_Integrations
+      EHR[(EHR / chart&lt;br/&gt;system)]
+      NURSE[(Nurse-line&lt;br/&gt;system)]
+      TELE[(Telehealth&lt;br/&gt;scheduling)]
+      URG_DIR[(Urgent care&lt;br/&gt;directory)]
+      HEALTHLAKE[(AWS HealthLake&lt;br/&gt;optional)]
+    end
+
+    subgraph State_and_Audit
+      DDB_SESS[(DynamoDB&lt;br/&gt;conversation state)]
+      DDB_META[(DynamoDB&lt;br/&gt;conversation metadata)]
+      DDB_TOOL[(DynamoDB&lt;br/&gt;tool-call ledger)]
+      DDB_DECISION[(DynamoDB&lt;br/&gt;triage-decision&lt;br/&gt;record journal)]
+      DDB_VERSION[(DynamoDB&lt;br/&gt;protocol-version&lt;br/&gt;registry)]
+      DDB_OUTCOME[(DynamoDB&lt;br/&gt;outcome-correlation&lt;br/&gt;pending)]
+      S3_AUDIT[(S3&lt;br/&gt;audit archive)]
+      S3_PROTOCOLS[(S3&lt;br/&gt;protocol corpus)]
+      S3_DECISION[(S3&lt;br/&gt;decision-record&lt;br/&gt;journal)]
+    end
+
+    subgraph Events_and_Analytics
+      EB[EventBridge]
+      KIN[Kinesis Firehose]
+      ATH[Athena]
+      QS[QuickSight]
+      CW[CloudWatch]
+      CT[CloudTrail]
+    end
+
+    subgraph Secrets_and_Keys
+      SM_SEC[(Secrets Manager)]
+      KMS[(AWS KMS)]
+    end
+
+    WEB --&gt; WAF
+    APP --&gt; WAF
+    SMS --&gt; APIGW
+    VOICE --&gt; APIGW
+    WAF --&gt; APIGW
+    APIGW --&gt; L_CHAT
+    L_CHAT --&gt; L_INPUT
+    L_CHAT --&gt; L_IDENTITY
+    L_CHAT --&gt; AGENT
+    AGENT --&gt; BEDROCK
+    AGENT --&gt; KB
+    KB --&gt; OS
+    AGENT --&gt; GUARDRAILS
+    AGENT --&gt; L_INTENT
+    AGENT --&gt; L_EMERGENCY
+    AGENT --&gt; L_CHART
+    AGENT --&gt; L_PROTOCOL_SEL
+    AGENT --&gt; L_PROTOCOL_RET
+    AGENT --&gt; L_RULE
+    AGENT --&gt; L_REC
+    AGENT --&gt; L_TELEHEALTH
+    AGENT --&gt; L_URGENT
+    L_CHART --&gt; EHR
+    L_CHART --&gt; HEALTHLAKE
+    L_TELEHEALTH --&gt; TELE
+    L_URGENT --&gt; URG_DIR
+    L_HANDOFF --&gt; NURSE
+    L_CHAT --&gt; L_OUTPUT
+    L_OUTPUT --&gt; L_HANDOFF
+    L_CHAT --&gt; DDB_SESS
+    L_CHAT --&gt; DDB_META
+    AGENT --&gt; DDB_TOOL
+    L_OUTPUT --&gt; DDB_DECISION
+    L_OUTPUT --&gt; DDB_VERSION
+    L_OUTPUT --&gt; S3_DECISION
+    L_OUTCOME --&gt; DDB_OUTCOME
+    L_CHAT --&gt; EB
+    EB --&gt; KIN
+    KIN --&gt; S3_AUDIT
+    S3_AUDIT --&gt; ATH
+    S3_DECISION --&gt; ATH
+    ATH --&gt; QS
+    L_CHAT --&gt; CW
+    APIGW --&gt; CT
+    L_CHART --&gt; SM_SEC
+    L_HANDOFF --&gt; SM_SEC
+    KMS --&gt; S3_AUDIT
+    KMS --&gt; S3_DECISION
+    KMS --&gt; S3_PROTOCOLS
+    KMS --&gt; DDB_SESS
+    KMS --&gt; DDB_META
+    KMS --&gt; DDB_TOOL
+    KMS --&gt; DDB_DECISION
+    KMS --&gt; DDB_VERSION
+    KMS --&gt; DDB_OUTCOME
+    KMS --&gt; SM_SEC
+
+    style AGENT fill:#fcf,stroke:#333
+    style BEDROCK fill:#fcf,stroke:#333
+    style KB fill:#fcf,stroke:#333
+    style GUARDRAILS fill:#fcf,stroke:#333
+    style OS fill:#fcf,stroke:#333
+    style L_INPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_OUTPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_EMERGENCY fill:#fcc,stroke:#900,stroke-width:3px
+    style L_RULE fill:#fcc,stroke:#900,stroke-width:3px
+    style L_HANDOFF fill:#fcc,stroke:#900,stroke-width:3px
+    style EHR fill:#ccf,stroke:#333
+    style NURSE fill:#ccf,stroke:#333
+    style TELE fill:#ccf,stroke:#333
+    style URG_DIR fill:#ccf,stroke:#333
+    style DDB_DECISION fill:#9ff,stroke:#333
+    style DDB_VERSION fill:#9ff,stroke:#333
+    style DDB_OUTCOME fill:#9ff,stroke:#333
+    style S3_DECISION fill:#cfc,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Bedrock (with Agents, Knowledge Bases, Guardrails, a foundation model selected for tool-use plus an embedding model), Amazon OpenSearch Serverless (for the vector retrieval index), AWS Lambda, Amazon API Gateway, AWS WAF, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena. Optionally: AWS HealthLake (for FHIR-native chart context), Amazon Connect (for SMS, voice, and nurse-line handoff), Amazon Lex (for IVR-style voice channel orchestration), Amazon SageMaker (for hosted emergency-screening classifier), Amazon QuickSight (for dashboards).</td>
+</tr>
+<tr>
+<td><strong>External Inputs</strong></td>
+<td>EHR or chart-context system providing demographics (age, sex), active problem list, active medication list, allergies, recent visit history, active treatment plans (oncology, transplant, pregnancy), advance directives. Clinical-protocol corpus (institutionally validated and version-controlled): adult triage protocols, pediatric triage protocols, special-population overlays (pregnancy, oncology treatment, transplant, geriatric). The protocol corpus is licensed (Schmitt-Thompson, MTS, or vendor-equivalent) or institution-built with medical-director ownership; either way, version-controlled with effective dates. Clinical-decision-rule library (HEART, Wells, Centor, Ottawa, PERC, others as applicable) implemented as deterministic code with audit trails. Nurse-line system integration with handoff payload schema (separate adult and pediatric where the institution has both). Telehealth scheduling system integration. Urgent care directory with hours, locations, and current capacity where available. Crisis-resource lookup (988 routing, Poison Control, institutional crisis line). Mandatory-reporting workflow integration for disclosures triggering statutory obligations. Outcome-correlation data pipeline pulling subsequent encounter records (ED visits, urgent care visits, primary care visits, hospital admissions) within configurable windows after each triage conversation.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege roles. The chart-context Lambda has read-only access to the EHR or HealthLake. The clinical-rule Lambdas have no external-system access (pure compute). The protocol-retrieve Lambda has read access to the protocol corpus in S3 plus the OpenSearch index. The nurse-line-escalate Lambda has the access required to post handoff events to the nurse-line system. None of the bot's Lambdas have write access to the clinical record; the bot is read-only with respect to clinical data. Resource-based policies on each Lambda pin the invoking principal to the production agent or API Gateway stage ARN.</td>
+</tr>
+<tr>
+<td><strong>BAA and Compliance</strong></td>
+<td>AWS BAA signed. Verify Amazon Bedrock (with the specific models in scope), Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, OpenSearch Serverless, HealthLake (where used), Connect, Lex (where used), and SageMaker (where used) are HIPAA-eligible at build time. The bot is patient-facing PHI; the audit and retention story must satisfy HIPAA Privacy and Security Rules plus state-specific medical-record retention rules and any FDA SaMD post-market obligations. The clinical-protocol corpus may have specific licensing restrictions if the protocols are licensed from third-party vendors (Schmitt-Thompson, MTS, etc.); the legal team reviews. The institutional regulatory team reviews the FDA-strategy positioning before launch and on each material scope change. The institutional malpractice insurer is part of the policy review.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Protocol-corpus bucket: SSE-KMS with customer-managed keys, versioning enabled. Audit-archive and triage-decision-record-journal buckets: SSE-KMS with customer-managed keys, Object Lock in compliance mode for the retention window, lifecycle to S3 Glacier Deep Archive after 90 days. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all integrations with the EHR, nurse-line, telehealth, urgent-care-directory, and crisis-resource systems. The OpenSearch retrieval index encrypted with customer-managed KMS keys. Different KMS key per data class for blast-radius containment.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: tool Lambdas that call the EHR, nurse-line system, telehealth scheduling, and urgent-care directory run in VPC with controlled egress. PrivateLink to vendor-hosted endpoints where supported; tightly-scoped NAT path with allow-list otherwise. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, OpenSearch Serverless, HealthLake (where used), Connect, and SageMaker (where used) so back-office Lambdas do not need public-internet egress for AWS-internal calls. The patient-facing edge (API Gateway, WAF) is public by design; the back-office traffic is private.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the audit-archive S3 bucket, the triage-decision-record-journal S3 bucket, the protocol-corpus S3 bucket, the DynamoDB conversation, tool-call, decision-record, version-registry, and outcome-correlation tables, the Secrets Manager secrets, and the customer-managed KMS keys. Bedrock and Bedrock Agents invocations logged with metadata. Lambda invocations logged. API Gateway access logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longer of HIPAA's six-year minimum, state medical-record retention rules, and FDA SaMD post-market obligations where applicable.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthetic patient profiles stratified by age cohort (pediatric, adolescent, adult, geriatric), by sex, by chart-context complexity (no chronic conditions, single chronic condition, polypharmacy, oncology treatment, immunosuppressed, pregnant, etc.), by language (English plus institution-relevant non-English). Synthetic presenting complaints covering the institution's full protocol library: chest pain (with both true-emergency and benign feature constellations), headache, abdominal pain, fever (adult and pediatric), respiratory symptoms, neurological symptoms (stroke-like presentations), trauma, mental-health crisis, and the long tail. Synthetic clinical-decision-rule input cases covering each rule's score range. Validated emergency-keyword and feature-constellation test cases. Test EHR, nurse-line, telehealth, and urgent-care-directory systems with synthetic data. Validated regulatory-disclaimer phrasings reviewed by the compliance and regulatory team. Validated translations of all patient-facing language reviewed by the institution's language-services team and clinical leadership.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a mid-sized health system or payer scale (500,000 triage conversations per year; average resolution rate around 60% with the rest escalating to nurse line; average 8-15 turns per resolved conversation; average 1,200 tokens of prompt and 350 tokens of response per turn for the orchestration model plus tool-call overhead): Bedrock LLM invocations typically $0.10-0.50 per resolved conversation for a Sonnet-class orchestration model, totaling approximately $50,000-250,000 per year. Bedrock Agents and Knowledge Bases hosting plus the OpenSearch Serverless retrieval index typically $15,000-50,000 per year. Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena total approximately $20,000-80,000 per year combined. AWS HealthLake (when used as the FHIR chart-context source) typically $20,000-90,000 per year depending on data volume. Amazon Connect (for SMS, voice, and nurse-line handoff) typically $10,000-50,000 per year depending on channel mix. Amazon SageMaker (when used for hosted emergency-screening classifier) typically $5,000-20,000 per year. Total AWS infrastructure typically $120,000-540,000 per year at this scale. The infrastructure cost is dominated by the LLM invocation volume and HealthLake (when used). Per-resolved-conversation infrastructure cost is small relative to nurse-line labor savings (a typical nurse-line call costs significantly more than a resolved bot conversation), and is also small relative to the cost of even a single avoided unnecessary ED visit.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>LLM for orchestration and conversational response generation; embedding model for the protocol corpus</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Agents</strong></td>
+<td>Tool orchestration: define triage tools as action groups, manage the multi-step LLM-and-tool flow</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Knowledge Bases</strong></td>
+<td>Managed RAG over the protocol corpus with metadata-filtered retrieval (protocol_id, protocol_version, decision_point_id, pediatric_vs_adult, special_population_flags, effective_date)</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Serverless</strong></td>
+<td>Vector and lexical retrieval index backing Knowledge Bases</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Guardrails</strong></td>
+<td>Content filtering for diagnosis-attempted, treatment-recommendation-attempted, drug-prescription-attempted, off-protocol clinical claims, off-scope topics</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Chat handler, input/output screening, identity-and-chart-context loading, nurse-line escalation, and tool implementations (chart_context_lookup, intent_classify, emergency_screen, protocol_select, protocol_retrieve, clinical_rule_compute, recommendation_compose, telehealth_book, urgent_care_locate, outcome_correlation)</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Public-facing chat endpoint for web, app, SMS, and voice channels</td>
+</tr>
+<tr>
+<td><strong>AWS WAF</strong></td>
+<td>Rate limiting, bot detection, common attack patterns (with limits tuned for legitimate triage patterns including fast-typing patients in distress)</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>conversation-state, conversation-metadata, tool-call-ledger, triage-decision-record-journal, protocol-version-registry, outcome-correlation-pending</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Protocol corpus, audit archive (conversations), triage-decision-record journal (durable recommendation records with citations), outcome-correlation data</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys per data class</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Credentials for the EHR, nurse-line, telehealth, urgent-care-directory, and crisis-resource systems</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics (resolution rate per protocol, escalation rate per protocol, time-to-recommendation, citation-coverage rate, conservative-bias-compliance rate, tool-call success per tool, per-cohort slices); alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>API-level audit logging</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Triage-event bus for cross-system event flow (conversation_started, protocol_selected, emergency_screened, recommendation_computed, recommendation_delivered, escalation_triggered, outcome_correlation_completed)</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Streaming audit and telemetry delivery</td>
+</tr>
+<tr>
+<td><strong>AWS Glue Data Catalog + Amazon Athena</strong></td>
+<td>SQL access to audit, decision-record, outcome-correlation, and telemetry data</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake (optional)</strong></td>
+<td>FHIR-native chart-context (Patient, Condition, MedicationStatement, AllergyIntolerance, Encounter, CarePlan resources)</td>
+</tr>
+<tr>
+<td><strong>Amazon Connect (optional)</strong></td>
+<td>SMS, voice, and nurse-line handoff with conversation-context payload</td>
+</tr>
+<tr>
+<td><strong>Amazon Lex (optional)</strong></td>
+<td>IVR-style voice-channel intent and slot management</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker (optional)</strong></td>
+<td>Hosted emergency-screening classifier inference endpoint</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight (optional)</strong></td>
+<td>Compliance, clinical-quality, and operational dashboards</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Receive the chat message, bootstrap the session, and run input safety with continuous emergency screening.</strong> This is the architectural floor for the triage bot. The continuous emergency screen runs on every patient utterance, not just the first. A patient who starts with a vague concern and then mid-conversation reveals &quot;actually I am bleeding heavily&quot; needs immediate emergency routing regardless of where the conversation was. Skip this and the bot composes a thoughtful triage answer for a patient who needs an ambulance now.</p>
+<pre class="code code-plain"><code>ON receive_message(channel, channel_session_id,
+                  user_message, auth_context,
+                  deep_link_params):
+    // Step 1A: identify or create the session.
+    session = conversation_state_table.get_or_create({
+        channel: channel,
+        channel_session_id: channel_session_id,
+        auth_context: auth_context,
+        deep_link_params: deep_link_params
+    })
+
+    IF session.message_count == 0:
+        attach_initial_greeting = true
+
+    // Step 1B: persist the user&#x27;s message.
+    conversation_metadata_table.append_turn(
+        session_id: session.id,
+        turn: {
+            speaker: &quot;user&quot;,
+            text: user_message,
+            timestamp: now()
+        })
+
+    // Step 1C: standard input safety screening.
+    screening_result = screen_input(
+        session_id: session.id,
+        user_message: user_message,
+        language: session.language,
+        domain: &quot;symptom_triage&quot;)
+
+    IF screening_result.action == &quot;block&quot;:
+        return handle_block(
+            session_id: session.id,
+            screening_result: screening_result)
+
+    // Step 1D: continuous emergency screening.
+    // Runs on every utterance, not just first.
+    emergency_check = emergency_screen_tool.invoke({
+        user_message: user_message,
+        recent_turns: conversation_metadata_table
+            .recent_turns(session.id, k: 6),
+        chart_context_summary:
+            session.chart_context_summary,
+        language: session.language
+    })
+
+    audit_tool_call(
+        session_id: session.id,
+        tool: &quot;emergency_screen&quot;,
+        result_summary: {
+            emergency_detected:
+                emergency_check.emergency_detected,
+            emergency_category:
+                emergency_check.category,
+            confidence: emergency_check.confidence
+        })
+
+    IF emergency_check.emergency_detected:
+        return handle_emergency_routing(
+            session_id: session.id,
+            emergency_category:
+                emergency_check.category,
+            urgency:
+                emergency_check.urgency)
+        // Routes immediately to 911, 988, or
+        // institutional crisis line as appropriate;
+        // bot stays on the line with stay-safe
+        // guidance and wakes a nurse for real-time
+        // backup where the institution supports it.
+
+    // Step 1E: continue to flow handling.
+    return handle_message(
+        session_id: session.id,
+        user_message: user_message,
+        attach_initial_greeting:
+            attach_initial_greeting)
+</code></pre>
+<p><strong>Step 2: On a fresh session, load the patient's chart context.</strong> This is what makes the bot patient-specific rather than generic. The protocol selection and the recommendation calibration both depend on chart context. A 25-year-old with no chronic conditions and a 75-year-old with anticoagulation and hypertension presenting with the same chief complaint should receive different recommendations. Skip this step and the bot's recommendations are no better than a generic web symptom checker.</p>
+<pre class="code code-plain"><code>FUNCTION load_chart_context(session_id):
+    // Step 2A: chart context lookup.
+    chart = chart_context_lookup_tool.invoke({
+        patient_id: session.verified_patient_id,
+        scope: [
+            &quot;demographics&quot;,
+            &quot;active_problems&quot;,
+            &quot;active_medications&quot;,
+            &quot;allergies&quot;,
+            &quot;recent_visits_90d&quot;,
+            &quot;active_treatment_plans&quot;
+        ]
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;chart_context_lookup&quot;,
+        result_summary: {
+            age_cohort: chart.age_cohort,
+            sex: chart.sex,
+            problem_count:
+                len(chart.active_problems),
+            medication_count:
+                len(chart.active_medications),
+            recent_visit_count:
+                len(chart.recent_visits),
+            active_treatment_plans:
+                chart.active_treatment_plans,
+            high_risk_medications_present:
+                chart.high_risk_medications_present,
+            language_preferences:
+                chart.language_preferences,
+            advance_directives_on_file:
+                chart.advance_directives_on_file
+        })
+
+    // Step 2B: pediatric-vs-adult flag and
+    // special-population flags.
+    session.pediatric_vs_adult =
+        chart.age_cohort == &quot;pediatric&quot;
+            ? &quot;pediatric&quot; : &quot;adult&quot;
+
+    session.special_population_flags = [
+        flag for flag in [
+            &quot;pregnancy&quot;,
+            &quot;active_oncology_treatment&quot;,
+            &quot;post_transplant&quot;,
+            &quot;immunosuppressed&quot;,
+            &quot;anticoagulated&quot;,
+            &quot;geriatric_frailty&quot;,
+            &quot;dialysis&quot;
+        ] IF chart.has_flag(flag)
+    ]
+
+    // Step 2C: stamp the session with chart-context
+    // freshness for audit.
+    session.chart_context_as_of_date =
+        chart.as_of_date
+
+    session.chart_context = chart
+    session.chart_context_summary =
+        chart.summary_for_emergency_screen
+
+    return { action: &quot;chart_context_loaded&quot; }
+</code></pre>
+<p><strong>Step 3: Identify the presenting symptom and select the protocol.</strong> The bot maps the patient's free-form complaint to one of the institution's validated protocols. Multi-symptom presentations select the highest-acuity-eligible protocol with cross-reference to the others. Pediatric versus adult, pregnancy, oncology treatment, and other special-population flags route to the appropriate protocol variant. Skip this and the bot tries to ask one-size-fits-all questions, which is the failure mode of the previous-generation symptom checkers.</p>
+<pre class="code code-plain"><code>FUNCTION select_protocol(session_id, user_message):
+    // Step 3A: identify the presenting symptom(s).
+    symptom_id = intent_classify_tool.invoke({
+        user_message: user_message,
+        recent_turns: conversation_metadata_table
+            .recent_turns(session_id, k: 4),
+        chart_context: session.chart_context
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;intent_classify&quot;,
+        result_summary: {
+            primary_symptom: symptom_id.primary,
+            secondary_symptoms:
+                symptom_id.secondary,
+            confidence: symptom_id.confidence
+        })
+
+    IF symptom_id.confidence &lt; INTENT_CONFIDENCE_THRESHOLD:
+        return ask_clarifying_question(
+            session_id: session_id,
+            user_message: user_message)
+
+    // Step 3B: select the protocol.
+    protocol_select = protocol_select_tool.invoke({
+        primary_symptom: symptom_id.primary,
+        secondary_symptoms: symptom_id.secondary,
+        pediatric_vs_adult:
+            session.pediatric_vs_adult,
+        special_population_flags:
+            session.special_population_flags,
+        chart_context: session.chart_context
+    })
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;protocol_select&quot;,
+        result_summary: {
+            selected_protocol:
+                protocol_select.protocol_id,
+            protocol_version:
+                protocol_select.protocol_version,
+            cross_reference_protocols:
+                protocol_select.cross_reference_protocols,
+            out_of_scope:
+                protocol_select.out_of_scope
+        })
+
+    IF protocol_select.out_of_scope:
+        return route_out_of_scope(
+            session_id: session_id,
+            reason: protocol_select.out_of_scope_reason,
+            referral: protocol_select.referral_target)
+        // E.g., suspected ingestion routes to Poison
+        // Control; severe psychiatric crisis routes
+        // to 988 or institutional crisis pathway;
+        // active-labor presentation in pregnancy may
+        // route to L&amp;D directly per protocol.
+
+    // Step 3C: stamp the session with selected
+    // protocol and version.
+    session.selected_protocol_id =
+        protocol_select.protocol_id
+    session.selected_protocol_version =
+        protocol_select.protocol_version
+    session.cross_reference_protocols =
+        protocol_select.cross_reference_protocols
+
+    return {
+        action: &quot;protocol_selected&quot;,
+        protocol_id: protocol_select.protocol_id
+    }
+</code></pre>
+<p><strong>Step 4: Conduct the structured protocol-driven questioning.</strong> The bot follows the protocol's question sequence in conversational form. The LLM may rephrase questions for clarity and may adjust order based on what the patient has volunteered. The bot does not skip protocol questions, does not invent new ones, and does not drift outside the protocol's scope. Continuous emergency screening runs in parallel on every patient response. Skip this step and the bot has no clinical foundation for its recommendation.</p>
+<pre class="code code-plain"><code>FUNCTION conduct_protocol_questioning(session_id):
+    protocol = protocol_retrieve_tool.invoke({
+        protocol_id:
+            session.selected_protocol_id,
+        protocol_version:
+            session.selected_protocol_version,
+        chart_context: session.chart_context
+    })
+
+    answer_set = {}
+    next_question = protocol.first_question
+
+    WHILE next_question IS NOT NULL:
+        // Step 4A: ask the question.
+        bot_response = compose_protocol_question(
+            question: next_question,
+            chart_context: session.chart_context,
+            previous_turns: conversation_metadata_table
+                .recent_turns(session_id, k: 4),
+            language: session.language)
+
+        deliver_bot_response(
+            session_id: session_id,
+            response: bot_response)
+
+        // Step 4B: receive the patient&#x27;s response.
+        patient_response = await_patient_response(
+            session_id: session_id)
+
+        // Step 4C: continuous emergency screening.
+        emergency_check = emergency_screen_tool.invoke({
+            user_message: patient_response,
+            recent_turns: conversation_metadata_table
+                .recent_turns(session_id, k: 6),
+            chart_context_summary:
+                session.chart_context_summary,
+            language: session.language
+        })
+
+        IF emergency_check.emergency_detected:
+            return handle_emergency_routing(
+                session_id: session_id,
+                emergency_category:
+                    emergency_check.category,
+                urgency: emergency_check.urgency)
+
+        // Step 4D: parse the answer.
+        parsed_answer = parse_protocol_answer(
+            question: next_question,
+            patient_response: patient_response,
+            language: session.language)
+
+        IF parsed_answer.confidence &lt; ANSWER_CONFIDENCE_THRESHOLD:
+            // Re-ask with a clarifying rephrase
+            // before falling through to escalation.
+            bot_response =
+                compose_clarifying_followup(
+                    original_question: next_question,
+                    patient_response: patient_response,
+                    language: session.language)
+            deliver_bot_response(
+                session_id: session_id,
+                response: bot_response)
+            patient_response =
+                await_patient_response(
+                    session_id: session_id)
+            parsed_answer = parse_protocol_answer(
+                question: next_question,
+                patient_response: patient_response,
+                language: session.language)
+
+            IF parsed_answer.confidence
+                    &lt; ANSWER_CONFIDENCE_THRESHOLD:
+                return route_to_nurse_line(
+                    session_id: session_id,
+                    reason: &quot;answer_ambiguous&quot;,
+                    answer_set_so_far: answer_set)
+
+        // Step 4E: store the answer.
+        answer_set[next_question.id] = parsed_answer
+
+        // Step 4F: protocol decides next question
+        // based on answers so far.
+        next_question = protocol.next_question(
+            answer_set: answer_set,
+            chart_context: session.chart_context)
+
+    session.protocol_answer_set = answer_set
+    return { action: &quot;protocol_questions_complete&quot; }
+</code></pre>
+<p><strong>Step 5: Compute clinical-decision rules where the protocol calls for them.</strong> The arithmetic for HEART, Wells, Centor, Ottawa, and similar rules is structured. The LLM does this poorly. The deterministic clinical-rule tool encapsulates the computation, returns a structured score with risk stratum and rule-mapped recommendation, and the LLM presents the result. Skip the deterministic tool and the bot's risk stratification is sometimes wrong by enough to change the recommendation.</p>
+<pre class="code code-plain"><code>FUNCTION compute_clinical_rules(session_id):
+    protocol = session.selected_protocol
+    rule_invocations = protocol.rules_to_invoke(
+        answer_set: session.protocol_answer_set,
+        chart_context: session.chart_context)
+
+    rule_results = []
+    FOR rule_invocation IN rule_invocations:
+        rule_result =
+            clinical_rule_compute_tool.invoke({
+                rule_id: rule_invocation.rule_id,
+                rule_version:
+                    rule_invocation.rule_version,
+                inputs: rule_invocation.inputs
+                    .resolve_from(
+                        answer_set: session
+                            .protocol_answer_set,
+                        chart_context:
+                            session.chart_context)
+            })
+
+        audit_tool_call(
+            session_id: session_id,
+            tool: &quot;clinical_rule_compute&quot;,
+            result_summary: {
+                rule_id: rule_result.rule_id,
+                rule_version: rule_result.rule_version,
+                score: rule_result.score,
+                risk_stratum:
+                    rule_result.risk_stratum,
+                recommendation:
+                    rule_result.recommendation
+            })
+
+        rule_results.append(rule_result)
+
+    session.clinical_rule_results = rule_results
+    return { action: &quot;clinical_rules_computed&quot; }
+</code></pre>
+<p><strong>Step 6: Compute the acuity recommendation with conservative-bias enforcement.</strong> The recommendation combines the protocol decision logic with any clinical-decision-rule outputs. When the protocol-driven and rule-driven recommendations diverge, the higher-acuity recommendation wins. Special-population flags can upgrade acuity (anticoagulated patient with bleeding presentation, immunosuppressed patient with infection presentation, oncology patient with neutropenic-fever-like presentation). Skip the conservative-bias enforcement and the bot occasionally selects a lower-acuity recommendation when the chart context warranted otherwise.</p>
+<pre class="code code-plain"><code>FUNCTION compute_recommendation(session_id):
+    protocol_recommendation =
+        session.selected_protocol.recommend(
+            answer_set: session.protocol_answer_set,
+            chart_context: session.chart_context)
+
+    rule_recommendations = [
+        rule.recommendation
+        FOR rule IN session.clinical_rule_results
+    ]
+
+    // Conservative-bias: take the highest-acuity
+    // recommendation across protocol and rules.
+    candidate_recommendations = [
+        protocol_recommendation
+    ] + rule_recommendations
+
+    base_recommendation = highest_acuity(
+        candidate_recommendations)
+
+    // Special-population upgrades.
+    upgraded_recommendation = apply_special_population_upgrades(
+        base_recommendation: base_recommendation,
+        special_population_flags:
+            session.special_population_flags,
+        answer_set: session.protocol_answer_set,
+        chart_context: session.chart_context)
+
+    final_recommendation = upgraded_recommendation
+
+    audit_tool_call(
+        session_id: session_id,
+        tool: &quot;recommendation_compose&quot;,
+        result_summary: {
+            protocol_recommendation:
+                protocol_recommendation.care_level,
+            rule_recommendations: [
+                r.care_level
+                FOR r IN rule_recommendations
+            ],
+            base_recommendation:
+                base_recommendation.care_level,
+            final_recommendation:
+                final_recommendation.care_level,
+            special_population_upgrades_applied:
+                final_recommendation
+                    .upgrades_applied
+        })
+
+    session.final_recommendation = final_recommendation
+    return { action: &quot;recommendation_computed&quot; }
+</code></pre>
+<p><strong>Step 7: Run output safety screening with citation verification and conservative-bias verification.</strong> Every recommendation must trace to a cited protocol, with the protocol version preserved. Conservative-bias verification re-checks that the bot took the higher-acuity path where the recommendation could plausibly have been higher acuity. Required regulatory disclaimers must be present. Emergency-instruction completeness checks for high-acuity recommendations. Red-flag-symptom completeness checks for low-acuity recommendations. Skip this step and the bot occasionally produces ungrounded, under-acuity, or under-instructed recommendations.</p>
+<pre class="code code-plain"><code>FUNCTION screen_output(session_id, response,
+                       tool_call_history):
+    // Step 7A: standard checks.
+    standard_check = standard_output_screen.evaluate(
+        response: response,
+        session_context:
+            session_context_for(session_id))
+
+    IF standard_check.action != &quot;deliver&quot;:
+        return standard_check
+
+    // Step 7B: scope checks specific to triage.
+    scope_violation = detect_triage_scope_violations(
+        response: response)
+    // Categories:
+    // - diagnosis_attempted
+    // - treatment_recommendation_attempted
+    // - drug_prescription_attempted
+    // - off_protocol_clinical_claim_attempted
+
+    IF scope_violation:
+        return {
+            action: &quot;replace_with_safe_response&quot;,
+            replacement:
+                TRIAGE_OUT_OF_SCOPE_TEMPLATE,
+            violation: scope_violation.category
+        }
+
+    // Step 7C: citation verification. Every
+    // recommendation in the response must be
+    // backed by a cited protocol decision point;
+    // every clinical-rule score must trace to a
+    // tool result.
+    citation_check = verify_citation_grounding(
+        response: response,
+        cited_protocol_id:
+            session.selected_protocol_id,
+        cited_protocol_version:
+            session.selected_protocol_version,
+        cited_decision_points:
+            response.cited_decision_points,
+        rule_results: session.clinical_rule_results)
+
+    IF citation_check.has_ungrounded_assertions:
+        return {
+            action: &quot;regenerate_with_grounding&quot;,
+            ungrounded_assertions:
+                citation_check
+                    .ungrounded_assertions
+        }
+
+    // Step 7D: conservative-bias verification.
+    bias_check = verify_conservative_bias(
+        response: response,
+        recommendation: session.final_recommendation,
+        protocol_recommendation:
+            session.protocol_recommendation,
+        rule_recommendations:
+            session.rule_recommendations,
+        chart_context: session.chart_context)
+
+    IF NOT bias_check.compliant:
+        return {
+            action: &quot;regenerate_with_higher_acuity&quot;,
+            details: bias_check.details
+        }
+
+    // Step 7E: instructions completeness.
+    instructions_check =
+        verify_instructions_completeness(
+            response: response,
+            care_level:
+                session.final_recommendation
+                    .care_level,
+            language: session.language)
+
+    IF NOT instructions_check.complete:
+        return {
+            action: &quot;augment_with_instructions&quot;,
+            missing_instructions:
+                instructions_check.missing
+        }
+
+    // Step 7F: regulatory disclaimer presence.
+    disclaimer_check = verify_disclaimers(
+        response: response,
+        institution_regulatory_position:
+            INSTITUTION_REGULATORY_POSITION,
+        language: session.language)
+
+    IF NOT disclaimer_check.present:
+        return {
+            action: &quot;augment_with_disclaimer&quot;,
+            missing_disclaimers:
+                disclaimer_check.missing
+        }
+
+    // Step 7G: persona-and-tone check.
+    persona_check =
+        persona_and_tone_evaluator.evaluate(
+            response: response,
+            care_level:
+                session.final_recommendation
+                    .care_level,
+            language: session.language)
+
+    IF persona_check.action != &quot;acceptable&quot;:
+        return {
+            action: &quot;regenerate_with_persona_correction&quot;,
+            persona_guidance:
+                persona_check.guidance
+        }
+
+    return {
+        action: &quot;deliver&quot;,
+        response: response
+    }
+</code></pre>
+<p><strong>Step 8: Persist the durable triage-decision record alongside the conversation log.</strong> The conversation log captures the dialog. The triage-decision-record journal captures, separately, every recommendation with its citation evidence and version stamps. This is the audit surface for clinical-quality review, for regulatory review (where applicable), for outcome correlation, and for any case where the recommendation is later disputed. Skip this and the audit story is intact only at the conversation level, which is enough for some reviews and not enough for clinical-quality and regulatory ones.</p>
+<pre class="code code-plain"><code>FUNCTION persist_triage_decision_record(
+        session_id, response):
+    decision_record = {
+        decision_id: generate_decision_id(),
+        session_id: session_id,
+        patient_id: session.verified_patient_id,
+        pediatric_vs_adult:
+            session.pediatric_vs_adult,
+        special_population_flags:
+            session.special_population_flags,
+        presenting_complaint:
+            session.most_recent_user_message_at_intake,
+        protocol_id:
+            session.selected_protocol_id,
+        protocol_version:
+            session.selected_protocol_version,
+        protocol_answer_set:
+            session.protocol_answer_set,
+        clinical_rule_results:
+            session.clinical_rule_results,
+        recommendation_care_level:
+            session.final_recommendation.care_level,
+        recommendation_rationale:
+            session.final_recommendation.rationale,
+        recommendation_text: response.text,
+        active_chart_context_as_of_date:
+            session.chart_context_as_of_date,
+        active_model_id: session.model_id,
+        active_prompt_version: session.prompt_version,
+        active_agent_version: session.agent_version,
+        delivered_at: now(),
+        channel: session.channel,
+        language: session.language,
+        nurse_line_escalation_status:
+            session.nurse_line_escalation_status
+    }
+
+    triage_decision_record_journal.write(
+        decision_record)
+
+    EventBridge.PutEvents([{
+        source: &quot;triage_bot&quot;,
+        detail_type: &quot;recommendation_delivered&quot;,
+        detail: {
+            decision_id: decision_record.decision_id,
+            session_id: session_id,
+            care_level:
+                decision_record
+                    .recommendation_care_level,
+            protocol_id:
+                decision_record.protocol_id
+        }
+    }])
+
+    // Queue for outcome correlation (long-term).
+    outcome_correlation_pending_table.write({
+        decision_id: decision_record.decision_id,
+        patient_id:
+            session.verified_patient_id,
+        recommendation_care_level:
+            decision_record.recommendation_care_level,
+        delivered_at:
+            decision_record.delivered_at,
+        correlation_window_end:
+            now() + 72_HOURS,
+        status: &quot;pending&quot;
+    })
+</code></pre>
+<p><strong>Step 9: Persist the durable conversation record on session close.</strong> Same archive pattern as the previous chapter 11 recipes, with triage-specific dimensions on the cohort axes (pediatric-vs-adult, age cohort, sex, language, channel, presenting symptom category, protocol used, recommended care level, escalation disposition).</p>
+<pre class="code code-plain"><code>FUNCTION close_conversation_and_archive(session_id,
+                                         reason):
+    state = conversation_state_table.get(session_id)
+    metadata =
+        conversation_metadata_table.get(session_id)
+    tool_calls =
+        tool_call_ledger.for_session(session_id)
+
+    audit_record = {
+        session_id: session_id,
+        channel: state.channel,
+        started_at: state.started_at,
+        ended_at: now(),
+        language: state.language,
+        verified_patient_id: state.verified_patient_id,
+        pediatric_vs_adult: state.pediatric_vs_adult,
+        special_population_flags:
+            state.special_population_flags,
+        assurance_level: state.assurance_level,
+        turns: [
+            redact_user_phi_for_audit(turn)
+            for turn in metadata.turns
+        ],
+        tool_calls: [
+            redact_sensitive_args(call)
+            for call in tool_calls
+        ],
+        protocols_consulted:
+            state.protocols_consulted,
+        recommendations_emitted:
+            state.recommendation_count,
+        active_model_id_at_session: state.model_id,
+        active_prompt_version_at_session:
+            state.prompt_version,
+        active_agent_version_at_session:
+            state.agent_version,
+        active_kb_version_at_session: state.kb_version,
+        active_protocol_version_at_session:
+            state.selected_protocol_version,
+        completion_status:
+            state.completion_status,
+            // resolved | escalated_to_nurse |
+            // emergency_routed | crisis_routed |
+            // patient_abandoned
+        cohort_axes: {
+            language: state.language,
+            channel: state.channel,
+            pediatric_vs_adult: state.pediatric_vs_adult,
+            age_cohort: state.chart_context.age_cohort,
+            sex: state.chart_context.sex,
+            primary_presenting_symptom:
+                state.primary_presenting_symptom,
+            recommended_care_level:
+                state.final_recommendation.care_level,
+            special_population_flags:
+                state.special_population_flags
+        },
+        close_reason: reason
+    }
+
+    audit_archive_kinesis_firehose.put(audit_record)
+
+    EventBridge.PutEvents([{
+        source: &quot;triage_bot&quot;,
+        detail_type: &quot;conversation_closed&quot;,
+        detail: {
+            session_id: session_id,
+            channel: state.channel,
+            disposition: state.completion_status,
+            primary_presenting_symptom:
+                state.primary_presenting_symptom,
+            recommended_care_level:
+                state.final_recommendation
+                    ?.care_level,
+            turn_count: len(metadata.turns)
+        }
+    }])
+
+    cloudwatch.put_metric(
+        namespace: &quot;TriageBot&quot;,
+        metric_name: &quot;ConversationResolved&quot;,
+        value: 1 IF state.completion_status
+                    == &quot;resolved&quot; ELSE 0,
+        dimensions: {
+            channel: state.channel,
+            language: state.language,
+            pediatric_vs_adult:
+                state.pediatric_vs_adult,
+            primary_presenting_symptom:
+                state.primary_presenting_symptom,
+            recommended_care_level:
+                state.final_recommendation
+                    ?.care_level
+        })
+
+    cloudwatch.put_metric(
+        namespace: &quot;TriageBot&quot;,
+        metric_name: &quot;EscalationToNurseLine&quot;,
+        value: 1 IF state.completion_status
+                    == &quot;escalated_to_nurse&quot; ELSE 0,
+        dimensions: {
+            channel: state.channel,
+            language: state.language,
+            pediatric_vs_adult:
+                state.pediatric_vs_adult,
+            primary_presenting_symptom:
+                state.primary_presenting_symptom
+        })
+
+    cloudwatch.put_metric(
+        namespace: &quot;TriageBot&quot;,
+        metric_name: &quot;EmergencyRouting&quot;,
+        value: 1 IF state.completion_status
+                    == &quot;emergency_routed&quot; ELSE 0,
+        dimensions: {
+            channel: state.channel,
+            language: state.language,
+            pediatric_vs_adult:
+                state.pediatric_vs_adult,
+            primary_presenting_symptom:
+                state.primary_presenting_symptom
+        })
+
+    cloudwatch.put_metric(
+        namespace: &quot;TriageBot&quot;,
+        metric_name: &quot;CitationCoverageRate&quot;,
+        value: state.citation_coverage_rate,
+        dimensions: {
+            primary_presenting_symptom:
+                state.primary_presenting_symptom,
+            language: state.language
+        })
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter11.06-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample conversation (illustrative, abbreviated):</strong></p>
+<pre class="code code-plain"><code>Bot:     Hi, I&#x27;m the triage assistant. I can help
+         you figure out the right next step for what
+         you&#x27;re experiencing. The questions I&#x27;ll ask
+         are based on the same protocols our nurse
+         line uses. I&#x27;m a chatbot, not a clinician,
+         so I won&#x27;t tell you what&#x27;s wrong, but I will
+         help you decide where to go for care. If at
+         any point you feel this is an emergency,
+         please stop and call 911. What&#x27;s going on?
+
+Patient: I woke up with a pressure feeling in my
+         chest and I&#x27;m not sure what to do.
+
+Bot:     I&#x27;m sorry you&#x27;re dealing with this. I want
+         to ask you some focused questions so we can
+         figure out the right next step. Where
+         exactly is the pressure, and how long have
+         you been feeling it?
+
+Patient: right in the center of my chest, started
+         maybe 30 minutes ago, woke me up.
+
+Bot:     Got it. Is the pressure constant, or does
+         it come and go? And on a scale of 1 to 10,
+         where would you put the discomfort right
+         now?
+
+Patient: constant since I woke up. maybe a 5 or 6
+         out of 10.
+
+Bot:     Does the pressure spread anywhere, like to
+         your arm, jaw, neck, or back?
+
+Patient: my left arm feels a little weird but I&#x27;m
+         not sure if it&#x27;s because I was sleeping on
+         it.
+
+Bot:     I understand. A few more questions. Are you
+         sweating, even though you&#x27;re just sitting
+         or lying down? Are you feeling short of
+         breath, nauseated, or lightheaded?
+
+Patient: I&#x27;m sweating a little but the room is warm.
+         a little short of breath. not nauseated.
+
+Bot:     Have you ever had something like this
+         before? And do you have any history of
+         heart problems, high blood pressure, or
+         high cholesterol?
+
+Patient: I&#x27;ve been told my cholesterol is borderline
+         for a few years. no heart problems that I
+         know of. my dad had a heart attack at 58.
+
+Bot:     Thanks for sharing all of that. Based on
+         what you&#x27;ve told me, I want you to call 911
+         right now. The combination of what you&#x27;re
+         feeling, your age, your family history, and
+         your cholesterol history is concerning
+         enough that I do not want you waiting until
+         morning or driving yourself.
+
+         Is there someone there with you who can
+         help?
+
+Patient: my wife is asleep.
+
+Bot:     Please wake her up and call 911 together.
+         While you wait for the ambulance, sit
+         upright in a comfortable position. Don&#x27;t
+         try to drive yourself. If you have aspirin
+         in the house and you&#x27;re not allergic to it,
+         the standard guidance for this situation is
+         to chew one regular aspirin (325 mg) or
+         four baby aspirin (81 mg each), but only if
+         you can do that without difficulty. The 911
+         operator can confirm.
+
+         I&#x27;m staying here in case you want to talk
+         while you wait. I&#x27;ve also flagged this
+         conversation for our nurse-line team in
+         case you need a follow-up later. Take care
+         of yourself.
+
+Patient: thank you. calling now.
+
+Bot:     Stay safe. The ambulance team is trained
+         for this and they will take good care of
+         you.
+</code></pre>
+<p><strong>Sample audit record (illustrative):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;session_id&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="s2">&quot;triage-9f4c8e21-7a32-4b9e-82d4-1c5e9a7f3b18&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;institution_app_embed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;started_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T02:14:42Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ended_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T02:19:17Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en-US&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;verified_patient_id&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="s2">&quot;patient-internal-id-redacted&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;pediatric_vs_adult&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;adult&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;special_population_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;borderline_dyslipidemia&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;tool_calls_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;chart_context_lookup&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;intent_classify&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;emergency_screen&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;protocol_select&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;protocol_retrieve&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;clinical_rule_compute&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;recommendation_compose&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;active_protocol_version_at_session&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="s2">&quot;schmitt-thompson-adult-chest-pain-v2026.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;active_clinical_rule_version_at_session&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="s2">&quot;heart-score-v2.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;presenting_complaint_category&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="s2">&quot;chest_pain_acute&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;computed_clinical_rule_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart_score&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;risk_stratum&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate_risk&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recommendation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;emergency_department&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;conservative_bias_upgrades_applied&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;min_acuity_floor:emergency_department&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;chart_context:family_history_early_mi&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;chart_context:borderline_dyslipidemia&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;recommendations_emitted&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;completion_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;emergency_routed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;emergency_routing_target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;911&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;nurse_line_followup_queued&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cohort_axes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en-US&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;institution_app_embed&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;pediatric_vs_adult&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;adult&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;47&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sex&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;male&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;primary_presenting_symptom&quot;</span><span class="p">:</span>
+<span class="w">      </span><span class="s2">&quot;chest_pain_acute&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;recommended_care_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;911&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;special_population_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;borderline_dyslipidemia&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;duration_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">275</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;close_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;emergency_routed&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Old self-service web symptom checker plus nurse-line phone tree</th>
+<th>Modern conversational triage bot</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time-to-recommendation (median)</td>
+<td>5-15 minutes for self-service tree completion; 25-50 minutes including hold time for nurse-line route</td>
+<td>3-7 minutes for the bot's recommendation</td>
+</tr>
+<tr>
+<td>Resolution rate without nurse-line escalation</td>
+<td>High for self-service tools (most users complete the tree), but with poorly calibrated recommendations</td>
+<td>50-65% across the protocol catalog</td>
+</tr>
+<tr>
+<td>Sensitivity for high-acuity presentations (avoidance of under-triage)</td>
+<td>Variable; static decision trees have documented under-triage issues</td>
+<td>High when paired with conservative-bias enforcement and continuous emergency screening</td>
+</tr>
+<tr>
+<td>Specificity for low-acuity presentations (avoidance of over-triage)</td>
+<td>Often poor; static trees over-triage</td>
+<td>Moderate; conservative-bias defaults trade specificity for sensitivity</td>
+</tr>
+<tr>
+<td>Patient satisfaction (CSAT)</td>
+<td>Variable; often low for static trees, low for nurse-line wait</td>
+<td>Generally positive for resolved cases</td>
+</tr>
+<tr>
+<td>Per-conversation infrastructure cost</td>
+<td>Negligible for static tree; $5-15 for nurse-line call</td>
+<td>$0.10-0.50</td>
+</tr>
+<tr>
+<td>Citation-coverage rate (fraction of recommendations grounded in cited protocol evidence)</td>
+<td>Static trees do not produce auditable citations</td>
+<td>95%+ as launch-gate target</td>
+</tr>
+<tr>
+<td>Per-cohort accuracy disparity</td>
+<td>Often invisible</td>
+<td>Monitored explicitly</td>
+</tr>
+<tr>
+<td>Cross-channel continuity</td>
+<td>Calls transferred without context</td>
+<td>Context preserved across handoff</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Atypical presentations of common emergencies.</strong> A myocardial infarction in a diabetic woman may present with epigastric discomfort, fatigue, and shortness of breath rather than classic chest pressure. The protocols try to capture atypical presentations, but the bot's accuracy for atypical patterns is bounded by the protocols themselves. Mitigation: the protocol-corpus governance includes regular review of atypical-presentation literature; per-cohort monitoring (sex, age, race) flags disparities.</li>
+<li><strong>Complex multi-system presentations.</strong> A patient with chest pain plus shortness of breath plus abdominal pain plus dizziness has a constellation that does not cleanly map to any single protocol. Mitigation: the protocol-selection logic recognizes high-complexity presentations and escalates to nurse-line review rather than forcing a protocol fit.</li>
+<li><strong>Patients with limited symptom-description vocabulary.</strong> Patients who describe symptoms in non-clinical language (&quot;my chest feels weird,&quot; &quot;my insides hurt&quot;) may not give the bot enough to disambiguate. Mitigation: the bot's questioning explicitly asks clarifying questions and uses chart context; persistent ambiguity triggers escalation.</li>
+<li><strong>Pediatric presentations interpreted by parents under stress.</strong> Parents of sick children describe symptoms through their own anxiety filter; the parent's narrative may not match the child's presentation. Mitigation: pediatric protocols include questions calibrated for parent-as-historian; serious pediatric presentations have a low threshold for nurse-line or pediatric-emergency-line escalation.</li>
+<li><strong>Patients with cognitive impairment or dementia.</strong> Patients who cannot reliably describe their symptoms or follow the conversation. Mitigation: caregiver-completion handling with appropriate authentication and explicit attribution.</li>
+<li><strong>Mental-health crisis presentations.</strong> Patients who disclose suicidal ideation, intent, or self-harm during the conversation. Mitigation: continuous emergency screening detects crisis disclosures; the bot routes immediately to 988 or the institutional crisis pathway with stay-on-the-line guidance.</li>
+<li><strong>Disclosures of intimate-partner violence, child abuse, or elder abuse.</strong> Patients who disclose these during the conversation. Mitigation: the disclosure triggers a specific escalation pathway with a licensed clinician (mandatory reporter), with the conversation context attached and statutory-reporting awareness.</li>
+<li><strong>Stale chart context.</strong> A patient whose chart context is several months old may have new conditions or new medications the bot cannot account for. Mitigation: chart-context as-of-date is explicit; bot asks confirmatory questions about high-risk medications and active treatment plans when relevant.</li>
+<li><strong>Cross-language asset gaps.</strong> Validated translations of protocols, regulatory disclaimers, emergency instructions, and red-flag symptom lists are difficult to maintain. Mitigation: per-language asset development with native-speaker review and clinical-leadership sign-off; per-language launch-gate equity monitoring.</li>
+<li><strong>Voice-channel ASR errors propagating into protocol questioning.</strong> &quot;Sharp pain&quot; misheard as &quot;shoulder pain&quot; propagates into wrong protocol selection. Mitigation: explicit confirmation step plus voice-tuned ASR; conservative-bias defaults when ASR confidence is low.</li>
+<li><strong>Patients who do not follow the recommendation.</strong> A patient told to call 911 who waits until morning. Mitigation: the institutional policy and the audit pathway record what was recommended; the responsibility for following the recommendation is the patient's; the bot's recommendation is delivered with appropriate urgency framing.</li>
+<li><strong>Patients who repeatedly ask the bot to give a diagnosis or prescribe a medication.</strong> Mitigation: scope-violation screening replaces diagnostic or prescriptive responses with appropriate redirects; persistent off-scope questioning escalates to a nurse.</li>
+<li><strong>Patients in social situations where the recommended care level is not feasible.</strong> A patient told to go to an ED who has no transportation, no childcare, and is afraid of the bill. Mitigation: care-navigation handoff for patients whose recommended care level is not reachable; institutional policy on social-determinants overlay.</li>
+<li><strong>Protocol gaps and ambiguities.</strong> Real protocols have decision points where the formal answer is &quot;consult clinical judgment.&quot; Mitigation: the protocol logic returns &quot;ambiguous, escalate to nurse&quot; rather than letting the LLM guess.</li>
+<li><strong>Outcome correlation bias.</strong> A patient who was told to go to the ED and chose not to never appears in the ED-encounter records, which can make the bot's accuracy look better than it is. Mitigation: outcome correlation includes 72-hour follow-up across all care settings, plus member-survey sampling for self-reported outcomes.</li>
+<li><strong>Regulatory positioning shifts.</strong> FDA guidance on patient-facing CDS continues to evolve; the institutional positioning may shift over time. Mitigation: the regulatory-strategy artifact is reviewed regularly; architectural changes preserve flexibility for either non-regulated or registered SaMD positioning.</li>
+<li><strong>Adversarial inputs.</strong> Patients (or others) attempting prompt injection to extract diagnostic content, manipulate recommendations, or test the system. Mitigation: input-safety pipeline with prompt-injection detection; output-safety pipeline with scope verification; per-language jailbreak-test corpus including triage-specific injection cases.</li>
+<li><strong>Health-equity disparities.</strong> Per-cohort monitoring may reveal that the bot's over-triage and under-triage rates differ by sex, race, age, or language in ways that do not reflect underlying clinical reality. Mitigation: per-cohort monitoring as launch-gate; periodic clinical-quality review with explicit equity focus; protocol-revision process incorporates equity findings.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Clinical-protocol corpus governance with full medical-director sign-off.</strong> The single largest pre-deployment investment is getting the protocol corpus correct, complete, version-controlled, and signed-off. Each protocol is reviewed by the medical director, the nurse-line clinical leadership, and the compliance team. Each protocol has an effective date and an annual review schedule. The corpus is rebuilt or incrementally updated when protocols change. Each retrieval chunk is tagged with protocol_id, protocol_version, decision_point_id, and other metadata supporting precise scoping. The medical-director's signature is the launch gate; protocols cannot go into production without it.</p>
+<p><strong>FDA-strategy artifact with regulatory-counsel review.</strong> The institutional regulatory positioning (informational, intended for clinician-oversight in regulated edge cases, or registered SaMD) is documented, reviewed by FDA-experienced regulatory counsel, and maintained as the deployment evolves. Architectural changes that may affect regulatory positioning are reviewed against the artifact. Post-market surveillance obligations for SaMD-positioned deployments are operationalized.</p>
+<p><strong>Continuous-emergency-screening pipeline with formal validation.</strong> The screening layer is validated against a held-out corpus of emergency-presentation cases (curated and reviewed by clinical leadership) before launch and on each material update. False-negative rate is the launch-gate metric; false-positive rate is the operational efficiency metric. Per-cohort screening accuracy is reviewed.</p>
+<p><strong>Conservative-bias-default policy with documented review.</strong> The conservative-bias policy is documented, reviewed by the compliance team, and audited in the quality-review process. The policy is reviewed annually and updated with clinical-leadership sign-off when changes are warranted.</p>
+<p><strong>Citation-grounding discipline as architectural floor.</strong> Every recommendation is grounded in a cited protocol decision point with the protocol version preserved. The citation-coverage-rate metric is a launch-gate threshold. Below-threshold deployments are not approved.</p>
+<p><strong>Clinical-decision-rule library with formal validation.</strong> The clinical-decision rules implemented as deterministic tools are validated against published reference implementations and against held-out test cases reviewed by clinical leadership. Each rule version has a documented validation report.</p>
+<p><strong>Nurse-line integration with full conversation-context handoff.</strong> The nurse-line handoff is a first-class capability with a comprehensive payload schema. The receiving nurse picks up where the bot left off, not from scratch. The handoff is operationally tested in tabletop drills.</p>
+<p><strong>Per-cohort monitoring with launch-gate discipline.</strong> Resolution rate, escalation rate, over-triage rate, under-triage rate, time-to-recommendation, citation-coverage rate, and patient satisfaction vary by language, channel, pediatric-vs-adult, age cohort, sex, presenting symptom category, and chart-context completeness. Per-cohort dashboards reviewed by the medical director, nurse-line operations, compliance, and patient-experience teams.</p>
+<p><strong>Outcome-correlation pipeline with operational ownership.</strong> The bot's clinical performance is measured against actual care utilization. The pipeline pulls subsequent encounter records, calculates per-protocol over-triage and under-triage rates, and feeds signals back to the protocol-revision process. Operational ownership is jointly held by the medical director, the nurse-line operations team, and the data science team.</p>
+<p><strong>Mandatory-reporting pathway integration.</strong> Disclosures of child abuse, elder abuse, intimate-partner violence, and certain mental-health crisis types trigger statutory reporting obligations for licensed clinicians. The bot's response routes to a licensed clinician (mandatory reporter) with the conversation context attached. The institutional policy specifies the routing per state and per disclosure type.</p>
+<p><strong>Voice-channel deployment with accessibility considerations.</strong> Patients without smartphones, patients with disabilities, patients preferring voice over text. The voice channel uses the same bot logic with ASR/TTS layers and voice-specific design adjustments including slower pacing, explicit confirmation of high-stakes inputs, and tighter latency budgets.</p>
+<p><strong>Multi-language deployment with validated translations.</strong> Per-language asset development includes validated protocol translations, validated emergency-instruction translations, validated regulatory disclaimer translations, validated red-flag symptom lists, per-language tone calibration, and per-language equity monitoring. The translations are reviewed by the institution's language-services team and clinical leadership; ad-hoc machine translation is not acceptable for triage content.</p>
+<p><strong>Disaster-recovery topology.</strong> When the protocol corpus, the chart-context system, the clinical-decision-rule tool, the nurse-line system, or any downstream integration is unreachable, the bot degrades gracefully. Per-source failover behavior is documented and tested quarterly. Cross-region failover for Bedrock and the institutional integrations.</p>
+<p><strong>Compensation operations for incorrect or disputed recommendations.</strong> When a patient or clinician disputes a recommendation (&quot;the bot told me to stay home and I had a heart attack&quot;), the operations team reproduces the conversation, retrieves the cited protocol and rule scores, and either confirms the bot followed the protocol correctly (escalating the underlying protocol question) or confirms the bot deviated from the protocol (compensating the patient and feeding the failure mode into the improvement loop). Tooling for this workflow is part of production scope and is reviewed by compliance.</p>
+<p><strong>Operational ownership across multiple teams.</strong> The bot sits at the intersection of medical leadership, nurse-line operations, compliance, regulatory, IT, the call center, and (in some institutions) the malpractice insurer. Establish clear ownership at the start.</p>
+<p><strong>Build-vs-buy rigor.</strong> Several mature commercial vendors offer triage-bot products. Most major institutions run a hybrid: in-house bot for the routine patient-facing journey on the institution's preferred infrastructure, vendor partnership for licensed protocols (Schmitt-Thompson, MTS) and specific complex sub-flows.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Pediatric-specific triage bot.</strong> A dedicated pediatric variant with Schmitt-Thompson Pediatric protocols, pediatric-specific emergency screening (febrile infant, lethargic infant, suspected meningitis pattern, suspected intussusception, suspected non-accidental trauma), parent-as-historian question framing, and pediatric-specific care-level options (pediatric ED, children's-hospital urgent care). The architectural pattern is the same; the protocols, emergency screening, and care-level options are pediatric-specific.</p>
+<p><strong>Behavioral-health triage bot.</strong> A dedicated behavioral-health variant for the institution's mental-health service line, with crisis-detection at the foreground (988 routing as a first-class capability), substance-use-specific protocols, and warm handoff to behavioral-health-trained clinicians. Recipe 11.8 (mental health support bot) is adjacent; this variation uses the triage-bot architecture with behavioral-health-tuned protocols.</p>
+<p><strong>Post-operative-recovery triage bot.</strong> A dedicated variant for patients in the recovery period after specific surgical procedures, with procedure-specific symptom-monitoring protocols (post-coronary-bypass chest pain, post-tonsillectomy bleeding, post-cesarean complications, post-knee-replacement DVT-or-infection screening). The protocols are surgeon-specified; the recommendations route to the surgical-on-call pathway rather than the general nurse line.</p>
+<p><strong>Active-treatment-plan triage bot.</strong> A dedicated variant for patients in active oncology treatment, post-transplant, on dialysis, or on other intensive treatment plans. The protocols are tuned to the treatment plan's specific complication profile (neutropenic fever in oncology patients, rejection symptoms in transplant patients, access-related complications in dialysis patients), and the recommendations route to the specialty-on-call pathway.</p>
+<p><strong>Voice channel for IVR-style triage.</strong> Patients calling the institution's main number can be served by the triage bot through Connect plus Lex, with ASR/TTS layered on the conversational core. Voice-specific design includes slower pacing, explicit confirmation of high-stakes inputs, and tighter latency budgets.</p>
+<p><strong>Multi-language deployment with validated translations.</strong> The bot operates natively in the institution's patient-population languages from day one. Per-language asset development includes validated protocol translations, validated emergency-instruction translations, validated regulatory-disclaimer translations, per-language tone calibration, and per-language equity monitoring.</p>
+<p><strong>Provider-side triage support tool.</strong> The same architecture serves clinical staff doing inbound-call triage with the bot as a documentation and protocol-adherence aid. The user is the nurse (not the patient), the access controls reflect the institution's clinical-staff authorization, and the recommendation is presented as input to the nurse's clinical judgment rather than as direct patient-facing output.</p>
+<p><strong>Cross-institutional triage federation.</strong> A regional or national triage capability shared across institutions, with each institution contributing its own protocols, its own chart context (where federation permits), and its own care-level pathways. The architectural extension is the federation layer, with attribution preserved through to each institution's audit pipeline.</p>
+<p><strong>Specialty-specific triage protocols.</strong> Dedicated protocols for women's health (gynecologic emergencies, obstetric emergencies, pregnancy-related concerns), men's health (genitourinary emergencies), dermatology (skin-rash protocols with image-input where the institution supports it), ophthalmology (acute vision changes), ENT (acute ear pain, acute throat symptoms). Each specialty's protocols are owned by the specialty's clinical leadership.</p>
+<p><strong>Telehealth-bridged triage.</strong> When the bot recommends a telehealth visit, the booking is integrated with the institution's telehealth scheduling system, the conversation context is attached to the visit record, and the receiving telehealth clinician has the triage data available. The architectural pattern is the same as recipe 11.2 (appointment scheduling bot) but with the triage decision as input.</p>
+<p><strong>Care-navigation overlay for social-determinants-aware recommendations.</strong> When the recommended care level is not feasible for the patient (no transportation, no childcare, financial concerns), the bot connects to the institution's care-navigation team for support. The architectural extension is the social-determinants-of-health overlay with care-navigation handoff.</p>
+<p><strong>Outcome-feedback closed loop.</strong> The outcome-correlation pipeline feeds signals back to the protocol-revision process; bottom-quartile outcomes per protocol trigger clinical-leadership review; per-cohort outcome disparities trigger equity-focused revision. The architectural extension is the explicit feedback loop with named clinical-leadership ownership.</p>
+<p><strong>Mandatory-reporting integration.</strong> Disclosures triggering statutory reporting obligations (child abuse, elder abuse, intimate-partner violence in some states) route to a licensed clinician (mandatory reporter) with the conversation context attached. The architectural extension is the disclosure-detection layer plus the routing to clinical staff.</p>
+<p><strong>Population-health overlay.</strong> The bot's outputs feed an institutional population-health dashboard tracking patterns of presentation (seasonal flu, COVID-19 surges, foodborne outbreaks, mental-health crisis surges) for early-warning purposes. The architectural extension is the population-health analytics layer reading the triage-decision-record journal.</p>
+<p><strong>Continuous-improvement loop with structured failure-mode labeling.</strong> Beyond per-conversation feedback, the institution runs a structured labeling program where reviewers (RNs and clinical leadership) tag failure modes (under-triage, over-triage, protocol-deviation, scope-violation, conservative-bias-failure, citation-gap, equity-disparity). The labels feed the protocol-corpus, clinical-rule-library, emergency-screening, and prompt-tuning workflows.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html">Amazon Bedrock Agents</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html">Amazon Bedrock Knowledge Bases</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless.html">Amazon OpenSearch Serverless</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/waf/latest/developerguide/waf-chapter.html">AWS WAF Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">Amazon S3 Object Lock</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html">Amazon Connect Administrator Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lexv2/latest/dg/what-is.html">Amazon Lex V2 Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-samples"><code>aws-samples/amazon-bedrock-samples</code></a>: Bedrock invocation patterns including Agents, Knowledge Bases, and Guardrails</li>
+<li><a href="https://github.com/aws-samples/aws-genai-llm-chatbot"><code>aws-samples/aws-genai-llm-chatbot</code></a>: reference architecture for a multi-model chatbot on AWS</li>
+<li><a href="https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks"><code>aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks</code></a>: broader healthcare AI/ML sample notebooks</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences plus AI/ML): browse for patient-engagement and triage-related reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;Bedrock Agents,&quot; &quot;healthcare conversational AI,&quot; &quot;RAG citation grounding,&quot; &quot;clinical decision support&quot;</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: search &quot;patient experience,&quot; &quot;triage,&quot; &quot;clinical communication&quot;</li>
+</ul>
+<p><strong>External References (Standards, Frameworks, and Clinical Protocols):</strong></p>
+<ul>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software">FDA Clinical Decision Support Software Final Guidance (2022)</a>: the FDA's framework for distinguishing regulated and non-regulated CDS software</li>
+<li><a href="https://www.fda.gov/medical-devices/digital-health-center-excellence/software-medical-device-samd">FDA Software as a Medical Device (SaMD)</a>: the FDA's overall framework for digital-health-product regulation</li>
+<li><a href="https://www.fda.gov/medical-devices/digital-health-center-excellence">FDA Digital Health Center of Excellence</a>: central resource for digital-health regulatory updates</li>
+<li><a href="https://www.hl7.org/fhir/patient.html">HL7 FHIR Patient Resource</a>: the FHIR Patient resource specification</li>
+<li><a href="https://www.hl7.org/fhir/condition.html">HL7 FHIR Condition Resource</a>: the FHIR Condition resource specification (for problem list)</li>
+<li><a href="https://www.hl7.org/fhir/medicationstatement.html">HL7 FHIR MedicationStatement Resource</a>: the FHIR resource for current-medication retrieval</li>
+<li><a href="https://www.hl7.org/fhir/allergyintolerance.html">HL7 FHIR AllergyIntolerance Resource</a>: the FHIR resource for allergy retrieval</li>
+<li><a href="https://www.hl7.org/fhir/encounter.html">HL7 FHIR Encounter Resource</a>: the FHIR resource for visit-history retrieval</li>
+<li><a href="https://988lifeline.org/">988 Suicide and Crisis Lifeline</a>: U.S. crisis resource for routing</li>
+<li><a href="https://aapcc.org/">American Association of Poison Control Centers</a>: U.S. Poison Control resource (1-800-222-1222)</li>
+<li><a href="https://www.cleartriage.com/">Schmitt-Thompson Clinical Content (ClearTriage)</a>: one of the dominant licensed nurse-line triage protocol vendors in the U.S.</li>
+<li><a href="https://www.triagenet.net/">Manchester Triage System</a>: international ED triage standard</li>
+<li><a href="https://www.acep.org/administration/quality/the-emergency-severity-index/">Emergency Severity Index (American College of Emergency Physicians)</a>: U.S. in-ED triage standard</li>
+<li><a href="https://www.mdcalc.com/calc/1752/heart-score-major-cardiac-events">HEART Score for Major Cardiac Events (MDCalc)</a>: chest-pain risk stratification</li>
+<li><a href="https://www.mdcalc.com/calc/115/wells-criteria-pulmonary-embolism">Wells Score for Pulmonary Embolism (MDCalc)</a>: PE risk stratification</li>
+<li><a href="https://www.mdcalc.com/calc/104/centor-score-modified-mcisaac-strep-pharyngitis">Centor Score for Strep Pharyngitis (MDCalc)</a>: pharyngitis risk stratification</li>
+<li><a href="https://www.mdcalc.com/calc/72/ottawa-ankle-rule">Ottawa Ankle Rules (MDCalc)</a>: ankle-injury imaging decision rule</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/index.html">HIPAA Privacy Rule</a>: governs PHI in conversation logs and triage-decision records</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/security/index.html">HIPAA Security Rule</a>: governs technical and administrative safeguards</li>
+<li><a href="https://www.w3.org/WAI/standards-guidelines/wcag/">WCAG 2.1 Accessibility Guidelines</a>: accessibility standards relevant to chat-widget surfaces</li>
+<li><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">OWASP Top 10 for Large Language Model Applications</a>: security framework for LLM-backed applications</li>
+<li><a href="https://www.childwelfare.gov/topics/systemwide/laws-policies/state/can-laws/">Mandatory Reporting of Child Abuse (Child Welfare Information Gateway)</a>: state-by-state child-abuse reporting laws</li>
+</ul>
+<p><strong>Industry Resources:</strong></p>
+<ul>
+<li><a href="https://www.aaacn.org/">American Academy of Ambulatory Care Nursing (AAACN)</a>: nursing-specialty association including telephone-triage clinical resources</li>
+<li><a href="https://www.acep.org/">American College of Emergency Physicians (ACEP)</a>: emergency-medicine specialty association including triage standards</li>
+<li><a href="https://www.cms.gov/">Centers for Medicare &amp; Medicaid Services (CMS)</a>: federal regulator for Medicare, Medicaid, and ACA marketplace</li>
+<li><a href="https://www.ama-assn.org/practice-management/digital/augmented-intelligence-medicine">American Medical Association (AMA) Augmented Intelligence Resources</a>: AMA position statements and resources for AI in medical practice</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Authenticated app or portal embed only, single language (English), narrow protocol catalog (10-15 most common adult presenting symptoms with the institution's existing nurse-line protocols), single-tenant institutional deployment, basic chart-context integration, basic clinical-decision rules (HEART, Centor, Ottawa), basic continuous-emergency-screening, basic nurse-line escalation with conversation-context handoff, basic regulatory-strategy artifact reviewed by FDA-experienced regulatory counsel, basic per-cohort monitoring at the institutional-aggregate level, basic audit pipeline, named medical-director ownership of protocols</td>
+<td>9-15 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Multi-channel (web chat, app embed, SMS, voice via Connect), multi-language (English plus Spanish at minimum with validated clinical translations), full protocol catalog covering common adult and pediatric presentations (40-60 protocols across the institution's nurse-line scope), pediatric-specific protocol variant with Schmitt-Thompson Pediatric or equivalent, special-population overlays (pregnancy, oncology treatment, transplant, geriatric), full clinical-decision-rule library, full continuous-emergency-screening with dedicated classifier, full chart-context integration including active treatment plans and high-risk medications, full nurse-line CTI integration with handoff payload, FDA-strategy artifact and (where applicable) SaMD registration with full quality-management system, full HIPAA-grade compliance review including triage-decision-record retention compliant with state medical-record retention rules, full per-cohort equity monitoring with launch-gate discipline, outcome-correlation pipeline pulling subsequent encounter records with 72-hour and 30-day windows, mandatory-reporting routing for relevant disclosures, named operational owners across medical leadership, nurse-line operations, compliance, regulatory, IT, and the call center</td>
+<td>18-30 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Pediatric-specific deployment, behavioral-health-specific deployment with crisis-pathway integration, post-operative-recovery deployment, active-treatment-plan deployment, voice-channel IVR integration, multi-language deployment beyond English plus Spanish with native-speaker review, provider-side triage-support tool, cross-institutional triage federation, specialty-specific protocols (women's health, men's health, dermatology, ophthalmology, ENT), telehealth-bridged triage with full booking integration, care-navigation overlay for social-determinants-aware recommendations, outcome-feedback closed loop with protocol-revision automation, population-health overlay, continuous-improvement loop with structured failure-mode labeling</td>
+<td>12-20 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter11.06-symptom-checker-triage-bot.html">Main Recipe 11.6</a> · <a href="chapter11.06-python-example.html">Python Example</a> · <a href="chapter11-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

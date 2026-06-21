@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 5.7: Longitudinal Patient Matching Across Name Changes ⭐⭐⭐⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-57-longitudinal-patient-matching-across-name-changes-">Recipe 5.7: Longitudinal Patient Matching Across Name Changes ⭐⭐⭐⭐</h1>
+<p><strong>Complexity:</strong> Complex · <strong>Phase:</strong> Production · <strong>Estimated Cost:</strong> ~$0.0001-0.001 per name-change resolution at population scale, dominated by review tooling and audit infrastructure rather than per-record fees (depends on the institution's name-change rate, the depth of historical retention, and the sensitivity-handling overhead the institution requires)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>A nurse at the cancer infusion center is preparing a chemotherapy bag for the patient sitting in chair 4. She scans the patient's wristband, the EHR pulls up the chart, and the active medication list shows a regimen the nurse has never seen for this diagnosis. She clicks back through the chart looking for the consult note that started the regimen. The note is not there. She clicks into the imaging history. The most recent CT is from eight months ago. She knows the patient told her she had a CT three weeks ago at the same hospital. She clicks into the labs. The lab trend graph stops at a date six months ago and resumes a month ago, with a six-month gap that does not match what the patient just told her about her treatment. The patient sees the nurse's face and says, <em>I changed my name in March. I think some things got separated. The other nurse said it would be fine but every time I come in someone has to fix something.</em></p>
+<p>This is what longitudinal patient matching across name changes is for. The patient is one person. The records are one person's records. The matcher knows it. The historical chart that was created under the patient's prior name is sitting in the same database as the current chart that was created under her current name, and the two are tied together by a cross-reference that has been built precisely to handle this case. The chart-rendering layer in the EHR did not consult the cross-reference, or consulted it and applied it incorrectly, or consulted it and rendered the historical chart under the prior name without surfacing the linkage to the nurse, or consulted it and silently dropped the historical chart entirely because the match logic failed when the prior name was retired. Any of those failure modes is common in production. All of them produce the same outcome: the nurse, the patient, and the safety of the next infusion are at risk because the system that should have presented one continuous record presented a fragmented one.</p>
+<p>The clinical-safety scenario is the dramatic one. It is far from the only one. Names change. People get married. People get divorced. People get remarried. People take a hyphenated name and then drop the hyphen. People legally change their name for any number of reasons. People go through gender transition and change their name (and sometimes their sex assigned at birth and their other demographic data) accordingly. People naturalize and change their family name to align with their adopted country's conventions. People with names from naming traditions that English-language registration systems do not handle well (Spanish double surnames, East Asian family-name-first conventions, Arabic patronymics, names with diacritics that the EHR strips on input) accumulate variations across years of registrations as different staff transcribe their names differently. People drop a suffix (Jr, Sr, II) when their parent dies. People reverse a suffix when they become a parent themselves. People who did not previously use a middle name start using one. People drop a previously-recorded middle name in favor of just an initial. People in the same family are co-registered with overlapping data fields and confused for each other in ways that name changes amplify.</p>
+<p>Now multiply this across every patient in a population over a multi-decade horizon, and the longitudinal-matching problem looks less like an exception case and more like the operational substrate that the rest of the patient-matching infrastructure depends on. Recipe 5.1 (internal duplicate detection) treats name as one demographic feature among several. Recipe 5.4 (insurance eligibility matching) treats the demographic asymmetry between payer-side and provider-side names as a feature mismatch to be scored. Recipe 5.5 (cross-facility matching) treats the cross-organizational name variation as a tolerance to be calibrated. None of those recipes solves the name-change problem at its root. They handle the name-mismatch artifact with a tolerant matcher and assume the underlying continuous identity is stable. The continuous identity is what this recipe is about.</p>
+<p>The harder versions of the question are everywhere:</p>
+<p>You are running a women's health clinic that has been in continuous operation for forty years. A substantial fraction of your long-term patients have been seen for thirty or more years, and the lifetime name-change rate among them is over forty percent.  You have charts on file from before the EHR was deployed (paper, scanned into PDF, indexed under the name on the chart at the time of scanning), charts created in the original EHR (which had no concept of prior names), charts migrated to the current EHR (which does have a prior-names field, but the migration did not always populate it), and charts created in the current EHR after the prior-names feature went live. The patient sitting in front of you today has charts in all four buckets, under three different names, and you need to be able to surface every relevant document the next time her oncologist queries the system.</p>
+<p>You are running gender-affirming care services at an academic medical center. A patient who began care at age fifteen with a name and sex assigned at birth has, by the time she is twenty-two, formally changed her name (with court order), updated her sex on her driver's license and her insurance card, and asked the clinic to retire her prior name from any chart view that her current providers see. She still wants the clinical history (the labs, the imaging, the procedures) preserved and accessible to her current care team, because some of that history is medically relevant to her ongoing care. She does not want a covering provider, a new front-desk staff member, or a member of her family with limited access seeing her prior name unless there is a specific clinical or legal reason. The matching infrastructure has to make her two identities one record for the purposes of clinical continuity and zero records for the purposes of casual disclosure, and the access-control surface has to know which is which.</p>
+<p>You are running a public-health agency that maintains a state immunization registry. Patients are submitted to the registry by every provider in the state, with the demographic data the provider had at the time of the visit. A patient who got her childhood vaccinations under her birth name and her adult booster shots under her married name appears as two registry entries under most matching configurations, and her care team gets a fragmented immunization record that may incorrectly suggest she is overdue for a series she has actually completed. The matcher has to recognize the same person across the name change without getting confused by family members (mother and daughter who share a last name and whose first names may be similar) or by other patients (someone with the daughter's first and last name combination who is not related).</p>
+<p>You are running an oncology service line where the patient's longitudinal record carries treatment exposure history that affects every subsequent treatment decision. A patient who was treated for breast cancer at age forty-two under her maiden name, then re-presented at fifty-one with a recurrence after a marriage and name change, then re-presented at sixty-three with a metastatic disease workup under her remarried name, has three primary records with three name variants and one continuous treatment trajectory. Total cumulative anthracycline dose, total cumulative chest radiation, history of cardiotoxicity, hormone-receptor status, prior surgical margins. Every one of those data points lives in records that carry one of the three name variants, and missing any of them changes the treatment plan in ways that range from suboptimal to actively dangerous.</p>
+<p>You are running insurance verification for an internal medicine practice that participates in a Medicare Advantage plan. A patient whose name on her Medicare card is &quot;Mary Catherine Wilson&quot; has been seeing the practice for fifteen years under &quot;Mary Wilson&quot; and her chart still says so. Her commercial insurance, before she aged into Medicare, was under &quot;Mary C Wilson,&quot; and her old payer claims feed (which still drives some retroactive analytics) carries that variant. Her PCP knows her as Mary. The eligibility verification step at every visit has to reconcile the name across her Medicare member ID, her chart, and her active claim feed, and any analytics that combine her pre-Medicare and post-Medicare claims have to recognize the continuous identity across the name format change.</p>
+<p>You are running quality measurement for an accountable-care organization. The HEDIS and CMS quality measures depend on a continuous longitudinal record per attributed patient. Patients who change their name between the measurement-year start and end (or who have changed it within the look-back window for measures with multi-year windows) accumulate two records in the underlying matching infrastructure unless the longitudinal matcher recognizes the change. Both records appear in the denominator of some measures and miss the numerator events that happened under the other name; the result is a quality-measurement number that is artificially low (the denominator includes both records, the numerator credits only one). At population scale, the cumulative undercount can move the institution's reported quality enough to affect contract performance.</p>
+<p>You are operating a TEFCA QHIN. The query that comes in from a participating organization carries a name-and-DOB-and-address payload. Your matcher evaluates the query against your local population and finds a high-confidence match. The local record carries a prior-names list with three entries. The query payload's name matches one of the prior names but not the current name. The system has to decide whether to release the current data (which is under the current name), what to do about the prior-name match in the response (acknowledge the prior name as part of the match evidence, or filter it out), and how to record the audit trail in a way that respects the patient's autonomy over their own identity history. None of these are technical questions; all of them shape what your matcher and your release pipeline have to do.</p>
+<p>You are doing outcomes research on a cohort that was defined in 2018 from claims and clinical data, and you are now refreshing the cohort in 2026 with eight years of additional follow-up. A non-trivial fraction of the original cohort has changed their name in the intervening eight years; some of those name changes were captured by the matchers running in the meantime, some were not. The 2026 refresh has to recognize the same patients across whatever name changes occurred and not double-count them in the cohort. The same is true for the comparison group, which has its own attrition and its own name-change events.</p>
+<p>This is the recipe. Longitudinal patient matching across name changes is the entity-resolution problem of &quot;given two records that may have different names but otherwise look like the same person, are they the same person, and if so, how do we represent the time-varying name in a way that preserves clinical continuity, supports the operational queries we need to run, respects the patient's autonomy over how their identity is presented, and survives the multi-decade lifecycle that healthcare data routinely operates over.&quot; The matching core is the same probabilistic-record-linkage stack from earlier recipes. Every layer above the core (the data model, the audit posture, the access controls, the review tooling, the operational discipline) is different.</p>
+<p>It is in the complex tier because the technical problem is genuinely temporal (a record's name on a date in the past is one fact, a record's name today is a different fact, and the match has to operate over both), the consent-and-sensitivity layer is unavoidable (especially for gender-transition cases), the historical retrofit complexity is large (most institutions have years of data that pre-date their current name-change handling and need to be reconciled retroactively), and the failure modes range from clinical-safety to dignity-of-the-patient in ways that the earlier recipes did not encounter at the same intensity.</p>
+<p>Let's get into how you build it.</p>
+<hr />
+<h2 id="the-technology-time-aware-identity-resolution">The Technology: Time-Aware Identity Resolution</h2>
+<h3 id="why-names-are-not-what-you-think-they-are">Why Names Are Not What You Think They Are</h3>
+<p>In recipe 5.1, a record's name is a string. The matcher compares it to another string and produces a similarity score. The score feeds the probabilistic combiner, which produces a match decision. That model works for the case where the two records were created close enough in time that the same name was current for both. The model breaks for the case where the two records were created at different times under different names that both belonged to the same person.</p>
+<p>The fix is not a tolerance adjustment. The matcher cannot get smart enough to recognize &quot;Catherine Wilson&quot; and &quot;Catherine Hernandez&quot; as the same person on the basis of demographic data alone, because at the level of the matcher, those are two different names belonging to two people who happen to share other features, and the population is large enough that the matcher will routinely encounter actual pairs of people who match on those other features and have those names. The fix is to represent the patient's name as a time-varying attribute, with a history of name spans that each cover a date range, and to make every comparison aware of which name the patient was using during the interval the comparison record was created.</p>
+<p>A patient is one identity. The identity has a current name. The identity has zero or more prior names, each with an effective span (the date range during which the prior name was current). The identity has zero or more aliases (alternative names that were never the legal name but appear in records anyway, like a hyphenated form recorded inconsistently or a nickname that was used in registration). The identity has zero or more sensitivity flags governing how the prior names may be displayed and to whom (the gender-transition case is the most common; the witness-protection case is the most extreme). The identity also has the standard demographic features that the rest of the matching infrastructure already uses: DOB (which is usually stable, with rare exceptions for refugees with reconstructed identities), sex assigned at birth (which is a separate field from current sex / gender, and which may be relevant or irrelevant depending on the use case), addresses (which change for their own reasons and feed recipe 5.3), phone numbers, SSN where collected, prior MRNs from systems the patient was previously in.</p>
+<p>The matcher works against this temporal-identity model rather than against a flat name field. A new record arriving with name &quot;Catherine Hernandez&quot; matches against the identity's current name, against each prior name (with the comparison weighted by the temporal proximity of the prior name's span to the new record's encounter date), and against any aliases. The match score combines all of these comparisons, not just the comparison to the current name. A new record arriving with name &quot;Catherine Wilson,&quot; dated five years ago, matches against whichever name was current for the identity five years ago (which might be &quot;Wilson&quot; if the change happened four years ago, in which case the comparison is to the current-as-of-then name and is a strong signal; or it might be the current name if the change happened more than five years ago, in which case the comparison is to a now-prior name and is also a strong signal; the temporal alignment is what makes the comparison work).</p>
+<p>The model has implications beyond the matcher. The chart-rendering layer has to know which name to display for a historical document (the name the patient had when the document was created, the patient's current name, or both, depending on the audience and the sensitivity flags). The audit log has to record what name was used in what query, and which version of the identity's name history was active when the query was answered. The release-of-information process has to know which names to include when responding to an outside request, which to suppress (because of sensitivity flags or jurisdictional rules), and which to acknowledge in the cover letter without exposing them in the released documents. None of these decisions can be made by the matcher; the matcher produces the linkage, and the rendering, audit, and release layers consume it with awareness of its temporal structure.</p>
+<h3 id="what-the-time-varying-name-model-has-to-capture">What the Time-Varying Name Model Has to Capture</h3>
+<p>A working model has at least seven dimensions that a flat name field does not.</p>
+<p><strong>Effective span.</strong> Each name (current or prior) has a from-date and a through-date, in the patient's reference frame. The current name's span is open-ended on the through-date. Prior names have a through-date that corresponds to when the change took effect (legally, administratively, or by patient self-report; the three may differ).</p>
+<p><strong>Source.</strong> The name change was reported by some entity. The patient (verbal or written self-report at registration). The patient's authorizing document (court order, marriage certificate, divorce decree). A payer's enrollment update (the patient updated her name on her insurance and the eligibility-verification step propagated it). A vital-records update (state vital-records data showing a name change event). A driver's-license verification (the new license was scanned and the matcher detected the change). The strength of the source matters for the matcher's confidence and for downstream audit. A self-reported change with no supporting document is weaker than a court order; both are valid; the matcher's behavior may differ.</p>
+<p><strong>Authority and document references.</strong> Where the source is a document, the document itself (or a reference to it) is part of the identity record. The court-order PDF is in the document store; the identity record points at it. The marriage certificate scan is in the document store; the identity record points at it. The audit trail can reach back to the supporting documents; the release-of-information process may need to disclose them or reference them depending on the request.</p>
+<p><strong>Sensitivity classification.</strong> Some name changes carry no special handling beyond audit. Others carry strong privacy preferences. The patient who changed her name through marriage may not care if her prior name is visible in the chart's name-history widget; the patient who changed her name as part of gender transition may have explicit preferences about who can see the prior name and under what circumstances. The model has to capture the patient's explicit preferences (default-display, restricted-display, masked-display, archive-only) and the system has to enforce them through the access-control layer.</p>
+<p><strong>Cross-reference linkages.</strong> The patient's identity may have prior MRNs in legacy systems that retired, prior member IDs at prior payers, prior employee IDs if she works for the institution. Each of those is part of the identity's history. The cross-reference table from recipe 5.4 (MRN to member ID) and the local-MPI from recipe 5.1 carry their own version of this; the longitudinal-name-change recipe coordinates with them so that a name change updates all the references atomically rather than orphaning some of them.</p>
+<p><strong>Sex and gender as separate, time-varying fields.</strong> The sex-assigned-at-birth is a stable biological attribute that does not change. The current sex / gender on the patient's records is administrative and may change. The chart-rendering layer and the matcher both need access to both, with the awareness that they are different things and that the matching uses the historical-as-of value, not the current value, for historical comparisons.</p>
+<p><strong>Reversibility and superseding events.</strong> A name-change event can be reversed (a patient who changed her name and then divorced and reverted; a patient whose initial change was recorded incorrectly and was corrected). The model treats name changes as events with their own audit trail rather than as in-place updates to a current-name field. The current name is computed from the event history; superseding events update the computed view without losing the underlying history.</p>
+<p>These seven dimensions are not optional. Every production-grade longitudinal-matching system handles all of them, and the gaps in any dimension show up in operational pain over the multi-decade lifecycle of healthcare data.</p>
+<h3 id="why-it-is-harder-than-it-sounds">Why It Is Harder Than It Sounds</h3>
+<p>Six structural reasons:</p>
+<p><strong>Historical records often contain only the name that was current at the time, with no link to the present identity.</strong> A chart created in 2009 carries a name that was current in 2009. The system that produced the chart did not know there would be a name change in 2014. The chart sits in the database, indexed under the 2009 name, and the matching infrastructure has to figure out (years later) that this 2009 chart belongs to the patient who is now indexed under the 2024 name. The matcher cannot rely on a forward pointer from the 2009 record to the 2024 identity, because the 2009 record was not aware the 2024 identity existed; it has to discover the linkage by retrospective analysis.</p>
+<p><strong>Supporting documents are unavailable for many name changes.</strong> A patient who self-reports at registration, &quot;I changed my name when I got married, here's my new ID,&quot; may not produce the marriage certificate. The receptionist updates the record under the new name and (if the system supports it) records the prior name. The change has no supporting document on file. Years later, the patient appears at a different point in the system under just the new name, and the matcher has to resolve the historical records without a paper trail to confirm the change. The matcher's confidence has to handle the asymmetry between &quot;well-documented change&quot; and &quot;self-reported, undocumented change.&quot;</p>
+<p><strong>Family members are a strong confounder, more so than in non-temporal matching.</strong> A name change moves a patient toward (or away from) a family member's name. A daughter who marries and takes her husband's last name now has a different last name from her mother (whom she previously matched closely). A son who is named after his father (Jr) drops the suffix when his father dies and now matches his deceased father's records more closely. A patient who divorces and reverts to her maiden name now has the same last name as her brother and the same first name as her sister-in-law's mother. The matcher has to maintain enough specificity not to merge across family members during these events, which is harder than the static-family-disambiguation case.</p>
+<p><strong>Sensitivity and patient-autonomy considerations are not negotiable.</strong> Gender-transition name changes are the prototypical case but not the only one. Patients in protective custody, patients fleeing intimate-partner violence, patients in witness protection, and patients who simply prefer not to have their prior identity visible all impose constraints on how the prior name may be presented. The architecture has to enforce the constraints at the rendering, audit, and release layers without making the matcher itself unable to find the linkage. The constraint is &quot;the system knows the linkage; specific users may not know the linkage&quot;; that distinction is operationally meaningful and architecturally non-trivial.</p>
+<p><strong>Cross-organizational reach magnifies every failure mode.</strong> Within one organization, a wrong name-change linkage produces an internal data error that the local matcher can review and correct. Across organizations, a wrong linkage propagated through the HIE or through TEFCA produces an exchange artifact that travels into other organizations' charts, and the original organization no longer controls it. Conservative thresholds and explicit reversibility are operationally necessary. The architecture has to be designed for the case where a linkage was wrong and has to be retracted from systems that have already consumed it.</p>
+<p><strong>The retrofit problem is enormous.</strong> Most institutions did not have a working time-varying-name model when they deployed their EHR. The early years of records carry only the name that was current at the time. The middle years may carry a partial prior-names list that was filled in inconsistently. The recent years carry a full history. Standing up the longitudinal-matching pipeline involves a one-time backfill that has to reconcile decades of records under whatever name conventions were in force at each point. The backfill is not a technical project; it is an organizational change-management project with technical scaffolding.</p>
+<h3 id="where-the-field-has-moved">Where the Field Has Moved</h3>
+<p>A few practical updates worth knowing:</p>
+<p><strong>Gender-affirming care has become a first-class data-model concern.</strong> Until recently, most EHR vendors treated sex as a single field with a small set of values. The current state-of-practice (and increasingly the regulatory expectation) is that sex assigned at birth, current sex / gender identity, pronouns, and legal sex on identity documents are four separate fields with their own update lifecycles.  The longitudinal-name-change recipe sits adjacent to this evolution: a gender-transition name change is one event that intersects with the broader gender-identity data model, and the architecture has to coordinate.</p>
+<p><strong>FHIR's <code>Patient.name</code> is a list, not a string.</strong> The FHIR Patient resource models name as a list of HumanName resources, each of which has its own use code (official, usual, nickname, anonymous, old, maiden), period (effective span), and text-and-component representation.  An institution that lands its data in a FHIR-native data lake gets the time-varying-name structure for free at the schema level; the matcher and the rendering layer still have to use it correctly. Most operational EHRs internally represent names with similar (if vendor-specific) structures, but the externalized representation is often a flat current-name field unless the integration explicitly preserves the history.</p>
+<p><strong>State-level vital-records integration is uneven but growing.</strong> State vital-records agencies maintain authoritative records of legal name changes through marriage, divorce, and court order. In some states the data is available to healthcare organizations through structured feeds (often through the public-health-reporting infrastructure); in others it is not directly available and the institution has to rely on patient self-report and document review.  The recipe is designed to incorporate vital-records feeds where they exist and to operate without them where they do not.</p>
+<p><strong>Information-blocking obligations apply here too.</strong> The 21st Century Cures Act information-blocking provisions require that an institution provide a patient's records on request, regardless of which name the records were created under. Refusing to release records that exist under a prior name (or filtering them out of a release because the request specified the current name) is increasingly characterized as information blocking. The release-of-information process has to recognize the linkage without violating the patient's preferences about how their prior name is referenced; this is operationally subtle.</p>
+<p><strong>Equity and disparity monitoring is increasingly specified.</strong> Patient-matching equity research has consistently found that name-handling errors are not uniform across demographic groups. Names from naming traditions that English-language registration systems handle poorly (Spanish double surnames, Asian family-name-first conventions, Arabic patronymics, names with diacritics) accumulate variations at higher rates and produce more match errors. Patients who change their name (disproportionately women in many U.S. populations; transgender patients across all populations) experience more match errors than patients with stable names. The cohort-stratified accuracy monitoring that was built for recipes 5.1, 5.4, and 5.5 carries forward here, with name-change-specific cohort axes layered on top.</p>
+<p><strong>Patient-mediated identity is changing the data sources.</strong> As the CMS Patient Access API and Patient-Facing-App ecosystems mature, the patient is increasingly the connecting tissue between their own records across organizations. A patient who has connected her records to a personal-health-record app under her current name can authorize the app to retrieve records from organizations that knew her under her prior name; the app does the linkage on her behalf, with her authentication serving as the strong identifier that supplements the demographic match. The patient-mediated path is becoming a real architectural pattern, particularly for the cross-organizational long-horizon case.</p>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>The pipeline has six logical stages: ingest the demographic update or new record, detect a candidate name-change event, evaluate the candidate against the patient's existing identity record, persist the temporal-name update with audit and sensitivity metadata, propagate the linkage to dependent stores, and react to events that supersede prior linkages (correction, reversal, identity merge, sensitivity-flag update).</p>
+<pre class="code code-plain"><code>┌────────────── INGEST ─────────────────────────────┐
+│                                                    │
+│  [Trigger sources]                                 │
+│   - Registration update at the front desk          │
+│     (&quot;I changed my name; here&#x27;s my new ID&quot;)       │
+│   - Inbound payer eligibility refresh with        │
+│     updated name                                   │
+│   - Vital-records feed (where available)          │
+│   - Cross-organizational match refresh            │
+│     (recipe 5.5) carrying a name discrepancy      │
+│   - Document upload: court order, marriage cert,  │
+│     divorce decree, driver&#x27;s license scan         │
+│   - Patient-facing app connection (the patient    │
+│     authenticated under her current name and      │
+│     authorized retrieval from prior records)     │
+│   - Bulk historical-records reconciliation         │
+│     (one-time backfill or periodic refresh)      │
+│           │                                        │
+│           ▼                                        │
+│  [Land the trigger record:                         │
+│   - source_type, source_record_id                 │
+│   - asserted_name (the new name in the trigger)   │
+│   - asserted_change_date (if known)               │
+│   - asserted_prior_name (if the trigger carried   │
+│     one)                                          │
+│   - supporting_document_reference (if any)       │
+│   - patient_self_assertion_flag,                  │
+│     authoritative_source_flag,                    │
+│     consent_for_change_flag]                      │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── DETECT ─────────────────────────────┐
+│                                                    │
+│  [Name-change candidate detection:                 │
+│   - Direct case: trigger record explicitly         │
+│     asserts a name change (the patient said so,   │
+│     the document says so, the payer&#x27;s update      │
+│     event says so)                                 │
+│   - Indirect case: trigger record has new name +  │
+│     existing record has different name + other    │
+│     demographics align strongly enough to suggest │
+│     same identity                                  │
+│   - Detection score combines:                     │
+│       - Demographic-feature match strength on     │
+│         non-name fields (DOB, address, phone,     │
+│         SSN where present)                        │
+│       - Name-pair plausibility (the new name      │
+│         is a plausible legal-change variant of    │
+│         the prior name: surname change with       │
+│         shared first/middle, hyphenation, suffix  │
+│         drop, transliteration variant)            │
+│       - Source strength (a court-order document   │
+│         beats a verbal patient assertion)         │
+│       - Temporal plausibility (the asserted       │
+│         change date is consistent with the        │
+│         records&#x27; creation timeline)]              │
+│           │                                        │
+│           ▼                                        │
+│  [Output: detection envelope including candidate  │
+│   identity, asserted name change, evidence        │
+│   summary, detection confidence]                   │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── EVALUATE / RESOLVE ─────────────────┐
+│                                                    │
+│  [For each candidate identity:                     │
+│   - Look up the existing temporal-name record     │
+│   - Score the asserted change against:           │
+│       - Existing current name and its span        │
+│       - Existing prior names and their spans      │
+│       - Existing aliases                          │
+│       - Demographic features as of the assertion  │
+│         date                                       │
+│       - Document-source strength of any           │
+│         supporting evidence                        │
+│   - Apply confidence thresholds calibrated for    │
+│     the name-change-specific scoring (separate    │
+│     from the demographic-match thresholds in 5.1):│
+│     - &gt;= NAME_CHANGE_HIGH: confident name change; │
+│       update the identity&#x27;s temporal-name record │
+│       atomically                                  │
+│     - &gt;= NAME_CHANGE_MED: probable change;       │
+│       record as pending; surface to review        │
+│       queue if patient-self-assertion alone      │
+│       (no document)                               │
+│     - &lt;= NAME_CHANGE_REJECT: not a name change;   │
+│       likely a different person matching some    │
+│       features                                    │
+│     - in between: name-change review queue;       │
+│       hold the assertion in pending state]       │
+│           │                                        │
+│           ▼                                        │
+│  [Output: change resolution decision and         │
+│   pending-state envelope, with all evidence       │
+│   preserved for audit and review]                 │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── SENSITIVITY + CONSENT ──────────────┐
+│                                                    │
+│  [Apply patient-preference and policy filters:    │
+│   - Patient preferences for prior-name display    │
+│     (default-display, restricted-display,         │
+│     masked-display, archive-only)                 │
+│   - Sensitivity classification of the name        │
+│     change (gender-affirming, protective-custody, │
+│     intimate-partner-violence relocation, none)  │
+│   - Default access scope for the prior name      │
+│     (treatment, payment, operations, research,    │
+│     patient-access-API release; some scopes may  │
+│     be blocked entirely for restricted classes)  │
+│   - Cohort/jurisdiction policy overlays (state    │
+│     law, institutional policy, HIE participation │
+│     agreement constraints)]                      │
+│           │                                        │
+│           ▼                                        │
+│  [Output: access-control envelope on the prior    │
+│   name and on the linkage itself]                 │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── PERSIST + AUDIT ────────────────────┐
+│                                                    │
+│  [Identity record:                                  │
+│   - identity_id (the institution&#x27;s stable          │
+│     internal patient identifier)                   │
+│   - current_name (with effective_from)             │
+│   - prior_names (each with effective_from,         │
+│     effective_through, source, document_ref,      │
+│     sensitivity_class)                             │
+│   - aliases (with same metadata)                   │
+│   - linked_local_mrns (current and historical)    │
+│   - linked_member_ids (current and historical)    │
+│   - sex_assigned_at_birth (stable)                 │
+│   - current_sex_or_gender (with history)           │
+│   - access_control_envelope on each prior name    │
+│   - resolved_at, resolved_by, source_record_id]   │
+│           │                                        │
+│           ▼                                        │
+│  [Audit log entry for every change: who/what       │
+│   asserted the change, what evidence supported    │
+│   it, what threshold tier the decision fell in,   │
+│   what prior identity state was superseded]      │
+│           │                                        │
+│           ▼                                        │
+│  [Emit identity_name_change_resolved event for     │
+│   downstream consumers]                            │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── PROPAGATE ──────────────────────────┐
+│                                                    │
+│  [Subscribe consumers update their derived state:  │
+│   - Local MPI (recipe 5.1) updates the patient&#x27;s │
+│     master record                                  │
+│   - Cross-reference table (recipe 5.4) updates    │
+│     MRN-to-member-ID mappings if changed          │
+│   - Cross-facility matcher (recipe 5.5) refreshes │
+│     prior-name handling for query responses       │
+│   - Claims-clinical linkage (recipe 5.6) re-      │
+│     evaluates encounter clusters whose patient   │
+│     resolution depended on the name              │
+│   - Chart-rendering layer refreshes its name-    │
+│     display logic                                  │
+│   - Release-of-information workflows incorporate  │
+│     the updated name history                       │
+│   - Quality-measurement and risk-adjustment       │
+│     pipelines deduplicate the records under the  │
+│     unified identity                              │
+│   - Care-coordination and patient-portal          │
+│     services pick up the change]                  │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+┌────────────── INVALIDATION / SUPERSEDE ───────────┐
+│                                                    │
+│  [Subscribe to events that supersede prior        │
+│   resolutions:                                     │
+│   - Correction event (the change was recorded     │
+│     incorrectly; a court order was misread; a    │
+│     reviewer overturned an automated decision)   │
+│   - Reversal event (the patient changed back; a   │
+│     marriage was annulled; an interim change     │
+│     was rolled back)                              │
+│   - Identity merge from recipe 5.1 (two           │
+│     identities are now one; both name histories   │
+│     fold into the surviving identity)             │
+│   - Identity unmerge (a wrong merge is being     │
+│     reversed; name history splits accordingly)   │
+│   - Sensitivity-class update (the patient&#x27;s      │
+│     preference for prior-name display has         │
+│     changed)                                      │
+│   - Document-strength upgrade (a previously      │
+│     self-reported change is now backed by a      │
+│     supporting document)                           │
+│   - Cross-organizational match invalidation      │
+│     (recipe 5.5 retracted a linkage that         │
+│     affected the prior-name handling)]           │
+│           │                                        │
+│           ▼                                        │
+│  [Re-evaluate the affected identity records;      │
+│   emit identity_name_change_invalidated events    │
+│   so propagation consumers refresh accordingly]  │
+│                                                    │
+└────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>The detection step is the load-bearing addition versus recipe 5.1.</strong> A flat-name matcher does not need a name-change detector because it treats every name as the value-of-the-day. The temporal model needs an explicit detector because the addition of a new name to an existing identity is structurally different from a new record matching an existing identity. The detector handles both the direct case (an explicit assertion of a name change) and the indirect case (a high-demographic-match record arriving with a different name from the matched identity). The indirect case is the dominant operational path and is the one that institutions tend to under-invest in.</p>
+<p><strong>Threshold calibration is name-change-specific.</strong> Re-using the recipe 5.1 thresholds for name-change decisions produces either too many false-merges (the threshold was calibrated for new-record-vs-existing comparisons where the names usually match, and a name-changed comparison fails it) or too many missed name changes (the threshold is loose enough that name changes get accepted, but the matcher then over-merges across family members or across actual different patients with similar features). The right thresholds for name-change events are derived from a separate calibration set that includes confirmed name-change events, near-miss family-disambiguation cases, and known-incorrect linkages. Same chapter pattern as 5.1, 5.4, 5.5; the parameters and the gold-set composition differ.</p>
+<p><strong>Sensitivity classification is set per-event, not per-identity.</strong> A patient may have multiple name changes over a lifetime, with different sensitivity classifications for each. A divorce that reverts to a maiden name may have no special sensitivity, while a subsequent legal name change associated with gender transition has explicit privacy preferences. The model carries the classification at the prior-name level, not at the identity level, because a single identity can have prior names with different sensitivity treatments.</p>
+<p><strong>Access controls operate on the prior name, not on the identity.</strong> The architecture assumes that the system always knows the linkage between current and prior names; specific users may or may not see the prior name based on their role, the sensitivity classification, the access purpose, and the patient's preferences. Hiding the linkage from the system itself defeats the matcher's job; hiding the prior name from the user surface is a presentation-and-access-control concern. The two are distinct. Same chapter pattern as 5.5's sensitivity-filter approach.</p>
+<p><strong>Patient-self-assertion is a valid source but a weaker one.</strong> The matcher accepts patient-self-assertion as a source for name-change events but treats it differently from document-backed assertions. Self-assertion alone may be enough for high-confidence resolution when the demographic features otherwise match strongly and there is no conflicting evidence; it may not be enough when the demographic match is medium-confidence or when there is conflicting evidence (a prior payer record under a different name with no overlap). The architecture supports a pending state for self-asserted changes and a confirmation pathway when supporting documents are eventually provided.</p>
+<p><strong>Document evidence has its own retention.</strong> When a court-order PDF or marriage-certificate scan is provided as supporting evidence for a name change, the document itself goes into the institution's document store with its own retention and access-control posture, and the identity record points at it. The retention floor for these documents is typically the longer of the institution's general medical-records retention and the regulatory floor for identity-related documents. The audit trail on the identity record references the document; the document itself is not duplicated into the identity record.</p>
+<p><strong>Reversibility is not a feature; it is the architecture.</strong> A name-change event can be wrong, and the architecture has to support cleanly retracting it. The temporal-name record carries an event history, not just a current state; superseding events update the computed view without losing the underlying history; downstream consumers receive invalidation events that allow them to refresh derived state. Skip the reversibility pathway and a wrong name change becomes a permanent data corruption that the organization cannot fully clean up.</p>
+<p><strong>Cohort-stratified accuracy monitoring applies here too.</strong> Name-change handling accuracy is not uniform across patient cohorts. Patients with names from non-dominant-culture naming traditions experience more matcher errors. Transgender patients experience higher rates of operational friction that affect care experience even when the matcher itself is technically correct. Per-cohort match-rate, per-cohort error-rate, and per-cohort review-queue-aging are the right metrics; per-cohort thresholds and disparity alarms are the right monitoring.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter05.07-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>Longitudinal name-change handling is the recipe in this chapter where the technical complexity is moderate and the human-and-organizational complexity is enormous. The matching techniques are familiar (you have seen the same probabilistic-record-linkage core in every recipe of this chapter, with the time-aware extension that this recipe layers on top). The orchestration is familiar (event-driven functions, batch jobs, workflow orchestrators, event buses, the same pattern as the other identity-pipeline recipes). The thing that makes this recipe hard is that names are not just strings; they are part of how a patient is known to herself, to her family, to her providers, and to the systems that record her care. Mishandling a name change is not a data-quality bug; it is a dignity failure that the patient experiences directly, sometimes repeatedly, sometimes for years. The job of the architecture is to produce continuity of clinical record without producing dignity failures, and the discipline that takes is operational and organizational at least as much as it is technical.</p>
+<p>The trap most specific to longitudinal name-change handling is treating it as an exception case. Name changes are not exceptional events. In a population of one million patients followed over a multi-decade horizon, the cumulative name-change rate is high enough that an institution that has built its identity infrastructure on the assumption of stable names will, by year ten, have a longitudinal record that is silently fragmented for a substantial fraction of its long-term patients. The fragmentation does not surface in the daily registration workflow; it surfaces when a clinician needs to make a treatment decision based on cumulative history, when an analytics team needs to compute a quality measure with a multi-year lookback, when a research team needs to define a cohort across a follow-up window that spans a name change. By the time the fragmentation surfaces, the institution has decades of records to retrofit. Build the time-varying-name model from the beginning; the retrofit cost is much higher than the up-front cost.</p>
+<p>The second trap is over-trusting front-desk-asserted name changes without supporting documents. Front-desk staff, under time pressure, with patients who have varying levels of documentation on hand, are not in a position to verify a name change rigorously. Most front-desk-asserted changes are correct (patients tell the truth about their own names), but the fraction that are not (someone else's insurance card used at registration; a name typed wrong with the typo persisting; a confused patient who reported a name change that did not legally happen) is large enough that auto-accepting all of them produces wrong linkages at scale. The right pattern is to record front-desk assertions, accept them provisionally for the encounter at hand, and require supporting evidence for the linkage to become canonical. The patient-portal upload path makes this workable; without it, the operational burden falls on the medical-records team and the queue ages.</p>
+<p>The third trap, related: under-investing in the patient-portal flow for name-change documentation. The asynchronous upload path is the lowest-friction way to get supporting documents on file, and the institutions that build it well have substantially better operational metrics than the institutions that rely on document upload at the front desk. Treat the patient-portal flow as a first-class architectural component, not an afterthought.</p>
+<p>The thing that surprises people coming from other identity-pipeline backgrounds is how much of the operational load is in the sensitivity layer rather than in the matcher itself. Recipe 5.1's matcher cares about whether two records refer to the same person; recipe 5.7's matcher cares about that and about whether the two records' name relationship is appropriate to surface to a given user, in a given context, under the patient's expressed preferences. The matcher is not deciding what to display; it is deciding what is true. The display decision lives in the access-control envelope, which is consulted by every consumer that reads the identity record. The split-of-concerns is correct (it lets the matcher do its job without being entangled in display logic), but it requires architectural discipline to maintain. Most teams initially put display logic in the matcher and have to refactor when the sensitivity requirements grow.</p>
+<p>The thing about gender-affirming-care patients: their experience of the system is, in most institutions, substantially worse than the experience of cisgender patients with otherwise comparable care needs. The reasons are operational, not algorithmic. The chart-rendering layer surfaces the prior name in places it should not. The release-of-information process includes the prior name in disclosures the patient did not consent to. The provider directory shows the prior name to colleagues who do not need it. Each of those is an architecture-and-process problem, not a matcher problem. Building the longitudinal name-change recipe well requires explicit collaboration with the gender-affirming-care service line (where it exists) or with patient-advocacy groups (where it does not), and treating the sensitivity layer as a load-bearing requirement rather than a checkbox.</p>
+<p>The thing about names from non-dominant-culture naming traditions: the matcher's reference data is the dominant source of cohort-disparity. Nickname dictionaries that were compiled from English-language sources do not handle Spanish nicknames, Arabic kunyas, or Chinese pet names. Surname-change-pattern models that were trained on Western European marriage conventions do not handle Spanish double-surname systems, Korean clan-name conventions, or Arabic patronymic structures. Transliteration maps that were built for one script-pair often miss the variations that arise in cross-language registration. The institutions that take cohort equity seriously invest in per-tradition reference data and in collaboration with the communities they serve to maintain it. The institutions that do not invest in this discover the disparity when their cohort-stratified accuracy monitoring surfaces it, which is later than they would have liked.</p>
+<p>The thing about historical retrofit: do it deliberately, with patient communication, and with the assumption that some fraction of the candidate linkages are wrong. The backfill is a one-time chance to clean up decades of records, but the backfill operates on records that were created without the time-varying-name model in mind, and the evidence available at backfill time is necessarily thinner than the evidence available at the time of each original name change. Use the patient-portal flow to surface candidate linkages to the patient for confirmation where possible; use conservative thresholds for auto-acceptance during the backfill and route ambiguous cases to review; communicate the back-fill behavior to the analytics consumers who will see their data refresh as the backfill progresses. The first version of the backfill that does not respect any of these will produce a &quot;merge wave&quot; that fragments more than it consolidates and undermines confidence in the longitudinal record for years.</p>
+<p>The thing about cross-organizational propagation: most institutions cannot fully solve this on their own. A name change recorded at organization A propagates to organization B only through one of three pathways: the patient updates her record at organization B in person, the cross-facility refresh path detects the discrepancy at query time, or the patient-mediated flow propagates the change through a personal-health-record app. Each pathway has its own latency and its own coverage gaps. The institutions that operate in mature regional HIE ecosystems get the cross-org refresh more reliably than institutions in less-mature regions. The patient-mediated flow is increasing in importance as the Patient Access API ecosystem matures; treat it as a strategic investment rather than a tactical convenience.</p>
+<p>The thing about reversibility: the institutions that build the invalidation pipeline first have substantially better operational outcomes than the institutions that build the resolution pipeline first and add invalidation later. The invalidation pipeline forces the architecture to treat name-change events as data with a lifecycle, not as in-place updates. The institutions that skip the invalidation pipeline initially discover, when the first wrong resolution surfaces, that retracting it cleanly is more work than they planned for; the institutions that build invalidation first treat retractions as routine.</p>
+<p>The thing I would do differently the second time: invest in the access-control envelope as a versioned, queryable artifact from day one. The first version of the recipe will treat the envelope as a small bag of policy fields attached to each prior-name event. The second version will recognize that the envelope has its own lifecycle (patient-preference updates, jurisdictional-policy changes, sensitivity-class upgrades, audit-rule modifications) and needs versioning, history, and a query API. The envelope is consulted by chart-rendering, release-of-information, patient-portal, audit, and analytics consumers; treating it as an undifferentiated bag of fields produces ad-hoc display logic that is hard to govern. Build the envelope as a first-class concept from the beginning.</p>
+<p>The thing about audit volume: the audit log for a sensitivity-classified name change is heavier than for a general one, by design. Every disclosure of the prior name is logged. Every query that touches the prior name is logged. The patient may have explicit preferences for monthly summaries delivered to her portal. The audit volume can grow surprisingly fast for restricted-class patients, and the audit-retention costs are non-trivial at population scale. Plan the audit-storage tier explicitly (cold-archive storage after 90 days is typical), the per-class retention floor explicitly, and the audit-query path explicitly so it does not collide with the operational read path.</p>
+<p>Last point, because it is specific to the regulatory context: the information-blocking obligation cuts both ways. The institution is obligated to release a patient's records on request, including records under prior names, but the patient also has the right to constrain how her prior names are referenced in disclosures. The release pipeline has to honor both obligations simultaneously, and the resolution between them is per-patient, per-context, per-disclosure. Build the release pipeline with the access-control envelope in scope from day one, not as a retrofit. The architecture is then load-bearing for compliance and for patient dignity in the same operational layer, which is the right place for both.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 5.1 (Internal Duplicate Patient Detection):</strong> The local MPI is the canonical patient identity that the longitudinal-name-change recipe maintains. Identity merges from 5.1 propagate through this recipe's invalidation pipeline; name-change resolutions from this recipe propagate to the local MPI's master record.</li>
+<li><strong>Recipe 5.2 (Provider NPI Matching):</strong> Providers also experience name changes (less frequently than patients, but they happen). The same architectural pattern applies to provider-name handling, with NPI as a stronger anchor that simplifies the matching but does not eliminate the time-varying-name need.</li>
+<li><strong>Recipe 5.3 (Address Standardization and Household Linkage):</strong> Address consistency is a strong demographic feature in the name-change detector; recipe 5.3's address pipeline supplies the standardized addresses that the detector compares as-of-date. Household-linkage data feeds the family-disambiguation rules variation.</li>
+<li><strong>Recipe 5.4 (Insurance Eligibility Matching):</strong> Payer eligibility refreshes are one of the most reliable trigger sources for name-change detection (the patient updated her name on her insurance and the eligibility refresh carries the new name). The cross-reference table from recipe 5.4 is updated through the propagation pipeline when a name change resolves.</li>
+<li><strong>Recipe 5.5 (Cross-Facility Patient Matching):</strong> Cross-organizational queries against an HIE may surface name discrepancies that this recipe's indirect-detection path consumes; cross-facility match invalidation events from 5.5 feed this recipe's invalidation pipeline.</li>
+<li><strong>Recipe 5.6 (Claims-to-Clinical Data Linkage):</strong> Encounter-cluster-to-clinical-encounter linkages whose patient resolution depended on the prior name need to be re-evaluated when a name change resolves; the propagation queue from this recipe triggers the re-link in 5.6.</li>
+<li><strong>Recipe 5.8 (Privacy-Preserving Record Linkage):</strong> Tokenization-based linkage produces different tokens for pre-change and post-change records; the token-pair-history layer (a variation above) maintains the longitudinal continuity in the privacy-preserving setting.</li>
+<li><strong>Recipe 5.9 (National-Scale Patient Matching):</strong> TEFCA-mediated identity resolution at national scale carries the same name-change challenges magnified; the QHIN-to-QHIN exchange of identity-update events is the cross-organizational extension of this recipe at national scale.</li>
+<li><strong>Recipe 5.10 (Deceased Patient Resolution):</strong> Deceased-patient events from 5.10 may surface previously-unknown name changes (a death record that carries a name different from the institution's current record for the same identity); the recipes coordinate so that the death-record reconciliation does not produce a false-positive name-change resolution.</li>
+<li><strong>Recipe 1.6 (Handwritten Clinical Note Digitization):</strong> Handwritten notes from prior decades may surface names different from the current canonical name; the recipe's historical-record retrofit consumes the digitized notes as evidence for backfill.</li>
+<li><strong>Recipe 1.10 (Historical Chart Migration):</strong> Migrating paper or legacy-system charts surfaces records under names that may not be in the current institution's name history; the migration's matcher hands off to this recipe's resolution path.</li>
+<li><strong>Recipe 2.6 (Clinical Note Summarization):</strong> Notes referencing the patient by name may be regenerated under the current name (or kept under the original name with a sensitivity-aware overlay) depending on the access-control envelope; the summarization service consumes the envelope at render time.</li>
+<li><strong>Recipe 7.x (Predictive Analytics):</strong> Cohort definitions for risk-scoring depend on the unified longitudinal identity; missed name-change linkages produce fragmented cohorts and biased model training. The longitudinal-name-change recipe is upstream of every multi-year predictive-analytics use case.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>entity-resolution</code> · <code>record-linkage</code> · <code>longitudinal-matching</code> · <code>name-change</code> · <code>temporal-identity</code> · <code>time-varying-name</code> · <code>master-patient-index</code> · <code>mpi</code> · <code>empi</code> · <code>gender-affirming-care</code> · <code>sensitivity-classification</code> · <code>access-control-envelope</code> · <code>fhir</code> · <code>humanname</code> · <code>patient-resource</code> · <code>event-driven</code> · <code>complex</code> · <code>production</code> · <code>hipaa</code> · <code>information-blocking</code> · <code>cures-act</code> · <code>equity-monitoring</code> · <code>cohort-stratified-accuracy</code> · <code>vital-records</code> · <code>patient-portal</code> · <code>audit-archive</code></p>
+<hr />
+<p><em>← <a href="chapter05.06-claims-to-clinical-data-linkage.html">Recipe 5.6: Claims-to-Clinical Data Linkage</a> · Chapter 5 · <a href="chapter05.08-privacy-preserving-record-linkage.html">Next: Recipe 5.8 - Privacy-Preserving Record Linkage →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

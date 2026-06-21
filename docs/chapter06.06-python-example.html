@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 6.6: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-66-python-implementation-example">Recipe 6.6: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 6.6. It shows one way you could build a patient similarity engine using synthetic data and scikit-learn for the core algorithm, with boto3 for the AWS integration pieces. It is not production-ready. The feature engineering is minimal, the cohort is tiny, and the distance metric is a starting point. Think of it as a workbench prototype: useful for understanding the mechanics, not something you'd plug into a care planning system on Monday morning. Consider it a starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the following packages:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>scikit-learn
+</pre></div>
+
+<p>Your environment needs AWS credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>s3:GetObject</code> and <code>s3:PutObject</code> on your feature store bucket</li>
+<li><code>dynamodb:GetItem</code> and <code>dynamodb:PutItem</code> on the similarity cache table</li>
+<li><code>sagemaker:InvokeEndpoint</code> if using a SageMaker-hosted model (this example uses local scikit-learn instead for simplicity)</li>
+</ul>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the steps, here's the configuration that drives the similarity engine. Feature weights encode clinical judgment about what matters for diabetes patient similarity. These should come from your clinical SMEs, not from the data.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NearestNeighbors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="c1"># Structured logging. In production, use JSON-formatted output for</span>
+<span class="c1"># CloudWatch Logs Insights queries. Never log PHI field values.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># --- Feature Configuration ---</span>
+<span class="c1"># These are the features we use for diabetes patient similarity.</span>
+<span class="c1"># Each feature has a weight that encodes clinical importance.</span>
+<span class="c1"># Higher weight = more influence on similarity score.</span>
+<span class="c1">#</span>
+<span class="c1"># These weights are NOT learned from data. They come from clinical SMEs</span>
+<span class="c1"># who understand which factors drive diabetes outcomes. Treat this as</span>
+<span class="c1"># a living document that gets refined as you validate the model.</span>
+
+<span class="n">FEATURE_WEIGHTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;bmi&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="s2">&quot;a1c&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>              <span class="c1"># A1C is the primary diabetes marker</span>
+    <span class="s2">&quot;systolic_bp&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;years_since_diagnosis&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+    <span class="s2">&quot;medication_count&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;on_insulin&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>       <span class="c1"># insulin status changes trajectory significantly</span>
+    <span class="s2">&quot;on_metformin&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="s2">&quot;on_glp1&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="s2">&quot;heart_failure&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>    <span class="c1"># comorbidities that change the game</span>
+    <span class="s2">&quot;ckd&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
+    <span class="s2">&quot;depression&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="s2">&quot;hypertension&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;ed_visits_12mo&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="s2">&quot;hospitalizations_12mo&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># How many similar patients to retrieve per query.</span>
+<span class="n">K_NEIGHBORS</span> <span class="o">=</span> <span class="mi">20</span>
+
+<span class="c1"># Maximum distance threshold. Neighbors beyond this are &quot;not similar enough&quot;</span>
+<span class="c1"># and should not be presented to the care manager.</span>
+<span class="c1"># This value depends on your feature scaling; tune it empirically.</span>
+<span class="n">MAX_DISTANCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">3.0</span>
+
+<span class="c1"># DynamoDB table for caching similarity results.</span>
+<span class="n">CACHE_TABLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;patient-similarity-cache&quot;</span>
+
+<span class="c1"># S3 bucket and prefix for the feature store.</span>
+<span class="n">FEATURE_STORE_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-health-system-features&quot;</span>
+<span class="n">FEATURE_STORE_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;patient-features/diabetes/v2026-03/&quot;</span>
+
+<span class="c1"># Cache TTL in seconds (24 hours). Results expire when the feature store refreshes.</span>
+<span class="n">CACHE_TTL_SECONDS</span> <span class="o">=</span> <span class="mi">86400</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-generate-synthetic-patient-cohort">Step 1: Generate Synthetic Patient Cohort</h2>
+<p><em>The main recipe's Step 1 covers feature engineering from raw EHR data. Here we generate a synthetic cohort to demonstrate the similarity mechanics without needing real clinical data. In production, this step is replaced by your Glue ETL pipeline.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_synthetic_cohort</span><span class="p">(</span><span class="n">n_patients</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a synthetic patient cohort with realistic feature distributions.</span>
+
+<span class="sd">    This creates fake-but-plausible patient data for demonstrating the</span>
+<span class="sd">    similarity algorithm. The distributions are loosely based on published</span>
+<span class="sd">    Type 2 diabetes population statistics, but they&#39;re synthetic.</span>
+<span class="sd">    Do NOT use this for clinical validation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_patients: Number of synthetic patients to generate.</span>
+<span class="sd">        seed: Random seed for reproducibility.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame with one row per patient, columns matching FEATURE_WEIGHTS keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="n">patients</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;PAT-</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">)],</span>
+
+        <span class="c1"># Age: Type 2 diabetes population skews older. Mean ~58, std ~12.</span>
+        <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">58</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+
+        <span class="c1"># BMI: overweight/obese population. Mean ~32, std ~6.</span>
+        <span class="s2">&quot;bmi&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">55</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+
+        <span class="c1"># A1C: the primary diabetes marker. Mean ~7.8, std ~1.5.</span>
+        <span class="c1"># Values below 5.7 are non-diabetic; we clip to realistic range.</span>
+        <span class="s2">&quot;a1c&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">7.8</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mf">5.7</span><span class="p">,</span> <span class="mf">14.0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+
+        <span class="c1"># Systolic blood pressure. Mean ~138, std ~18.</span>
+        <span class="s2">&quot;systolic_bp&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">138</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+
+        <span class="c1"># Years since diabetes diagnosis. Exponential-ish distribution.</span>
+        <span class="s2">&quot;years_since_diagnosis&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+
+        <span class="c1"># Medication count (all medications, not just diabetes).</span>
+        <span class="s2">&quot;medication_count&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+
+        <span class="c1"># Binary flags for specific drug classes.</span>
+        <span class="s2">&quot;on_insulin&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">),</span>
+        <span class="s2">&quot;on_metformin&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">),</span>
+        <span class="s2">&quot;on_glp1&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">),</span>
+
+        <span class="c1"># Comorbidity flags.</span>
+        <span class="s2">&quot;heart_failure&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">),</span>
+        <span class="s2">&quot;ckd&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">),</span>
+        <span class="s2">&quot;depression&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">),</span>
+        <span class="s2">&quot;hypertension&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">),</span>
+
+        <span class="c1"># Utilization in the past 12 months.</span>
+        <span class="s2">&quot;ed_visits_12mo&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="s2">&quot;hospitalizations_12mo&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+    <span class="p">})</span>
+
+    <span class="c1"># Generate synthetic outcomes for the cohort.</span>
+    <span class="c1"># Goal: A1C &lt; 7.0 within 6 months. Probability depends on features.</span>
+    <span class="c1"># This is a simplified outcome model for demonstration purposes.</span>
+    <span class="n">goal_probability</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="mf">0.5</span>
+        <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="p">(</span><span class="n">patients</span><span class="p">[</span><span class="s2">&quot;a1c&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mf">7.0</span><span class="p">)</span>       <span class="c1"># higher baseline A1C = harder</span>
+        <span class="o">+</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;on_metformin&quot;</span><span class="p">]</span>         <span class="c1"># metformin helps</span>
+        <span class="o">+</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;on_glp1&quot;</span><span class="p">]</span>             <span class="c1"># GLP-1 helps more</span>
+        <span class="o">-</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;heart_failure&quot;</span><span class="p">]</span>        <span class="c1"># comorbidities make it harder</span>
+        <span class="o">-</span> <span class="mf">0.08</span> <span class="o">*</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;ckd&quot;</span><span class="p">]</span>
+        <span class="o">-</span> <span class="mf">0.03</span> <span class="o">*</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;years_since_diagnosis&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">)</span>
+
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;goal_achieved&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">goal_probability</span><span class="p">)</span>
+
+    <span class="c1"># Time to goal (months) for those who achieved it. Faster for less severe cases.</span>
+    <span class="n">base_time</span> <span class="o">=</span> <span class="mf">3.0</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">patients</span><span class="p">[</span><span class="s2">&quot;a1c&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mf">6.5</span><span class="p">)</span>
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;time_to_goal_months&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;goal_achieved&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">base_time</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">))</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Interventions received (simplified: assign based on features).</span>
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;intervention_metformin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;on_metformin&quot;</span><span class="p">]</span>
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;intervention_glp1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;on_glp1&quot;</span><span class="p">]</span>
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;intervention_lifestyle&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;intervention_insulin_titration&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;on_insulin&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Adverse events (simplified).</span>
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;adverse_gi_intolerance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;on_metformin&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;adverse_hypoglycemia&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">patients</span><span class="p">[</span><span class="s2">&quot;on_insulin&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">patients</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-build-the-similarity-index">Step 2: Build the Similarity Index</h2>
+<p><em>The pseudocode calls this <code>build_similarity_index</code>. We use scikit-learn's NearestNeighbors with weighted Euclidean distance. In production, you'd use SageMaker's built-in kNN algorithm or OpenSearch's kNN plugin for scale.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_similarity_index</span><span class="p">(</span>
+    <span class="n">cohort</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">feature_weights</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a nearest-neighbor index from the patient cohort.</span>
+
+<span class="sd">    This applies feature weights, scales the features, and fits a</span>
+<span class="sd">    NearestNeighbors model for fast similarity queries.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cohort: DataFrame with patient features (one row per patient).</span>
+<span class="sd">        feature_weights: Dict mapping feature names to importance weights.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (fitted NearestNeighbors model, fitted StandardScaler, feature column list).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">feature_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_weights</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># Extract the feature matrix. Each row is a patient, each column is a feature.</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">cohort</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="c1"># Standardize features to zero mean, unit variance.</span>
+    <span class="c1"># Without this, features with large ranges (age: 30-90) would dominate</span>
+    <span class="c1"># features with small ranges (on_insulin: 0-1) in distance calculations.</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+    <span class="n">X_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+    <span class="c1"># Apply clinical weights. Multiply each feature column by its weight.</span>
+    <span class="c1"># This makes high-weight features (A1C: 3.0) contribute more to distance</span>
+    <span class="c1"># than low-weight features (age: 1.0).</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">feature_weights</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">feature_cols</span><span class="p">])</span>
+    <span class="n">X_weighted</span> <span class="o">=</span> <span class="n">X_scaled</span> <span class="o">*</span> <span class="n">weights</span>
+
+    <span class="c1"># Fit the nearest-neighbor index.</span>
+    <span class="c1"># algorithm=&quot;ball_tree&quot; works well for moderate dimensions (&lt;50 features).</span>
+    <span class="c1"># For very high dimensions or very large cohorts, use &quot;brute&quot; or switch</span>
+    <span class="c1"># to an ANN library like FAISS or Annoy.</span>
+    <span class="n">nn_model</span> <span class="o">=</span> <span class="n">NearestNeighbors</span><span class="p">(</span>
+        <span class="n">n_neighbors</span><span class="o">=</span><span class="n">K_NEIGHBORS</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># +1 because the patient is their own neighbor</span>
+        <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;euclidean&quot;</span><span class="p">,</span>
+        <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;ball_tree&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">nn_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_weighted</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Built similarity index: </span><span class="si">%d</span><span class="s2"> patients, </span><span class="si">%d</span><span class="s2"> features&quot;</span><span class="p">,</span>
+        <span class="n">X_weighted</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">X_weighted</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nn_model</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">feature_cols</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-query-for-similar-patients">Step 3: Query for Similar Patients</h2>
+<p><em>The pseudocode calls this <code>find_similar_patients</code>. Given a query patient's features, find the k nearest neighbors in the index and return them with distance scores.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_similar_patients</span><span class="p">(</span>
+    <span class="n">query_patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">cohort</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">nn_model</span><span class="p">:</span> <span class="n">NearestNeighbors</span><span class="p">,</span>
+    <span class="n">scaler</span><span class="p">:</span> <span class="n">StandardScaler</span><span class="p">,</span>
+    <span class="n">feature_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">feature_weights</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">K_NEIGHBORS</span><span class="p">,</span>
+    <span class="n">max_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">MAX_DISTANCE_THRESHOLD</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the k most similar patients to a query patient.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query_patient_id: The patient ID to find neighbors for.</span>
+<span class="sd">        cohort: Full patient cohort DataFrame.</span>
+<span class="sd">        nn_model: Fitted NearestNeighbors model.</span>
+<span class="sd">        scaler: Fitted StandardScaler (same one used during index build).</span>
+<span class="sd">        feature_cols: List of feature column names in order.</span>
+<span class="sd">        feature_weights: Dict of feature weights.</span>
+<span class="sd">        k: Number of neighbors to return.</span>
+<span class="sd">        max_distance: Maximum distance threshold; farther neighbors are excluded.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of dicts with patient_id, distance, and similarity score.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Look up the query patient&#39;s features.</span>
+    <span class="n">query_row</span> <span class="o">=</span> <span class="n">cohort</span><span class="p">[</span><span class="n">cohort</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">query_patient_id</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">query_row</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Patient </span><span class="si">%s</span><span class="s2"> not found in cohort&quot;</span><span class="p">,</span> <span class="n">query_patient_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># Extract, scale, and weight the query vector (same transforms as index build).</span>
+    <span class="n">query_features</span> <span class="o">=</span> <span class="n">query_row</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">query_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">query_features</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">feature_weights</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">feature_cols</span><span class="p">])</span>
+    <span class="n">query_weighted</span> <span class="o">=</span> <span class="n">query_scaled</span> <span class="o">*</span> <span class="n">weights</span>
+
+    <span class="c1"># Query the index. Returns distances and indices of nearest neighbors.</span>
+    <span class="n">distances</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">nn_model</span><span class="o">.</span><span class="n">kneighbors</span><span class="p">(</span><span class="n">query_weighted</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Flatten (kneighbors returns 2D arrays even for single queries).</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Build results, skipping the query patient and filtering by max distance.</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">dist</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+        <span class="n">neighbor_id</span> <span class="o">=</span> <span class="n">cohort</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Skip self-match.</span>
+        <span class="k">if</span> <span class="n">neighbor_id</span> <span class="o">==</span> <span class="n">query_patient_id</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Stop if we&#39;ve exceeded the distance threshold.</span>
+        <span class="c1"># kneighbors() returns results sorted by distance ascending, so once</span>
+        <span class="c1"># we exceed the threshold, all remaining neighbors are also too far.</span>
+        <span class="c1"># Note: if using approximate NN libraries (FAISS, Annoy), verify sort</span>
+        <span class="c1"># order before relying on this early-exit pattern.</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="n">max_distance</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">neighbor_id</span><span class="p">,</span>
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">dist</span><span class="p">),</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;similarity&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">dist</span><span class="p">)),</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="p">})</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">k</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Found </span><span class="si">%d</span><span class="s2"> similar patients for </span><span class="si">%s</span><span class="s2"> (closest distance: </span><span class="si">%.3f</span><span class="s2">)&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">),</span>
+        <span class="n">query_patient_id</span><span class="p">,</span>
+        <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">results</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-aggregate-outcomes">Step 4: Aggregate Outcomes</h2>
+<p><em>The pseudocode calls this <code>aggregate_outcomes</code>. For the matched similar patients, pull their outcome data and compute actionable summaries.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">aggregate_outcomes</span><span class="p">(</span>
+    <span class="n">similar_patients</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">cohort</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregate outcomes for a set of similar patients.</span>
+
+<span class="sd">    Computes goal achievement rates, common interventions, adverse events,</span>
+<span class="sd">    and a confidence indicator based on cohort size.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        similar_patients: List of dicts from find_similar_patients.</span>
+<span class="sd">        cohort: Full cohort DataFrame (includes outcome columns).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with aggregated outcome summary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">similar_patients</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;cohort_size&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="s2">&quot;insufficient&quot;</span><span class="p">}</span>
+
+    <span class="c1"># Get the patient IDs of similar patients.</span>
+    <span class="n">neighbor_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">similar_patients</span><span class="p">]</span>
+
+    <span class="c1"># Filter the cohort to just the similar patients.</span>
+    <span class="n">neighbors_df</span> <span class="o">=</span> <span class="n">cohort</span><span class="p">[</span><span class="n">cohort</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">neighbor_ids</span><span class="p">)]</span>
+
+    <span class="n">cohort_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neighbors_df</span><span class="p">)</span>
+
+    <span class="c1"># Goal achievement rate.</span>
+    <span class="n">goal_rate</span> <span class="o">=</span> <span class="n">neighbors_df</span><span class="p">[</span><span class="s2">&quot;goal_achieved&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="c1"># Median time to goal (only for those who achieved it).</span>
+    <span class="n">achievers</span> <span class="o">=</span> <span class="n">neighbors_df</span><span class="p">[</span><span class="n">neighbors_df</span><span class="p">[</span><span class="s2">&quot;goal_achieved&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">median_time</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">achievers</span><span class="p">[</span><span class="s2">&quot;time_to_goal_months&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">achievers</span><span class="o">.</span><span class="n">empty</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Intervention frequency among successful patients.</span>
+    <span class="n">intervention_cols</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;intervention_metformin&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;intervention_glp1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;intervention_lifestyle&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;intervention_insulin_titration&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">achievers</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">intervention_freq</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">col</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;intervention_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">achievers</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()),</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">intervention_cols</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">intervention_freq</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Sort interventions by frequency (most common first).</span>
+    <span class="n">intervention_freq</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="nb">sorted</span><span class="p">(</span><span class="n">intervention_freq</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Adverse event rates.</span>
+    <span class="n">adverse_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;adverse_gi_intolerance&quot;</span><span class="p">,</span> <span class="s2">&quot;adverse_hypoglycemia&quot;</span><span class="p">]</span>
+    <span class="n">adverse_rates</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">col</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;adverse_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">neighbors_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()),</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">adverse_cols</span>
+        <span class="k">if</span> <span class="n">neighbors_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Confidence based on cohort size.</span>
+    <span class="k">if</span> <span class="n">cohort_size</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="s2">&quot;high&quot;</span>
+    <span class="k">elif</span> <span class="n">cohort_size</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="s2">&quot;moderate&quot;</span>
+    <span class="k">elif</span> <span class="n">cohort_size</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="s2">&quot;low&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="s2">&quot;insufficient&quot;</span>
+
+    <span class="n">summary</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;cohort_size&quot;</span><span class="p">:</span> <span class="n">cohort_size</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">confidence</span><span class="p">,</span>
+        <span class="s2">&quot;goal_achievement_rate&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">goal_rate</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;median_time_to_goal_months&quot;</span><span class="p">:</span> <span class="n">median_time</span><span class="p">,</span>
+        <span class="s2">&quot;intervention_frequency&quot;</span><span class="p">:</span> <span class="n">intervention_freq</span><span class="p">,</span>
+        <span class="s2">&quot;adverse_event_rates&quot;</span><span class="p">:</span> <span class="n">adverse_rates</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Outcome summary: </span><span class="si">%d</span><span class="s2"> patients, </span><span class="si">%.0f%%</span><span class="s2"> goal achievement, confidence=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">cohort_size</span><span class="p">,</span>
+        <span class="n">goal_rate</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">summary</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-cache-results-in-dynamodb">Step 5: Cache Results in DynamoDB</h2>
+<p><em>The pseudocode calls this <code>store_and_present</code>. We cache similarity results so repeated queries for the same patient don't recompute. Results expire when the feature store refreshes.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cache_similarity_results</span><span class="p">(</span>
+    <span class="n">query_patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">similar_patients</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">outcome_summary</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">feature_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;v2026-03-15&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cache similarity results in DynamoDB with TTL-based expiration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query_patient_id: The patient we queried for.</span>
+<span class="sd">        similar_patients: List of similar patient matches.</span>
+<span class="sd">        outcome_summary: Aggregated outcome data.</span>
+<span class="sd">        feature_version: Version tag of the feature store used.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The cached record (for confirmation).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CACHE_TABLE_NAME</span><span class="p">)</span>
+
+    <span class="n">now</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">timestamp</span><span class="p">())</span>
+
+    <span class="c1"># DynamoDB requires Decimal for numeric types, not float.</span>
+    <span class="c1"># This helper converts floats in nested structures.</span>
+    <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">query_patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;feature_version&quot;</span><span class="p">:</span> <span class="n">feature_version</span><span class="p">,</span>
+        <span class="s2">&quot;computed_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;ttl&quot;</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="n">CACHE_TTL_SECONDS</span><span class="p">,</span>
+        <span class="s2">&quot;similar_patients&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">similar_patients</span><span class="p">),</span> <span class="n">parse_float</span><span class="o">=</span><span class="n">Decimal</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;outcome_summary&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">outcome_summary</span><span class="p">),</span> <span class="n">parse_float</span><span class="o">=</span><span class="n">Decimal</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Cached similarity results for </span><span class="si">%s</span><span class="s2"> (expires in </span><span class="si">%d</span><span class="s2"> seconds)&quot;</span><span class="p">,</span>
+        <span class="n">query_patient_id</span><span class="p">,</span>
+        <span class="n">CACHE_TTL_SECONDS</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">record</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_cache</span><span class="p">(</span><span class="n">query_patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature_version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if we have cached similarity results for this patient.</span>
+
+<span class="sd">    Returns the cached record if found and not expired, None otherwise.</span>
+<span class="sd">    DynamoDB TTL handles expiration, but items may linger briefly after TTL.</span>
+<span class="sd">    We check the feature_version to ensure results match current features.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">CACHE_TABLE_NAME</span><span class="p">)</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span>
+        <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">query_patient_id</span><span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="n">item</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Item&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">item</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;feature_version&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">feature_version</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cache hit for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">query_patient_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cache miss for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">query_patient_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single function. This is what your Lambda orchestrator would call (minus the DynamoDB caching if you're just experimenting locally).</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_patient_similarity_pipeline</span><span class="p">(</span>
+    <span class="n">query_patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">feature_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;v2026-03-15&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full patient similarity pipeline for one patient.</span>
+
+<span class="sd">    Generates a synthetic cohort (in production, this loads from S3),</span>
+<span class="sd">    builds the similarity index, finds neighbors, aggregates outcomes,</span>
+<span class="sd">    and returns a care-planning-ready summary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query_patient_id: Patient ID to find similar patients for.</span>
+<span class="sd">        use_cache: Whether to check/write DynamoDB cache.</span>
+<span class="sd">        feature_version: Feature store version tag.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with similar patients and outcome summary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># In production, check cache first to avoid redundant computation.</span>
+    <span class="c1"># Commented out for local testing (requires DynamoDB table to exist).</span>
+    <span class="c1"># if use_cache:</span>
+    <span class="c1">#     cached = check_cache(query_patient_id, feature_version)</span>
+    <span class="c1">#     if cached:</span>
+    <span class="c1">#         return cached</span>
+
+    <span class="c1"># Step 1: Load the patient cohort.</span>
+    <span class="c1"># In production: load from S3 feature store (Parquet files).</span>
+    <span class="c1"># Here: generate synthetic data for demonstration.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 1: Loading patient cohort...&quot;</span><span class="p">)</span>
+    <span class="n">cohort</span> <span class="o">=</span> <span class="n">generate_synthetic_cohort</span><span class="p">(</span><span class="n">n_patients</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cohort</span><span class="p">)</span><span class="si">}</span><span class="s2"> patients with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">FEATURE_WEIGHTS</span><span class="p">)</span><span class="si">}</span><span class="s2"> features each&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Build the similarity index.</span>
+    <span class="c1"># In production: this is pre-built and loaded from a model artifact.</span>
+    <span class="c1"># Here: we build it fresh each time (fast enough for 500 patients).</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 2: Building similarity index...&quot;</span><span class="p">)</span>
+    <span class="n">nn_model</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">feature_cols</span> <span class="o">=</span> <span class="n">build_similarity_index</span><span class="p">(</span><span class="n">cohort</span><span class="p">,</span> <span class="n">FEATURE_WEIGHTS</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Index built with algorithm=</span><span class="si">{</span><span class="n">nn_model</span><span class="o">.</span><span class="n">algorithm</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Find similar patients.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step 3: Finding patients similar to </span><span class="si">{</span><span class="n">query_patient_id</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="n">similar</span> <span class="o">=</span> <span class="n">find_similar_patients</span><span class="p">(</span>
+        <span class="n">query_patient_id</span><span class="o">=</span><span class="n">query_patient_id</span><span class="p">,</span>
+        <span class="n">cohort</span><span class="o">=</span><span class="n">cohort</span><span class="p">,</span>
+        <span class="n">nn_model</span><span class="o">=</span><span class="n">nn_model</span><span class="p">,</span>
+        <span class="n">scaler</span><span class="o">=</span><span class="n">scaler</span><span class="p">,</span>
+        <span class="n">feature_cols</span><span class="o">=</span><span class="n">feature_cols</span><span class="p">,</span>
+        <span class="n">feature_weights</span><span class="o">=</span><span class="n">FEATURE_WEIGHTS</span><span class="p">,</span>
+        <span class="n">k</span><span class="o">=</span><span class="n">K_NEIGHBORS</span><span class="p">,</span>
+        <span class="n">max_distance</span><span class="o">=</span><span class="n">MAX_DISTANCE_THRESHOLD</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">similar</span><span class="p">)</span><span class="si">}</span><span class="s2"> similar patients&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">similar</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  No similar patients found within distance threshold.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;query_patient_id&quot;</span><span class="p">:</span> <span class="n">query_patient_id</span><span class="p">,</span> <span class="s2">&quot;similar_patients&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;outcome_summary&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+    <span class="c1"># Print the top 5 matches for visibility.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Top 5 matches:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">similar</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: similarity=</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">&#39;similarity&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, distance=</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Aggregate outcomes for the similar cohort.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 4: Aggregating outcomes...&quot;</span><span class="p">)</span>
+    <span class="n">outcome_summary</span> <span class="o">=</span> <span class="n">aggregate_outcomes</span><span class="p">(</span><span class="n">similar</span><span class="p">,</span> <span class="n">cohort</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Goal achievement rate: </span><span class="si">{</span><span class="n">outcome_summary</span><span class="p">[</span><span class="s1">&#39;goal_achievement_rate&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Confidence: </span><span class="si">{</span><span class="n">outcome_summary</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Top interventions: </span><span class="si">{</span><span class="n">outcome_summary</span><span class="p">[</span><span class="s1">&#39;intervention_frequency&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Cache results (uncomment for production with DynamoDB).</span>
+    <span class="c1"># if use_cache:</span>
+    <span class="c1">#     cache_similarity_results(query_patient_id, similar, outcome_summary, feature_version)</span>
+
+    <span class="c1"># Assemble the final result.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;query_patient_id&quot;</span><span class="p">:</span> <span class="n">query_patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;feature_version&quot;</span><span class="p">:</span> <span class="n">feature_version</span><span class="p">,</span>
+        <span class="s2">&quot;similar_patients&quot;</span><span class="p">:</span> <span class="n">similar</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span>  <span class="c1"># top 5 for display; outcome_summary uses all k neighbors</span>
+        <span class="s2">&quot;outcome_summary&quot;</span><span class="p">:</span> <span class="n">outcome_summary</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Done. Result:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="c1"># --- Run it ---</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Pick a patient from our synthetic cohort to query.</span>
+    <span class="c1"># PAT-00042 is arbitrary; any valid patient_id works.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">run_patient_similarity_pipeline</span><span class="p">(</span><span class="n">query_patient_id</span><span class="o">=</span><span class="s2">&quot;PAT-00042&quot;</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="bonus-explaining-why-patients-are-similar">Bonus: Explaining Why Patients Are Similar</h2>
+<p>Care managers need to understand why two patients are considered similar. &quot;The algorithm says so&quot; doesn't cut it in clinical decision support. This function provides feature-level explanations.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">explain_similarity</span><span class="p">(</span>
+    <span class="n">query_patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">neighbor_patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">cohort</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">feature_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">feature_weights</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Explain which features make two patients similar (or different).</span>
+
+<span class="sd">    Returns a ranked list of features by their contribution to the</span>
+<span class="sd">    distance between the two patients. Features with small differences</span>
+<span class="sd">    (high agreement) are what makes them similar. Features with large</span>
+<span class="sd">    differences are where they diverge.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query_patient_id: The query patient.</span>
+<span class="sd">        neighbor_patient_id: A similar patient to explain.</span>
+<span class="sd">        cohort: Full cohort DataFrame.</span>
+<span class="sd">        feature_cols: Feature column names.</span>
+<span class="sd">        feature_weights: Feature importance weights.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of dicts with feature name, query value, neighbor value,</span>
+<span class="sd">        and weighted contribution to distance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">query_row</span> <span class="o">=</span> <span class="n">cohort</span><span class="p">[</span><span class="n">cohort</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">query_patient_id</span><span class="p">][</span><span class="n">feature_cols</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">neighbor_row</span> <span class="o">=</span> <span class="n">cohort</span><span class="p">[</span><span class="n">cohort</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">neighbor_patient_id</span><span class="p">][</span><span class="n">feature_cols</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">explanations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">feature_cols</span><span class="p">:</span>
+        <span class="n">q_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">query_row</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+        <span class="n">n_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">neighbor_row</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">feature_weights</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+        <span class="c1"># Weighted absolute difference on RAW (unscaled) values.</span>
+        <span class="c1"># Note: the actual similarity model uses StandardScaler-transformed</span>
+        <span class="c1"># values before applying weights, so this explanation is an</span>
+        <span class="c1"># approximation. The ranking of contributions here may differ from</span>
+        <span class="c1"># the true distance decomposition. For precise explanations, pass</span>
+        <span class="c1"># the fitted scaler and compute contributions on scaled values.</span>
+        <span class="n">contribution</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">q_val</span> <span class="o">-</span> <span class="n">n_val</span><span class="p">)</span> <span class="o">*</span> <span class="n">weight</span>
+
+        <span class="n">explanations</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;feature&quot;</span><span class="p">:</span> <span class="n">col</span><span class="p">,</span>
+            <span class="s2">&quot;query_value&quot;</span><span class="p">:</span> <span class="n">q_val</span><span class="p">,</span>
+            <span class="s2">&quot;neighbor_value&quot;</span><span class="p">:</span> <span class="n">n_val</span><span class="p">,</span>
+            <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weight</span><span class="p">,</span>
+            <span class="s2">&quot;distance_contribution&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">contribution</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="p">})</span>
+
+    <span class="c1"># Sort by contribution: smallest first (most similar features at top).</span>
+    <span class="n">explanations</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;distance_contribution&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">explanations</span>
+</pre></div>
+
+<p>Usage:</p>
+<div class="code"><pre><span></span><span class="c1"># After running the pipeline, explain why the top match is similar.</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">cohort</span> <span class="o">=</span> <span class="n">generate_synthetic_cohort</span><span class="p">(</span><span class="n">n_patients</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">feature_cols</span> <span class="o">=</span> <span class="n">build_similarity_index</span><span class="p">(</span><span class="n">cohort</span><span class="p">,</span> <span class="n">FEATURE_WEIGHTS</span><span class="p">)</span>
+
+    <span class="n">explanation</span> <span class="o">=</span> <span class="n">explain_similarity</span><span class="p">(</span>
+        <span class="n">query_patient_id</span><span class="o">=</span><span class="s2">&quot;PAT-00042&quot;</span><span class="p">,</span>
+        <span class="n">neighbor_patient_id</span><span class="o">=</span><span class="s2">&quot;PAT-00187&quot;</span><span class="p">,</span>  <span class="c1"># replace with actual top match</span>
+        <span class="n">cohort</span><span class="o">=</span><span class="n">cohort</span><span class="p">,</span>
+        <span class="n">feature_cols</span><span class="o">=</span><span class="n">feature_cols</span><span class="p">,</span>
+        <span class="n">feature_weights</span><span class="o">=</span><span class="n">FEATURE_WEIGHTS</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Similarity explanation (most similar features first):&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">explanation</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;feature&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: query=</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;query_value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;neighbor=</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;neighbor_value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (contribution=</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;distance_contribution&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Biggest differences:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">explanation</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;feature&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: query=</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;query_value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;neighbor=</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;neighbor_value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (contribution=</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;distance_contribution&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example works. Run it and you'll get a ranked list of similar patients with outcome summaries. But there's a meaningful distance between &quot;works in a script with synthetic data&quot; and &quot;runs in a care planning system with real patients.&quot; Here's where that gap lives:</p>
+<p><strong>Real feature engineering.</strong> This example generates synthetic features. A production system runs a Glue ETL pipeline that extracts features from EHR data (Epic, Cerner, claims feeds), handles missing values (patients without recent labs), resolves temporal issues (which A1C value do you use if there are three in the past year?), and produces versioned feature snapshots. That pipeline is 80% of the work.</p>
+<p><strong>Feature validation.</strong> Before trusting any similarity metric, you need to validate that &quot;similar features&quot; actually predicts &quot;similar outcomes&quot; in your population. Split your cohort temporally: use historical patients to build the index, then check whether the nearest neighbors of recent patients actually had similar outcomes. If they didn't, your features aren't capturing what matters.</p>
+<p><strong>Scale.</strong> scikit-learn's NearestNeighbors works fine for 500 patients. For 500,000 patients (a typical health system's diabetes population over several years), you need approximate nearest neighbor algorithms. SageMaker's built-in kNN uses FAISS under the hood, which handles millions of vectors efficiently. OpenSearch's kNN plugin is another option if you want sub-second queries without managing a SageMaker endpoint.</p>
+<p><strong>Feature drift monitoring.</strong> Clinical practice changes. New drug classes emerge. Guidelines shift. A feature set designed today may not capture what matters in two years. You need automated monitoring that detects when the similarity metric's predictive power degrades, and a process for clinical review of features on a regular cadence.</p>
+<p><strong>Bias auditing.</strong> If your historical data reflects disparities (certain populations received less aggressive treatment), the similarity engine will reproduce those patterns. You need to audit outcomes by demographic subgroups and ensure the system doesn't systematically recommend less effective care for underserved populations. This is not optional.</p>
+<p><strong>Explainability in the UI.</strong> The <code>explain_similarity</code> function above is a starting point. A production system needs to present explanations in clinician-friendly language (&quot;These patients are similar because they share A1C range, medication profile, and comorbidity pattern&quot;) rather than raw feature values.</p>
+<p><strong>Error handling and retries.</strong> This example has no error handling. A production system handles missing patients gracefully, retries failed S3 reads, validates that the feature store is fresh (not stale from a failed ETL run), and degrades gracefully when the similarity endpoint is unavailable.</p>
+<p><strong>IAM least-privilege.</strong> The Lambda orchestrator needs exactly: <code>s3:GetObject</code> on the feature store prefix, <code>dynamodb:GetItem</code> and <code>dynamodb:PutItem</code> on the cache table, and <code>sagemaker:InvokeEndpoint</code> on the specific similarity endpoint. Not <code>s3:*</code>. Not <code>AmazonSageMakerFullAccess</code>.</p>
+<p><strong>VPC and encryption.</strong> Patient features are PHI. The Lambda, SageMaker endpoint, and DynamoDB table should all be in a VPC with VPC endpoints. S3 uses SSE-KMS with a customer-managed key. DynamoDB encryption at rest is enabled by default but should use a CMK for key rotation control. All API calls are TLS (boto3 handles this automatically).</p>
+<p><strong>DynamoDB Decimal handling.</strong> This example already uses <code>json.loads(..., parse_float=Decimal)</code> for the cache write. Any numeric value going into DynamoDB must be a <code>Decimal</code>, not a Python <code>float</code>. boto3 will raise a <code>TypeError</code> on raw floats. The pattern shown here (serialize to JSON, then parse back with Decimal) is the standard workaround.</p>
+<p><strong>Testing.</strong> There are no tests here. A production system has unit tests for the feature engineering logic (with known inputs and expected outputs), integration tests for the similarity index (verify that known-similar patients are returned as neighbors), and regression tests that catch when model updates change results unexpectedly.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter06.06-patient-similarity-care-planning.html">Recipe 6.6</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

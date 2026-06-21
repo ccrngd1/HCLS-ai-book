@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.3: Billing Code Anomalies ⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-33-billing-code-anomalies-">Recipe 3.3: Billing Code Anomalies ⭐</h1>
+<p><strong>Complexity:</strong> Simple-Medium · <strong>Phase:</strong> MVP · <strong>Estimated Cost:</strong> ~$0.001-0.008 per claim screened (mostly compute; baseline lookups dominate)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>Picture a payment integrity analyst at a regional payer on a Thursday afternoon. Her dashboard shows 142,000 claims adjudicated this week across roughly 18,000 billing providers. Somewhere inside that pile are patterns that shouldn't be there. A dermatology practice that billed 97110 (therapeutic exercise) on eighty-four claims this quarter, a code that most dermatology practices would bill approximately zero times a year. An internist who, after being flat at two CPT codes per visit for a decade, suddenly jumped to five codes per visit two months ago. A small urgent care in the suburbs where the distribution of evaluation and management levels went from a reasonable-looking bell curve centered at 99213 (level 3) to a distribution that leans almost entirely on 99214 and 99215 (levels 4 and 5). (In 2021 a similar shift happened across the entire industry as a consequence of the CMS/AMA E/M documentation overhaul, which is exactly why peer comparisons matter as much as self-comparisons; the upcoding signal is the shift relative to peers, not the shift in absolute terms.) None of these patterns are duplicates. None of them are necessarily fraud. Some of them are legitimate practice evolution. A few of them are seven-figure problems hiding in plain sight.</p>
+<p>That's the billing code anomaly problem. Not &quot;is this claim wrong?&quot; but &quot;is this provider's billing behavior unusual, and in what way?&quot;</p>
+<p>The scale makes this painful. Her team can investigate maybe forty provider cases per month in any depth. There are 18,000 providers. Even a 1% anomaly rate produces 180 candidate investigations against a capacity of 40. The existing rule-based system (this modifier with that CPT requires review; these CPTs billed together are impossible; this dollar amount exceeds policy) catches the obvious stuff but misses the behavioral drift. A provider who's always been in the 90th percentile for billing intensity doesn't trigger any rule, because their claims individually are fine. It's the pattern across all their claims that matters, and rules that operate on single claims can't see the pattern.</p>
+<p>Here's what &quot;behavioral drift&quot; looks like in practice, with the texture the operations team actually sees:</p>
+<p>The primary care physician who started billing 99490 (chronic care management, 20 minutes non-face-to-face) on almost every patient in her panel over a three-month period. Is this legitimate expansion of CCM services (she attended a CMS webinar, hired a care manager, is now documenting the time she was already spending)? Or is it upcoding of time that isn't actually occurring? Both stories fit the data. The code itself is appropriate; the question is whether the time was spent and documented.</p>
+<p>The physical therapy practice where every patient gets billed the same four codes in the same sequence every visit: 97110 (therapeutic exercise), 97112 (neuromuscular reeducation), 97140 (manual therapy), 97530 (therapeutic activities). Each code individually is valid. The sequence is a pattern. A mature PT practice treats patients with widely varying conditions, and a uniform four-code regimen across all of them is statistically implausible. It might still be legitimate (this clinic has a rigid protocol that it believes is clinically justified). It's worth asking.</p>
+<p>The home health agency whose claims show HCPCS G0299 (registered nurse, per 15 minutes) billed at four units per visit for 94% of visits. Four units is exactly one hour. The distribution is oddly sharp for something that should vary naturally. A histogram that piles up on an exact time boundary (whether 15 minutes, 30 minutes, or an hour) is a classic &quot;unit rounding&quot; signal, where the actual time is being bucketed rather than measured.</p>
+<p>The orthopedic surgeon who bills modifier 59 (distinct procedural service) on 42% of his claims. Modifier 59 is one of the most frequently abused modifiers in all of medical billing because it unbundles codes that CCI edits would otherwise bundle together. An industry benchmark rate would put it in the 5-15% range for most specialties. 42% isn't proof of anything, but it's three standard deviations above the norm, and that's worth a look.</p>
+<p>The lab that runs on a very predictable mix of CPT codes for years, then over a month's span the mix changes (same total volume, different codes), and the per-claim dollar value goes up 18%. Something operational shifted. Maybe they added a new reference lab contract. Maybe they bought a new analyzer and started running different panels. Maybe they're upcoding. The payer doesn't know which, but the shift is measurable.</p>
+<p>None of these are caught by a static rule. They're caught by comparing the provider's current behavior to their own historical baseline and to a peer baseline for similar providers.</p>
+<p>The usual response to this mess, historically, was either &quot;run more rules&quot; (which doesn't scale, because you can't write a rule for every behavioral pattern) or &quot;sample randomly for audit&quot; (which is fair but wildly inefficient). The modern response is anomaly detection: build a model of what normal billing looks like for this provider, this specialty, this region, this patient population, and flag the deviations.</p>
+<p>What you actually want to produce: a prioritized queue of provider-level billing anomalies, each one enriched with enough context that the analyst can triage in a minute or two. &quot;Dr. X at Clinic Y had a sustained 3.4 sigma shift in their E&amp;M level distribution starting April 12; representative claims are ABC, DEF, GHI; peer group for comparison is internal medicine in metro Z; the anomaly has persisted for 32 days.&quot; That's the unit of work the analyst should see. Not a pile of individual claims with &quot;review this&quot; stickers. A narrative about a provider, with the evidence attached.</p>
+<p>Let's get into how.</p>
+<hr />
+<h2 id="the-technology">The Technology</h2>
+<h3 id="what-anomalous-means-when-the-baseline-is-the-provider-themselves">What &quot;Anomalous&quot; Means When the Baseline Is the Provider Themselves</h3>
+<p>Billing code anomaly detection is structurally different from duplicate detection or no-show prediction, and the difference matters for the modeling.</p>
+<p>Duplicate detection (Recipe 3.1) compares a claim against other claims to find matches. No-show prediction (Recipe 3.2) compares a patient's behavior against their own history and population norms, but the outcome is binary and well-defined. Billing code anomaly detection is fundamentally about <em>provider behavior over time</em>, where the &quot;normal&quot; is itself a distribution that evolves slowly, and the &quot;anomaly&quot; is a change in the shape of that distribution rather than a single suspect event.</p>
+<p>Three flavors of anomaly show up in billing data, and any serious system needs to handle all three:</p>
+<p><strong>Point anomalies.</strong> A single claim that doesn't fit the provider's normal pattern. The dermatologist billing 97110 is a point anomaly: one claim (or a few claims) with a code that doesn't match the specialty, the provider's history, or the patient's presenting condition. These are the easiest to catch because they stand out individually. A rule engine can handle most of them, actually, if the rules are written carefully.</p>
+<p><strong>Contextual anomalies.</strong> A claim that's normal in isolation but unusual given the context. 99215 (level 5 E&amp;M) is a normal code. 99215 billed for a 19-year-old with a single diagnosis of acne and no comorbidities is contextually unusual. The code exists; the patient doesn't warrant it. These require the model to understand the relationship between the code, the patient characteristics, and the visit context. Much harder to catch with rules alone.</p>
+<p><strong>Collective anomalies.</strong> No single claim is an anomaly, but the collection of claims (usually for a single provider over a window of time) is unusual. This is where most of the real money lives. A provider whose E&amp;M distribution shifts from centered-on-99213 to centered-on-99214 isn't wrong on any single claim. The pattern across thousands of claims is the signal. These require aggregated statistics and temporal monitoring. No rule engine catches them; this is where the model earns its keep.</p>
+<p>The consequence for architecture: a billing anomaly detector isn't really a &quot;score the incoming claim&quot; system. It's a &quot;continuously model each provider's behavior and flag the changes&quot; system. The unit of analysis is typically the provider-month or provider-week, not the individual claim. Individual claims get used as evidence <em>after</em> a provider-level flag fires, as representative samples that help a human understand what the anomaly actually is.</p>
+<h3 id="the-three-comparison-axes">The Three Comparison Axes</h3>
+<p>Every useful billing anomaly signal comes from a comparison, and there are three axes of comparison that matter:</p>
+<p><strong>Self-comparison (provider vs. their own history).</strong> The provider's billing mix today versus their billing mix over the last 6-12 months. The distribution of E&amp;M levels. The top N codes and their frequencies. The average claim dollar value. The mix of modifiers. The average number of codes per encounter. This axis catches drift: the provider who was doing X consistently and is now doing Y. Huge signal when it fires.</p>
+<p><strong>Peer comparison (provider vs. similar providers).</strong> The provider's billing patterns compared to a relevant peer group. &quot;Similar&quot; is doing a lot of work here: specialty, subspecialty, practice setting (solo, group, hospital-employed, FQHC), geography, patient population acuity. The peer group definition is probably the single most important design decision in the whole system. A too-narrow peer group (say, &quot;dermatologists in this ZIP code&quot;) has too few providers for stable statistics. A too-broad peer group (&quot;all outpatient providers&quot;) averages away the specialty-specific patterns that matter. Standard practice is to define peer groups with 30-500 providers per group, tuned to the specialty density in your coverage area.</p>
+<p><strong>Expected-given-patient-mix comparison.</strong> The provider's billing patterns compared to what you'd expect given their specific patient mix. If a provider serves a disproportionately complex patient population (older, more comorbidities, more chronic conditions), their billing intensity should be higher. If the model accounts for the patient mix and they're <em>still</em> above expectation, that's a stronger signal. This axis requires patient-level adjustment and is often called case-mix-adjusted comparison. It's the most sophisticated of the three and the one that's easiest to do wrong (because the adjustment model itself can hide real signal if it overfits to the billing patterns).</p>
+<p>Most mature systems run all three comparisons in parallel and combine the signals. A provider flagged on one axis is worth noting. A provider flagged on two or three axes simultaneously is the kind of case that pays for the whole program.</p>
+<h3 id="feature-families-that-actually-matter">Feature Families That Actually Matter</h3>
+<p>The feature engineering for billing anomaly detection has its own idiosyncrasies. Here are the families that show up, roughly ordered by signal-to-effort ratio:</p>
+<p><strong>Code mix features.</strong> Frequency distribution of CPT/HCPCS codes billed by the provider over a rolling window. Top-10 codes by frequency, share of total claims. Shannon entropy of the distribution (a provider who bills a narrow set of codes has low entropy; a provider who bills broadly has high entropy; a sudden entropy change is a flag). Percentile rank of each code's frequency versus peers.</p>
+<p><strong>E&amp;M level distribution features.</strong> For providers who bill E&amp;M codes, the distribution across levels 1-5 is one of the most important features in the whole system. Percentage of visits at each level. Comparison to peer-group distribution. Time-series of the distribution to detect drift. E&amp;M level distribution is where upcoding shows up most visibly, and CMS has published guidance on expected distributions by specialty that gives you a reference anchor.</p>
+<p><strong>Modifier usage features.</strong> Frequency of each modifier overall and on specific CPTs. Modifier 59 usage rate. Modifier 25 (significant separately identifiable E&amp;M) usage rate. Modifier 22 (increased procedural services) usage rate. These modifiers are heavily watched because they each allow billing for work that would otherwise be bundled into another code. Unusual rates are a strong signal.</p>
+<p><strong>Code combinations and sequences.</strong> Codes that frequently appear together on the same claim. Bundling violations (codes that CCI edits say shouldn't be billed together). Unusual combinations that pass edits but are clinically implausible. Sequences of codes across visits (a patient seen three times for CPT A, A, then B is different from A, B, A).</p>
+<p><strong>Dollar and unit features.</strong> Average billed amount per claim, per encounter, per patient. Units per claim (time-based codes with suspicious unit counts). Billed-to-allowed ratio. Distribution of billed amounts (a provider whose distribution is bimodal on either side of a specific threshold is suspicious; the gap may correspond to a coverage rule).</p>
+<p><strong>Volume and velocity features.</strong> Claims per month, per working day, per unique patient. Growth rate of volume. Sudden volume spikes. Number of unique patients seen. Ratio of new-patient codes to established-patient codes.</p>
+<p><strong>Temporal patterns.</strong> Billing timing (claims submitted weekly vs. batched monthly). Day-of-week distribution of service dates. Holiday and weekend billing rates (legitimate for emergency specialties; suspicious for office-based specialties). Gap between service date and submission date.</p>
+<p><strong>Network and relationship features.</strong> Patients shared with other providers. Referral patterns. Billing through the same practice tax ID. Some of the highest-dollar fraud patterns are organized (multiple providers acting in concert), and relationship features are what surface them. These require graph-level analysis and are where this recipe starts to blur into Recipe 3.6 (general fraud/waste/abuse detection).</p>
+<p>Most teams build the self-comparison and peer-comparison features first and get 80% of the value. The case-mix-adjusted and network features are the mature-system additions.</p>
+<h3 id="statistical-methods-that-fit">Statistical Methods That Fit</h3>
+<p>The field has tried a lot of methods. A few work well enough that they're standard.</p>
+<p><strong>Z-scores on rolling statistics.</strong> For each provider-feature combination (say, this provider's share of 99214 claims this month), compute a z-score against the peer-group distribution. Flag anything beyond a threshold (2 or 3 sigma, depending on desired sensitivity). Dumb, simple, fast, interpretable, and often the thing most of the system ends up doing because it's good enough for the common cases. Don't skip this step chasing sophistication.</p>
+<p><strong>Control charts and CUSUM.</strong> Treat each provider-feature as a time series and monitor for out-of-control signals. A standard Shewhart control chart flags when a single observation goes beyond 3-sigma limits. A CUSUM (cumulative sum) chart is more sensitive to small, sustained shifts (which is exactly what upcoding looks like: not a single huge jump, but a persistent small elevation). This is classical statistical process control, and it fits billing data very well because the underlying problem (detect a distributional shift) is exactly what SPC was invented for.</p>
+<p><strong>Isolation Forest or other unsupervised anomaly detectors.</strong> Feed the per-provider feature vectors into an Isolation Forest. Providers that require few splits to isolate are anomalies. Works especially well for multivariate anomalies where no single feature is unusual but the combination is. Interpretability takes extra work. SHAP's tree-explainer doesn't directly apply (Isolation Forest's prediction function is path-length-based, not leaf-level); the practical patterns are KernelSHAP (model-agnostic, slow), path-length attribution from the original IF paper (custom implementation), or feature-deviation proxies (z-score against training-set per-feature stats, fast and good enough for analyst-facing explanations). Most production systems use the third option.</p>
+<p><strong>Matrix factorization / collaborative filtering.</strong> Treat the provider-by-code matrix as a sparse matrix and factorize it. Predict each provider's expected frequency for each code based on their latent factors (which end up capturing specialty, practice type, patient mix). Compare actual to predicted. Large residuals are anomalies. This approach borrows from recommender systems and handles the &quot;expected given this provider's profile&quot; question naturally. It requires more modeling work than z-scores but produces richer anomaly signals.</p>
+<p><strong>Gradient boosting for supervised classification.</strong> If you have historical labels (cases that were investigated and confirmed as upcoding, fraud, or legitimate), train a classifier to predict the probability that a provider's current behavior is anomalous enough to warrant investigation. This is the mature-system move. Requires labeled data, which most organizations don't start with. Worth building toward.</p>
+<p><strong>Embedding + nearest-neighbor.</strong> Embed each provider into a vector space (from their code mix, or a learned embedding) and look for providers who are far from any cluster. Similar in spirit to Isolation Forest but with different geometric assumptions. Sometimes produces more intuitive anomalies because the embedding space can be inspected visually.</p>
+<p>A reasonable progression: start with z-scores and CUSUM. Add Isolation Forest once you've seen enough data to tune thresholds. Add supervised classification once you've got labels. Don't go to embeddings unless you've exhausted the simpler options.</p>
+<h3 id="the-peer-group-problem">The Peer Group Problem</h3>
+<p>The peer group definition is where a lot of systems go wrong, and it's worth lingering on.</p>
+<p>The goal is a group of providers who, if billing in a legitimate fashion, should produce similar statistics to the provider you're evaluating. Too narrow, and you don't have enough comparators (small groups have high variance; a small peer group with 15 providers will have a wide z-score distribution and you'll struggle to flag anything statistically). Too broad, and you average across genuinely different practices (a rural family physician and an academic internist will both roll up to &quot;primary care&quot; but their billing patterns differ in ways that aren't anomalies).</p>
+<p>Peer group features to consider:</p>
+<ul>
+<li>Specialty and subspecialty (primary axis)</li>
+<li>Practice setting (solo, group, hospital-owned, FQHC, rural health clinic)</li>
+<li>Geographic region (ZIP5 is too narrow; state is too broad; MSA or CBSA is often right)</li>
+<li>Patient volume band (a five-patients-a-day practice behaves differently than a thirty-patients-a-day one)</li>
+<li>Patient acuity (case-mix adjustment, where available)</li>
+<li>Years in practice (new practices are still building patterns)</li>
+</ul>
+<p>The practical approach is to try multiple peer group definitions and pick whichever produces stable percentiles with reasonable group sizes (30 minimum, ideally 100-500). Hierarchical peer groups work well: run the comparison at multiple levels (specialty, specialty+region, specialty+region+setting) and use whichever has enough comparators. For small specialties (pediatric nephrology, for example), the regional filter may drop too many providers and you'd run at the national specialty level only.</p>
+<p>One subtle trap: the peer group statistics include the provider you're evaluating. If you leave them in, you're comparing them to themselves (and if they're an extreme outlier, they're pulling the group statistic toward themselves). Leave-one-out z-scores fix this. It sounds fiddly. It matters more than you'd think when you have specialties with fewer than 100 providers.</p>
+<h3 id="the-labeling-problem-different-from-claims">The Labeling Problem (Different From Claims)</h3>
+<p>If you go supervised eventually, the labels for billing anomaly detection come from payment integrity investigations. Their nature matters:</p>
+<p><strong>Most investigations don't close with a clean &quot;fraud&quot; or &quot;not fraud&quot; label.</strong> They close with outcomes like &quot;provider educated,&quot; &quot;claims adjusted,&quot; &quot;referred to SIU,&quot; &quot;referred to law enforcement,&quot; &quot;no action.&quot; These are not directly the labels you want. Translating them requires judgment, and different organizations make different choices. A common mapping: &quot;adjustments or SIU referral&quot; → anomaly = True, &quot;education only&quot; → ambiguous, &quot;no action&quot; → anomaly = False (but be careful: &quot;no action&quot; sometimes means &quot;we didn't have time to finish the investigation,&quot; which isn't the same as &quot;we determined it's fine&quot;).</p>
+<p><strong>Label lag is enormous.</strong> Investigations can take 6-18 months from flag to resolution. By the time you have labels for cases flagged a year ago, the model's feature distributions have shifted, the provider landscape has changed, and the fraud patterns have evolved. This is structurally worse than most supervised problems.</p>
+<p><strong>Self-confirming labels are a big risk.</strong> If your existing system flags providers using criteria X, and those providers get investigated and labeled, the label dataset is heavily biased toward criteria X. A model trained on this data re-learns criteria X and misses everything else. Break out of this: periodically random-sample from unflagged providers and have them reviewed, specifically to get &quot;negative&quot; and &quot;other-pattern&quot; labels into the dataset.</p>
+<p><strong>False negatives are often never discovered.</strong> A provider engaged in upcoding who doesn't get flagged simply... doesn't get investigated. You never learn you missed them. This creates a perpetual blind spot in the label distribution that no amount of supervised learning can correct. The unsupervised signals (z-scores, Isolation Forest) partly mitigate this by flagging things the supervised system wouldn't think to flag.</p>
+<h3 id="fairness-legitimacy-and-the-harassment-of-legitimate-variation-risk">Fairness, Legitimacy, and the &quot;Harassment of Legitimate Variation&quot; Risk</h3>
+<p>Provider billing behavior is not uniform, and unusual isn't the same as fraudulent. Providers in different practice settings, with different patient populations, with different clinical philosophies, will produce different billing patterns. A high-performing geriatric practice will look different from an average one. A community health center serving a very sick population will bill differently from a concierge practice. These differences are legitimate, and flagging them as anomalies creates several kinds of harm:</p>
+<ul>
+<li><strong>Operational harm to the provider.</strong> Investigations take time. They interrupt clinical work. They stress providers who are already overworked.</li>
+<li><strong>Reputational harm.</strong> Being flagged for potential fraud, even if cleared, leaves a record.</li>
+<li><strong>Access harm.</strong> Providers who are repeatedly flagged may drop out of the network, which disproportionately affects the patients they serve (often the most complex and underserved).</li>
+<li><strong>Statistical discrimination.</strong> If the features correlate with patient demographics in ways that make serving certain populations look &quot;anomalous,&quot; the system punishes providers who serve those populations.</li>
+</ul>
+<p>The mitigations are real work, not checkboxes:</p>
+<ul>
+<li><strong>Case-mix adjustment.</strong> Make the expected statistics adjust for the patient population. A provider who serves sicker patients should have higher expected billing intensity, and the anomaly signal should be against the adjusted expectation.</li>
+<li><strong>Transparent, auditable thresholds.</strong> Document why each threshold is set where it is. Review thresholds periodically. Publish them internally so the provider relations team can explain them.</li>
+<li><strong>Investigation protocol focused on understanding, not punishing.</strong> The first step after a flag should be contact, not penalty. &quot;We noticed your billing pattern shifted; can you help us understand what changed?&quot; often resolves the flag in a single conversation.</li>
+<li><strong>Subgroup monitoring of who gets flagged and who gets investigated.</strong> If providers serving particular populations are systematically flagged at higher rates, that's a signal that the model is discriminating.</li>
+</ul>
+<p>The ethical posture that works best is: an anomaly flag is a prompt for a conversation with the provider, not an accusation. The conversation establishes context. Most flags resolve there. The small subset that don't is where investigation effort goes.</p>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>At a conceptual level, the pipeline has four stages plus a feedback loop. The architecture looks a lot like the no-show recipe (Recipe 3.2) but the unit of analysis shifts from appointment to provider-period, and the feature store is populated at a different cadence because provider statistics don't change second-to-second.</p>
+<pre class="code code-plain"><code>┌────────────── CONTINUOUS PROFILING PIPELINE ───────────────┐
+│                                                            │
+│  [Claims Stream + Adjudicated Claims Store]                │
+│         │                                                  │
+│         ▼                                                  │
+│  [Provider Period Aggregator]                              │
+│   (roll up claims to provider-week or provider-month;      │
+│    compute code-mix, E&amp;M distribution, modifier rates,     │
+│    volume metrics)                                         │
+│         │                                                  │
+│         ▼                                                  │
+│  [Peer Group Assembler]                                    │
+│   (assign providers to peer groups; compute peer           │
+│    distributions leave-one-out)                            │
+│         │                                                  │
+│         ▼                                                  │
+│  [Anomaly Scoring Layer]                                   │
+│   (z-scores for single features; CUSUM for time-series;    │
+│    Isolation Forest for multivariate; optional supervised  │
+│    classifier if labels exist)                             │
+│         │                                                  │
+│         ▼                                                  │
+│  [Case Assembly + Prioritization]                          │
+│   (consolidate multiple signals per provider into a        │
+│    single case record; attach representative claims;       │
+│    rank by severity, persistence, and dollar exposure)     │
+│         │                                                  │
+│         ▼                                                  │
+│  [Routing]                                                 │
+│   severity high + sustained    → payment-integrity queue   │
+│   specialty-atypical behavior  → clinical-review queue     │
+│   transient / low-severity     → watch list                │
+│         │                                                  │
+└─────────┼──────────────────────────────────────────────────┘
+          │
+┌─────────┼──────────────────────────────────────────────────┐
+│         ▼                                                  │
+│  [Investigation Workflow]                                  │
+│   (analyst reviews case; may contact provider;             │
+│    documents outcome and disposition)                      │
+│         │                                                  │
+│         ▼                                                  │
+│  [Outcome Capture]                                         │
+│   (education, adjustment, SIU referral, no-action;         │
+│    joined back to case record)                             │
+│         │                                                  │
+│         ▼                                                  │
+│  [Retraining + Threshold Tuning]                           │
+│   (monthly; includes bias and subgroup review; updates     │
+│    peer groups, adjusts thresholds, retrains supervised    │
+│    model if used)                                          │
+│                                                            │
+└──────────────────── FEEDBACK LOOP ─────────────────────────┘
+</code></pre>
+<p><strong>Provider period aggregator.</strong> The front of the pipeline is a time-bucketed rollup. For each active provider, produce a per-period feature vector (code-mix histogram, E&amp;M level distribution, modifier rates, volume counts, average billed amount, novelty code counts). Period length is a tuning parameter. A one-week period is responsive but noisy for lower-volume providers. A one-month period is stable but slower to flag drift. Many systems compute both and use different windows for different signals.</p>
+<p><strong>Peer group assembler.</strong> Assign each provider to one or more peer groups and compute the peer distributions for each feature, leave-one-out. Peer group membership is re-computed periodically (quarterly is typical) because providers change practices and specialties occasionally, and new providers need to be slotted in.</p>
+<p><strong>Anomaly scoring.</strong> For each provider-period, compute the relevant anomaly signals: z-scores against peer distributions, control chart signals on time series, multivariate Isolation Forest scores, optionally supervised classifier probabilities. Each signal is kept separately rather than aggregated into a single score prematurely, so the case assembly layer can explain which signal fired.</p>
+<p><strong>Case assembly and prioritization.</strong> This is the step most first-time builders under-invest in. The raw output of the scoring layer is a pile of signals (tens of thousands per period). The operations team can work tens of cases per analyst per month. The case assembly layer consolidates signals into narrative-level cases: &quot;Dr. X, internist, flagged on E&amp;M distribution shift (CUSUM signal), modifier 25 rate (peer z-score 3.8), and unusual code combinations (Isolation Forest outlier). Cumulative dollar exposure over flagged period: $240K. Persistence: 8 consecutive weekly periods.&quot; That's a case. The ranking then becomes across cases, not across signals.</p>
+<p><strong>Routing.</strong> Standard thresholded routing. High-severity, sustained cases go to the payment integrity team. Specialty-atypical cases (a podiatrist billing cardiology codes) go to clinical reviewers who can judge appropriateness. Lower-severity or transient cases go to a watch list that gets reviewed in aggregate.</p>
+<p><strong>Investigation workflow.</strong> Analysts review cases, may reach out to providers, and document findings. Outcomes get structured: education, claim adjustment, SIU referral, no action. The investigation may take weeks to months.</p>
+<p><strong>Outcome capture.</strong> Outcomes join back to case records. They form the label set for supervised retraining (with the caveats discussed under &quot;The Labeling Problem&quot;).</p>
+<p><strong>Retraining and threshold tuning.</strong> Monthly cadence. Retrain supervised models if used. Recompute peer groups. Review thresholds against operational capacity (if the queue is too long, raise thresholds; if the queue is too short, lower them). Subgroup bias review as a required step.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter03.03-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>The feature engineering matters more than the model. This is the same lesson as Recipe 3.2, and it keeps being true. Most of the signal in billing anomaly detection comes from a handful of careful features: E&amp;M level distribution, modifier 25/59 rates, code-mix entropy, CUSUM on key time series. Get those right and a simple z-score system will surface most of what matters. Teams that skip straight to fancy unsupervised models usually come back to z-scores anyway because the analysts want explainable signals.</p>
+<p>The peer group definition is the single most consequential design decision. You will get it wrong the first time. Whatever peer groups you define on day one, you will redefine within three months based on what the payment integrity team tells you. Some specialties need narrower groupings than you expect (cardiology versus electrophysiology matter for billing patterns; &quot;cardiology&quot; alone is too broad). Some need broader groupings than you expect (small rural specialties don't have enough regional peers). Build peer group definitions as configuration, not code, because you will be editing them.</p>
+<p>The operational cost of false positives is worse than you think. A false positive in no-show prediction is a wasted phone call. A false positive in billing anomaly detection is a provider who feels accused of fraud for behavior that turns out to be legitimate. The damage to the provider relationship, the damage to morale on the provider's team, and the operational cost of working through the investigation are all real. Budget your tolerance for false positives carefully, and err on the side of higher thresholds than you'd pick if the cost were zero. Catching 80% of true anomalies with 50% precision is better than catching 95% with 15% precision, because the operational bandwidth to investigate the latter doesn't exist.</p>
+<p>The narrative summary in the case record is surprisingly important. I initially built a version of this pipeline that produced case records with rich structured signal data and no prose. Analysts couldn't process them fast enough because they had to reconstruct the story from the signals. Adding a generated narrative summary (&quot;this provider shifted their E&amp;M distribution in March, persisted through May, combined with elevated modifier 25 usage&quot;) cut case-triage time dramatically. You can generate these summaries from templates using the signal data, or use an LLM if your organization has an established HIPAA-eligible LLM pipeline (BAA coverage of the model and the serving infrastructure, minimum-necessary prompt construction, output filtering, and a full prompt-and-response audit trail; see Chapter 2 for the patterns). The template approach is faster to build and easier to certify; the LLM approach produces more natural prose but inherits the compliance scaffolding of the broader generative AI program. Most teams start with templates and only move to LLM when those Chapter 2 patterns are already in place for other reasons. The narrative matters more than you'd think.</p>
+<p>The thing that surprised me on the last project: the Isolation Forest caught cases that none of the z-score signals did. I was initially skeptical of adding the multivariate detector because z-scores covered the obvious cases. The first month the Isolation Forest ran, it surfaced a handful of providers who were outliers on combinations of features that no individual feature caught. One of them was running what turned out to be a legitimate but unusual practice model (a holistic clinic billing a specific mix of codes); two of them were misconfigured billing systems; one was the kind of pattern that eventually resulted in a seven-figure recovery. Worth the extra complexity. Add the multivariate signal earlier than you think you need to.</p>
+<p>The thing I'd do differently: I spent too long on the supervised classifier before recognizing that I didn't have enough labels. With a few hundred labeled cases across a specialty, the classifier produces unstable estimates that can make the system worse, not better (by confidently flagging the wrong things). Start with unsupervised and statistical signals, accumulate labels for a year, then layer supervised signals on top. Don't try to build the supervised piece first, even if the existing payment integrity program has investigation records.</p>
+<p>The trap to avoid: do not let the system drive toward &quot;maximize cases generated.&quot; The right operational metric is &quot;dollars recovered per analyst hour&quot; or &quot;investigations-closed-with-action per case created,&quot; not volume. If you measure the system by cases generated, you incentivize lowering the thresholds and producing more noise. If you measure it by precision-weighted recovery, you incentivize fewer, better cases. The latter is what the business actually wants, and it keeps the provider relationship manageable.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 3.1 (Duplicate Claim Detection):</strong> Shares the blocking-scoring-routing structure. If you've built 3.1, you have most of the claim-level infrastructure already; billing anomaly detection adds the provider-level aggregation and longitudinal modeling on top.</li>
+<li><strong>Recipe 3.2 (Patient No-Show Pattern Detection):</strong> Shares the anomaly framing (comparison to self-baseline versus peer baseline) and the supervised-with-feedback-loop pattern. Different unit of analysis (patient vs. provider) but nearly identical architectural shape.</li>
+<li><strong>Recipe 3.6 (Healthcare Fraud/Waste/Abuse Detection):</strong> The broader, more sophisticated cousin of this recipe. 3.3 is about detecting statistical anomalies in individual provider behavior. 3.6 extends to coordinated patterns, network-level analysis, and adversarial adaptation. Build 3.3 first; 3.6 inherits most of its infrastructure.</li>
+<li><strong>Recipe 5.2 (Provider Entity Resolution):</strong> The prerequisite for a reliable billing anomaly pipeline. If your providers aren't resolved to canonical entities, your per-provider statistics are fragmented and the anomaly signal is diluted.</li>
+<li><strong>Recipe 6.4 (Provider Similarity and Benchmarking):</strong> Uses similar features and peer-group concepts for a different purpose: benchmarking rather than anomaly detection. A mature payment integrity program often runs both, sharing the feature pipeline.</li>
+<li><strong>Recipe 7.7 (Coding Compliance Risk Scoring):</strong> A predictive companion to this reactive detection pipeline. Predicts which providers are at elevated risk of compliance issues before the issues materialize.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>anomaly-detection</code> · <code>payment-integrity</code> · <code>billing-anomalies</code> · <code>provider-behavior</code> · <code>upcoding-detection</code> · <code>statistical-process-control</code> · <code>isolation-forest</code> · <code>cusum</code> · <code>peer-benchmarking</code> · <code>sagemaker</code> · <code>feature-store</code> · <code>glue</code> · <code>athena</code> · <code>dynamodb</code> · <code>step-functions</code> · <code>simple-medium</code> · <code>mvp</code> · <code>hipaa</code> · <code>payer</code></p>
+<hr />
+<p><em>← <a href="chapter03.02-patient-no-show-pattern-detection.html">Recipe 3.2: Patient No-Show Pattern Detection</a> · <a href="chapter03-preface.html">Chapter 3 Preface</a> · <a href="chapter03.04-medication-dispensing-anomalies.html">Next: Recipe 3.4 - Medication Dispensing Anomalies →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

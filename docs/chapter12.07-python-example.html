@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 12.7: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-127-python-implementation-example">Recipe 12.7: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 12.7. It shows one way you could translate the vital sign trajectory monitoring pipeline into working Python using boto3 for Kinesis ingestion, DynamoDB for patient state, Timestream for trajectory history, and SNS for alert routing. The demo uses synthetic vital sign data for a small set of patients with realistic deterioration patterns (a gradual sepsis trajectory with coordinated HR/RR rise and BP decline, a stable patient with normal variation, and a patient experiencing measurement artifact) so you can see the ingestion normalization, the per-patient baseline computation, the slope and deviation calculations, the multi-parameter pattern matching, the alert suppression logic, and the persistence and routing work end-to-end without provisioning real bedside monitors. It is not production-ready. There is no real Kinesis stream, no real Apache Flink application, no real Timestream database, no real SNS topic, no real HL7/FHIR interface, no medication administration record integration, no VPC endpoints, no KMS customer-managed keys, no per-Lambda IAM least privilege, and no clinical display integration. Think of it as the sketchpad version: useful for understanding the shape of a trajectory pipeline that respects the patient-specific-baseline discipline, the multi-parameter-correlation discipline, the suppression-before-alerting discipline, and the clinical-actionability discipline this recipe demands. Consider it a starting point, not a destination.</p>
+<p>The code maps to the six pseudocode steps from the main recipe: normalize and ingest an incoming vital sign reading (Step 1); retrieve and update the patient's rolling state including exponential moving average baselines (Step 2); compute trajectory features including slope, acceleration, deviation from baseline, and variability (Step 3); check multi-parameter correlation against known deterioration signatures (Step 4); evaluate alert conditions with suppression logic for baseline stabilization, cooldown periods, medication effects, and artifacts (Step 5); persist trajectory metrics and route alerts to the appropriate clinical channels (Step 6).</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You will need the AWS SDK for Python:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3
+</pre></div>
+
+<p>The demo runs against the Python standard library plus boto3. Production deployments would add <a href="https://numpy.org/">numpy</a> for efficient linear regression, <a href="https://docs.scipy.org/doc/scipy/">scipy</a> for statistical tests, and potentially <a href="https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/python/overview/">Apache Flink's PyFlink</a> for the stateful streaming computations. The demo uses pure-Python implementations of slope estimation and statistics so you can run it locally with zero extra dependencies.</p>
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>kinesis:PutRecord</code> on the <code>patient-vitals</code> stream</li>
+<li><code>dynamodb:GetItem</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code> on the <code>patient-state</code> table</li>
+<li><code>timestream:WriteRecords</code> on the <code>vital-trajectories</code> table in your Timestream database</li>
+<li><code>sns:Publish</code> on the <code>clinical-alerts</code> topic</li>
+<li><code>cloudwatch:PutMetricData</code> for operational metrics</li>
+</ul>
+<p>Scope each Lambda's role to the specific resource ARNs. The demo replaces all external services with in-memory mocks so you can trace the logic without provisioning anything.</p>
+<hr />
+<h2 id="configuration-and-constants">Configuration and Constants</h2>
+<p>Everything that is configuration rather than logic lives here. Thresholds, deterioration signatures, and resource names are what you would change between environments or clinical units.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">mean</span><span class="p">,</span> <span class="n">stdev</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. Never log raw vital sign values with patient identifiers.</span>
+<span class="c1"># Log structural metadata only: patient_id_hash, parameter, alert_decision, runtime_ms.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Adaptive retry for throttling resilience on streaming writes.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># --- Resource Names (swap per environment) ---</span>
+<span class="n">KINESIS_STREAM_NAME</span> <span class="o">=</span> <span class="s2">&quot;patient-vitals&quot;</span>
+<span class="n">DYNAMODB_TABLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;patient-state&quot;</span>
+<span class="n">TIMESTREAM_DB_NAME</span> <span class="o">=</span> <span class="s2">&quot;vital-signs-db&quot;</span>
+<span class="n">TIMESTREAM_TABLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;vital-trajectories&quot;</span>
+<span class="n">SNS_TOPIC_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:sns:us-east-1:123456789012:clinical-alerts&quot;</span>
+
+<span class="c1"># --- Trajectory Thresholds ---</span>
+<span class="c1"># Baseline stabilization period: minimum hours of data before alerting.</span>
+<span class="n">BASELINE_STABILIZATION_HOURS</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># Exponential moving average alpha for baselines.</span>
+<span class="c1"># Small alpha = slow-moving baseline that resists short-term fluctuations.</span>
+<span class="n">BASELINE_ALPHA</span> <span class="o">=</span> <span class="mf">0.05</span>
+
+<span class="c1"># Alert cooldown: minimum minutes between repeated alerts for the same pattern.</span>
+<span class="n">ALERT_COOLDOWN_MINUTES</span> <span class="o">=</span> <span class="mi">60</span>
+
+<span class="c1"># Artifact detection: variability threshold for readings in a very short window.</span>
+<span class="n">ARTIFACT_VARIABILITY_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.15</span>
+
+<span class="c1"># Single-parameter alert thresholds (deviation in standard deviations).</span>
+<span class="n">SINGLE_PARAM_DEVIATION_THRESHOLD</span> <span class="o">=</span> <span class="mf">3.0</span>
+
+<span class="c1"># Per-parameter slope thresholds (units per minute) for single-param alerts.</span>
+<span class="n">SLOPE_THRESHOLDS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>    <span class="c1"># ~3 bpm per hour</span>
+    <span class="s2">&quot;RR&quot;</span><span class="p">:</span> <span class="mf">0.015</span><span class="p">,</span>   <span class="c1"># ~1 breath/min per hour</span>
+    <span class="s2">&quot;SBP&quot;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>   <span class="c1"># ~2 mmHg per hour</span>
+    <span class="s2">&quot;DBP&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span>
+    <span class="s2">&quot;SpO2&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>  <span class="c1"># ~0.6% per hour</span>
+    <span class="s2">&quot;Temp&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># --- Deterioration Signatures ---</span>
+<span class="c1"># Each signature defines required and supporting parameter conditions</span>
+<span class="c1"># that, when seen together, suggest a specific clinical concern.</span>
+<span class="n">DETERIORATION_SIGNATURES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;early_sepsis&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">,</span> <span class="s2">&quot;RR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;supporting&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;SBP&quot;</span><span class="p">:</span> <span class="s2">&quot;falling&quot;</span><span class="p">,</span> <span class="s2">&quot;Temp&quot;</span><span class="p">:</span> <span class="s2">&quot;deviating&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;min_required&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;min_supporting&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;alert&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Coordinated HR/RR rise with hemodynamic compromise consistent with early sepsis&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;recommended&quot;</span><span class="p">:</span> <span class="s2">&quot;Assess patient. Consider lactate, blood cultures, and fluid resuscitation per sepsis protocol.&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;hemorrhage&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">,</span> <span class="s2">&quot;SBP&quot;</span><span class="p">:</span> <span class="s2">&quot;falling&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;supporting&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;DBP&quot;</span><span class="p">:</span> <span class="s2">&quot;falling&quot;</span><span class="p">,</span> <span class="s2">&quot;RR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;min_required&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;min_supporting&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;alarm&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Tachycardia with falling blood pressure suggests active hemorrhage&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;recommended&quot;</span><span class="p">:</span> <span class="s2">&quot;Immediate bedside assessment. Type and screen, large-bore IV access.&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;respiratory_failure&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;SpO2&quot;</span><span class="p">:</span> <span class="s2">&quot;falling&quot;</span><span class="p">,</span> <span class="s2">&quot;RR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;supporting&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;min_required&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;min_supporting&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;alert&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Falling oxygenation with compensatory tachypnea&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;recommended&quot;</span><span class="p">:</span> <span class="s2">&quot;Assess respiratory status. Consider ABG, chest imaging, respiratory therapy.&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;cardiac_decompensation&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">,</span> <span class="s2">&quot;SpO2&quot;</span><span class="p">:</span> <span class="s2">&quot;falling&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;supporting&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;RR&quot;</span><span class="p">:</span> <span class="s2">&quot;rising&quot;</span><span class="p">,</span> <span class="s2">&quot;SBP&quot;</span><span class="p">:</span> <span class="s2">&quot;falling&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;min_required&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;min_supporting&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;alert&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Multi-parameter pattern consistent with cardiac decompensation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;recommended&quot;</span><span class="p">:</span> <span class="s2">&quot;Cardiac assessment. Consider BNP, echocardiogram, diuretic adjustment.&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="mocks-for-local-demonstration">Mocks for Local Demonstration</h2>
+<p>These mocks replace real AWS services so you can run the full pipeline locally. In production, swap each mock for its real boto3 client call.</p>
+<div class="code"><pre><span></span><span class="c1"># --- In-Memory Mocks ---</span>
+<span class="c1"># These simulate AWS services for local execution.</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MockKinesis</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulates Kinesis PutRecord. Stores events in a list.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">put_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">StreamName</span><span class="p">,</span> <span class="n">Data</span><span class="p">,</span> <span class="n">PartitionKey</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;StreamName&quot;</span><span class="p">:</span> <span class="n">StreamName</span><span class="p">,</span>
+            <span class="s2">&quot;Data&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Data</span><span class="p">),</span>
+            <span class="s2">&quot;PartitionKey&quot;</span><span class="p">:</span> <span class="n">PartitionKey</span><span class="p">,</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ShardId&quot;</span><span class="p">:</span> <span class="s2">&quot;shard-0001&quot;</span><span class="p">,</span> <span class="s2">&quot;SequenceNumber&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">records</span><span class="p">))}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MockDynamoDB</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulates DynamoDB GetItem/PutItem against an in-memory dict.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TableName</span><span class="p">,</span> <span class="n">Key</span><span class="p">):</span>
+        <span class="n">pk</span> <span class="o">=</span> <span class="n">Key</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;patient_id&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;Item&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">pk</span><span class="p">]}</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">put_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TableName</span><span class="p">,</span> <span class="n">Item</span><span class="p">):</span>
+        <span class="n">pk</span> <span class="o">=</span> <span class="n">Item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;patient_id&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">pk</span><span class="p">]</span> <span class="o">=</span> <span class="n">Item</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MockTimestream</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulates Timestream WriteRecords. Stores records in a list.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_records</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">DatabaseName</span><span class="p">,</span> <span class="n">TableName</span><span class="p">,</span> <span class="n">Records</span><span class="p">,</span> <span class="n">CommonAttributes</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">Records</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">CommonAttributes</span><span class="p">,</span> <span class="o">**</span><span class="n">record</span><span class="p">})</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;RecordsIngested&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">Records</span><span class="p">)}}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MockSNS</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulates SNS Publish. Stores messages in a list.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TopicArn</span><span class="p">,</span> <span class="n">Message</span><span class="p">,</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">MessageAttributes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;TopicArn&quot;</span><span class="p">:</span> <span class="n">TopicArn</span><span class="p">,</span>
+            <span class="s2">&quot;Subject&quot;</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+            <span class="s2">&quot;Message&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Message</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;MessageId&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())}</span>
+
+<span class="c1"># Instantiate mocks for the demo.</span>
+<span class="n">mock_kinesis</span> <span class="o">=</span> <span class="n">MockKinesis</span><span class="p">()</span>
+<span class="n">mock_dynamodb</span> <span class="o">=</span> <span class="n">MockDynamoDB</span><span class="p">()</span>
+<span class="n">mock_timestream</span> <span class="o">=</span> <span class="n">MockTimestream</span><span class="p">()</span>
+<span class="n">mock_sns</span> <span class="o">=</span> <span class="n">MockSNS</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-ingest-vital-sign-event">Step 1: Ingest Vital Sign Event</h2>
+<p><em>The pseudocode calls this <code>ingest_vital_sign(source_event)</code>. It normalizes an incoming reading from any source into a standard event format and writes it to the streaming layer, partitioned by patient ID.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">ingest_vital_sign</span><span class="p">(</span><span class="n">source_event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalize an incoming vital sign reading and write it to the stream.</span>
+
+<span class="sd">    Different sources send data in wildly different shapes. A bedside monitor</span>
+<span class="sd">    sends numeric arrays every second. A nurse&#39;s EHR entry sends a single</span>
+<span class="sd">    observation with free-text context. This function unifies them into one</span>
+<span class="sd">    consistent format so downstream processing never has to worry about source</span>
+<span class="sd">    variability.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        source_event: Raw event from any source (monitor, EHR, device).</span>
+<span class="sd">            Expected keys: patient_id, timestamp (ISO string or datetime),</span>
+<span class="sd">            parameter (HR, SBP, DBP, RR, SpO2, Temp), value (numeric),</span>
+<span class="sd">            source_type, measurement_method (optional).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The normalized event dict that was placed onto the stream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Normalize timestamp to UTC ISO-8601.</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">source_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+        <span class="n">ts_iso</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ts_iso</span> <span class="o">=</span> <span class="n">ts</span>  <span class="c1"># assume already ISO string</span>
+
+    <span class="n">normalized</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">source_event</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">ts_iso</span><span class="p">,</span>
+        <span class="s2">&quot;parameter&quot;</span><span class="p">:</span> <span class="n">source_event</span><span class="p">[</span><span class="s2">&quot;parameter&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">source_event</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;source_type&quot;</span><span class="p">:</span> <span class="n">source_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_type&quot;</span><span class="p">,</span> <span class="s2">&quot;nursing_assessment&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;measurement_method&quot;</span><span class="p">:</span> <span class="n">source_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;measurement_method&quot;</span><span class="p">,</span> <span class="s2">&quot;non_invasive&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">source_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Write to Kinesis, partitioned by patient_id so all readings</span>
+    <span class="c1"># for one patient arrive at the same shard in order.</span>
+    <span class="n">mock_kinesis</span><span class="o">.</span><span class="n">put_record</span><span class="p">(</span>
+        <span class="n">StreamName</span><span class="o">=</span><span class="n">KINESIS_STREAM_NAME</span><span class="p">,</span>
+        <span class="n">Data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">normalized</span><span class="p">),</span>
+        <span class="n">PartitionKey</span><span class="o">=</span><span class="n">normalized</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Ingested </span><span class="si">%s</span><span class="s2"> reading for patient </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">normalized</span><span class="p">[</span><span class="s2">&quot;parameter&quot;</span><span class="p">],</span>
+        <span class="n">normalized</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">normalized</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-retrieve-and-update-patient-state">Step 2: Retrieve and Update Patient State</h2>
+<p><em>The pseudocode calls this <code>update_patient_state(vital_event)</code>. It fetches the patient's rolling state from DynamoDB, updates baselines using an exponential moving average, and appends the new reading to the per-parameter rolling window.</em></p>
+<div class="code"><pre><span></span><span class="c1"># In-memory patient state store for the demo. In production, this is DynamoDB.</span>
+<span class="n">PATIENT_STATES</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="c1"># Maximum readings to keep in the rolling window per parameter.</span>
+<span class="n">MAX_WINDOW_SIZE</span> <span class="o">=</span> <span class="mi">60</span>  <span class="c1"># covers ~60 minutes of 1-min data or ~10 hours of q10min data</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update_patient_state</span><span class="p">(</span><span class="n">vital_event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve the patient&#39;s current state, update baselines and rolling window.</span>
+
+<span class="sd">    The patient state holds everything we need to compute trajectories:</span>
+<span class="sd">    - baselines: per-parameter EMA mean and rolling std</span>
+<span class="sd">    - last_readings: per-parameter window of recent (value, timestamp) tuples</span>
+<span class="sd">    - alert_history: recent alerts for cooldown logic</span>
+<span class="sd">    - baseline_stable: whether we have enough history to trust our baselines</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        vital_event: Normalized vital sign event from Step 1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The updated patient state dict.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">vital_event</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span>
+    <span class="n">param</span> <span class="o">=</span> <span class="n">vital_event</span><span class="p">[</span><span class="s2">&quot;parameter&quot;</span><span class="p">]</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">vital_event</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">vital_event</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Fetch or initialize state.</span>
+    <span class="k">if</span> <span class="n">pid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PATIENT_STATES</span><span class="p">:</span>
+        <span class="n">PATIENT_STATES</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">pid</span><span class="p">,</span>
+            <span class="s2">&quot;admitted_at&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="p">,</span>
+            <span class="s2">&quot;baselines&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;last_readings&quot;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">),</span>
+            <span class="s2">&quot;alert_history&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;baseline_stable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="n">PATIENT_STATES</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span>
+
+    <span class="c1"># Append to rolling window for this parameter.</span>
+    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;last_readings&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="p">})</span>
+
+    <span class="c1"># Trim window to max size.</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;last_readings&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">MAX_WINDOW_SIZE</span><span class="p">:</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;last_readings&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;last_readings&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">][</span><span class="o">-</span><span class="n">MAX_WINDOW_SIZE</span><span class="p">:]</span>
+
+    <span class="c1"># Update baseline using exponential moving average.</span>
+    <span class="c1"># Alpha = 0.05 means the baseline moves slowly, resisting short-term spikes.</span>
+    <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">]:</span>
+        <span class="n">old_mean</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+        <span class="n">old_std</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">][</span><span class="s2">&quot;std&quot;</span><span class="p">]</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">BASELINE_ALPHA</span><span class="p">)</span> <span class="o">*</span> <span class="n">old_mean</span> <span class="o">+</span> <span class="n">BASELINE_ALPHA</span> <span class="o">*</span> <span class="n">value</span>
+        <span class="p">)</span>
+        <span class="n">deviation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">][</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">BASELINE_ALPHA</span><span class="p">)</span> <span class="o">*</span> <span class="n">old_std</span> <span class="o">+</span> <span class="n">BASELINE_ALPHA</span> <span class="o">*</span> <span class="n">deviation</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">][</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+
+    <span class="c1"># Check if baseline has stabilized (4+ hours of data).</span>
+    <span class="n">hours_since_admission</span> <span class="o">=</span> <span class="p">(</span><span class="n">ts</span> <span class="o">-</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;admitted_at&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">/</span> <span class="mf">3600.0</span>
+    <span class="k">if</span> <span class="n">hours_since_admission</span> <span class="o">&gt;=</span> <span class="n">BASELINE_STABILIZATION_HOURS</span><span class="p">:</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baseline_stable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="n">state</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-compute-trajectory-features">Step 3: Compute Trajectory Features</h2>
+<p><em>The pseudocode calls this <code>compute_trajectory(state, parameter)</code>. It computes slope via linear regression, acceleration as the change in slope between the early and late halves of the window, deviation from baseline in standard deviations, and variability as the coefficient of variation.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_linear_regression_slope</span><span class="p">(</span><span class="n">times</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the slope of a simple linear regression (least-squares fit).</span>
+
+<span class="sd">    This is the core math for trajectory estimation. The slope tells us</span>
+<span class="sd">    the rate of change in units-per-minute.</span>
+
+<span class="sd">    Uses the closed-form formula: slope = (n*sum(xy) - sum(x)*sum(y)) /</span>
+<span class="sd">                                          (n*sum(x^2) - (sum(x))^2)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        times: List of time offsets in minutes from the first reading.</span>
+<span class="sd">        values: List of corresponding vital sign values.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Slope in units-per-minute. Positive = rising, negative = falling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="n">sum_x</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="n">sum_y</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">sum_xy</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">v</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">values</span><span class="p">))</span>
+    <span class="n">sum_x2</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">times</span><span class="p">)</span>
+
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">sum_x2</span> <span class="o">-</span> <span class="n">sum_x</span> <span class="o">*</span> <span class="n">sum_x</span>
+    <span class="k">if</span> <span class="n">denominator</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">sum_xy</span> <span class="o">-</span> <span class="n">sum_x</span> <span class="o">*</span> <span class="n">sum_y</span><span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_trajectory</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute trajectory features for a single vital sign parameter.</span>
+
+<span class="sd">    Returns slope (units/min), acceleration (change in slope), deviation</span>
+<span class="sd">    from patient baseline (in sigma), and variability (coefficient of variation).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        state: The patient&#39;s current state dict.</span>
+<span class="sd">        parameter: Which vital sign to analyze (HR, SBP, etc.)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Trajectory dict with slope, acceleration, deviation, variability,</span>
+<span class="sd">        current value, baseline, and window duration.</span>
+<span class="sd">        Returns None if insufficient data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">readings</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;last_readings&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">readings</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Not enough data for trajectory estimation.</span>
+
+    <span class="c1"># Build time and value arrays.</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">readings</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">/</span> <span class="mf">60.0</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">readings</span><span class="p">]</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">readings</span><span class="p">]</span>
+
+    <span class="c1"># Overall slope via linear regression.</span>
+    <span class="n">slope</span> <span class="o">=</span> <span class="n">_linear_regression_slope</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+    <span class="c1"># Acceleration: compare slope of first half vs second half.</span>
+    <span class="n">mid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">readings</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">early_slope</span> <span class="o">=</span> <span class="n">_linear_regression_slope</span><span class="p">(</span><span class="n">times</span><span class="p">[:</span><span class="n">mid</span><span class="p">],</span> <span class="n">values</span><span class="p">[:</span><span class="n">mid</span><span class="p">])</span>
+    <span class="n">late_slope</span> <span class="o">=</span> <span class="n">_linear_regression_slope</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">mid</span><span class="p">:],</span> <span class="n">values</span><span class="p">[</span><span class="n">mid</span><span class="p">:])</span>
+    <span class="n">acceleration</span> <span class="o">=</span> <span class="n">late_slope</span> <span class="o">-</span> <span class="n">early_slope</span>
+
+    <span class="c1"># Deviation from patient-specific baseline (in standard deviations).</span>
+    <span class="n">current_value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">baseline</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;baselines&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">current_value</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">})</span>
+    <span class="n">baseline_mean</span> <span class="o">=</span> <span class="n">baseline</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+    <span class="n">baseline_std</span> <span class="o">=</span> <span class="n">baseline</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">baseline_std</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">deviation</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_value</span> <span class="o">-</span> <span class="n">baseline_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">baseline_std</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Variability: coefficient of variation over the window.</span>
+    <span class="n">window_mean</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="k">if</span> <span class="n">values</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">window_std</span> <span class="o">=</span> <span class="n">stdev</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">variability</span> <span class="o">=</span> <span class="n">window_std</span> <span class="o">/</span> <span class="n">window_mean</span> <span class="k">if</span> <span class="n">window_mean</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="n">window_minutes</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">times</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;parameter&quot;</span><span class="p">:</span> <span class="n">parameter</span><span class="p">,</span>
+        <span class="s2">&quot;slope&quot;</span><span class="p">:</span> <span class="n">slope</span><span class="p">,</span>
+        <span class="s2">&quot;acceleration&quot;</span><span class="p">:</span> <span class="n">acceleration</span><span class="p">,</span>
+        <span class="s2">&quot;deviation&quot;</span><span class="p">:</span> <span class="n">deviation</span><span class="p">,</span>
+        <span class="s2">&quot;variability&quot;</span><span class="p">:</span> <span class="n">variability</span><span class="p">,</span>
+        <span class="s2">&quot;current&quot;</span><span class="p">:</span> <span class="n">current_value</span><span class="p">,</span>
+        <span class="s2">&quot;baseline&quot;</span><span class="p">:</span> <span class="n">baseline_mean</span><span class="p">,</span>
+        <span class="s2">&quot;window_minutes&quot;</span><span class="p">:</span> <span class="n">window_minutes</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-multi-parameter-correlation-check">Step 4: Multi-Parameter Correlation Check</h2>
+<p><em>The pseudocode calls this <code>check_multi_parameter_patterns(all_trajectories)</code>. It checks whether the current set of trajectories matches any known deterioration signature by evaluating the direction conditions for required and supporting parameters.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_check_condition</span><span class="p">(</span><span class="n">trajectory</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate whether a trajectory meets a condition string.</span>
+
+<span class="sd">    Conditions:</span>
+<span class="sd">      - &quot;rising&quot;: slope &gt; 0 (parameter is increasing)</span>
+<span class="sd">      - &quot;falling&quot;: slope &lt; 0 (parameter is decreasing)</span>
+<span class="sd">      - &quot;deviating&quot;: absolute deviation &gt; 1.5 sigma from baseline</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        trajectory: Trajectory dict from compute_trajectory().</span>
+<span class="sd">        condition: One of &quot;rising&quot;, &quot;falling&quot;, &quot;deviating&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if the condition is met.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">trajectory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">condition</span> <span class="o">==</span> <span class="s2">&quot;rising&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">trajectory</span><span class="p">[</span><span class="s2">&quot;slope&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">elif</span> <span class="n">condition</span> <span class="o">==</span> <span class="s2">&quot;falling&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">trajectory</span><span class="p">[</span><span class="s2">&quot;slope&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="k">elif</span> <span class="n">condition</span> <span class="o">==</span> <span class="s2">&quot;deviating&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">trajectory</span><span class="p">[</span><span class="s2">&quot;deviation&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">1.5</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_multi_parameter_patterns</span><span class="p">(</span><span class="n">all_trajectories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check all trajectories against known deterioration signatures.</span>
+
+<span class="sd">    This is where multi-parameter correlation dramatically improves</span>
+<span class="sd">    specificity. Instead of alerting on &quot;HR trending up&quot; alone, we alert</span>
+<span class="sd">    on &quot;HR trending up AND RR trending up AND SBP trending down,&quot; which</span>
+<span class="sd">    matches the early sepsis signature.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        all_trajectories: Dict mapping parameter name to trajectory dict.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of matched pattern dicts, each containing pattern name,</span>
+<span class="sd">        severity, clinical message, and evidence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">matched</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">pattern_name</span><span class="p">,</span> <span class="n">signature</span> <span class="ow">in</span> <span class="n">DETERIORATION_SIGNATURES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">required_met</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">supporting_met</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Check required conditions.</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">condition</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">traj</span> <span class="o">=</span> <span class="n">all_trajectories</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_check_condition</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">condition</span><span class="p">):</span>
+                <span class="n">required_met</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Check supporting conditions.</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">condition</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">[</span><span class="s2">&quot;supporting&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">traj</span> <span class="o">=</span> <span class="n">all_trajectories</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_check_condition</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">condition</span><span class="p">):</span>
+                <span class="n">supporting_met</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Pattern matches if minimum thresholds are met.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">required_met</span> <span class="o">&gt;=</span> <span class="n">signature</span><span class="p">[</span><span class="s2">&quot;min_required&quot;</span><span class="p">]</span>
+                <span class="ow">and</span> <span class="n">supporting_met</span> <span class="o">&gt;=</span> <span class="n">signature</span><span class="p">[</span><span class="s2">&quot;min_supporting&quot;</span><span class="p">]):</span>
+            <span class="n">matched</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="n">pattern_name</span><span class="p">,</span>
+                <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">signature</span><span class="p">[</span><span class="s2">&quot;severity&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">signature</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;recommended&quot;</span><span class="p">:</span> <span class="n">signature</span><span class="p">[</span><span class="s2">&quot;recommended&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;evidence&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;required_met&quot;</span><span class="p">:</span> <span class="n">required_met</span><span class="p">,</span>
+                    <span class="s2">&quot;supporting_met&quot;</span><span class="p">:</span> <span class="n">supporting_met</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">matched</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-alert-evaluation-and-suppression">Step 5: Alert Evaluation and Suppression</h2>
+<p><em>The pseudocode calls this <code>evaluate_alert(patient_state, trajectories, pattern_matches)</code>. It applies suppression logic: baseline stabilization check, cooldown period, medication effects, and artifact detection. Only alerts that pass all gates fire.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">evaluate_alert</span><span class="p">(</span>
+    <span class="n">patient_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">all_trajectories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">pattern_matches</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decide whether to fire, suppress, or downgrade an alert.</span>
+
+<span class="sd">    This is arguably the most important function in the pipeline.</span>
+<span class="sd">    A technically correct alert that fires too often is worse than</span>
+<span class="sd">    no alert at all because clinical staff will ignore the entire system.</span>
+
+<span class="sd">    Suppression reasons:</span>
+<span class="sd">    - Baseline not yet stable (first hours of admission)</span>
+<span class="sd">    - Same pattern alerted within cooldown window</span>
+<span class="sd">    - Probable measurement artifact (high variability in a very short window)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_state: Current patient state dict.</span>
+<span class="sd">        all_trajectories: Dict of parameter -&gt; trajectory dict.</span>
+<span class="sd">        pattern_matches: List of matched deterioration patterns from Step 4.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Decision dict with &quot;action&quot; (none, suppress, watch, alert, alarm)</span>
+<span class="sd">        and supporting details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+    <span class="c1"># Suppression check 1: baseline not yet stable.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">patient_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;baseline_stable&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;suppress&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Baseline still stabilizing&quot;</span><span class="p">}</span>
+
+    <span class="c1"># Suppression check 2: recent alert cooldown.</span>
+    <span class="k">if</span> <span class="n">pattern_matches</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">recent_alert</span> <span class="ow">in</span> <span class="n">patient_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alert_history&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">if</span> <span class="n">recent_alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pattern&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">pattern_matches</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;pattern&quot;</span><span class="p">]:</span>
+                <span class="n">elapsed</span> <span class="o">=</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="n">recent_alert</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">/</span> <span class="mf">60.0</span>
+                <span class="k">if</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="n">ALERT_COOLDOWN_MINUTES</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;suppress&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Same alert within </span><span class="si">{</span><span class="n">ALERT_COOLDOWN_MINUTES</span><span class="si">}</span><span class="s2">min cooldown&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+
+    <span class="c1"># Suppression check 3: artifact detection.</span>
+    <span class="c1"># If any parameter has very high variability in a window under 2 minutes,</span>
+    <span class="c1"># it&#39;s likely a measurement artifact (probe slip, patient movement).</span>
+    <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">all_trajectories</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">traj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;variability&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ARTIFACT_VARIABILITY_THRESHOLD</span>
+                <span class="ow">and</span> <span class="n">traj</span><span class="p">[</span><span class="s2">&quot;window_minutes&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;suppress&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Probable artifact in </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+
+    <span class="c1"># Multi-parameter pattern detected: use the pattern&#39;s severity.</span>
+    <span class="k">if</span> <span class="n">pattern_matches</span><span class="p">:</span>
+        <span class="c1"># Use the highest severity among matched patterns.</span>
+        <span class="n">severities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;watch&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;alert&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;alarm&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">pattern_matches</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">severities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;severity&quot;</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="n">best</span><span class="p">[</span><span class="s2">&quot;severity&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;patterns&quot;</span><span class="p">:</span> <span class="n">pattern_matches</span><span class="p">,</span>
+            <span class="s2">&quot;trajectories&quot;</span><span class="p">:</span> <span class="n">all_trajectories</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="c1"># No multi-parameter pattern. Check for single-parameter deviation.</span>
+    <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">all_trajectories</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">traj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">SLOPE_THRESHOLDS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;deviation&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">SINGLE_PARAM_DEVIATION_THRESHOLD</span>
+                <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;slope&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;watch&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> deviating </span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;deviation&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> sigma with slope </span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;slope&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">/min&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;trajectories&quot;</span><span class="p">:</span> <span class="n">all_trajectories</span><span class="p">,</span>
+            <span class="p">}</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-persist-trajectory-metrics-and-route-alerts">Step 6: Persist Trajectory Metrics and Route Alerts</h2>
+<p><em>The pseudocode calls this <code>persist_and_route(patient_state, trajectories, alert_decision)</code>. It stores all trajectory metrics in Timestream (regardless of alert status) and routes active alerts to SNS for clinical delivery.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">persist_and_route</span><span class="p">(</span>
+    <span class="n">patient_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">all_trajectories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">alert_decision</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Store trajectory metrics in Timestream and route alerts via SNS.</span>
+
+<span class="sd">    Every trajectory computation is stored for retrospective analysis,</span>
+<span class="sd">    even when no alert fires. The &quot;show me this patient&#39;s trajectories</span>
+<span class="sd">    for the 12 hours before the code&quot; query is one of the most valuable</span>
+<span class="sd">    uses of this data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_state: Current patient state dict.</span>
+<span class="sd">        all_trajectories: Dict of parameter -&gt; trajectory dict.</span>
+<span class="sd">        alert_decision: Decision dict from evaluate_alert().</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">patient_state</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="n">now_ms</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">))</span>
+
+    <span class="c1"># --- Persist to Timestream (always) ---</span>
+    <span class="n">timestream_records</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">all_trajectories</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">traj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">timestream_records</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;Dimensions&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;patient_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">pid</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;parameter&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">param</span><span class="p">},</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;MeasureName&quot;</span><span class="p">:</span> <span class="s2">&quot;trajectory&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MeasureValues&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;slope&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;slope&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;DOUBLE&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;acceleration&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;acceleration&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;DOUBLE&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;deviation&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;deviation&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;DOUBLE&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;variability&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;variability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;DOUBLE&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;current&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;current&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;DOUBLE&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;baseline&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj</span><span class="p">[</span><span class="s1">&#39;baseline&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="s2">&quot;DOUBLE&quot;</span><span class="p">},</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;MeasureValueType&quot;</span><span class="p">:</span> <span class="s2">&quot;MULTI&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Time&quot;</span><span class="p">:</span> <span class="n">now_ms</span><span class="p">,</span>
+            <span class="s2">&quot;TimeUnit&quot;</span><span class="p">:</span> <span class="s2">&quot;MILLISECONDS&quot;</span><span class="p">,</span>
+        <span class="p">})</span>
+
+    <span class="k">if</span> <span class="n">timestream_records</span><span class="p">:</span>
+        <span class="n">mock_timestream</span><span class="o">.</span><span class="n">write_records</span><span class="p">(</span>
+            <span class="n">DatabaseName</span><span class="o">=</span><span class="n">TIMESTREAM_DB_NAME</span><span class="p">,</span>
+            <span class="n">TableName</span><span class="o">=</span><span class="n">TIMESTREAM_TABLE_NAME</span><span class="p">,</span>
+            <span class="n">Records</span><span class="o">=</span><span class="n">timestream_records</span><span class="p">,</span>
+            <span class="n">CommonAttributes</span><span class="o">=</span><span class="p">{},</span>
+        <span class="p">)</span>
+
+    <span class="c1"># --- Route alerts ---</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="n">alert_decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">action</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;suppress&quot;</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Patient </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span>
+                    <span class="n">alert_decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;watch&quot;</span><span class="p">:</span>
+        <span class="c1"># Update patient dashboard status. No active paging.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Patient </span><span class="si">%s</span><span class="s2">: WATCH - </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">alert_decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">action</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;alert&quot;</span><span class="p">,</span> <span class="s2">&quot;alarm&quot;</span><span class="p">):</span>
+        <span class="c1"># Build the alert payload for clinical delivery via SNS.</span>
+        <span class="n">patterns</span> <span class="o">=</span> <span class="n">alert_decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;patterns&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">primary_pattern</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">patterns</span> <span class="k">else</span> <span class="p">{}</span>
+
+        <span class="c1"># Format trajectories for clinical display.</span>
+        <span class="n">traj_display</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">all_trajectories</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">traj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">traj_display</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;current&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;current&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s2">&quot;baseline&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;baseline&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s2">&quot;slope_per_hour&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;slope&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="s2">&quot;deviation_sigma&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;deviation&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s2">&quot;window_hours&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="s2">&quot;window_minutes&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="n">alert_payload</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">pid</span><span class="p">,</span>
+            <span class="s2">&quot;alert_timestamp&quot;</span><span class="p">:</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">action</span><span class="p">,</span>
+            <span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="n">primary_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pattern&quot;</span><span class="p">,</span> <span class="s2">&quot;single_parameter&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">primary_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">alert_decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span>
+            <span class="s2">&quot;recommended_action&quot;</span><span class="p">:</span> <span class="n">primary_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;recommended&quot;</span><span class="p">,</span> <span class="s2">&quot;Assess patient.&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;trajectories&quot;</span><span class="p">:</span> <span class="n">traj_display</span><span class="p">,</span>
+            <span class="s2">&quot;alert_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;ALT-</span><span class="si">{</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">pid</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">mock_sns</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">TopicArn</span><span class="o">=</span><span class="n">SNS_TOPIC_ARN</span><span class="p">,</span>
+            <span class="n">Subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">action</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] Trajectory alert: </span><span class="si">{</span><span class="n">pid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">alert_payload</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Record in alert history for cooldown logic.</span>
+        <span class="n">patient_state</span><span class="p">[</span><span class="s2">&quot;alert_history&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="n">primary_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pattern&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">now</span><span class="p">,</span>
+            <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">action</span><span class="p">,</span>
+        <span class="p">})</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Patient </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> fired - </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">pid</span><span class="p">,</span> <span class="n">action</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">primary_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pattern&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here is the full pipeline assembled into a single function that processes one vital sign event end-to-end.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">process_vital_sign</span><span class="p">(</span><span class="n">source_event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full vital sign trajectory pipeline for one incoming reading.</span>
+
+<span class="sd">    In production, this function would be invoked by a Lambda triggered</span>
+<span class="sd">    from Kinesis (for intermittent floor data) or embedded in a Flink</span>
+<span class="sd">    application (for continuous ICU data).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        source_event: Raw vital sign event from any source.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The alert decision dict (action, reason, trajectories if relevant).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Normalize and ingest.</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">ingest_vital_sign</span><span class="p">(</span><span class="n">source_event</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Update patient state (baselines, rolling window).</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">update_patient_state</span><span class="p">(</span><span class="n">normalized</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Compute trajectory for the parameter that just arrived,</span>
+    <span class="c1"># plus any other parameters with recent data (for correlation).</span>
+    <span class="n">all_trajectories</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;last_readings&quot;</span><span class="p">]:</span>
+        <span class="n">traj</span> <span class="o">=</span> <span class="n">compute_trajectory</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">traj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">all_trajectories</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">traj</span>
+
+    <span class="c1"># Step 4: Check multi-parameter patterns.</span>
+    <span class="n">pattern_matches</span> <span class="o">=</span> <span class="n">check_multi_parameter_patterns</span><span class="p">(</span><span class="n">all_trajectories</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Evaluate alert with suppression logic.</span>
+    <span class="n">alert_decision</span> <span class="o">=</span> <span class="n">evaluate_alert</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">all_trajectories</span><span class="p">,</span> <span class="n">pattern_matches</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Persist trajectory metrics and route alerts.</span>
+    <span class="n">persist_and_route</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">all_trajectories</span><span class="p">,</span> <span class="n">alert_decision</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">alert_decision</span>
+
+<span class="c1"># --- Demo: Simulate a sepsis deterioration ---</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_demo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate synthetic vital signs for two patients:</span>
+<span class="sd">    - Patient A: gradual sepsis trajectory over 8 hours</span>
+<span class="sd">    - Patient B: stable patient with normal variation</span>
+
+<span class="sd">    Shows how the pipeline detects the coordinated deterioration in Patient A</span>
+<span class="sd">    while leaving Patient B alone.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;VITAL SIGN TRAJECTORY MONITORING - DEMO&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="n">base_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+    <span class="c1"># --- Patient A: gradual sepsis trajectory ---</span>
+    <span class="c1"># HR starts at 74 and rises ~3 bpm/hr.</span>
+    <span class="c1"># RR starts at 16 and rises ~0.8/hr.</span>
+    <span class="c1"># SBP starts at 128 and falls ~2 mmHg/hr.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Patient A: Sepsis Trajectory (8 hours of q30min vitals) ---</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span> <span class="c1"># 16 readings over 8 hours (every 30 min)</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.5</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">base_time</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">hours</span><span class="p">)</span>
+
+        <span class="c1"># Simulated gradual deterioration with some noise.</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">hr</span> <span class="o">=</span> <span class="mi">74</span> <span class="o">+</span> <span class="p">(</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">hours</span><span class="p">)</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">rr</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">hours</span><span class="p">)</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">sbp</span> <span class="o">=</span> <span class="mi">128</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">hours</span><span class="p">)</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">&quot;HR&quot;</span><span class="p">,</span> <span class="n">hr</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;RR&quot;</span><span class="p">,</span> <span class="n">rr</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;SBP&quot;</span><span class="p">,</span> <span class="n">sbp</span><span class="p">)]:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">process_vital_sign</span><span class="p">({</span>
+                <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;P-00847291&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="p">,</span>
+                <span class="s2">&quot;parameter&quot;</span><span class="p">:</span> <span class="n">param</span><span class="p">,</span>
+                <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">val</span><span class="p">,</span>
+                <span class="s2">&quot;source_type&quot;</span><span class="p">:</span> <span class="s2">&quot;nursing_assessment&quot;</span><span class="p">,</span>
+            <span class="p">})</span>
+
+        <span class="c1"># Print status every 2 hours.</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">PATIENT_STATES</span><span class="p">[</span><span class="s2">&quot;P-00847291&quot;</span><span class="p">]</span>
+            <span class="n">hr_traj</span> <span class="o">=</span> <span class="n">compute_trajectory</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s2">&quot;HR&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Hour </span><span class="si">{</span><span class="n">hours</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">: HR=</span><span class="si">{</span><span class="n">hr</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, RR=</span><span class="si">{</span><span class="n">rr</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, SBP=</span><span class="si">{</span><span class="n">sbp</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">hr_traj</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    HR slope: </span><span class="si">{</span><span class="n">hr_traj</span><span class="p">[</span><span class="s1">&#39;slope&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">60</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> bpm/hr, &quot;</span>
+                      <span class="sa">f</span><span class="s2">&quot;deviation: </span><span class="si">{</span><span class="n">hr_traj</span><span class="p">[</span><span class="s1">&#39;deviation&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> sigma&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Alert decision: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Patient B: stable patient ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Patient B: Stable Patient (8 hours of q30min vitals) ---</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.5</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">base_time</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">hours</span><span class="p">)</span>
+
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">100</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">hr</span> <span class="o">=</span> <span class="mi">72</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">rr</span> <span class="o">=</span> <span class="mi">14</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">sbp</span> <span class="o">=</span> <span class="mi">122</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">&quot;HR&quot;</span><span class="p">,</span> <span class="n">hr</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;RR&quot;</span><span class="p">,</span> <span class="n">rr</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;SBP&quot;</span><span class="p">,</span> <span class="n">sbp</span><span class="p">)]:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">process_vital_sign</span><span class="p">({</span>
+                <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;P-00123456&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="p">,</span>
+                <span class="s2">&quot;parameter&quot;</span><span class="p">:</span> <span class="n">param</span><span class="p">,</span>
+                <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">val</span><span class="p">,</span>
+                <span class="s2">&quot;source_type&quot;</span><span class="p">:</span> <span class="s2">&quot;nursing_assessment&quot;</span><span class="p">,</span>
+            <span class="p">})</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Patient B final decision: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (expected: none)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Summary ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RESULTS SUMMARY&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Kinesis records written: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mock_kinesis</span><span class="o">.</span><span class="n">records</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Timestream records stored: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mock_timestream</span><span class="o">.</span><span class="n">records</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SNS alerts published: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mock_sns</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mock_sns</span><span class="o">.</span><span class="n">messages</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Alert details:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">mock_sns</span><span class="o">.</span><span class="n">messages</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;severity&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Recommended: </span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;recommended_action&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Trajectories:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;trajectories&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;      </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">: current=</span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;current&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, baseline=</span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;baseline&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+                      <span class="sa">f</span><span class="s2">&quot;slope=</span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;slope_per_hour&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/hr, dev=</span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;deviation_sigma&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">σ&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">run_demo</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example works. Run it and you will see the pipeline detect Patient A's sepsis trajectory while leaving Patient B alone. But there is meaningful distance between &quot;works in a script&quot; and &quot;runs in an ICU monitoring real patients.&quot; Here is where that gap lives:</p>
+<p><strong>Real streaming infrastructure.</strong> The demo processes events sequentially in memory. Production uses Kinesis Data Streams for ingestion and either Lambda (floor patients with intermittent vitals) or Apache Flink via Kinesis Data Analytics (ICU patients with continuous monitoring). Flink handles the stateful windowed computations with exactly-once semantics, maintaining per-patient state without external database calls on every event.</p>
+<p><strong>HL7/FHIR integration.</strong> Real vital signs arrive via HL7v2 ADT/OBX messages from bedside monitors or FHIR Observation resources from the EHR. The normalization step in production must parse HL7 segments, map device-specific parameter codes to standard names, handle unit conversions (Fahrenheit to Celsius, inches of mercury to mmHg), and deal with the reality that different monitors report different parameter sets.</p>
+<p><strong>Medication administration awareness.</strong> The demo omits medication-aware suppression entirely. In production, you need a feed from the Medication Administration Record (MAR). When a patient receives a beta-blocker and their HR drops, that is the drug working, not deterioration. Without this, your system will cry wolf after every Metoprolol dose. This integration alone is typically a 3-6 month project.</p>
+<p><strong>Apache Flink for continuous monitoring.</strong> For ICU patients where data arrives every second, you cannot afford a DynamoDB read/write on every event. A Flink application maintains per-patient state in memory with periodic checkpointing, computes rolling statistics over configurable windows, and only emits events downstream when trajectory features change significantly. The demo's per-event architecture is fine for floor patients with q4h vitals but will not scale to ICU data density.</p>
+<p><strong>Robust statistics.</strong> The demo uses simple linear regression for slope estimation. Production should use robust methods like Theil-Sen estimation (resistant to outliers) or weighted least squares (weighting recent readings more heavily). For irregularly sampled data, a Kalman filter provides proper handling of varying time gaps between observations.</p>
+<p><strong>DynamoDB design.</strong> The demo uses a simple patient_id key. Production needs a composite key design supporting queries like &quot;all patients on Unit 4B with active watch or alert status&quot; for the unit dashboard. A GSI on unit + alert_status enables this. TTL automatically expires state records for discharged patients.</p>
+<p><strong>Timestream query patterns.</strong> Storing trajectory metrics in Timestream enables powerful temporal queries: &quot;Show me this patient's HR slope over the last 24 hours&quot; or &quot;Find all patients whose SpO2 deviation exceeded 2 sigma in the last shift.&quot; Production systems build CloudWatch dashboards on top of Timestream scheduled queries for unit-level situational awareness.</p>
+<p><strong>Error handling and dead-letter queues.</strong> If trajectory computation fails for one patient, it must not affect other patients. Production Lambda functions wrap each patient's processing in try/except blocks, send failures to a DLQ for retry, and emit CloudWatch metrics on error rates. A spike in processing errors triggers an operational alarm (distinct from clinical alerts).</p>
+<p><strong>IAM least-privilege.</strong> The trajectory-processor Lambda needs <code>kinesis:GetRecords</code> (read from stream), <code>dynamodb:GetItem</code>/<code>PutItem</code> (patient state), <code>timestream:WriteRecords</code> (metrics), but NOT <code>sns:Publish</code> (that belongs to the alert-evaluator Lambda). Each Lambda gets exactly the permissions it needs, scoped to specific resource ARNs. Not <code>dynamodb:*</code>. Not <code>AdministratorAccess</code>.</p>
+<p><strong>VPC and network isolation.</strong> Vital signs are PHI. In production, all Lambda functions and the Flink application run inside a VPC with private subnets. VPC endpoints for DynamoDB, Timestream, SNS, and CloudWatch Logs keep traffic on the AWS backbone. The Kinesis stream uses interface endpoints. No PHI traverses the public internet.</p>
+<p><strong>Encryption.</strong> Production uses KMS customer-managed keys for the Kinesis stream (server-side encryption), DynamoDB table (encryption at rest), Timestream database (encryption at rest), and SNS topic (encrypted messages). Key rotation enabled. CloudTrail logs every key usage for the HIPAA audit trail.</p>
+<p><strong>Alert delivery confirmation.</strong> When SNS publishes a clinical alert, production tracks whether it was delivered and acknowledged. If a nurse does not acknowledge an alert within a configured window, the system escalates to the charge nurse. This requires a delivery tracking mechanism (SNS delivery status logging + a separate Lambda checking acknowledgment state).</p>
+<p><strong>Clinical display integration.</strong> The demo prints to stdout. Production integrates with the EHR (via SMART on FHIR or CDS Hooks), the unit's patient status board, and the paging system. Each integration has its own latency characteristics and failure modes.</p>
+<p><strong>Testing.</strong> There are no tests here. A production pipeline has unit tests for <code>compute_trajectory</code> (with known synthetic data), integration tests for the full pipeline with MIMIC-III derived scenarios, and a validation suite that compares trajectory alerts against historical rapid response events to measure sensitivity and specificity. Never use real patient data in test fixtures.</p>
+<p><strong>Tuning and feedback.</strong> Production systems log every alert decision (fire, suppress, and why) for retrospective analysis. Clinical teams review false positives and missed events monthly, adjusting thresholds, cooldown windows, and deterioration signatures based on their patient population. The configuration constants at the top of this file are starting points. They will need tuning per unit, per acuity level, and over time.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter12.07-vital-sign-trajectory-monitoring.html">Recipe 12.7</a> for the full architectural walkthrough, pseudocode, deterioration signatures, and honest take on why alert fatigue is the real enemy.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

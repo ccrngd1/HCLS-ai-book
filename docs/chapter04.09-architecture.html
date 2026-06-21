@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 4.9 Architecture and Implementation: Personalized Care Plan Generation</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested nav-active" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-49-architecture-and-implementation-personalized-care-plan-generation">Recipe 4.9 Architecture and Implementation: Personalized Care Plan Generation</h1>
+<p><em>Companion to <a href="chapter04.09-personalized-care-plan-generation.html">Recipe 4.9: Personalized Care Plan Generation</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon DynamoDB for the clinical content, plan records, action records, narrative records, and feedback events.</strong> Several new tables: <code>goal-templates</code> keyed on <code>(condition_id, goal_id, version)</code>; <code>action-templates</code> keyed on <code>(action_id, version)</code>; <code>plan-records</code> keyed on <code>(patient_id, plan_version)</code> storing the structured plan; <code>plan-action-records</code> keyed on <code>(plan_id, action_id)</code> for action status tracking through the plan lifecycle; <code>plan-narratives</code> keyed on <code>(plan_id, narrative_audience)</code> for the clinician-facing, patient-facing, and care-team-internal narratives; <code>plan-feedback-records</code> keyed on <code>(plan_id, feedback_id)</code> for action completion events, outcome events, and patient feedback. The <code>patient-profile</code> table from prior recipes is extended with care-plan-relevant attributes (current plan_id, last plan revision date, plan-engagement summary). DynamoDB is HIPAA-eligible under BAA.</p>
+<p><strong>Amazon SageMaker Feature Store for patient features powering the inputs aggregation.</strong> The same offline and online feature stores from prior recipes are reused. The online store is read at plan generation time to provide low-latency access to the patient's current state. The offline store powers the cohort-stratified plan-quality monitoring and the longitudinal plan-effectiveness analyses.</p>
+<p><strong>AWS HealthLake for the FHIR-native clinical data substrate.</strong> Care plan generation benefits substantially from FHIR-native storage. The condition list, medication list, observation history, encounter history, and care team feed directly into the inputs aggregation. The plan output is itself a FHIR <code>CarePlan</code> with linked <code>Goal</code>, <code>Task</code>, and <code>ServiceRequest</code> resources, which makes plan portability across care settings tractable. HealthLake is the natural home for the plan as a FHIR resource.</p>
+<p><strong>Amazon S3 for the data lake, plan archives, and longitudinal storage.</strong> Source data feeds (claims, EHR, lab, pharmacy, vitals, PROMs, social work assessments, advance care planning documents) land in S3 via Kinesis Firehose and Glue. Plan archives (the immutable record of every plan version, including the input record, the goal set, the action set, the narratives, and the activation events) live in S3 alongside the structured DynamoDB data; the S3 archive is the system of record for audit, the DynamoDB is the operational store. Cohort outputs from the goal-derivation, action-assembly, and reconciliation stages land in S3 as Parquet for downstream analytics.</p>
+<p><strong>Amazon Bedrock for the narrative generation, with strict validator enforcement.</strong> Three distinct LLM use cases:</p>
+<ol>
+<li>
+<p><strong>Clinician-facing narrative.</strong> A structured-output prompt takes the plan record and produces a paragraph-plus-bullets summary that the clinician reads at the point of plan review. The structured summary precedes the prose; the prose surfaces what changed since the prior plan, what conflicts were reconciled, and what the care team should pay attention to.</p>
+</li>
+<li>
+<p><strong>Patient-facing narrative.</strong> A separate prompt takes the plan record, the patient's reading level, the patient's preferred language, the patient's channel preferences, and the patient's stated preferences and produces the patient-facing version. Reading-level matching applies the same pattern as Recipe 4.2. Approved-claim-language enforcement applies the same pattern as Recipes 2.5 and 4.5 through 4.8.</p>
+</li>
+<li>
+<p><strong>Care-team-internal disagreement narrative.</strong> When reconciliation could not resolve a conflict, the LLM generates an internal-facing summary listing the conflict, candidate resolutions, and recommended escalation path. This is decision-support for the care team, not patient-facing.</p>
+</li>
+</ol>
+<p>The validator is a four-layer check applied to every narrative: schema and length, fact grounding (every clinical fact traces to a structured plan element), prohibited-language patterns (no recommendation language for treatments not in the structured plan, no probabilistic claims framed as guarantees, no goal statements not in the goal set), and required content (shared-decision framing for the patient narrative, change-since-prior-plan callouts for the clinician narrative, escalation path for the disagreement narrative). Failed validations regenerate with feedback or fall back to a templated narrative.</p>
+<p>Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models.</p>
+<p><strong>AWS Step Functions for plan-generation orchestration.</strong> Plan generation is a multi-stage workflow: inputs aggregation, goal derivation, action assembly and reconciliation, plan finalization, narrative generation and validation, plan persistence, and review notification. Step Functions orchestrates the stages, with explicit retry, timeout, and DLQ semantics per stage. A separate state machine handles plan revision (the same stages, but starting from a prior plan record and applying targeted updates). A third state machine handles scheduled plan review (running plan adherence and effectiveness aggregation, triggering revisions where indicated). All Step Functions executions are logged to S3 and surfaced in the operational dashboards.</p>
+<p><strong>AWS Lambda for per-stage logic.</strong> The inputs aggregator, the goal derivator, the action-template matcher, the interaction filter, the burden estimator, the capacity reconciler, the schedule reconciler, the plan finalizer, the narrative generator, the validator, the plan persister, the review-notifier, the activation-dispatcher, the action-completion-tracker, and the plan-revision-trigger all run as Lambdas. Each Lambda is in VPC with VPC endpoints for downstream services.</p>
+<p><strong>Amazon EventBridge for scheduling and event-driven triggers.</strong> EventBridge schedules the periodic plan-review runs (typically aligned to the plan's defined review cadence: monthly for high-risk patients, quarterly for stable patients, ad-hoc on triggering events). EventBridge rules also handle event-driven triggers: a hospitalization triggers a plan-revision check; a new diagnosis triggers a plan-revision check; a quality-program deadline approaching for a patient with an unmet care gap triggers a plan-revision check; an upstream signal change from Recipes 4.5 through 4.8 (a new adherence intervention, a new care management enrollment, a new treatment-response prediction) triggers a plan-revision check.</p>
+<p><strong>Amazon Kinesis Data Streams for plan-generation events, action-completion events, outcome events, and patient feedback events.</strong> Same engagement-event bus pattern as prior chapters, with new event types: <code>plan_generation_requested</code>, <code>plan_generation_completed</code>, <code>plan_review_required</code>, <code>plan_approved</code>, <code>plan_activated</code>, <code>action_completed</code>, <code>action_failed</code>, <code>outcome_observed</code>, <code>patient_feedback_received</code>, <code>plan_revision_triggered</code>. The state-machine worker consumes these and updates the relevant DynamoDB tables.</p>
+<p><strong>Amazon API Gateway and Amazon Cognito for the plan-review API.</strong> The clinical-team plan-review surface is exposed as an authenticated API consumed by the EHR integration layer (typically a SMART on FHIR app). API Gateway provides the endpoint, Cognito (or the institution's identity provider via SAML or OIDC) provides authentication, and per-clinician audit logs go to CloudTrail. The patient-facing plan delivery uses the institution's existing patient portal (Amazon Pinpoint or the EHR's patient-portal infrastructure for the channel layer); the API Gateway endpoint is for the clinician review surface.</p>
+<p><strong>Amazon Pinpoint for patient-facing plan delivery in the patient's preferred channel.</strong> The plan record's narrative for the patient is rendered into the channel format (email, SMS link to portal, mailed letter for low-digital-literacy patients) and delivered through Pinpoint. Channel preferences are read from Recipe 4.1's preference store. Pinpoint is HIPAA-eligible for the eligible channels (email and SMS in the US); confirm at build time.</p>
+<p><strong>Amazon QuickSight for governance and operational dashboards.</strong> Per-cohort plan ambition, plan complexity, and action-assignment dashboards (the equity instrumentation). Per-plan adherence and effectiveness dashboards (how often actions are completed, how often plans are revised, how often plans drive observed outcome improvements). Care-team-load dashboards (how many plans each care manager has, how many require review, how many are at risk of stalling). Clinical-content-version usage dashboards (which goal templates and action templates are firing, which are rare, which produce conflicts). QuickSight on Athena, with row-level security for cohort-specific access.</p>
+<p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Same PHI infrastructure pattern as prior recipes, with elevated controls for the plan artifacts. Customer-managed keys, CloudTrail data events on the plan tables, CloudWatch alarms on plan-generation failure rates, validator-fallback rates, plan-review-SLA breaches, and cohort fairness threshold crossings. Plan records are sensitive enough that the audit posture is closer to clinical-record audit than typical analytics audit.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Sources
+      A1[Claims Feed]
+      A2[EHR / FHIR via HealthLake]
+      A3[Lab Results]
+      A4[Pharmacy / Adherence from 4.5]
+      A5[Vitals and PROMs]
+      A6[Care Gap Inventory from 4.6]
+      A7[Care Mgmt from 4.7]
+      A8[Treatment Predictions from 4.8]
+      A9[Wellness Programs from 4.4]
+      A10[Content Matches from 4.2]
+      A11[Provider Relationships from 4.3]
+      A12[Channel Prefs from 4.1]
+      A13[POLST / Advance Directives]
+      A14[SDOH and Functional]
+    end
+
+    A1 --&gt;|Streaming| B1[Kinesis Firehose\ncp-source-events]
+    A2 --&gt;|FHIR| HL1[AWS HealthLake]
+    HL1 --&gt;|Export| B1
+    A3 --&gt;|Streaming| B1
+    A4 --&gt;|Daily| B1
+    A5 --&gt;|Streaming| B1
+    A6 --&gt;|Daily| B1
+    A7 --&gt;|Daily| B1
+    A8 --&gt;|On change| B1
+    A9 --&gt;|Daily| B1
+    A10 --&gt;|Daily| B1
+    A11 --&gt;|Daily| B1
+    A12 --&gt;|Daily| B1
+    A13 --&gt;|On change| B1
+    A14 --&gt;|Daily| B1
+
+    B1 --&gt; S1[S3\ncp-data-lake]
+
+    PR1[Lambda\ncontent-sync] --&gt; D1[DynamoDB\ngoal-templates]
+    PR1 --&gt; D2[DynamoDB\naction-templates]
+    S1 --&gt; F1[SageMaker Feature Store\npatient features]
+
+    EB1[EventBridge\nschedule + triggers] --&gt; SF1[Step Functions\nplan-generation]
+    SF1 --&gt; L1[Lambda\ninputs-aggregator]
+    F1 --&gt; L1
+    HL1 --&gt; L1
+    D1 --&gt; L1
+    D2 --&gt; L1
+    L1 --&gt; L2[Lambda\ngoal-derivator]
+    L2 --&gt; L3[Lambda\naction-assembler]
+    L3 --&gt; L4[Lambda\ninteraction-filter]
+    L4 --&gt; L5[Lambda\nburden-estimator]
+    L5 --&gt; L6[Lambda\ncapacity-and-schedule\nreconciler]
+    L6 --&gt; L7[Lambda\nplan-finalizer]
+    L7 --&gt; P1[DynamoDB\nplan-records]
+    L7 --&gt; S2[S3\nplan-archives]
+
+    L7 --&gt; L8[Lambda\nnarrative-generator]
+    L8 --&gt; BD1[Bedrock\nclinician + patient + internal]
+    BD1 --&gt; VL1[Lambda\nvalidator]
+    VL1 --&gt; P2[DynamoDB\nplan-narratives]
+
+    P2 --&gt; AG1[API Gateway\nplan-review API]
+    AG1 --&gt; AU1[Cognito or IdP]
+    AU1 --&gt; EHR1[EHR via SMART on FHIR\nclinical-team review]
+
+    P2 --&gt; PI1[Amazon Pinpoint\npatient-facing delivery]
+    PI1 --&gt; PORTAL[Patient portal / SMS / email / mail]
+
+    EHR1 -.Approval.-&gt; KS1[Kinesis\ncp-events]
+    PORTAL -.Acknowledgment.-&gt; KS1
+    KS1 --&gt; SM1[Lambda\nstate-machine-worker]
+    SM1 --&gt; P3[DynamoDB\nplan-action-records]
+    SM1 --&gt; P4[DynamoDB\nplan-feedback-records]
+
+    SM1 --&gt; ACT1[Lambda\nactivation-dispatcher]
+    ACT1 -.eRx.-&gt; RX1[E-Prescribing system]
+    ACT1 -.Schedule.-&gt; SCH1[Scheduling system]
+    ACT1 -.Program enroll.-&gt; PR2[Program registry]
+
+    EB2[EventBridge\nrevision-triggers] --&gt; SF2[Step Functions\nplan-revision]
+    SF2 --&gt; L1
+
+    SF3[Step Functions\nperiodic-review] --&gt; RV1[Lambda\nreview-aggregator]
+    P3 --&gt; RV1
+    P4 --&gt; RV1
+    RV1 --&gt; S3[S3\nreview-outputs]
+    RV1 --&gt; RV2[Lambda\nrevision-trigger]
+    RV2 --&gt; SF2
+
+    KS1 --&gt; KF1[Kinesis Firehose]
+    KF1 --&gt; S4[S3\ncp-event-lake]
+    S4 --&gt; QS1[QuickSight\ndashboards]
+    S3 --&gt; QS1
+
+    style F1 fill:#9ff,stroke:#333
+    style D1 fill:#9ff,stroke:#333
+    style D2 fill:#9ff,stroke:#333
+    style P1 fill:#9ff,stroke:#333
+    style P2 fill:#9ff,stroke:#333
+    style P3 fill:#9ff,stroke:#333
+    style P4 fill:#9ff,stroke:#333
+    style S1 fill:#cfc,stroke:#333
+    style S2 fill:#cfc,stroke:#333
+    style S3 fill:#cfc,stroke:#333
+    style S4 fill:#cfc,stroke:#333
+    style KS1 fill:#f9f,stroke:#333
+    style HL1 fill:#fc9,stroke:#333
+    style BD1 fill:#fc9,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon DynamoDB, Amazon SageMaker Feature Store, AWS HealthLake, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon API Gateway, Amazon Cognito, Amazon Pinpoint, Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: <code>dynamodb:GetItem</code> / <code>BatchWriteItem</code> / <code>UpdateItem</code> scoped to specific tables (especially <code>plan-records</code>, <code>plan-narratives</code>, <code>plan-feedback-records</code>); <code>bedrock:InvokeModel</code> on specific foundation-model ARNs; <code>s3:GetObject</code> / <code>PutObject</code> scoped to plan-archive and review-output buckets; <code>kinesis:PutRecord</code> on the cp-events stream; <code>healthlake:SearchWithGet</code> and related read actions scoped to the relevant data store; <code>pinpoint:SendMessages</code> scoped to the relevant Pinpoint application; <code>sagemaker:GetRecord</code> on the relevant Feature Store. Never <code>*</code>.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. All services in the architecture must be HIPAA-eligible: DynamoDB, SageMaker Feature Store, HealthLake, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, API Gateway, Cognito, Pinpoint (eligible channels only), QuickSight, KMS.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>DynamoDB: customer-managed KMS at rest (especially <code>plan-records</code>, <code>plan-narratives</code>, and <code>plan-feedback-records</code>; the plan is a clinical record). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker Feature Store: KMS keys for offline storage. HealthLake: KMS-encrypted at rest, TLS in transit. Lambda log groups KMS-encrypted. Narrative text stored in DynamoDB is PHI; treat with full clinical-record encryption posture.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas in VPC. SageMaker Feature Store online store runs in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, Step Functions, EventBridge, Glue, Athena, STS, HealthLake, API Gateway, Pinpoint. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR integration typically arrives via PrivateLink, Direct Connect, or the institution's existing private network. VPC Flow Logs enabled.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the <code>goal-templates</code>, <code>action-templates</code>, <code>plan-records</code>, <code>plan-narratives</code>, <code>plan-action-records</code>, and <code>plan-feedback-records</code> tables. Data events on the S3 buckets containing source feeds, plan archives, and review outputs. Plan-review API invocations logged at the API Gateway and Lambda layers. Plan activations logged through the activation-dispatcher Lambda. The audit posture for care-plan artifacts approaches clinical-record audit standards.</td>
+</tr>
+<tr>
+<td><strong>Clinical Content Governance</strong></td>
+<td>Document the goal-template and action-template review process (clinical informatics, P&amp;T, care management, quality, patient education). Establish a clinical-content review committee that approves new templates, template updates, and cohort overrides. Establish a parallel-evaluation policy for significant content changes (run new templates against the prior version's plans on a held-out cohort and surface differences for review). Document the cohort-override approval policy (who can approve a cohort-specific override and what evidence is required).</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>A starter set of synthetic patients with realistic multi-condition profiles, medication lists, encounter histories, and goals-of-care preferences (Synthea provides good baseline data; augment with synthesized POLST / advance-directive structured data, SDOH attributes, and patient-portal preference data). A starter clinical-content library covering the most common chronic-condition combinations (diabetes + CKD, CHF + diabetes, CHF + CKD, depression + chronic pain) with goal templates and action templates that exercise the reconciliation logic.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a multi-specialty health system with ~500,000 active patients and ~50,000 active care plans (10 percent care-managed cohort), with monthly plan-review cycles for high-risk patients and quarterly cycles for the rest: DynamoDB on-demand: $400-1,200/month. SageMaker Feature Store: $200-500/month. HealthLake: $1,500-5,000/month depending on data volume. Lambda + Step Functions: $300-900/month. Bedrock for narratives (~50,000 plan narratives per month average across clinician, patient, and internal audiences), Sonnet-class for clinician and internal, Haiku-class for patient where reading-level allows: $5,000-15,000/month. API Gateway + Cognito: $200-500/month. Amazon Pinpoint: $300-1,000/month depending on channel mix. S3 + Glue + Athena: $800-2,000/month. QuickSight: $50/user/month authors plus reader fees. Estimated infrastructure total: $9,000-26,000/month for a regional system, before staff time, EHR integration, and the (substantial) clinical-content-curation costs that dominate this recipe.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores the goal templates, action templates, plan records, plan-action records, plan narratives, and plan-feedback records</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Per-patient features (clinical, social, functional, preference) feeding the inputs aggregation; offline store powers cohort analytics</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake</strong></td>
+<td>FHIR-native clinical data store powering condition, medication, observation, encounter, and care-team aggregation; persists plan output as FHIR <code>CarePlan</code> with linked <code>Goal</code>, <code>Task</code>, and <code>ServiceRequest</code> resources</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Hosts the cp-data-lake, plan archives, review outputs, and longitudinal event lake; the immutable plan-archive S3 store is the audit system of record</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Cohort analytics over the plan and feedback data; longitudinal plan-effectiveness ETL</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena</strong></td>
+<td>SQL access to the plan and feedback data lake; powers cohort-stratified plan-quality monitoring and longitudinal effectiveness analysis</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates plan-generation, plan-revision, and periodic-review workflows</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Schedules periodic plan reviews; routes event-driven plan-revision triggers (hospitalizations, new diagnoses, upstream signal changes from Recipes 4.5 through 4.8)</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Carries plan-generation events, action-completion events, outcome events, and patient feedback events</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Lands plan and feedback events into S3 Parquet for long-horizon analysis</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Runs the inputs aggregator, goal derivator, action assembler, interaction filter, burden estimator, capacity and schedule reconciler, plan finalizer, narrative generator, validator, plan persister, review notifier, activation dispatcher, and plan-revision trigger</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Hosts the LLM for clinician-facing narratives, patient-facing narratives, and care-team-internal disagreement narratives</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Exposes the plan-review API consumed by the EHR integration layer (SMART on FHIR app)</td>
+</tr>
+<tr>
+<td><strong>Amazon Cognito</strong></td>
+<td>Authenticates clinical-team access to the plan-review API; integrates with the institution's identity provider via SAML or OIDC</td>
+</tr>
+<tr>
+<td><strong>Amazon Pinpoint</strong></td>
+<td>Patient-facing plan delivery in the patient's preferred channel (email, SMS link to portal, mailed letter via partner)</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Equity, plan-quality, plan-effectiveness, care-team-load, and clinical-content-version dashboards</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all PHI-containing stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, plan-generation-failure alarms, validator-fallback alarms, plan-review-SLA-breach alarms, fairness-threshold alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all PHI-related API calls, plan-review API invocations, and plan activation events</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful aws-samples and open-source patterns for this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Demonstrates structured-output prompting applicable to clinician-facing narratives, patient-facing narratives, and internal disagreement narratives.</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage applicable to the per-patient feature pipelines feeding inputs aggregation.</li>
+<li><a href="https://github.com/awslabs/fhir-works-on-aws-deployment"><code>fhir-works-on-aws-deployment</code></a>: FHIR-native API patterns applicable to persisting and serving FHIR <code>CarePlan</code>, <code>Goal</code>, <code>Task</code>, and <code>ServiceRequest</code> resources.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Aggregate inputs and freeze them in a plan-input record.</strong> Plan generation depends on a snapshot of the patient's state and the upstream signals from Recipes 4.1 through 4.8. The aggregation is at a single point in time, with the inputs frozen so that the plan can be reproduced and audited. Skip the freezing step and a plan generated on Tuesday cannot be reproduced from Wednesday's data, which makes investigation of any later issue impossible.</p>
+<pre class="code code-plain"><code>FUNCTION aggregate_plan_inputs(patient_id, request_context):
+    // request_context includes the trigger (scheduled review,
+    // event-driven, manual request), the requesting clinician
+    // (if any), and any clinician-supplied scope (e.g., &quot;regenerate
+    // only the cardiac-related goals&quot;).
+    plan_input_record = {
+        plan_input_id:        new UUID,
+        patient_id:           patient_id,
+        request_context:      request_context,
+        captured_at:          current UTC timestamp
+    }
+
+    // Step 1A: clinical state from FHIR.
+    clinical_state = HealthLake.GetPatientBundle(
+        patient_id = patient_id,
+        resources  = [&quot;Condition&quot;, &quot;MedicationRequest&quot;, &quot;Observation&quot;,
+                       &quot;Encounter&quot;, &quot;AllergyIntolerance&quot;, &quot;CareTeam&quot;])
+    plan_input_record.clinical_state = normalize_clinical_state(clinical_state)
+
+    // Step 1B: patient features from the Feature Store.
+    patient_features = SageMaker.FeatureStore.GetRecord(
+        feature_group_name = &quot;patient-features-online&quot;,
+        record_identifier  = patient_id)
+    plan_input_record.patient_features = patient_features
+
+    // Step 1C: upstream signals from Recipes 4.1 through 4.8. Each
+    // signal is fetched independently; missing signals are recorded
+    // as such rather than failing the whole aggregation. A care plan
+    // can be generated without (e.g.) Recipe 4.8 treatment-response
+    // predictions if those are not available for this patient; the
+    // plan should reflect what is and is not available.
+    plan_input_record.channel_preferences =
+        try_fetch(&quot;recipe-4.1&quot;, patient_id, default = null)
+    plan_input_record.educational_content_matches =
+        try_fetch(&quot;recipe-4.2&quot;, patient_id, default = [])
+    plan_input_record.provider_relationships =
+        try_fetch(&quot;recipe-4.3&quot;, patient_id, default = [])
+    plan_input_record.wellness_program_candidates =
+        try_fetch(&quot;recipe-4.4&quot;, patient_id, default = [])
+    plan_input_record.adherence_interventions =
+        try_fetch(&quot;recipe-4.5&quot;, patient_id, default = [])
+    plan_input_record.care_gap_inventory =
+        try_fetch(&quot;recipe-4.6&quot;, patient_id, default = [])
+    plan_input_record.care_management_enrollment =
+        try_fetch(&quot;recipe-4.7&quot;, patient_id, default = null)
+    plan_input_record.treatment_response_predictions =
+        try_fetch(&quot;recipe-4.8&quot;, patient_id, default = [])
+
+    // Step 1D: goals-of-care preferences. POLST forms, advance
+    // directives, structured advance-care-planning conversations,
+    // and patient-portal preference questionnaires.
+    plan_input_record.goals_of_care = HealthLake.GetGoalsOfCare(patient_id)
+        // returns: { polst, advance_directive, acp_conversations,
+        //            stated_preferences, comfort_focused_flag,
+        //            decision_maker, last_updated }
+        // TODO (TechWriter): Expert review A5 (MEDIUM). Compute a
+        // goals_of_care_quality_flag here (&quot;high&quot;, &quot;medium&quot;, &quot;low&quot;,
+        // &quot;sparse&quot;) so the clinician-facing narrative can disclose
+        // how confident the goals-of-care alignment was. Trigger a
+        // structured ACP conversation action when the flag is low or
+        // sparse. Add cohort-stratified GoC-quality monitoring to
+        // the equity dashboard so systematically lower data quality
+        // in some cohorts is itself surfaced as a fairness signal.
+
+    // Step 1E: social determinants and functional status.
+    plan_input_record.sdoh = fetch_sdoh_assessment(patient_id)
+        // returns: { transportation, food_security, housing_stability,
+        //            financial_strain, social_support, language,
+        //            digital_literacy, last_assessed }
+    plan_input_record.functional_status = fetch_functional_status(patient_id)
+        // returns: { adl_score, iadl_score, cognitive_status,
+        //            mobility, last_assessed }
+    plan_input_record.family_caregivers = fetch_family_caregivers(patient_id)
+        // returns: list of { relationship, role_in_care, contact,
+        //                    consent_status }
+
+    // Step 1F: prior plan, if any. The current plan is the baseline
+    // for revision; the goal is incremental update where possible
+    // rather than full regeneration.
+    plan_input_record.prior_plan = lookup_current_plan(patient_id)
+
+    // Persist the input record. Immutable; this is the audit
+    // baseline for the plan.
+    DynamoDB.PutItem(&quot;plan-input-records&quot;, plan_input_record)
+    write_json(plan_input_record,
+               &quot;s3://cp-archives/inputs/&quot; + plan_input_record.plan_input_id + &quot;.json&quot;)
+
+    Kinesis.PutRecord(stream = &quot;cp-events&quot;, record = {
+        event_type:        &quot;plan_inputs_aggregated&quot;,
+        patient_id:        patient_id,
+        plan_input_id:     plan_input_record.plan_input_id,
+        request_context:   request_context,
+        timestamp:         current UTC timestamp
+    })
+
+    RETURN plan_input_record
+</code></pre>
+<p><strong>Step 2: Derive the goal set from condition-specific guidelines, goals-of-care preferences, and quality-program requirements.</strong> Goals are the structural backbone of the plan. Condition-specific guidelines drive the baseline goal set; goals-of-care preferences re-weight (or in some cases remove) goals; quality-program requirements add measure-linked goals and weighting. Skip the goals-of-care alignment and you produce an aggressive disease-management plan for a patient who has elected comfort-focused care, which is exactly the failure mode that erodes patient trust.</p>
+<pre class="code code-plain"><code>FUNCTION derive_goal_set(plan_input_record):
+    goal_set = []
+
+    // Step 2A: match conditions to goal templates. Each active
+    // condition surfaces its guideline-recommended goals; cohort
+    // overrides apply for pediatric, geriatric, palliative,
+    // pregnancy, and other special populations.
+    FOR each condition in plan_input_record.clinical_state.conditions:
+        IF NOT is_active(condition):
+            CONTINUE
+        templates = DynamoDB.Query(
+            &quot;goal-templates&quot;,
+            filter = &quot;condition_id = :c AND status = :s&quot;,
+            params = { :c = condition.condition_id,
+                       :s = &quot;active&quot; })
+        FOR each template in templates:
+            // Apply cohort overrides. The cohort_overrides field on
+            // the template specifies modifications based on patient
+            // attributes (age, frailty, life expectancy, comorbidity
+            // burden, pregnancy, etc.).
+            applicable_template = apply_cohort_overrides(template, plan_input_record)
+            IF applicable_template == null:
+                // The cohort override removed this template entirely
+                // (e.g., a goal that does not apply in palliative care).
+                CONTINUE
+            goal_set.append({
+                goal_id:               applicable_template.goal_id,
+                source_template:       applicable_template.template_id,
+                source_template_version: applicable_template.version,
+                source_condition:      condition.condition_id,
+                horizon:               applicable_template.horizon,
+                measurable_outcome:    applicable_template.measurable_outcome,
+                priority_weight:       applicable_template.baseline_priority,
+                evidence_level:        applicable_template.evidence_level,
+                cohort_overrides_applied: applicable_template.overrides_applied,
+                provenance: {
+                    source: &quot;condition_guideline&quot;,
+                    condition_id: condition.condition_id,
+                    template_id: applicable_template.template_id
+                }
+            })
+
+    // Step 2B: apply goals-of-care alignment. The patient&#x27;s stated
+    // preferences and POLST re-weight goals. A patient with
+    // comfort_focused_flag = true sees aggressive-disease-management
+    // goals down-weighted or removed; a patient with
+    // explicit-decline-of-specific-treatment preferences sees the
+    // corresponding goals removed.
+    FOR each goal in goal_set:
+        adjustment = compute_goals_of_care_adjustment(goal, plan_input_record.goals_of_care)
+            // returns { weight_multiplier, retain_flag,
+            //           override_reason }
+        IF NOT adjustment.retain_flag:
+            // Mark the goal as removed by goals-of-care alignment;
+            // do not silently drop. The clinician-facing narrative
+            // will surface what was removed and why.
+            goal.removed_by_goals_of_care = true
+            goal.removal_reason = adjustment.override_reason
+        goal.priority_weight *= adjustment.weight_multiplier
+        goal.goals_of_care_adjustment = adjustment
+
+    // Step 2C: apply quality-program weighting. Goals that map to
+    // active quality measures (HEDIS, CMS Stars, ACO measures) carry
+    // additional weight depending on the program. The mapping is
+    // maintained in the catalog.
+    FOR each goal in goal_set:
+        IF goal.removed_by_goals_of_care:
+            CONTINUE
+        program_links = lookup_quality_program_links(goal, plan_input_record)
+        FOR each link in program_links:
+            goal.priority_weight *= link.weight_multiplier
+            goal.quality_program_links.append(link)
+
+    // Step 2D: deduplicate goals that surfaced from multiple
+    // conditions (e.g., &quot;control blood pressure&quot; surfaces from
+    // hypertension, CKD, and CHF templates). Merge while preserving
+    // provenance; the merged goal carries the union of the source
+    // templates and the maximum priority weight.
+    goal_set = deduplicate_goals(goal_set)
+
+    // Step 2E: rank by priority weight; include the bottom-of-list
+    // goals as candidates for prioritization compression in Step 4.
+    goal_set = rank_by_priority(goal_set)
+
+    Kinesis.PutRecord(stream = &quot;cp-events&quot;, record = {
+        event_type:        &quot;goals_derived&quot;,
+        patient_id:        plan_input_record.patient_id,
+        plan_input_id:     plan_input_record.plan_input_id,
+        goal_count:        len(goal_set),
+        removed_by_goc_count: count_removed_by_goc(goal_set),
+        timestamp:         current UTC timestamp
+    })
+
+    RETURN goal_set
+</code></pre>
+<p><strong>Step 3: Assemble candidate actions per goal, then run reconciliation (interactions, burden, capacity, schedule).</strong> Action assembly produces the candidate set; reconciliation removes infeasible actions, surfaces deprescribing candidates, and compresses the action set to a feasible total burden. Reconciliation is where the multi-condition synthesis actually happens; skip it and you produce an action set that looks comprehensive on paper and is unworkable in practice.</p>
+<pre class="code code-plain"><code>FUNCTION assemble_and_reconcile_actions(goal_set, plan_input_record):
+    candidate_actions = []
+
+    // Step 3A: for each retained goal, generate candidate actions
+    // from action templates. Action templates link to goal templates
+    // and contain the action-level metadata (owner role, timing,
+    // success criteria, fallback chain, dependencies, burden score,
+    // contraindications).
+    FOR each goal in goal_set:
+        IF goal.removed_by_goals_of_care:
+            CONTINUE
+        templates = DynamoDB.Query(
+            &quot;action-templates&quot;,
+            filter = &quot;goal_link = :g AND status = :s&quot;,
+            params = { :g = goal.goal_id,
+                       :s = &quot;active&quot; })
+        FOR each template in templates:
+            applicable = apply_cohort_overrides(template, plan_input_record)
+            IF applicable == null:
+                CONTINUE
+            candidate_actions.append({
+                action_id:             applicable.action_id,
+                source_template:       applicable.template_id,
+                source_template_version: applicable.version,
+                goal_link:             goal.goal_id,
+                owner_role:            applicable.owner_role,
+                horizon:               applicable.horizon,
+                due_date_logic:        applicable.due_date_logic,
+                success_criteria:      applicable.success_criteria,
+                fallback_chain:        applicable.fallback_chain,
+                dependencies:          applicable.dependencies,
+                burden_score:          applicable.burden_score,
+                clinical_payload:      applicable.clinical_payload,
+                provenance: {
+                    source_template: applicable.template_id,
+                    goal_link: goal.goal_id
+                }
+            })
+
+    // Step 3B: drug-drug, drug-disease, drug-allergy interaction
+    // filtering. Actions whose clinical payload includes a
+    // medication recommendation are checked against the patient&#x27;s
+    // current medication list, condition list, and allergy list.
+    // Contraindicated actions are removed; the contraindication is
+    // logged with the suppressed action so the clinician-facing
+    // narrative can surface &quot;this action was suppressed because...&quot;
+    suppressed_actions = []
+    retained_actions = []
+    FOR each action in candidate_actions:
+        IF action.clinical_payload.kind == &quot;medication&quot;:
+            interaction_check = check_interactions(
+                action.clinical_payload,
+                current_medications = plan_input_record.clinical_state.medications,
+                conditions          = plan_input_record.clinical_state.conditions,
+                allergies           = plan_input_record.clinical_state.allergies)
+            IF interaction_check.severe:
+                action.suppressed = true
+                action.suppression_reason = interaction_check.reason
+                suppressed_actions.append(action)
+                CONTINUE
+        retained_actions.append(action)
+
+    // Step 3C: deprescribing candidates. The action assembly is not
+    // only additive. A polypharmacy-aware care plan looks at the
+    // current medication list and surfaces deprescribing candidates:
+    // medications that are no longer indicated, that are duplicative,
+    // that are contraindicated by the current condition list, or
+    // that exceed Beers / STOPP geriatric criteria. Deprescribing is
+    // an action with the prescribing clinician as the owner.
+    deprescribing_actions = generate_deprescribing_actions(
+        current_medications = plan_input_record.clinical_state.medications,
+        conditions          = plan_input_record.clinical_state.conditions,
+        patient_features    = plan_input_record.patient_features)
+    retained_actions.extend(deprescribing_actions)
+
+    // Step 3D: burden estimation. Compute the cumulative burden of
+    // the action set; if above the patient&#x27;s threshold, trigger
+    // prioritization compression (drop or defer the
+    // lowest-priority-weight actions until the burden is feasible).
+    cumulative_burden = sum_of_burden(retained_actions)
+    burden_threshold = compute_burden_threshold(plan_input_record)
+        // patient-specific: a function of functional status, cognitive
+        // status, social support, and stated preferences. The
+        // threshold for Linda is lower than the threshold for a
+        // 45-year-old with the same conditions and full social
+        // support.
+        // TODO (TechWriter): Expert review A1 (HIGH). The threshold
+        // derivation policy and the compress_for_burden decision
+        // policy are referenced but undefined. Specify the
+        // threshold formula (baseline minus penalties for functional
+        // deficits, cognitive impairment, social support tier, SDOH
+        // burdens; floor for comfort-focused patients) and the
+        // compression-decision policy (which goal classes are
+        // protected from compression; how patient-stated-preference
+        // goals interact with quality-program-incentivized goals).
+        // Reference the Cumulative Complexity Model and the
+        // Treatment Burden Questionnaire as calibration anchors.
+        // The Honest Take warns that naive burden scoring
+        // systematically deprioritizes the wrong actions for the
+        // patients with the least support; the architecture should
+        // not leave the threshold and compression logic
+        // implementation-defined.
+    IF cumulative_burden &gt; burden_threshold:
+        compression_decisions = compress_for_burden(
+            retained_actions, goal_set, target_burden = burden_threshold)
+            // returns { dropped_or_deferred_actions, compression_rationale }
+        retained_actions = subtract_dropped(retained_actions,
+                                            compression_decisions.dropped_or_deferred_actions)
+
+    // Step 3E: capacity reconciliation. For each action&#x27;s owner,
+    // check whether the owner is at capacity. Care manager panels,
+    // social worker capacities, specialist appointment availability,
+    // and home-health agency capacity all matter. Actions whose
+    // owner is at capacity are flagged for substitution (alternate
+    // owner) or deferral (later horizon).
+    FOR each action in retained_actions:
+        capacity_status = check_owner_capacity(action.owner_role,
+                                                plan_input_record.patient_features.geographic_region)
+        IF capacity_status.at_capacity:
+            substitute = find_substitute_owner(action, capacity_status)
+            IF substitute != null:
+                action.owner_role = substitute.owner_role
+                action.capacity_substitution = substitute
+            ELSE:
+                action.deferred = true
+                action.defer_reason = capacity_status.reason
+
+    // Step 3F: schedule reconciliation. Actions with overlapping
+    // timing constraints (e.g., three programs each meeting twice a
+    // week, when the patient has stated they can do at most two
+    // away-from-home commitments per week) are sequenced rather
+    // than parallelized. The sequencing respects clinical urgency
+    // (higher-urgency actions earlier) and the patient&#x27;s stated
+    // capacity.
+    schedule_reconciled = sequence_for_schedule(retained_actions, plan_input_record)
+    retained_actions = schedule_reconciled.actions
+    schedule_decisions = schedule_reconciled.decisions
+
+    // Persist the reconciliation decisions for the audit trail and
+    // for the clinician-facing narrative.
+    reconciliation_record = {
+        suppressed_actions:        suppressed_actions,
+        deprescribing_added:       deprescribing_actions,
+        compression_decisions:     compression_decisions,
+        capacity_decisions:        extract_capacity_decisions(retained_actions),
+        schedule_decisions:        schedule_decisions
+    }
+
+    RETURN { actions: retained_actions, reconciliation: reconciliation_record }
+</code></pre>
+<p><strong>Step 4: Finalize the plan into a structured plan record with goals, sequenced actions, owners, and dependencies.</strong> The plan record is the system of record. Every downstream activity (narrative generation, review, activation, feedback) operates on it. Skip the explicit structuring and the system has nothing to reproduce, audit, or update against; you have a one-shot document, not a plan.</p>
+<pre class="code code-plain"><code>FUNCTION finalize_plan(goal_set, retained_actions, reconciliation_record,
+                        plan_input_record):
+    // Step 4A: bucket actions by horizon. The horizons are
+    // catalog-defined; typical horizons are this-week, this-month,
+    // this-quarter, ongoing.
+    actions_by_horizon = bucket_by_horizon(retained_actions)
+
+    // Step 4B: verify each action has an owner and a fallback path.
+    // Actions failing this check are not silently accepted; they
+    // are surfaced to the care team as to-be-assigned items in the
+    // clinician-facing narrative.
+    // TODO (TechWriter): Expert review A7 (MEDIUM). Plan finalization
+    // verifies the fallback chain exists, but architecture is silent
+    // on fallback execution: when an in-flight action transitions to
+    // failed, who fires the fallback (auto for screening
+    // substitutions, clinician-review-gated for medication
+    // substitutions, scheduler-initiated for appointments), how the
+    // fallback interacts with plan-revision triggers (Finding A3),
+    // and what the patient-facing narrative says when a fallback
+    // fires. Add a fallback_dispatcher Lambda and specify the
+    // per-action-class firing policy.
+    to_be_assigned = []
+    final_actions = []
+    FOR each action in retained_actions:
+        IF action.owner_role == null:
+            to_be_assigned.append(action)
+            CONTINUE
+        IF action.fallback_chain == null OR len(action.fallback_chain) == 0:
+            // Some actions legitimately have no fallback (e.g.,
+            // &quot;complete cardiac rehab&quot;); others (e.g., &quot;fill the
+            // prescription&quot;) should have one. The catalog flags
+            // which actions require a fallback.
+            template_meta = lookup_template_meta(action.source_template)
+            IF template_meta.fallback_required:
+                to_be_assigned.append(action)
+                CONTINUE
+        final_actions.append(action)
+
+    // Step 4C: assemble the plan record. The record carries goals,
+    // actions, the reconciliation record, the to-be-assigned list,
+    // a plan_version, and the input record reference for
+    // reproducibility.
+    plan_id = new UUID
+    plan_version = next_plan_version(plan_input_record.patient_id)
+    plan_record = {
+        plan_id:               plan_id,
+        plan_version:          plan_version,
+        patient_id:            plan_input_record.patient_id,
+        plan_input_id:         plan_input_record.plan_input_id,
+        goal_set:              goal_set,
+        actions_by_horizon:    actions_by_horizon,
+        final_actions:         final_actions,
+        to_be_assigned:        to_be_assigned,
+        reconciliation_record: reconciliation_record,
+        prior_plan_version:    plan_input_record.prior_plan ? plan_input_record.prior_plan.plan_version : null,
+        plan_status:           &quot;pending_review&quot;,
+        review_due_at:         current UTC timestamp + REVIEW_SLA_DAYS,
+        generated_at:          current UTC timestamp
+    }
+
+    // Step 4D: persist. The plan record is the operational store;
+    // the immutable archive is in S3. Both must be written before
+    // the workflow proceeds.
+    DynamoDB.PutItem(&quot;plan-records&quot;, plan_record)
+    write_json(plan_record, &quot;s3://cp-archives/plans/&quot; + plan_id + &quot;.json&quot;)
+
+    Kinesis.PutRecord(stream = &quot;cp-events&quot;, record = {
+        event_type:           &quot;plan_finalized&quot;,
+        patient_id:           plan_record.patient_id,
+        plan_id:              plan_id,
+        plan_version:         plan_version,
+        goal_count:           len(goal_set),
+        action_count:         len(final_actions),
+        to_be_assigned_count: len(to_be_assigned),
+        timestamp:            current UTC timestamp
+    })
+
+    RETURN plan_record
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter04.09-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<p><strong>Step 5: Generate the clinician-facing, patient-facing, and care-team-internal narratives, with strict validator enforcement.</strong> The narratives are the human-readable artifacts; the structured plan is the audit-ready system of record. Skip the structured-then-narrative direction and the LLM becomes the source of truth, which is the failure mode that makes care plan generation systems clinically unsafe.</p>
+<pre class="code code-plain"><code>FUNCTION generate_narratives(plan_record):
+    narratives = {}
+
+    // Step 5A: clinician-facing narrative. The structured summary
+    // (goals, actions, what-changed-since-prior) precedes the prose;
+    // the prose surfaces conflicts, what was reconciled, and what
+    // requires care-team attention.
+    clinician_context = {
+        plan_record:          plan_record,
+        prior_plan:           lookup_prior_plan(plan_record),
+        what_changed:         compute_diff(plan_record, lookup_prior_plan(plan_record)),
+        care_team_attention:  extract_attention_items(plan_record),
+            // to-be-assigned actions, suppressed actions with
+            // clinical implications, deprescribing candidates,
+            // disagreement-investigation items
+        audience:             &quot;clinician&quot;
+    }
+    clinician_narrative = Bedrock.InvokeModel(
+        model_id = CLINICIAN_NARRATIVE_MODEL_ID,
+        body     = build_narrative_prompt(clinician_context, CLINICIAN_OUTPUT_SCHEMA))
+    clinician_validation = validate_narrative(parse_json(clinician_narrative.completion),
+                                               observed_context = clinician_context,
+                                               audience = &quot;clinician&quot;)
+    narratives.clinician = finalize_narrative(clinician_narrative, clinician_validation,
+                                                clinician_context)
+
+    // Step 5B: patient-facing narrative. Tailored to the patient&#x27;s
+    // reading level, language, channel preferences, and stated
+    // preferences. Approved-claim language and reading-level
+    // enforcement apply throughout.
+    patient_context = {
+        plan_record:          plan_record,
+        reading_level:        plan_record.patient_id ? lookup_reading_level(plan_record.patient_id) : &quot;default&quot;,
+        language:             lookup_language_preference(plan_record.patient_id),
+        channel_preferences:  lookup_channel_preferences(plan_record.patient_id),
+        stated_preferences:   plan_record.plan_input_id ? lookup_stated_preferences(plan_record.plan_input_id) : null,
+        audience:             &quot;patient&quot;
+    }
+    patient_narrative = Bedrock.InvokeModel(
+        model_id = PATIENT_NARRATIVE_MODEL_ID,
+        body     = build_narrative_prompt(patient_context, PATIENT_OUTPUT_SCHEMA))
+    patient_validation = validate_narrative(parse_json(patient_narrative.completion),
+                                             observed_context = patient_context,
+                                             audience = &quot;patient&quot;)
+    narratives.patient = finalize_narrative(patient_narrative, patient_validation,
+                                              patient_context)
+
+    // Step 5C: care-team-internal disagreement narrative. Generated
+    // only when reconciliation could not resolve a conflict. The
+    // narrative describes the conflict, candidate resolutions, and
+    // recommended escalation path. Internal-facing only.
+    IF has_unresolved_conflicts(plan_record):
+        internal_context = {
+            plan_record:        plan_record,
+            unresolved:         extract_unresolved_conflicts(plan_record),
+            audience:           &quot;care_team_internal&quot;
+        }
+        internal_narrative = Bedrock.InvokeModel(
+            model_id = INTERNAL_NARRATIVE_MODEL_ID,
+            body     = build_narrative_prompt(internal_context, INTERNAL_OUTPUT_SCHEMA))
+        internal_validation = validate_narrative(parse_json(internal_narrative.completion),
+                                                  observed_context = internal_context,
+                                                  audience = &quot;care_team_internal&quot;)
+        narratives.care_team_internal = finalize_narrative(internal_narrative,
+                                                            internal_validation,
+                                                            internal_context)
+
+    // Persist narratives keyed by audience.
+    FOR each audience, narrative in narratives:
+        DynamoDB.PutItem(&quot;plan-narratives&quot;, {
+            narrative_id:     new UUID,
+            plan_id:          plan_record.plan_id,
+            plan_version:     plan_record.plan_version,
+            patient_id:       plan_record.patient_id,
+            audience:         audience,
+            narrative_text:   narrative,
+            validator_status: narrative.validator_status,
+            generated_at:     current UTC timestamp
+        })
+
+    RETURN narratives
+
+FUNCTION finalize_narrative(raw_narrative, validation_result, observed_context):
+    parsed = parse_json(raw_narrative.completion)
+        // Validator layers (applied by validate_narrative):
+        // 1. Schema and length: required fields present per the
+        //    audience-specific output schema, no oversize text,
+        //    every required section present.
+        // 2. Fact grounding: every clinical fact in the narrative
+        //    must trace to a structured plan element (goal, action,
+        //    reconciliation decision, observation). The LLM cannot
+        //    introduce clinical claims absent from observed_context.
+        // 3. Prohibited-language patterns: no recommendation
+        //    language for treatments not in the structured plan,
+        //    no probabilistic claims framed as guarantees, no goal
+        //    statements not in the goal set, no prognostic claims
+        //    beyond approved templates. The patterns are
+        //    audience-specific (the patient-facing list is broader
+        //    than the clinician-facing list).
+        // 4. Required content: shared-decision framing for the
+        //    patient narrative, change-since-prior-plan callouts
+        //    for the clinician narrative, escalation path for the
+        //    disagreement narrative, contact-for-questions for the
+        //    patient narrative, reading-level compliance for the
+        //    patient narrative.
+    IF NOT validation_result.passed:
+        IF validation_result.failure_count &lt; MAX_REGENERATION_ATTEMPTS:
+            // Regenerate with stricter guidance.
+            observed_context.validator_feedback = validation_result.feedback
+            raw_narrative = Bedrock.InvokeModel(
+                model_id = pick_model_for_audience(observed_context.audience),
+                body     = build_narrative_prompt(observed_context,
+                                                   pick_schema_for_audience(observed_context.audience),
+                                                   strict_mode = true))
+            parsed = parse_json(raw_narrative.completion)
+            validation_result = validate_narrative(parsed,
+                                                    observed_context = observed_context,
+                                                    audience = observed_context.audience)
+
+        IF NOT validation_result.passed:
+            // Fall back to a templated narrative that lists the
+            // structured plan without LLM narration. The templated
+            // narrative is deterministic and always passes
+            // validation; it is less readable but never crosses
+            // into prohibited territory.
+            parsed = render_templated_narrative(observed_context)
+            parsed.fallback_reason = validation_result.failure_summary
+            Kinesis.PutRecord(stream = &quot;cp-events&quot;, record = {
+                event_type:        &quot;narrative_validator_fallback&quot;,
+                plan_id:           observed_context.plan_record.plan_id,
+                audience:          observed_context.audience,
+                reason:            validation_result.failure_summary,
+                timestamp:         current UTC timestamp
+            })
+
+    parsed.validator_status = validation_result.passed
+    parsed.validator_layers_passed = validation_result.layers_passed
+    RETURN parsed
+</code></pre>
+<p><strong>Step 6: Activate approved actions, capture feedback, and trigger plan revisions when conditions, outcomes, or scheduled review intervals warrant.</strong> Activation flips the structured actions into operational tasks; feedback closes the loop; revision keeps the plan alive. Skip the feedback loop and the plan is a one-shot artifact that ages out of relevance, which is the most common reason care plans become the stale document Linda's plan started as.</p>
+<pre class="code code-plain"><code>FUNCTION activate_plan(plan_id, activation_payload):
+    // activation_payload includes:
+    //   - approving_clinician_id (from the authenticated session)
+    //   - approved_action_ids (subset of plan_record.final_actions)
+    //   - clinician_edits (per-action overrides, if any)
+    //   - patient_acknowledgment (if patient review preceded
+    //     activation)
+    //   - teach_back_results (if applicable)
+    plan = DynamoDB.GetItem(&quot;plan-records&quot;, plan_id)
+
+    // Identity-boundary checks: validate the calling clinician has a
+    // treatment relationship to plan.patient_id; validate that
+    // approved_action_ids is a subset of plan.final_actions; reject
+    // attempts to approve actions not in the structured plan.
+    // TODO (TechWriter): Expert review S1 (HIGH). The comment above
+    // describes the identity-boundary checks but the pseudocode that
+    // follows performs neither. activate_plan and record_feedback
+    // are the most security-sensitive write paths in Chapter 4
+    // (clinical-record-equivalent PHI; downstream dispatch to
+    // e-prescribing, scheduling, and program-registry systems).
+    // Specify in pseudocode: clinician treatment-relationship check,
+    // approved_action_ids subset check against final_actions,
+    // plan_id consistency check, log + emit metric on each
+    // violation, reject mismatches. Add an analogous check in
+    // record_feedback (target_action_id belongs to plan; source is
+    // consistent with feedback_kind; idempotency on the deterministic
+    // event key). Mirror 4.4-4.8 chapter pattern.
+
+    activation_record = {
+        activation_id:           new UUID,
+        plan_id:                 plan_id,
+        plan_version:            plan.plan_version,
+        approving_clinician_id:  activation_payload.approving_clinician_id,
+        approved_action_ids:     activation_payload.approved_action_ids,
+        clinician_edits:         activation_payload.clinician_edits,
+        patient_acknowledgment:  activation_payload.patient_acknowledgment,
+        teach_back_results:      activation_payload.teach_back_results,
+        activated_at:            current UTC timestamp
+    }
+
+    // For each approved action, dispatch the operational integration:
+    // medication actions go to the e-prescribing system, appointment
+    // actions go to the scheduling system, program enrollment
+    // actions go to the program registry, patient-facing reminder
+    // actions go to the channel-appropriate sender, care-manager
+    // outreach actions are queued in the care-management system.
+    // TODO (TechWriter): Expert review A4 (HIGH). Activation-
+    // dispatch propagation status is not persisted. The pseudocode
+    // marks plan-action-records status=&quot;active&quot; immediately after
+    // dispatch, which assumes successful propagation everywhere.
+    // Architect the asynchronous status pipeline: initial state
+    // &quot;pending_dispatch&quot;; per-integration success/failure responses
+    // update to &quot;active&quot;, &quot;active_partial&quot;, or &quot;dispatch_failed&quot;;
+    // SLA-driven retry for stuck dispatches; failed dispatches
+    // surface to care team and feed the plan-revision evaluator
+    // (Finding A3). The patient-facing narrative renders only after
+    // activation reaches a stable state so the system never makes
+    // promises it cannot verify. Add per-integration cohort-
+    // stratified dispatch-success dashboards. Mirror 4.4-4.7&#x27;s
+    // optimistic-counter-without-reconciliation pattern; the same
+    // architectural primitive applies (close the loop with the
+    // operational system before claiming the action is live).
+    FOR each action_id in activation_payload.approved_action_ids:
+        action = find_action(plan, action_id)
+        edit = activation_payload.clinician_edits[action_id] or null
+        effective_action = apply_clinician_edit(action, edit)
+        dispatch_action_to_operational_system(effective_action,
+                                                plan_id,
+                                                activation_record.activation_id)
+        DynamoDB.PutItem(&quot;plan-action-records&quot;, {
+            plan_action_record_id: new UUID,
+            plan_id:               plan_id,
+            action_id:             action_id,
+            effective_action:      effective_action,
+            status:                &quot;active&quot;,
+            owner_role:            effective_action.owner_role,
+            due_at:                compute_due_at(effective_action),
+            success_criteria:      effective_action.success_criteria,
+            fallback_chain:        effective_action.fallback_chain,
+            activated_at:          current UTC timestamp
+        })
+
+    DynamoDB.UpdateItem(&quot;plan-records&quot;, plan_id, updates = {
+        plan_status:           &quot;active&quot;,
+        activation_record:     activation_record,
+        last_status_change_at: current UTC timestamp
+    })
+
+    Kinesis.PutRecord(stream = &quot;cp-events&quot;, record = {
+        event_type:        &quot;plan_activated&quot;,
+        patient_id:        plan.patient_id,
+        plan_id:           plan_id,
+        plan_version:      plan.plan_version,
+        activated_action_count: len(activation_payload.approved_action_ids),
+        timestamp:         current UTC timestamp
+    })
+
+FUNCTION record_feedback(plan_id, feedback_payload):
+    // feedback_payload includes:
+    //   - feedback_kind (action_completed, action_failed,
+    //     outcome_observed, patient_reported, adverse_event)
+    //   - target_action_id (if action-level)
+    //   - feedback_data (kind-specific payload)
+    //   - source (clinician, patient, system, integrated_device)
+    feedback_record = {
+        feedback_id:    new UUID,
+        plan_id:        plan_id,
+        feedback_kind:  feedback_payload.feedback_kind,
+        target_action_id: feedback_payload.target_action_id,
+        feedback_data:  feedback_payload.feedback_data,
+        source:         feedback_payload.source,
+        recorded_at:    current UTC timestamp
+    }
+    DynamoDB.PutItem(&quot;plan-feedback-records&quot;, feedback_record)
+
+    // Update the action status if action-level feedback.
+    IF feedback_payload.target_action_id != null:
+        update_action_status(plan_id, feedback_payload.target_action_id,
+                              feedback_payload.feedback_kind,
+                              feedback_payload.feedback_data)
+
+    // Determine if the feedback should trigger a plan revision.
+    revision_signal = evaluate_feedback_for_revision(plan_id, feedback_record)
+    // TODO (TechWriter): Expert review A3 (HIGH). The trigger
+    // calibration policy is undefined. Specify in pseudocode:
+    // always-trigger events (adverse_event, hospitalization,
+    // new_diagnosis); threshold-trigger events (outcome thresholds
+    // catalog-defined per pair, with per-cohort severity tuning);
+    // persistent-failure triggers (action failure beyond the
+    // catalog-defined fallback window); suppress-trigger events
+    // (within-normal-variation). Add idempotency on the feedback
+    // event&#x27;s deterministic key so replayed events do not re-fire
+    // revisions. Add cohort-stratified trigger-rate monitoring as
+    // part of the equity instrumentation. The Honest Take names
+    // both failure modes (too-sensitive churn versus too-insensitive
+    // staleness); architecture must specify the framework so the
+    // calibration is operational tuning, not implementation guesswork.
+    IF revision_signal.should_revise:
+        EventBridge.PutEvents([{
+            source:      &quot;care-plan&quot;,
+            detail_type: &quot;plan_revision_triggered&quot;,
+            detail:      { plan_id: plan_id,
+                           reason: revision_signal.reason,
+                           triggered_by: feedback_record.feedback_id }
+        }])
+
+    Kinesis.PutRecord(stream = &quot;cp-events&quot;, record = {
+        event_type:        &quot;plan_feedback_recorded&quot;,
+        plan_id:           plan_id,
+        feedback_kind:     feedback_payload.feedback_kind,
+        target_action_id:  feedback_payload.target_action_id,
+        revision_triggered: revision_signal.should_revise,
+        timestamp:         current UTC timestamp
+    })
+
+FUNCTION run_periodic_plan_review(run_date):
+    // For each active plan, check whether it is due for scheduled
+    // review based on the catalog-defined review cadence (monthly
+    // for high-risk patients, quarterly for stable patients,
+    // event-driven otherwise). Plans due for review are dispatched
+    // to the plan-revision Step Functions workflow.
+    due_plans = DynamoDB.Query(&quot;plan-records&quot;,
+        filter = &quot;plan_status = :s AND review_due_at &lt;= :d&quot;,
+        params = { :s = &quot;active&quot;, :d = run_date })
+    FOR each plan in due_plans:
+        EventBridge.PutEvents([{
+            source:      &quot;care-plan&quot;,
+            detail_type: &quot;plan_revision_triggered&quot;,
+            detail:      { plan_id: plan.plan_id,
+                           reason: &quot;scheduled_review&quot;,
+                           run_date: run_date }
+        }])
+
+    // Cohort-stratified plan-quality monitoring runs on the same
+    // cadence. Plan ambition parity, plan complexity parity, action
+    // assignment parity, and outcome trajectory parity are computed
+    // per cohort axis. Threshold crossings emit alerts to the
+    // governance review committee.
+    quality_metrics = compute_plan_quality_metrics(run_date,
+                                                    SURVEILLANCE_WINDOW_DAYS)
+    FOR each axis, metric in quality_metrics:
+        IF metric.disparity &gt;= COHORT_DISPARITY_ALERT_THRESHOLD:
+            // TODO (TechWriter): Expert review A2 (HIGH).
+            // COHORT_DISPARITY_ALERT_THRESHOLD and the equity-
+            // metric definitions are referenced but undefined.
+            // Specify per-axis-per-metric thresholds (plan ambition
+            // disparity, plan complexity disparity, action assignment
+            // disparity, outcome trajectory disparity), the
+            // operationalization of each metric (median ratio of
+            // priority-weight sum, action count, self-management
+            // share, outcome improvement, worst-cohort versus best-
+            // cohort), the chronic-suppression-as-fairness-signal
+            // pattern (when MIN_COHORT_SAMPLE is not met across a
+            // surveillance window, escalate as an equity signal in
+            // its own right), and the per-axis override mechanism
+            // (the equity-review committee documents threshold
+            // overrides per (axis, metric) at deployment). Reference
+            // Obermeyer 2019 and Recipe 4.8 Finding A4.
+            DynamoDB.PutItem(&quot;surveillance-alerts&quot;, {
+                alert_id:           new UUID,
+                alert_type:         &quot;plan_cohort_disparity&quot;,
+                axis:               axis,
+                metric:              metric,
+                triggered_at:       run_date,
+                review_status:      &quot;pending&quot;
+            })
+</code></pre>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample plan record (truncated for readability):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;plan_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plan-2026-04-22-pat-007842-v07&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;plan_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-007842&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;plan_input_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;input-2026-04-22-pat-007842-7c3a&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;goal_set&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;goal_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chf_avoid_readmission&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next_12_months&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;measurable_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no_chf_related_admission&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;priority_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">9.5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guideline_strong&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quality_program_links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;cms_stars_readmission&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;condition_guideline&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;condition_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I50.22&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;goal_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diabetes_a1c_under_8&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next_quarter&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;measurable_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_below_8_at_q3&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;priority_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">7.8</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guideline_strong&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quality_program_links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;hedis_cdc_a1c&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;condition_guideline&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;condition_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;E11.9&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;goal_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ckd_egfr_stabilization&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ongoing&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;measurable_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;egfr_decline_under_2_per_year&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;priority_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guideline_strong&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;condition_guideline&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;condition_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;N18.32&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;goal_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;depression_phq9_remission&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next_6_months&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;measurable_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;phq9_under_5&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;priority_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">7.2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guideline_moderate&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;condition_guideline&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;condition_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;F32.1&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;goal_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;stay_at_home&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ongoing&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;measurable_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no_skilled_nursing_admission&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;priority_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">9.8</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient_stated_preference&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;goals_of_care&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;preference_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pref-stay-home&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;goal_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;colon_cancer_screening&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next_quarter&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;measurable_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;colonoscopy_completed&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;priority_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">6.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evidence_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;guideline_strong&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quality_program_links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;hedis_col&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;provenance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care_gap_inventory_4.6&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;actions_by_horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;this_week&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diuretic_daily_morning&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;chf_avoid_readmission&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;stay_at_home&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;self_management&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;take_furosemide_40mg_at_8am_daily&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;self_reported_compliance_5_of_7_days&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;care_manager_call_at_2_missed_doses&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ongoing&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;weight_daily_log&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;chf_avoid_readmission&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;self_management&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;weigh_morning_after_void_log_in_portal&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5_of_7_days_logged&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;care_manager_call_if_no_log_3_days&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ongoing&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;weight_alert_threshold&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;chf_avoid_readmission&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;self_management&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;call_care_manager_if_3lb_gain_in_3_days&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient_reports_understanding&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;care_manager_outreach_on_alert_failure&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ongoing&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;this_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;colonoscopy_with_transport&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;colon_cancer_screening&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care_manager&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;scheduling_with_benefit&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;book_colonoscopy_arrange_plan_transport&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;colonoscopy_completed&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fit_test_if_colonoscopy_declined&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;dependencies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;transport_benefit_verified&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-22&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ces-d_followup_with_pcp&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;depression_phq9_remission&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pcp&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;appointment&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;phq9_reassessment_visit&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;visit_completed&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;telehealth_visit_if_in_person_declined&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-08&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;this_quarter&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cardiac_rehab_enrollment&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;chf_avoid_readmission&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;stay_at_home&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care_manager&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;program_enrollment&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;enroll_cardiac_rehab_local_site_with_transport&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;completes_first_4_sessions&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;home_based_cardiac_rehab_if_facility_attendance_fails&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-15&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;capacity_substitution&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;advance_care_planning_visit&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;stay_at_home&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;social_worker&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;appointment&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;structured_acp_conversation_in_home&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;polst_completed_with_patient_signature&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;telehealth_acp_if_in_home_declined&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-06-30&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;ongoing&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care_manager_monthly_checkin&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;goal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;chf_avoid_readmission&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;diabetes_a1c_under_8&quot;</span><span class="p">,</span>
+<span class="w">                       </span><span class="s2">&quot;depression_phq9_remission&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;stay_at_home&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care_manager&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clinical_payload&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outreach&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="nt">&quot;instruction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;monthly_phone_checkin_followup_on_goals&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;success_criteria&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;monthly_call_completed_each_month&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;fallback_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pcp_outreach_if_2_months_missed&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;burden_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;monthly&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;to_be_assigned&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="nt">&quot;reconciliation_record&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;suppressed_actions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;naproxen_for_oa_pain&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;suppression_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;drug_disease_chf_severe&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;deprescribing_added&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deprescribe_ppi_long_term&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;rationale&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;long_term_ppi_no_indication_documented&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;compression_decisions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;smoking_cessation_referral&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;decision&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deferred_next_review&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient_burden_threshold_reached&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;capacity_decisions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cardiac_rehab_enrollment&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;original_owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cardiology_clinic_scheduler&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;substituted_owner_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care_manager&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;scheduler_capacity_exceeded&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;schedule_decisions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diabetes_self_mgmt_education_deferred_to_q3_to_avoid_overlap_with_cardiac_rehab&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;plan_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending_review&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;review_due_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-26&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;generated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T14:32:18Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample patient-facing narrative (truncated):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;narrative_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;narr-2026-04-22-pat-007842-patient&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;plan_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plan-2026-04-22-pat-007842-v07&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;audience&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;headline&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Your care plan for the next few weeks. Your care team made these updates after your hospital stay.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;this_week&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Take your water pill (furosemide 40 mg) at 8 in the morning, every day. Set a phone alarm if it helps.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Weigh yourself every morning after using the bathroom. Write the weight in your patient portal or on a paper log we will send.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Call your care manager (number below) if you gain 3 pounds in 3 days, or if your breathing feels worse.&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;this_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Your colonoscopy is overdue. Your care manager will help schedule it and arrange the ride that your plan covers.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;We will see you in the office for a follow-up visit on your mood and how you&#39;re feeling overall.&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;this_quarter&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;We are signing you up for cardiac rehab at a location close to you. We will arrange the rides. Please plan on going three times a week for twelve weeks.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;A social worker will visit you at home to talk through what is most important to you for the next few years and to update your wishes for your care.&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;ongoing&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Your care manager will call you once a month to check in on how everything is going.&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;what_changed&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;After your hospital stay, we added the daily weight check and the cardiac rehab. We are also working on getting your colonoscopy scheduled with transportation help.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;questions&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;If anything in this plan does not work for you, please call your care manager. Your plan is meant to fit your life, not the other way around.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;contact&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;care_manager_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jordan&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;phone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;(800) 555-0142&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;portal_link&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;secure.example.com/portal&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;validator_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;passed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;reading_level_target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;grade_6&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;reading_level_measured&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;grade_6.2&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample clinician-facing narrative (truncated):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;narrative_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;narr-2026-04-22-pat-007842-clinician&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;plan_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plan-2026-04-22-pat-007842-v07&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;audience&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clinician&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;headline&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Plan v7 for Linda following CHF admission discharge. Six goals; thirteen actions; one suppressed action; one deprescribing candidate. Care-team attention required on transportation benefit verification (cardiac rehab dependency).&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;what_changed_since_v6&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Added daily diuretic adherence and weight monitoring (CHF readmission prevention).&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Added cardiac rehab enrollment (capacity-substituted to care manager because cardiology scheduler at capacity).&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Added structured ACP conversation (patient stated preference for staying at home; goal weight elevated).&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Suppressed naproxen for OA (drug-disease interaction in CHF severe).&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Added PPI deprescribing candidate (long-term use, no documented indication).&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Deferred smoking cessation referral to next review (burden threshold reached this cycle).&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;care_team_attention&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Transportation benefit must be verified before cardiac rehab enrollment can complete; care manager to confirm with plan benefits team this week.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;PPI deprescribing requires PCP review and patient discussion; flag for next PCP visit (already scheduled May 8).&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;PHQ-9 reassessment recommended at the May 8 visit; current depression goal is on the borderline of moderate-to-severe.&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;narrative_paragraph&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;This plan reflects post-discharge focus on CHF stabilization while preserving Linda&#39;s stated preference to stay at home. Burden compression deferred the smoking cessation referral; revisit at the July review or earlier if her cardiac rehab attendance is going well. Capacity substitution moved cardiac rehab enrollment to the care manager. The PPI deprescribing candidate is the new addition this cycle.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;validator_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;passed&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Status quo template plan</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Percent of plans with structured goals (versus prose only)</td>
+<td>5-15%</td>
+<td>95%+</td>
+</tr>
+<tr>
+<td>Average actions per plan with explicit owners</td>
+<td>2-4</td>
+<td>8-15</td>
+</tr>
+<tr>
+<td>Percent of plans surfacing drug-drug or drug-disease conflicts</td>
+<td>&lt;10%</td>
+<td>70-90%</td>
+</tr>
+<tr>
+<td>Percent of plans surfacing deprescribing candidates</td>
+<td>&lt;5%</td>
+<td>30-50%</td>
+</tr>
+<tr>
+<td>Patient-facing narrative reading-level compliance (grade 6 target)</td>
+<td>not measured</td>
+<td>85-95%</td>
+</tr>
+<tr>
+<td>Plan-revision latency (days from triggering event to revised plan)</td>
+<td>30-90 (often never)</td>
+<td>1-5</td>
+</tr>
+<tr>
+<td>Clinician plan-review time (median)</td>
+<td>5-10 minutes (skim)</td>
+<td>4-7 minutes (active review)</td>
+</tr>
+<tr>
+<td>Cohort plan-ambition parity (worst cohort vs best cohort)</td>
+<td>0.4-0.6</td>
+<td>0.85-0.95</td>
+</tr>
+<tr>
+<td>Validator first-attempt pass rate (patient narrative)</td>
+<td>n/a</td>
+<td>85-94%</td>
+</tr>
+<tr>
+<td>Validator fallback-to-templated rate</td>
+<td>n/a</td>
+<td>1-5%</td>
+</tr>
+<tr>
+<td>End-to-end plan-generation latency (95th percentile, 6-condition patient)</td>
+<td>n/a</td>
+<td>25-60 seconds</td>
+</tr>
+<tr>
+<td>Patient acknowledgment rate within 7 days</td>
+<td>&lt;30%</td>
+<td>60-80%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Conditions not in the clinical content library.</strong> Goal templates and action templates exist for the conditions the clinical-content team has authored. A patient with a less-common condition (e.g., a rare metabolic disorder, a recently-diagnosed-but-not-yet-templated condition) gets a plan that is silent on that condition or that defaults to generic management. Coverage gaps are visible in the plan as &quot;no condition-specific goals authored for X&quot; callouts; the catalog growth rate is the bottleneck.</li>
+<li><strong>Patients with very high condition counts and very low capacity.</strong> A patient with eight active conditions, severe frailty, and low health literacy can produce a candidate action set with thirty or more actions before reconciliation. The burden compression layer reduces this, but the resulting plan may be uncomfortably reductive (a lot was dropped to reach a feasible burden); the alternative of presenting all thirty actions is worse, but the compression decisions warrant clinician review every time.</li>
+<li><strong>Goals-of-care preferences that conflict with quality-program weighting.</strong> A patient who has elected comfort-focused care but is enrolled in a Medicare Advantage plan with aggressive quality-program incentives produces goals where the goals-of-care alignment removes goals that the quality program rewards. The system should preserve the patient's preferences; some plans will systematically underperform on certain quality measures because the patient does not want the actions those measures incentivize. That is the right outcome, but it requires the operations team to expect it.</li>
+<li><strong>Multi-actor coordination across systems.</strong> A care plan spans the EHR, the e-prescribing system, the scheduling system, the program-enrollment system, the patient portal, and the care-management system. Each of these has its own state, its own update cadence, and its own integration friction. Plans that activate cleanly in one system and fail to propagate to another are the hardest failure mode to detect; the activation-dispatcher should produce structured success/failure events per integration, and the plan-action-records should reflect propagation status.</li>
+<li><strong>Deprescribing candidates without prescribing-clinician engagement.</strong> The system surfaces deprescribing candidates; the deprescribing decision belongs to the prescribing clinician (often the PCP, sometimes a specialist). If the PCP does not engage with the deprescribing surface, the candidates accumulate and are eventually ignored as noise. Treat deprescribing as a workflow integration problem, not a model-output problem; the candidates need a clear point in the clinician's workflow, not a separate dashboard.</li>
+<li><strong>Plans for newly diagnosed patients.</strong> A patient with a new diagnosis has limited longitudinal data; the personalization layer is sparse. Cold-start plans use cohort-level defaults more heavily, which is the right answer in the short term but means the personalization improves over the first few revisions rather than being immediately rich. Set patient expectations accordingly; the first plan is the starting point, not the destination.</li>
+<li><strong>LLM narrative drift in less-common scenarios.</strong> The validator catches the common failure modes (recommendation language, prognostic claims, ungrounded facts). Less-common scenarios (an unusual condition combination, a non-English language with subtle clinical-claim translation issues, a rarely-used cohort override) are where validator coverage is thinnest. Expect a higher fallback-to-templated rate for these scenarios and treat the templated narrative as the safe default.</li>
+<li><strong>Cohort fairness that hides under proxies.</strong> Plan ambition parity, plan complexity parity, and outcome trajectory parity catch the obvious fairness failures. Subtler patterns (less-engaged action ownership for some cohorts, longer fallback chains for some cohorts, more deferrals through compression for some cohorts) are harder to detect and require deeper analysis. Build the analysis pipeline before you need it.</li>
+<li><strong>Care-team review fatigue.</strong> A plan with thirteen actions, an LLM narrative, a what-changed callout, and a care-team-attention list takes more cognitive effort to review than a status quo template plan. Care teams that are already at capacity will skim. The review surface design is the difference between a plan that is meaningfully reviewed and a plan that is rubber-stamped; budget for iterative UX work, not just a launch.</li>
+<li><strong>The first-time-shift cost.</strong> The first time a clinical team uses the system, the plans are noticeably more detailed than the status quo. Some clinicians experience this as helpful; others experience it as overwhelming or as a critique of how plans were authored before. Plan for change management. The pattern that fails is shipping the system to a clinical team without explicit framing of what is changing and why.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Clinical-content library curation as an ongoing program.</strong> The clinical-content library (goal templates and action templates with cohort overrides) is the substrate of the system. It is not a one-time build. Plan for at least 1.0 to 2.0 FTE of clinical informaticist time, plus part-time involvement from pharmacy, care management, quality, and patient education. Establish a versioned change-management process with parallel evaluation against the prior version on a held-out cohort. The pattern that fails is treating the content library as engineering work; the resulting templates drift from current clinical practice within a year and the clinical team's trust evaporates.</p>
+<p><strong>Multi-condition reconciliation evidence and validation.</strong> The reconciliation logic (drug-drug, drug-disease, burden compression, capacity reconciliation, schedule reconciliation) requires clinical evidence for the rules and operational validation for the decisions. Drug-interaction databases (First Databank, Lexicomp, Wolters Kluwer) are licensed and integrated. Burden scoring requires a calibrated model (the Treatment Burden Questionnaire, the Patient Experience with Treatment and Self-Management measure, or an internally-validated equivalent) rather than a hand-tuned constant. Capacity reconciliation requires real-time integration with the staffing and panel-management systems. Schedule reconciliation requires integration with the patient's stated capacity, which most systems do not capture in structured form. None of these are quick wins; budget appropriately.</p>
+<p><strong>LLM narrative validation maturity.</strong> The validator described in Step 5 is a four-layer pattern that needs significant content-team investment to operationalize. The fact-grounding layer requires structured-payload-to-narrative-claim tracing infrastructure that is not trivial to build. The prohibited-language patterns require a curated catalog with cohort-specific extensions. The required-content layer requires audience-specific schemas and template fallbacks. Plan for a validator team (a senior engineer plus a clinical content reviewer) and ongoing maintenance; the failure modes the validator catches will evolve as the underlying foundation models evolve.</p>
+<p><strong>FHIR-native plan persistence and portability.</strong> The plan record is, ideally, a FHIR <code>CarePlan</code> with linked <code>Goal</code>, <code>Task</code>, and <code>ServiceRequest</code> resources, persisted in HealthLake for interoperability. The mapping from the internal structured plan to the FHIR resources is straightforward in principle and operationally non-trivial; FHIR profile selection (US Core, IPS, payer-specific profiles), value-set bindings, and extension management all need to be done well. Plan for an integration-engineer plus a FHIR-knowledgeable informaticist on the integration. The payoff is that the plan is portable across care settings, which is increasingly a regulatory and interoperability expectation.</p>
+<p><strong>Patient-portal and channel integration.</strong> The patient-facing narrative is delivered through the patient portal, SMS, email, or mailed letter. Integration with the patient portal is typically the longest-pole project; most patient portals (Epic MyChart, Cerner HealtheLife, athenahealth Patient Portal, custom portals) have limited APIs for structured-content delivery, and the work of rendering the plan in the portal in a way the patient can engage with is iterative UX work. Mailed letter delivery for low-digital-literacy patients is also non-trivial (mail vendor integration, mailing-list deduplication, opt-out handling). Budget the channel integration as a separate workstream from the plan generation logic.</p>
+<p><strong>Patient consent for data use and plan-generation participation.</strong> The plan uses goals-of-care preferences, SDOH data, functional and cognitive status, family-caregiver involvement, and longitudinal engagement signals. Each of these has a consent posture: the patient should be aware that the data is being used and should be able to opt out. The institution's existing consent infrastructure typically does not have all of these granularities; expect to extend it. Document the consent posture in the patient-facing narrative; &quot;your care plan was generated using your medical record, your stated preferences, and your social and functional context&quot; is the kind of explicit framing that builds trust rather than the silent surprise the alternative produces.</p>
+<p><strong>Clinical decision support regulatory analysis.</strong> Care plan generation that produces patient-facing prose with clinical instructions sits in a regulatory grey area in many jurisdictions. The framing of the patient-facing narrative (educational versus directive), the degree of clinical-team review before patient delivery, and the specificity of the action instructions all affect the regulatory analysis. Plan for regulatory legal review at scoping, with explicit framing of the system's posture (clinician-mediated, patient-direct, hybrid). Retrofitting regulatory compliance is expensive.</p>
+<p><strong>Adverse event handling and plan-revision triggering.</strong> When an adverse event occurs (a fall, a hospitalization, a serious medication side effect), the plan should revise. The revision triggers need to be calibrated: too-sensitive triggers cause plan churn that erodes the plan's stability and the patient's understanding of it; too-insensitive triggers leave the plan stale through changes that should drive revision. The trigger calibration is operationally tuned, not a one-time configuration. Build the trigger-calibration analysis pipeline before you need it.</p>
+<p><strong>Cross-recipe orchestration with Recipes 4.1 through 4.8.</strong> Care plan generation depends on signals from every prior Chapter 4 recipe. The integration points must be reliable, idempotent, and consistent. A plan generated when Recipe 4.5 was unavailable should be regenerated when 4.5 comes back; a plan-feedback event from Recipe 4.7 should propagate to Recipe 4.6 if it changes the care-gap inventory. The cross-recipe event flow needs to be designed up front, not bolted on. Document the integration patterns and the failure-mode handling.</p>
+<p><strong>Operational privacy in plan records and narratives.</strong> The <code>plan-records</code> table joins patient_id with the structured plan; the <code>plan-narratives</code> table joins patient_id with the LLM-generated prose. Both are highly inferential PHI. The plan archive in S3 is the audit system of record and accumulates indefinitely; data-retention policy needs to balance audit requirements against minimization principles. Apply tighter controls than for engagement data: narrower IAM read scopes, optional separate-table partitioning by sensitivity tier, additional CloudTrail data event capture, and a documented minimum-necessary access policy.</p>
+<p><strong>Idempotency and retry semantics.</strong> Plan generation is multi-stage; each stage's outputs are addressed by deterministic keys (plan_input_id, plan_id, narrative_id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.</p>
+<p><strong>Cost-aware narrative generation.</strong> Bedrock calls per plan (one clinician-facing, one patient-facing, sometimes one internal) add up at 50,000 plans per month. Tiering the model selection (Sonnet for clinician and internal, Haiku for patient where reading-level allows) substantially reduces cost without quality loss for the patient-facing path. Caching narrative fragments for repeated content (boilerplate sections, contact-information blocks) reduces token volume. Production deployments should rationalize the narrative-generation topology against actual usage patterns and cost, with the cost monitoring built into the dashboard from day one.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Multi-language patient-facing narratives.</strong> The patient-facing narrative is generated in the patient's preferred language. Beyond simple machine translation, the variation includes: language-specific reading-level scoring, cultural-context overrides for goal framing (e.g., family-decision-making centrality for some cultures), idiomatic localization, and language-specific approved-claim language. The catalog supports per-language template variants. The validator applies language-specific reading-level checks. Plan for in-language clinical content review for the languages you support; machine translation alone is not sufficient for clinical content.</p>
+<p><strong>Caregiver-facing narrative.</strong> When a patient has a designated family caregiver with consent to access the plan, a third audience-specific narrative addresses the caregiver directly: what they should watch for, when to escalate, what specific support they can provide, and what is not their responsibility (an explicit boundary statement). The caregiver narrative respects the patient's privacy preferences (some patients consent to plan sharing without sharing every detail). The validator extends to a caregiver-audience layer with caregiver-specific prohibited-language patterns.</p>
+<p><strong>Multi-condition disease-specific deep-dives.</strong> Some patients with multi-morbid profiles benefit from a condition-specific addendum to the main plan: a CHF-specific deep-dive for Linda that goes deeper into self-management than the main plan does. The condition-specific addendum is generated when the patient's condition meets a depth threshold (recently diagnosed, recently destabilized, complex regimen) and references the main plan for the cross-condition synthesis. Implement as additional narrative layers on top of the structured plan, not as separate plans.</p>
+<p><strong>Goals-of-care conversation prompts.</strong> When the goals-of-care data is sparse or stale, the plan surfaces a prompt for a structured advance-care-planning conversation as an action. The prompt's framing is calibrated to the patient's stage and stated comfort with the conversation; jumping to &quot;let's talk about your end-of-life preferences&quot; with a newly-diagnosed patient who is not ready is counterproductive. The clinical-content team curates the framing; the LLM produces the patient-facing version with strict approved-claim-language enforcement.</p>
+<p><strong>Outcomes-based plan effectiveness reporting.</strong> Beyond plan adherence (did the actions get completed?), longitudinal outcome tracking measures whether plans drive observed clinical improvements. Per-cohort outcome trajectory analysis (A1c trends, readmission rates, mortality) attributes change to plan-level interventions where causal inference supports the attribution. This crosses into Recipe 4.8 territory methodologically; the outcome attribution requires the same discipline (target trial emulation, sensitivity analysis, calibration) that 4.8 applies. The plan-effectiveness surveillance dashboard is a downstream consumer.</p>
+<p><strong>Federated learning across institutions for plan-quality benchmarking.</strong> Care plan quality at a single institution is hard to benchmark in isolation. Consortium-based approaches (multi-institution data sharing with privacy-preserving methods) produce benchmarks for plan ambition, plan complexity, plan adherence, and outcome trajectories that single-institution analyses cannot. OHDSI and PCORnet provide harmonized data substrates that make federated plan-quality analysis tractable.</p>
+<p><strong>Patient-driven plan editing.</strong> Beyond patient acknowledgment, allow the patient to suggest edits to the plan: &quot;I cannot do daily weights because I do not own a scale,&quot; &quot;I prefer not to enroll in cardiac rehab because of past experience,&quot; &quot;I want to add a goal about staying active enough to garden.&quot; The structured edit pipeline maps the patient's free-text input to the structured plan elements (suggested action removal, suggested action substitution, suggested goal addition), with a clinical-team review gate before the edits become part of the active plan. The variation respects patient autonomy without bypassing clinical review for safety-critical changes.</p>
+<p><strong>Real-time plan adjustment based on remote-monitoring data.</strong> When a patient is enrolled in remote patient monitoring (RPM) for CHF, blood pressure, glucose, or weight, the plan can adjust in near-real-time based on the monitoring data: a gradual upward weight trend triggers diuretic dose adjustment review by the care manager; a hypoglycemia pattern triggers diabetes-medication review by the PCP. This crosses into Recipe 4.10 (Dynamic Treatment Regime) territory and requires the same regulatory discipline.</p>
+<p><strong>Plan-driven preventive health journey.</strong> For relatively healthy patients with primarily preventive goals (screening, vaccinations, health maintenance), the plan focuses on age and risk-stratified preventive care rather than chronic-condition management. The clinical content is different (USPSTF recommendations, ACIP vaccine schedules, age-stratified screening); the structure is the same. The same recipe accommodates both populations with different content libraries.</p>
+<p><strong>Care-transition plans.</strong> A patient transitioning between care settings (hospital to home, skilled nursing facility to home, primary care to specialty care, adult to geriatric medicine) needs a transition-specific plan that addresses the transition itself plus the ongoing care. Transition plans are typically time-bounded (30 to 90 days post-transition) and emphasize handoff actions (medication reconciliation, follow-up appointments, ongoing-care provider designation). Implement as a plan variant with its own goal templates and action templates.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html">Amazon Cognito Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/pinpoint/latest/developerguide/welcome.html">Amazon Pinpoint Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Hands-on labs covering structured-output prompting that informs clinician-facing narratives, patient-facing narratives, and internal disagreement narratives</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage applicable to the per-patient feature pipelines feeding inputs aggregation</li>
+<li><a href="https://github.com/awslabs/fhir-works-on-aws-deployment"><code>fhir-works-on-aws-deployment</code></a>: FHIR-native API patterns applicable to persisting and serving FHIR <code>CarePlan</code>, <code>Goal</code>, <code>Task</code>, and <code>ServiceRequest</code> resources</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter AI/ML and Healthcare): browse for healthcare ML, care management, and population health reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;care management,&quot; &quot;personalization,&quot; and &quot;FHIR&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/industries/">AWS for Industries Blog</a> (Healthcare and Life Sciences): search &quot;care plan,&quot; &quot;care management,&quot; and &quot;value-based care&quot; for end-to-end customer architectures</li>
+</ul>
+<p><strong>External References (Clinical Content and Methodology):</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/fhir/careplan.html">HL7 FHIR <code>CarePlan</code> Resource</a>: the FHIR specification for care plans, including linked <code>Goal</code>, <code>Task</code>, and <code>ServiceRequest</code> resources</li>
+<li><a href="https://www.hl7.org/fhir/goal.html">HL7 FHIR <code>Goal</code> Resource</a>: the FHIR specification for patient-care goals</li>
+<li><a href="https://www.hl7.org/fhir/task.html">HL7 FHIR <code>Task</code> Resource</a>: the FHIR specification for action assignment and tracking</li>
+<li><a href="https://www.hl7.org/fhir/us/core/">US Core Implementation Guide</a>: US Core profiles for FHIR resources used in clinical settings</li>
+<li><a href="https://polst.org/">The National POLST Paradigm</a>: structured advance-care-planning forms</li>
+<li><a href="https://www.bmj.com/content/339/bmj.b2803">Cumulative Complexity Model (May, Montori, Mair, BMJ 2009)</a>: the canonical framework for therapeutic burden in chronic illness</li>
+<li><a href="https://academic.oup.com/ageing/article/44/2/213/2812233">STOPP/START Criteria for Older Adults</a>: screening tool for inappropriate prescribing in older adults</li>
+<li><a href="https://www.americangeriatrics.org/programs/beers-criteria">Beers Criteria for Potentially Inappropriate Medication Use</a>: geriatric prescribing safety criteria</li>
+<li><a href="https://www.science.org/doi/10.1126/science.aax2342">Obermeyer et al. 2019, <em>Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations</em></a>: the canonical cautionary tale for fairness failures in healthcare AI; required reading for anyone building care plan generation</li>
+</ul>
+<p><strong>External References (Regulatory and Standards):</strong></p>
+<ul>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd">FDA Software as a Medical Device (SaMD) framework</a></li>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software">FDA Clinical Decision Support Software guidance</a></li>
+<li><a href="https://www.uspreventiveservicestaskforce.org/uspstf/">USPSTF Recommendations</a>: preventive-care recommendations relevant to preventive-health goal templates</li>
+<li><a href="https://www.ncqa.org/hedis/">HEDIS Measures</a>: healthcare-quality measures relevant to quality-program-linked goals</li>
+<li><a href="https://www.cms.gov/Medicare/Prescription-Drug-Coverage/PrescriptionDrugCovGenIn/PerformanceData">CMS Star Ratings</a>: Medicare quality measures relevant to quality-program-linked goals</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Clinical-content library for two to three chronic conditions (e.g., diabetes, CHF, hypertension) + goal and action templates with cohort overrides for a single cohort axis (age) + inputs aggregation from Recipes 4.5 through 4.7 + simple multi-condition reconciliation (drug-drug only) + plan finalization with structured output + clinician-facing narrative with validator + manual care-team review (no integrated EHR review surface) + manual activation (no operational integrations)</td>
+<td>20-32 weeks</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full pipeline: clinical-content library covering the most common multi-condition patterns + complete inputs aggregation from Recipes 4.1 through 4.8 + multi-condition reconciliation with drug-drug, drug-disease, drug-allergy, burden, capacity, and schedule layers + plan finalization with FHIR-native persistence + LLM-generated clinician-facing, patient-facing, and care-team-internal narratives with strict four-layer validator + clinical-team review surface via SMART on FHIR + patient-facing delivery via Pinpoint with channel preferences + activation integrations (e-prescribing, scheduling, program enrollment) + feedback capture and plan revision triggers + cohort-stratified plan-quality monitoring + adverse-event-triggered revisions + cross-recipe orchestration + regulatory documentation</td>
+<td>24-36 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add multi-language patient narratives, caregiver-facing narrative, condition-specific deep-dives, goals-of-care conversation prompts, outcomes-based effectiveness reporting, federated benchmarking, patient-driven plan editing, real-time RPM-driven adjustments, preventive-health variants, care-transition variants</td>
+<td>12-24 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter04.09-personalized-care-plan-generation.html">Main Recipe 4.9</a> · <a href="chapter04.09-python-example.html">Python Example</a> · <a href="chapter04-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

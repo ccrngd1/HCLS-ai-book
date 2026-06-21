@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 4.10 Architecture and Implementation: Dynamic Treatment Regime Recommendation</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested nav-active" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-410-architecture-and-implementation-dynamic-treatment-regime-recommendation">Recipe 4.10 Architecture and Implementation: Dynamic Treatment Regime Recommendation</h1>
+<p><em>Companion to <a href="chapter04.10-dynamic-treatment-regime-recommendation.html">Recipe 4.10: Dynamic Treatment Regime Recommendation</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon DynamoDB for the regime catalog, trajectory metadata, recommendation records, and surveillance metadata.</strong> Several new tables: <code>regime-catalog</code> keyed on <code>(regime_id, version)</code> with state definition, action catalog, reward function, eligibility predicates, model risk tier, and clearance status; <code>trajectory-metadata</code> keyed on <code>(patient_id, regime_id)</code> storing pointers to S3 trajectory blobs and per-patient metadata (start date, current decision-point index, current state hash, censoring status); <code>recommendation-records</code> keyed on <code>(patient_id, regime_id, decision_point_id)</code> storing each served recommendation with rationale, alternatives, OOD flag, similar trajectories, regime version, and clinician's eventual action; <code>regime-versions</code> keyed on <code>(regime_id, version)</code> with the registered model artifacts, OPE results, governance-approval status, and effective dates; <code>surveillance-metrics</code> keyed on <code>(regime_id, surveillance_window)</code> for the operational metrics. DynamoDB is HIPAA-eligible under BAA. The full trajectory data lives in S3; DynamoDB carries the metadata and operational hot path.</p>
+<p><strong>Amazon S3 for trajectory storage, OPE outputs, and the data lake.</strong> Per-patient trajectory records (the sequence of state, action, reward, next_state tuples) are stored as Parquet in S3 with partitioning by patient cohort and regime. Source data feeds (claims, EHR via HealthLake, lab, pharmacy, vitals, PROMs, mortality) land in S3 via Kinesis Firehose and Glue. OPE outputs (the value estimates, confidence intervals, cohort-stratified results, sensitivity analyses) are stored in S3 with version-tagged paths so the governance committee can review historical OPE alongside the model artifacts. The S3 trajectory archive is the system of record for audit; the DynamoDB metadata is the operational store.</p>
+<p><strong>Amazon SageMaker for regime training, model registry, and serving.</strong> SageMaker Training Jobs run the sequential causal modeling stack (Q-learning, offline RL, target trial emulation). The choice of algorithms depends on the clinical area: Q-learning with regression at each stage for chronic-disease management with curated state representations; offline RL (Conservative Q-Learning, Implicit Q-Learning) for high-dimensional state spaces or acute-care problems; A-learning or outcome-weighted learning as cross-validation. The SageMaker Model Registry holds candidate regime versions with their OPE results, governance-approval status, and clearance-for-decision-support metadata. SageMaker Endpoints serve the active regime model for on-demand recommendation generation; the endpoint configuration is multi-model so the same endpoint can serve different regimes by clinical area.</p>
+<p><strong>Amazon SageMaker Feature Store for patient features.</strong> The same feature store from prior recipes is reused. The online store provides low-latency access at the decision point; the offline store powers trajectory construction and cohort analytics. Feature Store's point-in-time-correct retrieval is essential for trajectory construction; the state at decision point three must reflect what was known at decision point three, not what is known today.</p>
+<p><strong>AWS HealthLake for FHIR-native clinical data.</strong> Treatment regimes benefit from FHIR-native storage for the same reasons Recipe 4.9 did: condition lists, medication lists, observation history, encounter history feed directly into trajectory construction. Recommendation outputs map to FHIR <code>Task</code> and <code>ServiceRequest</code> resources with regime-specific extensions, supporting interoperability across care settings.</p>
+<p><strong>Amazon Bedrock for the clinician-facing narrative, with strict validator enforcement.</strong> Two distinct LLM use cases:</p>
+<ol>
+<li>
+<p><strong>Clinician-facing regime briefing.</strong> A structured-output prompt takes the recommendation record (recommended action, alternatives with values and uncertainty, OOD flag, similar trajectories, regime version) and produces a paragraph the clinician reads at the decision point. The briefing surfaces the recommendation, the comparison to alternatives, the uncertainty, the data-quality flags, and the explicit &quot;the regime suggests, the clinician decides&quot; framing.</p>
+</li>
+<li>
+<p><strong>Patient-facing regime summary</strong> (when the clinician chooses to share). Tailored to reading level, language, and channel preferences. Lay-language equivalents for probabilities and confidence intervals; explicit &quot;this is the next step in your overall plan&quot; framing that connects to Recipe 4.9's care plan.</p>
+</li>
+</ol>
+<p>The validator is a four-layer check applied to every narrative: schema and length, fact grounding (every clinical claim traces to a structured element of the recommendation record or the regime catalog), prohibited-language patterns (no recommendation language for treatments not in the regime's action catalog, no probabilistic claims framed as guarantees, no policy-as-directive framing), and required content (uncertainty disclosure, regime-version reference, override-encouragement framing for the clinician narrative; care-plan-linkage and contact-for-questions for the patient narrative). Failed validations regenerate with feedback or fall back to a templated narrative.</p>
+<p>Bedrock is HIPAA-eligible under BAA.</p>
+<p><strong>AWS Step Functions for training and serving orchestration.</strong> Three workflows: a training workflow (trajectory pipeline, sequential causal modeling, OPE, governance review packaging); a serving workflow (recommendation generation at a decision point); a surveillance workflow (regime adherence, outcome surveillance, drift detection, cohort-stratified monitoring). Step Functions provides the per-stage retry, timeout, and DLQ semantics; all executions are logged to S3 and surfaced in the operational dashboards.</p>
+<p><strong>AWS Lambda for per-stage logic.</strong> The trajectory builder, the behavior-policy estimator, the OPE runner, the eligibility checker, the OOD detector, the policy evaluator, the similar-trajectory retriever, the narrative generator, the validator, the recommendation persister, the action-taken-tracker, the surveillance computer, and the drift detector all run as Lambdas. Each Lambda is in VPC with VPC endpoints for downstream services.</p>
+<p><strong>Amazon EventBridge for scheduling and event-driven triggers.</strong> EventBridge schedules the periodic training cycles and the surveillance computations. Event-driven triggers handle decision-point arrivals: a clinical encounter scheduled for a patient eligible for a regime triggers a recommendation-generation event so the recommendation is ready when the encounter starts.</p>
+<p><strong>Amazon Kinesis Data Streams for the trajectory event bus.</strong> Event types: <code>decision_point_arrived</code>, <code>recommendation_generated</code>, <code>action_taken</code>, <code>outcome_observed</code>, <code>adverse_event_recorded</code>, <code>regime_adherence_evaluated</code>, <code>regime_version_promoted</code>, <code>surveillance_alert_raised</code>. The stream feeds the state-machine worker that updates the trajectory store, the recommendation records, and the surveillance metrics.</p>
+<p><strong>Amazon API Gateway and Amazon Cognito for the recommendation API.</strong> The clinician-facing recommendation surface is exposed as an authenticated API consumed by the EHR integration (typically a SMART on FHIR app). API Gateway provides the endpoint, Cognito (or the institution's identity provider via SAML or OIDC) provides authentication, and per-clinician audit logs go to CloudTrail. The API supports both pull (clinician requests a recommendation for a patient at the visit) and push (recommendation generated proactively before a scheduled visit and rendered on the EHR's pre-visit screen).</p>
+<p><strong>Amazon QuickSight for governance and operational dashboards.</strong> Per-cohort regime value, regime adherence, OOD-flag rates, and outcome-trajectory dashboards (the equity instrumentation). Per-regime OPE result dashboards (the value estimates and confidence intervals over training runs). Calibration-drift dashboards (predicted versus realized outcomes over surveillance windows). Override-pattern dashboards (which recommendations are clinicians overriding, in which cohorts, with what stated rationales). QuickSight on Athena, with row-level security for cohort-specific access.</p>
+<p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Same PHI infrastructure pattern as prior recipes, with elevated controls for the regime artifacts. Customer-managed keys, CloudTrail data events on the recommendation tables and trajectory storage, CloudWatch alarms on training failure rates, OPE-confidence-interval-violation rates, OOD-flag rates, and cohort fairness threshold crossings. Recommendation records are sensitive enough that the audit posture is closer to clinical-record audit than typical analytics audit.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Sources
+      A1[Claims Feed]
+      A2[EHR / FHIR via HealthLake]
+      A3[Lab Results]
+      A4[Pharmacy / Adherence]
+      A5[Vitals and PROMs]
+      A6[Mortality / Outcomes]
+      A7[CATE from 4.8]
+      A8[Care Plan from 4.9]
+    end
+
+    A1 --&gt;|Streaming| B1[Kinesis Firehose\ndtr-source-events]
+    A2 --&gt;|FHIR| HL1[AWS HealthLake]
+    HL1 --&gt;|Export| B1
+    A3 --&gt;|Streaming| B1
+    A4 --&gt;|Daily| B1
+    A5 --&gt;|Streaming| B1
+    A6 --&gt;|Periodic| B1
+    A7 --&gt;|On change| B1
+    A8 --&gt;|On change| B1
+
+    B1 --&gt; S1[S3\ndtr-data-lake]
+    S1 --&gt; F1[SageMaker Feature Store\npatient features]
+
+    PR1[Lambda\ncatalog-sync] --&gt; D1[DynamoDB\nregime-catalog]
+
+    EB1[EventBridge\nperiodic train trigger] --&gt; SF1[Step Functions\ntraining]
+    SF1 --&gt; L1[Lambda\ntrajectory-builder]
+    F1 --&gt; L1
+    HL1 --&gt; L1
+    S1 --&gt; L1
+    L1 --&gt; S2[S3\ntrajectories]
+
+    SF1 --&gt; L2[Lambda\nbehavior-policy-estimator]
+    S2 --&gt; L2
+    L2 --&gt; S3[S3\nbehavior-policy]
+
+    SF1 --&gt; SM1[SageMaker Training\nQ-learning / offline RL /\nA-learning]
+    S2 --&gt; SM1
+    S3 --&gt; SM1
+    D1 --&gt; SM1
+    SM1 --&gt; MR1[SageMaker Model Registry\ncandidate regimes]
+
+    SF1 --&gt; L3[Lambda\nope-runner]
+    S2 --&gt; L3
+    S3 --&gt; L3
+    MR1 --&gt; L3
+    L3 --&gt; S4[S3\nope-outputs]
+
+    L3 --&gt; L4[Lambda\ngovernance-package-builder]
+    S4 --&gt; L4
+    L4 --&gt; S5[S3\ngovernance-packages]
+
+    EB2[EventBridge\ndecision-point trigger] --&gt; SF2[Step Functions\nrecommendation]
+    SF2 --&gt; L5[Lambda\nstate-builder]
+    F1 --&gt; L5
+    D2[DynamoDB\ntrajectory-metadata] --&gt; L5
+    L5 --&gt; L6[Lambda\neligibility-and-ood]
+    L6 --&gt; EP1[SageMaker Endpoint\nactive regime model]
+    EP1 --&gt; L6
+    L6 --&gt; L7[Lambda\nsimilar-trajectory-retriever]
+    S2 --&gt; L7
+    L7 --&gt; L8[Lambda\nnarrative-generator]
+    L8 --&gt; BD1[Bedrock\nclinician + patient]
+    BD1 --&gt; VL1[Lambda\nvalidator]
+    VL1 --&gt; R1[DynamoDB\nrecommendation-records]
+    VL1 --&gt; S6[S3\nrecommendation-archives]
+
+    R1 --&gt; AG1[API Gateway\nrecommendation API]
+    AG1 --&gt; AU1[Cognito or IdP]
+    AU1 --&gt; EHR1[EHR via SMART on FHIR\nclinician decision support]
+
+    EHR1 -.Action taken.-&gt; KS1[Kinesis\ndtr-events]
+    KS1 --&gt; SM2[Lambda\nstate-machine-worker]
+    SM2 --&gt; R1
+    SM2 --&gt; D2
+
+    EB3[EventBridge\nsurveillance schedule] --&gt; SF3[Step Functions\nsurveillance]
+    SF3 --&gt; L9[Lambda\nadherence-tracker]
+    SF3 --&gt; L10[Lambda\noutcome-surveillance]
+    SF3 --&gt; L11[Lambda\ndrift-detector]
+    SF3 --&gt; L12[Lambda\ncohort-equity-monitor]
+    R1 --&gt; L9
+    S6 --&gt; L9
+    S2 --&gt; L10
+    S2 --&gt; L11
+    S4 --&gt; L11
+    S2 --&gt; L12
+    L9 --&gt; S7[S3\nsurveillance-outputs]
+    L10 --&gt; S7
+    L11 --&gt; S7
+    L12 --&gt; S7
+
+    KS1 --&gt; KF1[Kinesis Firehose]
+    KF1 --&gt; S8[S3\ndtr-event-lake]
+    S8 --&gt; QS1[QuickSight\ndashboards]
+    S7 --&gt; QS1
+    S4 --&gt; QS1
+
+    style F1 fill:#9ff,stroke:#333
+    style D1 fill:#9ff,stroke:#333
+    style D2 fill:#9ff,stroke:#333
+    style R1 fill:#9ff,stroke:#333
+    style S1 fill:#cfc,stroke:#333
+    style S2 fill:#cfc,stroke:#333
+    style S4 fill:#cfc,stroke:#333
+    style S6 fill:#cfc,stroke:#333
+    style S7 fill:#cfc,stroke:#333
+    style KS1 fill:#f9f,stroke:#333
+    style HL1 fill:#fc9,stroke:#333
+    style BD1 fill:#fc9,stroke:#333
+    style MR1 fill:#fc9,stroke:#333
+    style EP1 fill:#fc9,stroke:#333
+    style SM1 fill:#fc9,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon DynamoDB, Amazon SageMaker (Training, Model Registry, Feature Store, Endpoints), AWS HealthLake, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon API Gateway, Amazon Cognito, Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: <code>dynamodb:GetItem</code> / <code>BatchWriteItem</code> / <code>UpdateItem</code> scoped to specific tables (especially <code>recommendation-records</code>, <code>regime-catalog</code>, <code>trajectory-metadata</code>); <code>bedrock:InvokeModel</code> on specific foundation-model ARNs; <code>s3:GetObject</code> / <code>PutObject</code> scoped to trajectory, OPE, recommendation-archive, and surveillance-output buckets; <code>kinesis:PutRecord</code> on the dtr-events stream; <code>sagemaker:InvokeEndpoint</code> on the regime-serving endpoint ARN; <code>sagemaker:CreateTrainingJob</code> and Model Registry actions for training-stage Lambdas; <code>healthlake:SearchWithGet</code> and related read actions scoped to the relevant data store. Never <code>*</code>.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. All services in the architecture must be HIPAA-eligible: DynamoDB, SageMaker, HealthLake, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, API Gateway, Cognito, QuickSight, KMS.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>DynamoDB: customer-managed KMS at rest (especially <code>recommendation-records</code>, <code>regime-catalog</code>, <code>trajectory-metadata</code>; the recommendation is a clinical decision-support artifact). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker Feature Store and Model Registry: KMS keys. SageMaker Endpoints: KMS for storage and TLS for inference traffic. HealthLake: KMS-encrypted at rest, TLS in transit. Lambda log groups KMS-encrypted. Recommendation rationale text in DynamoDB is PHI-adjacent; treat with full clinical-record encryption posture.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas in VPC. SageMaker Feature Store online store and Endpoints run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, Step Functions, EventBridge, Glue, Athena, STS, HealthLake, API Gateway, SageMaker. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR integration typically arrives via PrivateLink, Direct Connect, or the institution's existing private network. VPC Flow Logs enabled.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the <code>regime-catalog</code>, <code>trajectory-metadata</code>, <code>recommendation-records</code>, <code>regime-versions</code>, and <code>surveillance-metrics</code> tables. Data events on the S3 buckets containing source feeds, trajectories, OPE outputs, recommendation archives, and surveillance outputs. Recommendation API invocations logged at the API Gateway and Lambda layers. SageMaker training and inference invocations logged. The audit posture for recommendation artifacts approaches clinical-record audit standards.</td>
+</tr>
+<tr>
+<td><strong>Regime Governance</strong></td>
+<td>Regime governance committee charter (clinical informatics, P&amp;T, outcomes research, compliance, regulatory legal, ideally with patient-advisory representation). Documented model risk classification process. Documented predetermined change control plan. Documented OPE-result review and approval policy. Documented retraining cadence and re-evaluation gating policy. Documented model monitoring and drift-response protocol. Cleared-for-decision-support clearance gate that no recommendation is served to clinicians without committee approval.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>A starter set of synthetic longitudinal patient trajectories with realistic multi-decision-point clinical histories (Synthea-derived multi-year trajectories, augmented with explicit decision points, action labels, and outcome events). A starter regime catalog covering one or two clinical areas with strong sequential-decision patterns (chronic disease management for diabetes / CKD / hypertension; depression treatment selection; HIV care). For OPE work, a held-out subset of trajectories used as the validation cohort; a randomized subset (where available, e.g., from SMART trials in the literature) used as the gold-standard benchmark.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a multi-specialty health system with ~500,000 active patients and ~50,000 patients in active regimes (10 percent in regime-eligible chronic-disease cohorts), with quarterly decision points and monthly surveillance: DynamoDB on-demand: $300-900/month. SageMaker Feature Store: $200-500/month. SageMaker Training (quarterly retraining cycles per regime, ~5 regimes): $1,500-5,000/month. SageMaker Endpoints (multi-model, 4-8 ml.m5 instances): $800-2,000/month. HealthLake: $1,500-5,000/month depending on data volume. Lambda + Step Functions: $400-1,200/month. Bedrock for narratives (~50,000 recommendations per month average across clinician and patient narratives, Sonnet-class for clinician, Haiku-class for patient): $4,000-12,000/month. API Gateway + Cognito: $200-500/month. S3 + Glue + Athena: $600-1,800/month. QuickSight: $50/user/month authors plus reader fees. Estimated infrastructure total: $9,500-29,000/month for a regional system, before staff time, EHR integration, and the (substantial) regime-curation, OPE-validation, and governance costs that dominate this recipe.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores the regime catalog, trajectory metadata, recommendation records, regime version registry, and surveillance metrics</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker (Training)</strong></td>
+<td>Runs the sequential causal modeling pipeline (Q-learning, offline RL, A-learning, target trial emulation)</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker (Model Registry)</strong></td>
+<td>Holds candidate and approved regime versions with OPE results and clearance status</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker (Endpoints)</strong></td>
+<td>Serves the active regime models for on-demand recommendation generation</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Per-patient features feeding state construction; offline store powers trajectory construction and cohort analytics</td>
+</tr>
+<tr>
+<td><strong>AWS HealthLake</strong></td>
+<td>FHIR-native clinical data store powering condition, medication, observation, encounter, and care-team aggregation; persists recommendation outputs as FHIR <code>Task</code> and <code>ServiceRequest</code> resources</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Hosts the dtr-data-lake, trajectories, OPE outputs, recommendation archives, surveillance outputs, and event lake; the immutable trajectory and recommendation archives are the audit system of record</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Cohort analytics over the trajectory and recommendation data; longitudinal regime-effectiveness ETL</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena</strong></td>
+<td>SQL access to the trajectory and recommendation data lake; powers cohort-stratified surveillance and OPE-result review</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates training, recommendation, and surveillance workflows</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Schedules periodic training cycles and surveillance computations; routes decision-point-arrival events</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Carries decision-point, recommendation, action-taken, outcome, and surveillance events</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Lands trajectory events into S3 Parquet for long-horizon analysis</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Runs the trajectory builder, behavior-policy estimator, OPE runner, eligibility checker, OOD detector, similar-trajectory retriever, narrative generator, validator, recommendation persister, action-taken tracker, surveillance computer, and drift detector</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Hosts the LLM for clinician-facing regime briefings and patient-facing summaries</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>Exposes the recommendation API consumed by the EHR integration layer (SMART on FHIR app)</td>
+</tr>
+<tr>
+<td><strong>Amazon Cognito</strong></td>
+<td>Authenticates clinical-team access to the recommendation API; integrates with the institution's identity provider via SAML or OIDC</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Governance, OPE, surveillance, equity, and override-pattern dashboards</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all PHI-containing stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, training-failure alarms, OPE-confidence-interval-violation alarms, OOD-rate alarms, fairness-threshold alarms, drift alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all PHI-related API calls, recommendation API invocations, regime-version promotions, and SageMaker training and inference invocations</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful aws-samples and open-source patterns for this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: SageMaker Training, Model Registry, and Endpoints patterns applicable to regime training and serving.</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: Feature Store usage applicable to point-in-time-correct state construction.</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Structured-output prompting applicable to clinician-facing regime briefings and patient-facing summaries.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Build longitudinal trajectories from source clinical data.</strong> Trajectories are the substrate of dynamic-treatment-regime work; quality issues here propagate to every downstream model. Skip the careful identification of decision points, the precise state construction at each point, and the explicit handling of censoring, and the resulting trajectories produce policies that look defensible and are not.</p>
+<pre class="code code-plain"><code>FUNCTION build_trajectories(refresh_window):
+    // refresh_window includes the start_date, end_date, and the
+    // patient cohorts in scope for this trajectory build.
+    eligible_patients = identify_regime_eligible_patients(refresh_window)
+        // returns the patient_ids whose clinical histories within
+        // the refresh window meet the regime&#x27;s eligibility criteria
+        // (active condition, sufficient longitudinal data, no
+        // exclusion criteria).
+
+    FOR each patient_id in eligible_patients:
+        // Step 1A: identify decision points. The cadence is regime-
+        // specific (typically aligned to clinical encounters,
+        // scheduled reviews, or regime-defined intervals).
+        decision_points = identify_decision_points(patient_id, refresh_window)
+        IF len(decision_points) &lt; MIN_TRAJECTORY_LENGTH:
+            // Patients with too few decision points contribute
+            // limited signal; record but flag for exclusion from
+            // training.
+            log_short_trajectory(patient_id, len(decision_points))
+            CONTINUE
+
+        trajectory = []
+        FOR i, dp in enumerate(decision_points):
+            // Step 1B: construct the state at this decision point.
+            // The state is built from the feature store (point-in-
+            // time-correct retrieval), the trajectory store (prior
+            // regime actions), and recent observations.
+            state = build_state_at_time(patient_id, dp.timestamp)
+                // state schema is regime-defined; typically
+                // includes clinical features (severity, comorbidity,
+                // recent labs, recent encounters), prior actions
+                // taken under the regime, time since last
+                // decision point, and any state-relevant patient
+                // characteristics.
+
+            // Step 1C: label the action taken at this decision point.
+            // The action catalog is regime-defined; out-of-catalog
+            // actions are recorded as such.
+            action = label_action_at_time(patient_id, dp.timestamp)
+            IF action.kind == &quot;out_of_catalog&quot;:
+                trajectory.append({
+                    decision_point_index: i,
+                    timestamp: dp.timestamp,
+                    state: state,
+                    action: action,
+                    out_of_catalog: true,
+                    out_of_catalog_detail: action.detail
+                })
+                // Trajectories with high out-of-catalog rates
+                // signal catalog inadequacy; surveillance will
+                // pick this up.
+                CONTINUE
+
+            // Step 1D: compute the reward accumulated between this
+            // decision point and the next (or to the end of the
+            // horizon). The reward is a weighted combination of
+            // outcomes per the regime&#x27;s reward function.
+            next_dp_or_horizon = decision_points[i+1] if i+1 &lt; len(decision_points) else refresh_window.end_date
+            reward = compute_reward(patient_id,
+                                     dp.timestamp,
+                                     next_dp_or_horizon,
+                                     reward_function = regime.reward_function)
+                // reward_function is a structured spec: per-outcome
+                // weights, censoring rules, time-discounting (if
+                // any), and adverse-event penalties.
+
+            // Step 1E: handle censoring. If the patient is censored
+            // (lost to follow-up, changed insurer, died) before the
+            // next decision point or horizon, the trajectory is
+            // censored at the censoring time and the censoring
+            // weight is computed for IPCW-based estimators.
+            censoring = check_censoring(patient_id, dp.timestamp, next_dp_or_horizon)
+            IF censoring.censored:
+                trajectory.append({
+                    decision_point_index: i,
+                    timestamp: dp.timestamp,
+                    state: state,
+                    action: action,
+                    reward_to_censoring: reward,
+                    censored: true,
+                    censoring_reason: censoring.reason,
+                    censoring_weight: censoring.weight
+                })
+                BREAK
+
+            trajectory.append({
+                decision_point_index: i,
+                timestamp: dp.timestamp,
+                state: state,
+                action: action,
+                reward: reward,
+                next_state_timestamp: next_dp_or_horizon,
+                censored: false
+            })
+
+        // Step 1F: persist the trajectory. The full trajectory is
+        // written to S3 as Parquet; metadata (last decision point,
+        // censoring status, current state hash) is written to
+        // DynamoDB for the operational hot path.
+        write_parquet(trajectory,
+                      &quot;s3://dtr-trajectories/&quot; + regime.regime_id +
+                      &quot;/&quot; + patient_id + &quot;/trajectory.parquet&quot;)
+        DynamoDB.PutItem(&quot;trajectory-metadata&quot;, {
+            patient_id: patient_id,
+            regime_id: regime.regime_id,
+            last_decision_point_index: len(trajectory) - 1,
+            current_state_hash: hash(trajectory[-1].state),
+            censoring_status: trajectory[-1].censored,
+            last_updated: current UTC timestamp,
+            trajectory_uri: &quot;s3://dtr-trajectories/&quot; + regime.regime_id +
+                            &quot;/&quot; + patient_id + &quot;/trajectory.parquet&quot;
+        })
+
+    RETURN { eligible_patient_count: len(eligible_patients),
+             trajectory_count: count_persisted_trajectories(refresh_window) }
+</code></pre>
+<p><strong>Step 2: Estimate the behavior policy.</strong> Off-policy evaluation requires the propensity of the historical clinician to choose each action given the state. A poorly-estimated behavior policy produces poor importance weights and poor evaluations. The behavior policy is a model in its own right that requires validation, calibration, and monitoring; skip its discipline and the OPE results are not trustworthy.</p>
+<pre class="code code-plain"><code>FUNCTION estimate_behavior_policy(trajectories, regime):
+    // Step 2A: assemble the behavior-policy training data: pairs of
+    // (state, action) from across the trajectories.
+    training_data = []
+    FOR each trajectory in trajectories:
+        FOR each step in trajectory:
+            IF step.censored OR step.out_of_catalog:
+                CONTINUE
+            training_data.append({
+                state: step.state,
+                action: step.action.action_id,
+                cohort: extract_cohort_features(step.state)
+            })
+
+    // Step 2B: fit the behavior-policy estimator. Multinomial
+    // logistic regression for small action spaces; gradient-boosted
+    // trees or a small neural network for larger action spaces or
+    // richer state representations.
+    behavior_policy_model = fit_behavior_policy_estimator(
+        training_data,
+        action_catalog = regime.action_catalog,
+        method = regime.behavior_policy_method)
+
+    // Step 2C: validate calibration. The behavior policy&#x27;s predicted
+    // action probabilities should match the empirical action
+    // frequencies in held-out data, both overall and within
+    // cohorts. Miscalibration produces biased importance weights.
+    held_out = sample_held_out(training_data, fraction = 0.2)
+    calibration_results = compute_calibration_metrics(
+        behavior_policy_model, held_out,
+        cohort_axes = [&quot;race_ethnicity&quot;, &quot;language&quot;, &quot;age_band&quot;,
+                        &quot;comorbidity_tier&quot;, &quot;geographic_region&quot;])
+    IF calibration_results.overall_ece &gt; BEHAVIOR_POLICY_ECE_THRESHOLD:
+        // Calibration failure on the overall metric is a blocker.
+        log_calibration_failure(calibration_results)
+        RAISE BehaviorPolicyCalibrationFailure
+    FOR each axis, axis_results in calibration_results.cohort_axes:
+        IF axis_results.worst_cohort_ece &gt; BEHAVIOR_POLICY_COHORT_ECE_THRESHOLD:
+            // Cohort-specific calibration failure is also a blocker;
+            // OPE on a regime trained on miscalibrated importance
+            // weights produces misleading equity assessments.
+            log_calibration_failure_cohort(axis, axis_results)
+            RAISE BehaviorPolicyCohortCalibrationFailure
+
+    // Step 2D: persist the behavior-policy model. Version-tagged so
+    // OPE results trace to the specific behavior-policy model used.
+    behavior_policy_version = next_behavior_policy_version(regime.regime_id)
+    write_pickle(behavior_policy_model,
+                  &quot;s3://dtr-behavior-policy/&quot; + regime.regime_id +
+                  &quot;/&quot; + behavior_policy_version + &quot;/model.pkl&quot;)
+
+    RETURN { behavior_policy_model: behavior_policy_model,
+             behavior_policy_version: behavior_policy_version,
+             calibration_results: calibration_results }
+</code></pre>
+<p><strong>Step 3: Train the regime with multiple methods, with sequential target trial emulation as the protocol.</strong> Method diversity is the discipline; using only one estimator and shipping it produces a regime that has not been cross-validated against the alternative methodological choices. Skip the multi-method approach and the resulting regime is no more reliable than a single-method ML model.</p>
+<pre class="code code-plain"><code>FUNCTION train_regime(trajectories, behavior_policy, regime):
+    candidate_regimes = []
+
+    // Step 3A: target trial emulation specification. The hypothetical
+    // sequential trial protocol must be specified before training
+    // begins: eligibility, treatment strategies under comparison,
+    // outcome definition, censoring, follow-up. The protocol is
+    // documented in the regime catalog so the OPE results can be
+    // interpreted against an explicit hypothetical experiment.
+    protocol = build_sequential_target_trial_protocol(regime,
+                                                       trajectories)
+    write_json(protocol,
+                &quot;s3://dtr-protocols/&quot; + regime.regime_id +
+                &quot;/protocol_v&quot; + protocol.version + &quot;.json&quot;)
+
+    // Step 3B: Q-learning with backward induction. The workhorse
+    // method.
+    q_model = train_q_learning(
+        trajectories,
+        regime = regime,
+        protocol = protocol,
+        function_class = regime.q_function_class,
+            // typical: gradient-boosted trees or a small neural
+            // network depending on state dimensionality
+        backward_induction = true)
+    candidate_regimes.append({
+        method: &quot;q_learning&quot;,
+        model: q_model,
+        version: next_model_version(regime.regime_id, &quot;q_learning&quot;)
+    })
+
+    // Step 3C: offline RL where the action space is large or the
+    // state representation is high-dimensional. Conservative Q-
+    // Learning (CQL) and Implicit Q-Learning (IQL) are typical
+    // choices because they constrain the learned policy to stay
+    // close to the behavior policy, which limits the extrapolation
+    // problem.
+    IF regime.use_offline_rl:
+        offline_rl_model = train_offline_rl(
+            trajectories,
+            regime = regime,
+            protocol = protocol,
+            algorithm = regime.offline_rl_algorithm,
+                // CQL, IQL, BCQ, or similar
+            behavior_constraint = regime.behavior_constraint_strength)
+        candidate_regimes.append({
+            method: regime.offline_rl_algorithm,
+            model: offline_rl_model,
+            version: next_model_version(regime.regime_id,
+                                          regime.offline_rl_algorithm)
+        })
+
+    // Step 3D: A-learning or outcome-weighted learning as
+    // cross-validation. Different bias-variance tradeoffs from
+    // Q-learning; agreement among methods is the robustness signal.
+    IF regime.use_a_learning:
+        a_learning_model = train_a_learning(
+            trajectories,
+            regime = regime,
+            protocol = protocol)
+        candidate_regimes.append({
+            method: &quot;a_learning&quot;,
+            model: a_learning_model,
+            version: next_model_version(regime.regime_id, &quot;a_learning&quot;)
+        })
+
+    // Step 3E: marginal structural model with IPTW for population-
+    // level policy value comparison. Used as a complement, not as
+    // the primary estimator, because MSMs estimate the value of a
+    // candidate regime rather than the optimal regime directly.
+    IF regime.use_msm:
+        msm_results = estimate_msm_policy_values(
+            trajectories,
+            behavior_policy = behavior_policy,
+            candidate_policies = [c.model.policy for c in candidate_regimes],
+            regime = regime)
+        write_json(msm_results,
+                    &quot;s3://dtr-msm/&quot; + regime.regime_id + &quot;/msm_v&quot; +
+                    next_msm_version(regime.regime_id) + &quot;.json&quot;)
+
+    // Step 3F: register all candidate regimes in the SageMaker Model
+    // Registry. Each candidate carries its method, training data
+    // window, behavior-policy version, and protocol version.
+    FOR each candidate in candidate_regimes:
+        SageMaker.ModelRegistry.RegisterModel(
+            ModelPackageGroupName = regime.regime_id,
+            ModelData = candidate.model.s3_uri,
+            ModelMetadata = {
+                method: candidate.method,
+                version: candidate.version,
+                training_window: refresh_window,
+                behavior_policy_version: behavior_policy.version,
+                protocol_version: protocol.version,
+                governance_status: &quot;pending_ope&quot;
+            })
+
+    RETURN candidate_regimes
+</code></pre>
+<p><strong>Step 4: Run off-policy evaluation with multiple estimators and sensitivity analysis, including cohort-stratified results.</strong> OPE is the gate that determines whether a candidate regime can be deployed. Skip the multi-estimator approach and you have a single point estimate without the cross-validation discipline; skip the sensitivity analysis and you have not asked how robust the conclusion is to the unmeasured confounding the data cannot rule out; skip the cohort stratification and you can ship a regime whose overall value is high while its value for some cohorts is much lower or much more uncertain. Each omission produces a regime whose deployment risk is higher than the OPE results suggest.</p>
+<pre class="code code-plain"><code>FUNCTION run_ope(candidate_regimes, behavior_policy, trajectories, regime):
+    ope_results = []
+
+    FOR each candidate in candidate_regimes:
+        // Step 4A: doubly-robust off-policy evaluation. The workhorse
+        // estimator. Combines importance sampling weights from the
+        // behavior policy with a fitted Q model for the candidate
+        // policy. Consistent if either the IS weights or the Q model
+        // is correctly specified.
+        dr_value, dr_ci = doubly_robust_ope(
+            trajectories,
+            target_policy = candidate.model.policy,
+            behavior_policy = behavior_policy.model,
+            q_model = fit_q_for_target(trajectories, candidate.model.policy),
+            bootstrap_iterations = OPE_BOOTSTRAP_ITERATIONS)
+
+        // Step 4B: importance sampling (self-normalized) for
+        // comparison. Higher variance than DR but less reliant on
+        // the Q model&#x27;s specification.
+        is_value, is_ci = self_normalized_importance_sampling(
+            trajectories,
+            target_policy = candidate.model.policy,
+            behavior_policy = behavior_policy.model,
+            bootstrap_iterations = OPE_BOOTSTRAP_ITERATIONS)
+
+        // Step 4C: fitted Q evaluation. Lower variance than IS, more
+        // reliant on the Q model&#x27;s specification.
+        fqe_value, fqe_ci = fitted_q_evaluation(
+            trajectories,
+            target_policy = candidate.model.policy,
+            q_model_fitter = OPE_FQE_MODEL_FITTER)
+
+        // Step 4D: cohort-stratified OPE. The same estimators applied
+        // to within-cohort subsets. The cohort axes are the same
+        // ones used throughout Chapter 4 (race, ethnicity, language,
+        // age, comorbidity tier, geographic region) plus regime-
+        // specific cohorts (e.g., diabetes-only versus diabetes-plus-
+        // CKD for a diabetes regime).
+        cohort_results = []
+        FOR each axis in COHORT_AXES:
+            FOR each cohort_value in get_cohort_values(axis):
+                cohort_trajectories = filter_to_cohort(trajectories,
+                                                         axis, cohort_value)
+                IF len(cohort_trajectories) &lt; MIN_COHORT_SAMPLE:
+                    // Insufficient data is itself an equity signal:
+                    // a cohort that is systematically underrepresented
+                    // cannot be evaluated and should be flagged
+                    // rather than silently dropped.
+                    cohort_results.append({
+                        axis: axis,
+                        cohort_value: cohort_value,
+                        sample_size: len(cohort_trajectories),
+                        evaluable: false,
+                        flag: &quot;insufficient_data&quot;
+                    })
+                    CONTINUE
+                cohort_dr_value, cohort_dr_ci = doubly_robust_ope(
+                    cohort_trajectories,
+                    target_policy = candidate.model.policy,
+                    behavior_policy = behavior_policy.model,
+                    q_model = fit_q_for_target(cohort_trajectories,
+                                                  candidate.model.policy),
+                    bootstrap_iterations = OPE_BOOTSTRAP_ITERATIONS)
+                cohort_results.append({
+                    axis: axis,
+                    cohort_value: cohort_value,
+                    sample_size: len(cohort_trajectories),
+                    dr_value: cohort_dr_value,
+                    dr_ci: cohort_dr_ci,
+                    evaluable: true
+                })
+
+        // Step 4E: sensitivity analysis. Bound the impact of
+        // unmeasured confounding on the OPE conclusion. E-value
+        // and Rosenbaum bounds are typical; simulation-based
+        // perturbation of the propensity model is more flexible.
+        sensitivity_results = run_sensitivity_analysis(
+            trajectories,
+            target_policy = candidate.model.policy,
+            behavior_policy = behavior_policy.model,
+            method = &quot;e_value_and_simulation&quot;)
+
+        ope_results.append({
+            candidate_method: candidate.method,
+            candidate_version: candidate.version,
+            dr_value: dr_value, dr_ci: dr_ci,
+            is_value: is_value, is_ci: is_ci,
+            fqe_value: fqe_value, fqe_ci: fqe_ci,
+            method_agreement_score: compute_agreement([dr_value, is_value, fqe_value]),
+            cohort_results: cohort_results,
+            sensitivity_results: sensitivity_results,
+            ope_run_at: current UTC timestamp
+        })
+
+    // Step 4F: persist OPE results for governance review.
+    write_json(ope_results,
+                &quot;s3://dtr-ope/&quot; + regime.regime_id + &quot;/ope_run_&quot; +
+                next_ope_run_id(regime.regime_id) + &quot;.json&quot;)
+
+    // Step 4G: build the governance package. The committee reviews
+    // the OPE results, the cohort-stratified results, the sensitivity
+    // analysis, and the calibration of the behavior policy before
+    // approving any candidate for deployment. The package is the
+    // artifact the committee approves; the committee&#x27;s decision is
+    // recorded with the package.
+    governance_package = build_governance_package(
+        regime = regime,
+        candidate_regimes = candidate_regimes,
+        ope_results = ope_results,
+        behavior_policy = behavior_policy,
+        protocol = protocol)
+    write_json(governance_package,
+                &quot;s3://dtr-governance/&quot; + regime.regime_id +
+                &quot;/package_&quot; + governance_package.package_id + &quot;.json&quot;)
+
+    RETURN ope_results
+</code></pre>
+<p><strong>Step 5: Serve recommendations at decision points with eligibility, OOD detection, similar-trajectory retrieval, and validator-protected narrative generation.</strong> The serving path is where the regime meets the patient. Skip the eligibility check and the regime is applied to patients it was not designed for; skip the OOD check and recommendations become extrapolation rather than interpolation; skip the similar-trajectory retrieval and clinicians have no concrete evidence behind the recommendation; skip the validator and the LLM is allowed to drift from the structured recommendation into territory the regime does not support.</p>
+<pre class="code code-plain"><code>FUNCTION serve_recommendation(patient_id, regime_id, decision_point_id):
+    regime = DynamoDB.GetItem(&quot;regime-catalog&quot;, regime_id, latest_version = true)
+
+    // Step 5A: build the patient&#x27;s current state.
+    state = build_state_at_time(patient_id, current UTC timestamp)
+    trajectory_metadata = DynamoDB.GetItem(&quot;trajectory-metadata&quot;,
+                                              patient_id, regime_id)
+
+    // Step 5B: identity-boundary checks. The recommendation API is
+    // called by an authenticated EHR session. Validate that the
+    // calling clinician has a treatment relationship to the patient,
+    // that the patient is an active member of the regime&#x27;s eligible
+    // population, and that the decision_point_id is consistent with
+    // the patient&#x27;s trajectory state.
+    treatment_relationship_check(calling_clinician_id, patient_id)
+    consistency_check(decision_point_id, trajectory_metadata)
+    // TODO (TechWriter): Expert review S1 (HIGH). Specify the
+    // identity-boundary check policy and rejection semantics at the
+    // chapter pattern level: failure modes (clinician_not_authorized,
+    // patient_not_active_in_regime, decision_point_inconsistent),
+    // metric emission on each violation, and the served_to_clinician_id
+    // capture that record_action_taken needs. Mirror 4.4-4.9 chapter
+    // pattern; sharper here because trajectory contamination is a
+    // propagating harm into the next training cycle.
+
+    // Step 5C: eligibility check. The regime&#x27;s eligibility predicates
+    // are evaluated against the current state. Patients who fail
+    // eligibility receive an explicit &quot;not eligible&quot; response with
+    // the failing predicate identified, not silently no recommendation.
+    eligibility = evaluate_eligibility(state, regime.eligibility_predicates)
+    IF NOT eligibility.eligible:
+        recommendation_record = {
+            recommendation_id: new UUID,
+            patient_id: patient_id,
+            regime_id: regime_id,
+            regime_version: regime.version,
+            decision_point_id: decision_point_id,
+            outcome: &quot;not_eligible&quot;,
+            failing_predicate: eligibility.failing_predicate,
+            generated_at: current UTC timestamp
+        }
+        DynamoDB.PutItem(&quot;recommendation-records&quot;, recommendation_record)
+        Kinesis.PutRecord(stream = &quot;dtr-events&quot;, record = {
+            event_type: &quot;recommendation_not_eligible&quot;,
+            patient_id: patient_id,
+            regime_id: regime_id,
+            decision_point_id: decision_point_id,
+            timestamp: current UTC timestamp
+        })
+        RETURN recommendation_record
+
+    // Step 5D: out-of-distribution check. Does the patient&#x27;s state
+    // fall within the support of the training trajectories? Several
+    // signals: density estimation in the state space, propensity
+    // score near 0 or 1 for any action, large extrapolation distance
+    // by k-NN.
+    ood_check = run_ood_check(state, regime.ood_detector,
+                                regime.ood_thresholds)
+    // The OOD flag is information, not necessarily a stop. The
+    // regime risk tier determines whether OOD-flagged patients still
+    // receive a recommendation, receive one with explicit warnings,
+    // or are blocked.
+    // TODO (TechWriter): Expert review A3 (HIGH). Specify the OOD
+    // severity bands (NONE/LOW/MODERATE/HIGH thresholds), the routing
+    // policy by regime risk tier (which severity bands serve, warn,
+    // or suppress at each tier), the override semantics (whether a
+    // clinician can request &quot;show recommendation anyway&quot; and how that
+    // event is captured), and the suppressed-for-OOD outcome on the
+    // recommendation record so the audit trail captures the
+    // suppression. Without these the clinical-safety posture is
+    // implementation-defined.
+
+    // Step 5E: invoke the regime&#x27;s policy.
+    endpoint_response = SageMaker.InvokeEndpoint(
+        EndpointName = regime.serving_endpoint,
+        Body = serialize({
+            state: state,
+            regime_id: regime_id,
+            regime_version: regime.version
+        }))
+    policy_output = parse(endpoint_response)
+    // policy_output schema: {
+    //   recommended_action_id, recommended_action_value,
+    //   recommended_action_ci_low, recommended_action_ci_high,
+    //   alternative_actions: [{ action_id, value, ci_low, ci_high }, ...],
+    //   feature_contributions: [{ feature, contribution }, ...],
+    //   regime_version, behavior_policy_version,
+    //   evaluation_method
+    // }
+
+    // Step 5F: similar-trajectory retrieval. A small cohort (typically
+    // 5 to 20) of historical trajectories most similar to the
+    // patient&#x27;s current state, with their actions and outcomes. The
+    // similarity metric is regime-defined; a learned embedding from
+    // the regime model is typical. The retrieval is privacy-aware
+    // (de-identified, k-anonymity-checked, and aggregate-only when
+    // the cohort is too small to share individual examples without
+    // re-identification risk).
+    similar_trajectories = retrieve_similar_trajectories(
+        state, regime,
+        n = SIMILAR_TRAJECTORY_COUNT,
+        privacy_check = true)
+
+    // Step 5G: build the recommendation record.
+    recommendation_record = {
+        recommendation_id: new UUID,
+        patient_id: patient_id,
+        regime_id: regime_id,
+        regime_version: regime.version,
+        decision_point_id: decision_point_id,
+        outcome: &quot;served&quot;,
+        state: state,
+        eligibility: eligibility,
+        ood_flag: ood_check.flagged,
+        ood_detail: ood_check.detail,
+        recommended_action: policy_output.recommended_action_id,
+        recommended_action_value: policy_output.recommended_action_value,
+        recommended_action_ci: [policy_output.recommended_action_ci_low,
+                                  policy_output.recommended_action_ci_high],
+        alternative_actions: policy_output.alternative_actions,
+        feature_contributions: policy_output.feature_contributions,
+        similar_trajectories: similar_trajectories,
+        guideline_references: lookup_guideline_references(regime,
+                                                           policy_output.recommended_action_id),
+        contraindication_checks: run_contraindication_checks(state,
+                                                              policy_output.recommended_action_id,
+                                                              policy_output.alternative_actions),
+        generated_at: current UTC timestamp
+    }
+
+    // Step 5H: generate the clinician-facing narrative with validator
+    // enforcement. Same pattern as Recipes 4.5 through 4.9; the
+    // regime-specific prohibited-language patterns are stricter
+    // (no policy-as-directive framing, no recommendation language
+    // that elides the alternatives, no probabilistic claims framed
+    // as guarantees, explicit override-encouragement framing).
+    narrative = generate_clinician_narrative(recommendation_record, regime)
+        // The validator is layered the same way as in Recipe 4.9:
+        // schema and length, fact grounding (every clinical claim
+        // traces to the recommendation_record or the regime catalog),
+        // prohibited-language patterns, required content (uncertainty
+        // disclosure, regime version, override-encouragement,
+        // similar-trajectory reference). Failed validations
+        // regenerate or fall back to a templated narrative.
+    recommendation_record.clinician_narrative = narrative
+
+    // Step 5I: persist and emit.
+    DynamoDB.PutItem(&quot;recommendation-records&quot;, recommendation_record)
+    write_json(recommendation_record,
+                &quot;s3://dtr-recommendation-archives/&quot; +
+                recommendation_record.recommendation_id + &quot;.json&quot;)
+    Kinesis.PutRecord(stream = &quot;dtr-events&quot;, record = {
+        event_type: &quot;recommendation_generated&quot;,
+        patient_id: patient_id,
+        regime_id: regime_id,
+        regime_version: regime.version,
+        decision_point_id: decision_point_id,
+        recommended_action: policy_output.recommended_action_id,
+        ood_flagged: ood_check.flagged,
+        timestamp: current UTC timestamp
+    })
+
+    RETURN recommendation_record
+</code></pre>
+<p><strong>Step 6: Capture the clinician's eventual action, the patient outcomes, and run the surveillance pipeline.</strong> The feedback loop is what turns the regime from a static artifact into a living one. Skip the action-taken capture and you cannot tell whether clinicians follow the recommendations; skip the outcome surveillance and you cannot tell whether the regime is performing as the OPE estimated; skip the cohort-stratified surveillance and you cannot tell whether equity disparities have emerged in production. Each omission converts the regime back into a research artifact.</p>
+<pre class="code code-plain"><code>FUNCTION record_action_taken(recommendation_id, action_taken_payload):
+    // action_taken_payload includes:
+    //   - action_id (the action the clinician picked, which may be
+    //     the regime&#x27;s recommendation, an alternative, or out-of-
+    //     catalog)
+    //   - clinician_id (from the authenticated session)
+    //   - rationale (free text or structured, especially when
+    //     overriding the recommendation)
+    //   - patient_share_decision (whether the clinician shared the
+    //     recommendation with the patient and what level of detail)
+    rec = DynamoDB.GetItem(&quot;recommendation-records&quot;, recommendation_id)
+
+    // Identity-boundary check: the clinician_id must match the
+    // session that received the recommendation; mismatch is logged
+    // and rejected.
+    IF action_taken_payload.clinician_id != rec.served_to_clinician_id:
+        log_security_violation(...)
+        REJECT
+    // TODO (TechWriter): Expert review S1 (HIGH). Specify the
+    // rejection semantics in chapter pattern style: validate that
+    // action_id is in the recommendation&#x27;s known action set
+    // (recommended_action plus alternatives, or explicit out-of-
+    // catalog), enforce idempotency on replay (rec.action_taken
+    // already set means treat as replay rather than double-mutate),
+    // and emit metric action_taken_identity_mismatch on rejection.
+    // Trajectory poisoning from a misrouted action-taken event
+    // propagates into the next training cycle; the boundary must
+    // hold.
+
+    DynamoDB.UpdateItem(&quot;recommendation-records&quot;, recommendation_id, {
+        action_taken: action_taken_payload.action_id,
+        action_taken_kind: classify_action(action_taken_payload.action_id, rec),
+            // returns one of: &quot;followed_recommendation&quot;,
+            // &quot;chose_alternative&quot;, &quot;out_of_catalog&quot;
+        action_rationale: action_taken_payload.rationale,
+        patient_share_decision: action_taken_payload.patient_share_decision,
+        action_recorded_at: current UTC timestamp
+    })
+
+    // Append to the patient&#x27;s trajectory record. This is the same
+    // trajectory record that powers training; the in-production
+    // trajectories continuously feed the next training cycle.
+    append_to_trajectory(rec.patient_id, rec.regime_id, {
+        decision_point_id: rec.decision_point_id,
+        timestamp: current UTC timestamp,
+        state: rec.state,
+        action: action_taken_payload.action_id,
+        recommendation_id: recommendation_id,
+        followed_regime: classify_action(...) == &quot;followed_recommendation&quot;
+    })
+
+    Kinesis.PutRecord(stream = &quot;dtr-events&quot;, record = {
+        event_type: &quot;action_taken&quot;,
+        patient_id: rec.patient_id,
+        regime_id: rec.regime_id,
+        recommendation_id: recommendation_id,
+        followed_regime: classify_action(...) == &quot;followed_recommendation&quot;,
+        timestamp: current UTC timestamp
+    })
+
+FUNCTION run_surveillance(regime_id, surveillance_window):
+    regime = DynamoDB.GetItem(&quot;regime-catalog&quot;, regime_id, latest_version = true)
+
+    // Step 6A: regime adherence tracking. How often did clinicians
+    // follow the regime&#x27;s recommendation, by clinical area, by
+    // patient cohort, by recommendation strength. Low adherence
+    // to high-confidence recommendations is a signal of clinician
+    // disagreement that merits review.
+    adherence_metrics = compute_adherence_metrics(regime_id, surveillance_window)
+
+    // Step 6B: outcome surveillance. Compare observed outcomes
+    // against the OPE-estimated regime value. Calibration drift
+    // (predicted versus realized outcomes diverging) is the signal
+    // that the regime is no longer optimal for the current
+    // population.
+    outcome_metrics = compute_outcome_metrics(regime_id, surveillance_window)
+    drift_results = detect_calibration_drift(regime_id, surveillance_window,
+                                              ope_baseline = lookup_ope_baseline(regime_id))
+    // TODO (TechWriter): Expert review A4 (HIGH). Specify the
+    // prediction-versus-outcome pairing: identify recommendations
+    // whose outcome window has closed within the surveillance
+    // window (regime.outcome_window_days), join action-taken events
+    // to observed outcomes computed against the regime&#x27;s reward
+    // function (matching weights), apply IPCW for patients censored
+    // before the outcome window closed, and compute per-cohort
+    // residuals. Drift severity = |mean residual| / OPE baseline CI
+    // half-width. The implementation must avoid the failure mode of
+    // averaging predicted Q-values across recommendations and
+    // calling that &quot;observed reward&quot;; that signal detects
+    // population-mix drift, not calibration drift, and the
+    // RETRAINING_TRIGGER_THRESHOLD fires on the wrong axis.
+
+    // Step 6C: cohort-stratified surveillance. Outcome trajectories
+    // by cohort, regime adherence by cohort, OOD-flag rates by
+    // cohort. Disparities trigger committee review.
+    cohort_metrics = compute_cohort_stratified_metrics(regime_id, surveillance_window,
+                                                        cohort_axes = COHORT_AXES)
+    FOR each axis, axis_metrics in cohort_metrics:
+        IF axis_metrics.disparity &gt;= COHORT_DISPARITY_ALERT_THRESHOLD:
+            DynamoDB.PutItem(&quot;surveillance-alerts&quot;, {
+                alert_id: new UUID,
+                alert_type: &quot;regime_cohort_disparity&quot;,
+                regime_id: regime_id,
+                axis: axis,
+                axis_metrics: axis_metrics,
+                triggered_at: current UTC timestamp,
+                review_status: &quot;pending&quot;
+            })
+    // TODO (TechWriter): Expert review A1 (HIGH). Specify the
+    // cohort-disparity thresholds (REGIME_VALUE_DISPARITY_THRESHOLD,
+    // REGIME_ADHERENCE_DISPARITY_THRESHOLD, OOD_RATE_DISPARITY_THRESHOLD,
+    // OUTCOME_TRAJECTORY_DISPARITY_THRESHOLD) and the per-axis-per-
+    // metric override mechanism. Specify how each disparity is
+    // computed (e.g., regime value disparity = ratio of mean DR-OPE
+    // value worst-cohort vs best-cohort; adherence disparity =
+    // difference in follow-recommendation rate by recommendation
+    // strength tier). Specify MIN_SURVEILLANCE_COHORT_SAMPLE and
+    // chronic-suppression-as-fairness-signal pattern: a cohort whose
+    // sample size is structurally low across windows is itself an
+    // under-representation alert, not silently absorbed into the
+    // disparity calculation. Specify the relationship between the
+    // OPE-stage MIN_COHORT_SAMPLE and the surveillance-stage minimum.
+    // Reference Obermeyer 2019 and the chapter siblings 4.8 A4 / 4.9 A2.
+
+    // Step 6D: drift-driven retraining trigger. If calibration drift
+    // exceeds threshold, trigger a retraining cycle ahead of the
+    // scheduled cadence. The retraining produces a new candidate
+    // regime that goes through OPE before promotion.
+    IF drift_results.severity &gt;= RETRAINING_TRIGGER_THRESHOLD:
+        EventBridge.PutEvents([{
+            source: &quot;dtr-surveillance&quot;,
+            detail_type: &quot;retraining_triggered&quot;,
+            detail: { regime_id: regime_id,
+                      reason: &quot;calibration_drift&quot;,
+                      drift_results: drift_results }
+        }])
+
+    // Step 6E: persist surveillance metrics for the dashboards.
+    DynamoDB.PutItem(&quot;surveillance-metrics&quot;, {
+        regime_id: regime_id,
+        surveillance_window: surveillance_window,
+        adherence_metrics: adherence_metrics,
+        outcome_metrics: outcome_metrics,
+        drift_results: drift_results,
+        cohort_metrics: cohort_metrics,
+        run_at: current UTC timestamp
+    })
+    write_json({
+        regime_id: regime_id,
+        surveillance_window: surveillance_window,
+        adherence_metrics: adherence_metrics,
+        outcome_metrics: outcome_metrics,
+        drift_results: drift_results,
+        cohort_metrics: cohort_metrics
+    }, &quot;s3://dtr-surveillance/&quot; + regime_id + &quot;/window_&quot; +
+        surveillance_window.id + &quot;.json&quot;)
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter04.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample recommendation record (truncated for readability):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;recommendation_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rec-2026-04-22-pat-009315-dp-014&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-009315&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;regime_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diabetes_ckd_stepwise_v3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;regime_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3.2.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;decision_point_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dp-2026-04-22-pat-009315-014&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;served&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;current_a1c&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;current_egfr&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">41</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;current_acr&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">78</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;current_systolic_bp&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">134</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;current_medications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;metformin_2000_mg&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;lisinopril_20_mg&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;hydrochlorothiazide_25_mg&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;semaglutide_1_mg_weekly&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;decision_point_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;time_since_last_decision_point_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">91</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;prior_actions_under_regime&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;add_glp1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;increase_glp1&quot;</span><span class="p">,</span>
+<span class="w">                                     </span><span class="s2">&quot;no_change&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;no_change&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;comorbidities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;t2dm&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ckd_3b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;htn&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;comorbidity_tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_band&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;50_to_59&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;polypharmacy_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;eligibility&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;eligible&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;predicate_evaluations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;active_t2dm&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;egfr_above_30&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;no_active_pregnancy&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;regime_consent_on_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;ood_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ood_detail&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;density_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.83</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;propensity_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.06</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;propensity_max&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;knn_extrapolation_distance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.4</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;recommended_action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;add_sglt2_dapagliflozin_10_mg_daily&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;recommended_action_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.78</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;recommended_action_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.71</span><span class="p">,</span><span class="w"> </span><span class="mf">0.84</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;alternative_actions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;increase_semaglutide_to_2_mg_weekly&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.66</span><span class="p">,</span><span class="w"> </span><span class="mf">0.81</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;add_basal_insulin_glargine&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.61</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.52</span><span class="p">,</span><span class="w"> </span><span class="mf">0.69</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no_change_with_lifestyle_intensification&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.58</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.49</span><span class="p">,</span><span class="w"> </span><span class="mf">0.66</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;action_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;add_dpp4_sitagliptin_100_mg_daily&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.55</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.47</span><span class="p">,</span><span class="w"> </span><span class="mf">0.63</span><span class="p">]}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;feature_contributions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current_egfr&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;direction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;favors_sglt2_for_renal_protection&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current_acr&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;direction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;favors_sglt2_for_albuminuria&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;comorbidity_tier&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.07</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;direction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;favors_sglt2_for_cv_protection&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;current_a1c&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;direction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;modest_benefit_either_way&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;polypharmacy_count&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;contribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-0.04</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;direction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;modest_caution_with_more_medications&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;similar_trajectories&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;trajectory_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anonymized_001&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;starting_state_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_8.5_egfr_43_glp1_on_board&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;action_taken&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;add_sglt2&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;12_month_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_7.4_egfr_42_no_aki&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;discontinuation&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;k_anonymity_passed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;trajectory_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anonymized_002&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;starting_state_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_8.6_egfr_39_glp1_on_board&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;action_taken&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;add_sglt2&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;12_month_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_7.6_egfr_40_no_aki&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;discontinuation&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;k_anonymity_passed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;trajectory_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;anonymized_003&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;starting_state_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_8.3_egfr_40_glp1_on_board&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;action_taken&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;increase_glp1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;12_month_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1c_7.8_egfr_38_no_aki&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;discontinuation&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;k_anonymity_passed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;guideline_references&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA_Standards_of_Care_2026&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;section&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diabetes_with_ckd&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recommendation_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;in_t2dm_with_egfr_under_60_or_albuminuria_prefer_sglt2_or_glp1_with_proven_kidney_benefit&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;KDIGO_2022_diabetes_in_ckd&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;section&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;first_line_after_metformin&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recommendation_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sglt2_inhibitor_with_proven_kidney_outcome_benefit_strongly_recommended&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;contraindication_checks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;drug_drug&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no_severe_interactions&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;drug_disease&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no_active_drug_disease_contraindications&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;drug_allergy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no_known_allergies&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;renal_dosing&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dapagliflozin_appropriate_at_egfr_41&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;clinician_narrative&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;headline&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;For this patient, the regime suggests adding an SGLT2 inhibitor (dapagliflozin 10 mg daily). The estimated benefit is modestly higher than increasing the GLP-1 dose. Confidence intervals overlap; the clinician&#39;s judgment should incorporate factors not in the model.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;rationale&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The state-level features driving this recommendation are eGFR 41 and ACR 78 (both favor SGLT2 for renal protection), current cardiovascular risk profile, and the patient already being on metformin and a GLP-1. Three similar historical trajectories with comparable starting states all received SGLT2 with stable eGFR and improved A1c at twelve months. Two alternative actions have overlapping confidence intervals; this regime is not strongly discriminating between SGLT2 addition and GLP-1 dose increase.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;uncertainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The OPE confidence interval is [0.71, 0.84]. Cohort-stratified estimates for this patient&#39;s combined cohort (T2DM with CKD 3b on GLP-1) are consistent with the overall estimate. The OOD score does not flag this patient as out-of-distribution.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;alternatives_callout&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Increasing the GLP-1 dose to 2 mg weekly has an estimated value of 0.74 [0.66, 0.81]; the difference from the recommended action is small relative to the confidence intervals. Either action is defensible from the regime&#39;s perspective; the choice may reasonably depend on patient preferences (oral SGLT2 versus injectable GLP-1 dose increase), formulary status, and expected tolerability.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;regime_version_disclosure&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Regime version 3.2.1, trained on data through 2026-Q1, last governance approval 2026-03-15.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;override_encouragement&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;If clinical judgment or patient preference points to a different action, document the rationale; the regime is decision support, not a directive.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;generated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T15:08:42Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample governance package OPE summary (truncated):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;regime_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diabetes_ckd_stepwise_v3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;candidate_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3.3.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;training_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2022-01-01_to_2026-01-31&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;behavior_policy_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diabetes_ckd_bp_v7&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;protocol_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">47832</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;decision_points_per_trajectory_median&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ope_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;doubly_robust&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.79</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.74</span><span class="p">,</span><span class="w"> </span><span class="mf">0.83</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;self_normalized_is&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.77</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.69</span><span class="p">,</span><span class="w"> </span><span class="mf">0.85</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;fitted_q_evaluation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.80</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.76</span><span class="p">,</span><span class="w"> </span><span class="mf">0.83</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;method_agreement&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;current_regime_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.71</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.66</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;value_lift&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;candidate exceeds current regime CI lower bound; promotion candidate&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;cohort_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;race_ethnicity&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;white_non_hispanic&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">28115</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.80</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.74</span><span class="p">,</span><span class="w"> </span><span class="mf">0.85</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;race_ethnicity&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;black_non_hispanic&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9842</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.67</span><span class="p">,</span><span class="w"> </span><span class="mf">0.81</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;race_ethnicity&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hispanic&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7251</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.76</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.69</span><span class="p">,</span><span class="w"> </span><span class="mf">0.83</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;race_ethnicity&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;asian&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1834</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.78</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.66</span><span class="p">,</span><span class="w"> </span><span class="mf">0.88</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;race_ethnicity&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;other_or_unknown&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">790</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;evaluable&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;insufficient_data&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;language&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;english&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">41512</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.80</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.84</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;language&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;spanish&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4318</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.66</span><span class="p">,</span><span class="w"> </span><span class="mf">0.82</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;language&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;other&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;sample_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2002</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;dr_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.71</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dr_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.59</span><span class="p">,</span><span class="w"> </span><span class="mf">0.81</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wide_ci&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;sensitivity_analysis&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;e_value_for_main_effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.62</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;e_value_for_lower_ci&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.34</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;interpretation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate_robustness_to_unmeasured_confounding&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;governance_recommendation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;approve_for_pilot_deployment_with_cohort_specific_monitoring&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;blocking_concerns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="nt">&quot;non_blocking_concerns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;other_or_unknown_race_ethnicity_cohort_insufficient_data&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;other_language_cohort_wide_ci&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Status quo (clinician unaided)</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Regime-coverage of multi-decision chronic-disease care</td>
+<td>&lt;5% (mostly ad-hoc)</td>
+<td>70-90% in supported regimes</td>
+</tr>
+<tr>
+<td>Per-recommendation evidence depth (similar-trajectory N)</td>
+<td>0 (none surfaced)</td>
+<td>5-20 anonymized trajectories</td>
+</tr>
+<tr>
+<td>Per-recommendation uncertainty quantification</td>
+<td>not surfaced</td>
+<td>95% CI on every value</td>
+</tr>
+<tr>
+<td>OPE-validated regime value lift over status quo</td>
+<td>not measured</td>
+<td>5-15% on the chosen reward</td>
+</tr>
+<tr>
+<td>Clinician follow-rate of high-confidence recommendations</td>
+<td>n/a</td>
+<td>60-80%</td>
+</tr>
+<tr>
+<td>Clinician follow-rate of borderline recommendations</td>
+<td>n/a</td>
+<td>40-55% (which is appropriate; low confidence should not auto-follow)</td>
+</tr>
+<tr>
+<td>Cohort regime-value parity (worst cohort vs best cohort)</td>
+<td>unknown</td>
+<td>0.85-0.95 after cohort-stratified retraining</td>
+</tr>
+<tr>
+<td>Validator first-attempt pass rate (clinician narrative)</td>
+<td>n/a</td>
+<td>88-95%</td>
+</tr>
+<tr>
+<td>Validator fallback-to-templated rate</td>
+<td>n/a</td>
+<td>1-4%</td>
+</tr>
+<tr>
+<td>End-to-end recommendation latency (95th percentile)</td>
+<td>n/a</td>
+<td>1-3 seconds</td>
+</tr>
+<tr>
+<td>Calibration drift detection time-to-alert</td>
+<td>n/a</td>
+<td>30-90 days from drift onset</td>
+</tr>
+<tr>
+<td>Time from drift alert to retraining completion</td>
+<td>n/a</td>
+<td>7-21 days</td>
+</tr>
+<tr>
+<td>OOD-flag rate (patients outside training distribution)</td>
+<td>not measured</td>
+<td>3-8% in supported cohorts</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Sparse decision points or short trajectories.</strong> Some regimes' clinical areas have decision points spaced months apart with only a handful per patient. Q-learning and offline RL benefit from longer trajectories and denser decision points; sparse trajectories produce wider OPE confidence intervals and less stable policies. Surface this as part of the OPE result; do not promote regimes whose CIs do not exclude the current regime's value.</li>
+<li><strong>Action catalog gaps.</strong> The action catalog is a finite list; clinicians regularly choose actions that are not in the catalog (a non-formulary medication, an unusual dose, a combination not previously considered). High out-of-catalog rates degrade the regime's coverage and produce trajectories that train on incomplete history. Surveillance should track out-of-catalog rate per cohort; persistent gaps should drive catalog expansion.</li>
+<li><strong>Behavior-policy estimation in low-decision-density cohorts.</strong> A cohort where every patient gets the same action has a degenerate behavior policy (probability 1 for one action, 0 for others), which produces infinite or zero importance weights. Cohorts with very homogeneous historical practice cannot be evaluated with importance-sampling-based OPE; alternative methods (FQE, model-based simulation) are needed and produce wider intervals.</li>
+<li><strong>Long horizons.</strong> Off-policy evaluation variance grows with horizon length. Multi-year chronic-disease horizons with annual or semiannual decision points produce CIs wide enough that the OPE often cannot discriminate between candidate regimes. Either shorten the evaluation horizon (with explicit acknowledgement that the policy's long-term value is uncertain), or invest in advanced techniques (per-decision IS, model-based OPE) that mitigate the variance growth.</li>
+<li><strong>Clinician disengagement.</strong> Clinicians who do not understand the regime's logic, the OPE confidence intervals, or the OOD flag will skim the narrative and either reflexively follow or reflexively ignore the recommendation. Both modes are failures of decision support. Invest in clinician education before launch and in continuous engagement after; track follow-rates by clinician and surface disengagement patterns to clinical leadership.</li>
+<li><strong>Calibration drift in evolving practice.</strong> A regime trained on 2022-2025 data optimizes for the prescribing patterns and patient mix of that era. As newer drug classes enter standard practice, as new outcomes data updates the guidelines, and as the patient mix shifts, the regime's recommendations age. Calibration drift detection should flag this within months; the retraining cadence should respond. The pattern that fails is treating the regime as static; it ages out and starts producing recommendations the current literature would not endorse.</li>
+<li><strong>Cohort-stratified OPE with insufficient data.</strong> Smaller cohorts (less-represented racial groups, less-represented languages, rare comorbidity profiles) produce OPE results with intervals so wide they are not actionable. The honest response is &quot;we cannot tell whether the regime works for this cohort with the data we have&quot;; the dishonest response is to report the point estimate as if it were trustworthy. The architecture surfaces the insufficient-data flag explicitly; the governance committee decides whether to deploy the regime to that cohort with explicit warnings, restrict deployment to cohorts with adequate data, or invest in cohort-specific data acquisition.</li>
+<li><strong>Reward-function gaming and unintended optimization.</strong> A reward function that weights A1c reduction heavily may push the regime toward aggressive medication intensification, producing improvements in A1c at the cost of more hypoglycemia, more weight gain, and more medication burden than the intended balance. The reward function is a policy decision that the governance committee must revisit as outcomes accumulate; outcomes that improve the reward but worsen unmeasured aspects of patient experience are a structural feature of any reward-driven system, and the system needs an audit mechanism (PROMs, qualitative feedback, periodic clinical review) for catching them.</li>
+<li><strong>Patient communication of policy logic.</strong> When the clinician shares the recommendation with the patient, the patient often wants to know &quot;why this and not that?&quot; The patient-facing narrative must convey the path-dependence (&quot;this is the next step given how things have gone&quot;) and the uncertainty (&quot;the model is more confident about A than about B for patients in your situation&quot;) without crossing into prescriptive language. Patient-facing regime communication is iterative work; the first version is rarely the version that lands.</li>
+<li><strong>Override pattern interpretation.</strong> Clinicians override recommendations for many reasons: patient preference, formulary issues, supply constraints, unspecified clinical judgment, simple disagreement with the model. Distinguishing &quot;override because the model is right but the patient said no&quot; from &quot;override because the model is wrong for this patient profile&quot; requires structured rationale capture and periodic clinical review of the rationales. Without that discipline, override patterns become noise rather than signal.</li>
+<li><strong>Regulatory shift mid-deployment.</strong> FDA SaMD policy is evolving. The Predetermined Change Control Plan policy has matured and may continue to mature; state-level regulations are also evolving. A regime that is below the SaMD threshold today may not be below it next year if the policy changes or if the regime's deployment posture (clinician-mediated versus more direct) changes. Maintain the regulatory analysis as an active document, not a one-time deliverable.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Methodology validation against randomized-trial benchmarks.</strong> Where SMART-trial data is available (the canonical sequential-randomized-trial design that grounded much of the dynamic-treatment-regime literature), the regime's OPE estimates should be benchmarked against the trial's primary analysis. Closeness to the randomized-trial point estimate, with overlapping confidence intervals, is the signal of methodological validity. The benchmark exercises require a methodologically sophisticated team (biostatistician with sequential-causal-inference experience, ML engineer with offline RL background); plan for at least 1.0 to 2.0 FTE during the methodology-validation phase.</p>
+<p><strong>Behavior policy validation depth.</strong> The behavior policy is a model whose miscalibration silently corrupts every downstream OPE result. Calibration validation is necessary but not sufficient. Sensitivity analysis to behavior-policy misspecification (perturbing the propensity model and observing the OPE result) is a discipline that the methodology-validation phase should establish as ongoing practice, not a one-time check.</p>
+<p><strong>Reward-function governance and revision.</strong> The reward function is the most contested artifact in the catalog. Establish an explicit policy: who can propose a reward change, what evidence is required, how is the proposed change evaluated (parallel-evaluation against the prior reward, surface what changes in the recommended actions), what cohort-specific impact analysis must accompany the proposal, and what review cadence (quarterly, annually) does the governance committee maintain on the reward as outcomes accumulate. Reward-function changes are policy changes; the engineering process should treat them with the seriousness that implies.</p>
+<p><strong>Patient consent posture.</strong> Dynamic treatment regime recommendations use the patient's longitudinal trajectory data, including prior actions, outcomes, and (in many implementations) similar-trajectory cohorts of other patients. The consent framing should make this explicit: &quot;your care recommendations are informed by your own past care and outcomes and by the patterns observed in similar patients' care; we use this information with care and you can opt out.&quot; The institution's existing consent infrastructure typically does not have all of these granularities; expect to extend it. Consent revocation requires a defined data-handling pathway: revoking patients' contributions to training data, re-training without their data on the next cycle, removing them from similar-trajectory retrieval pools.</p>
+<p><strong>Operational privacy in trajectory storage and similar-trajectory retrieval.</strong> The trajectory store is highly sensitive: per-patient sequences of (state, action, reward) tuples encode rich clinical journeys. The similar-trajectory retrieval surface returns information about other patients (de-identified, k-anonymity-checked, but still derived from real PHI). Apply tighter controls than for engagement data: narrower IAM read scopes, separate-table partitioning by sensitivity tier, additional CloudTrail data event capture, and a documented minimum-necessary access policy. The k-anonymity threshold for similar-trajectory retrieval should be regime-specific and revisited as the data accumulates.</p>
+<p><strong>FDA SaMD framework integration as an ongoing program.</strong> Treat the regulatory analysis as a continuous deliverable. Model risk classification at scoping; predetermined change control plan as part of the initial submission (where SaMD applies); post-deployment surveillance with structured outcome tracking; regulatory legal review at every regime version promotion that includes a substantive change to the action catalog, the reward function, or the deployment posture. The Good Machine Learning Practice principles are a useful checklist; map your operational practices against them and identify the gaps.</p>
+<p><strong>Idempotency and retry semantics.</strong> Recommendation generation is multi-stage; each stage's outputs are addressed by deterministic keys (recommendation_id, decision_point_id) and writes are conditional, so a Step Functions retry is a no-op rather than a duplicate. SageMaker endpoint invocations should be idempotent at the recommendation_id level. Action-taken events use deterministic event keys for at-most-once trajectory updates. Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.</p>
+<p><strong>Cross-recipe orchestration with Recipes 4.5 through 4.9.</strong> Dynamic treatment regimes depend on signals from prior Chapter 4 recipes: the per-treatment CATE estimates from 4.8 inform the action-catalog and the similar-trajectory retrieval; the personalized care plan from 4.9 is the broader plan in which the regime's recommendation is one component; the adherence and engagement signals from 4.5 and 4.7 affect the state representation. The integration points must be reliable, idempotent, and consistent. Document the integration patterns and the failure-mode handling.</p>
+<p><strong>Regime-deprecation and patient-impact handling.</strong> When a regime version is deprecated (replaced by a newer version, retired due to drift, withdrawn after surveillance findings), the patients with active recommendations under the old version need clear handling: re-recommend under the new version at the next decision point, surface the change to the clinician with the rationale, and avoid silent regime swaps. The deprecation policy is part of the change control plan and should be reviewed by the governance committee.</p>
+<p><strong>Cost-aware narrative generation.</strong> Bedrock calls per recommendation (one clinician-facing always, one patient-facing when shared) add up at scale. Tiering the model selection (Sonnet for clinician, Haiku for patient where reading-level allows) substantially reduces cost. Caching narrative fragments for repeated content (regime-version-disclosure boilerplate, override-encouragement blocks) reduces token volume. Production deployments should rationalize the narrative-generation topology against actual usage patterns and cost, with the cost monitoring built into the dashboard from day one.</p>
+<p><strong>Operational dashboards and runbooks.</strong> Drift alarms, OOD-rate alarms, and cohort fairness alarms require runbooks that designate the responding teams (clinical leadership, data science, regulatory, operations) and the response protocols. A drift alarm without a runbook is an alarm that gets acknowledged and ignored. The runbooks are operational deliverables, not engineering ones; the regime is in production only when the runbooks exist and the response teams have rehearsed them.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Multi-objective regimes with explicit Pareto-frontier exploration.</strong> Some clinical areas have multiple outcomes that resist combination into a single reward (clinical effectiveness, harm avoidance, burden, cost, patient-reported quality of life). Multi-objective offline RL produces a Pareto frontier of policies, each optimizing a different weighting of the objectives. The clinician-facing surface presents the patient's recommended action under each weighting alongside the implications, and the clinician (with the patient) picks among the weightings rather than picking among the actions directly. This is methodologically more demanding and operationally harder to explain; pilot in a clinical area where the multi-objective tradeoffs are explicit and patient-driven (oncology line-of-therapy, end-of-life care planning).</p>
+<p><strong>Patient-driven reward weighting.</strong> A specialization of the multi-objective approach: the patient's stated values are translated into reward weights at the point of recommendation. A patient who has elected comfort-focused care has a reward weighting that down-weights aggressive disease control and up-weights symptom burden; a patient who has elected aggressive disease control has the opposite weighting. The regime serves a recommendation whose policy is calibrated to the patient's reward, not the population-average reward. This requires per-patient policy evaluation rather than a single shared policy and increases serving complexity; the payoff is recommendations that actually reflect what each patient values.</p>
+<p><strong>Federated and consortium-based regime estimation.</strong> Single-institution data is rarely enough for adequate cohort coverage in less-common scenarios (rare comorbidity profiles, less-represented racial groups, less-represented languages). Federated approaches across multiple healthcare systems (OHDSI, PCORnet, Sentinel) produce pooled regimes with broader cohort coverage. The institution-specific regime serves as a fine-tune of the federated baseline; the federated baseline serves as the prior or anchor when local data is sparse. Privacy-preserving methods (secure aggregation, differential privacy) protect individual-institution data; the methodological work to combine federated and local estimation is non-trivial and worth the investment for cohorts where local data is insufficient.</p>
+<p><strong>Real-time RPM-driven decision points.</strong> When a patient is enrolled in remote patient monitoring (continuous glucose monitor, blood pressure cuff, weight scale, pulse oximetry), the decision points can be event-driven rather than visit-aligned: a sustained glucose excursion triggers a regime evaluation; a weight trend triggers a regime evaluation; a sustained blood pressure pattern triggers a regime evaluation. The regime in this variant has higher decision-point density, smaller per-decision actions (titration adjustments rather than regime changes), and tighter integration with the operational workflow. The regulatory framing tightens; closer-to-real-time recommendations are more likely to be regulated as SaMD.</p>
+<p><strong>Consultation-mode regime advice.</strong> Rather than producing a recommendation at a decision point, the regime produces a &quot;what would this regime do?&quot; estimate at any time. The clinician asks the system &quot;if Sara stays on her current regimen for another quarter and then we add an SGLT2, what does the regime estimate?&quot; and the system returns a value estimate with confidence intervals. Consultation mode supports clinical reasoning without committing to a specific recommendation cadence; it is also useful for shared decision-making with patients who want to explore alternatives.</p>
+<p><strong>Multi-regime composition.</strong> A patient may be eligible for multiple regimes (a diabetes regime, a CHF regime, a depression regime). The regimes' recommended actions may interact (an SGLT2 from the diabetes regime affects the CHF regime; an SSRI from the depression regime affects the CHF regime through QT prolongation considerations). Multi-regime composition requires a meta-policy that reconciles the per-regime recommendations into a coherent action set, similar to the multi-condition reconciliation in Recipe 4.9. The reconciliation is not just multi-condition (which 4.9 handles); it is multi-regime, where each regime is itself a policy. This is a research-frontier problem with limited applied work; pilot cautiously.</p>
+<p><strong>Reinforcement-learning-informed clinical-trial design.</strong> The methodology that produces a dynamic treatment regime can also produce hypotheses for prospective sequential-randomized trials. A regime that performs well in OPE but with wide intervals is a candidate for a SMART-style trial that would tighten the intervals with prospective randomized data. The recipe's infrastructure becomes a hypothesis-generating engine for clinical research, with appropriate ethics-board review and pre-registration.</p>
+<p><strong>Causal-discovery-informed state representation.</strong> The state representation in the regime is, by default, a curated feature set. Causal discovery methods (PC algorithm, FCI, neural causal inference) can suggest features that are causally relevant to the outcomes that are not obvious from clinical reasoning alone. The discovered features, after expert review, can enrich the state representation and improve the regime's value. This is methodologically advanced and requires careful causal-inference expertise; the discovered features should not enter the state representation without expert review for confounding and clinical plausibility.</p>
+<p><strong>Counterfactual-explanation surfaces.</strong> Beyond the recommended action and its alternatives, the surface can present counterfactuals: &quot;if the patient's eGFR were 50 instead of 41, the regime would recommend X instead of Y.&quot; Counterfactual explanations are useful for clinician understanding of the policy's logic and for patient education. The work to produce counterfactuals well (with attention to causal validity rather than just feature perturbation) is substantial; pilot in a clinical area where counterfactual reasoning is high-value (oncology line-of-therapy, ICU sedation policies).</p>
+<p><strong>Online value-of-information evaluation.</strong> Some recommendations may benefit from additional data before commitment: &quot;the regime recommends X with moderate confidence; if we get a recent A1c and an updated eGFR before the next visit, the confidence interval will narrow substantially.&quot; The system surfaces value-of-information analyses that suggest which additional measurements would most improve the recommendation's confidence. This connects to ordering and lab-utilization workflows that were out of scope for the base recipe.</p>
+<p><strong>Prospective regime-versus-current-care comparison studies.</strong> Once a regime has been deployed in some clinical contexts and not others (a phased rollout), a quasi-experimental comparison of outcomes between deployed and non-deployed contexts produces real-world evidence on the regime's value. The methodology requires careful design (interrupted time series, difference-in-differences, regression discontinuity if a clear deployment threshold exists) and prospective registration of the analysis plan. The output is a publishable, peer-reviewable assessment of the regime's real-world performance, complementing the OPE-based pre-deployment estimates.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html">Amazon SageMaker Model Registry</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">AWS HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">Amazon API Gateway Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html">Amazon Cognito Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: SageMaker Training, Model Registry, and Endpoints patterns applicable to regime training and serving</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: Feature Store usage applicable to point-in-time-correct state construction at decision points</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Hands-on labs covering structured-output prompting that informs clinician-facing regime briefings and patient-facing summaries</li>
+<li><a href="https://github.com/awslabs/fhir-works-on-aws-deployment"><code>fhir-works-on-aws-deployment</code></a>: FHIR-native API patterns applicable to persisting regime recommendations as FHIR <code>Task</code> and <code>ServiceRequest</code> resources</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter AI/ML and Healthcare): browse for healthcare ML, sequential-decision-support, and population health reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;reinforcement learning,&quot; &quot;causal inference,&quot; and &quot;FHIR&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/industries/">AWS for Industries Blog</a> (Healthcare and Life Sciences): search &quot;decision support,&quot; &quot;treatment recommendation,&quot; and &quot;value-based care&quot; for end-to-end customer architectures</li>
+</ul>
+<p><strong>External References (Methodology):</strong></p>
+<ul>
+<li><a href="https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/">Hernán M., Robins J. <em>Causal Inference: What If</em></a>: the canonical reference on causal inference from observational data, including target trial emulation and G-methods</li>
+<li><a href="https://www.jstor.org/stable/3647538">Murphy S. <em>Optimal Dynamic Treatment Regimes</em></a>: the foundational statistical paper on dynamic treatment regimes</li>
+<li><a href="https://link.springer.com/book/10.1007/978-1-4614-7428-9">Chakraborty B., Moodie E. <em>Statistical Methods for Dynamic Treatment Regimes</em></a>: textbook reference on dynamic treatment regime methodology</li>
+<li><a href="https://www.annualreviews.org/doi/10.1146/annurev-statistics-031017-100753">Kosorok M., Laber E. <em>Precision Medicine</em></a>: annual-review-style overview of precision medicine methodology including dynamic treatment regimes</li>
+<li><a href="https://www.nature.com/articles/s41591-018-0213-5">Komorowski M. et al. <em>The AI Clinician learns optimal treatment strategies for sepsis in intensive care</em></a>: canonical applied paper on offline RL for ICU treatment policies, with extensive subsequent commentary</li>
+<li><a href="https://arxiv.org/abs/2005.01643">Levine S., Kumar A., Tucker G., Fu J. <em>Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems</em></a>: comprehensive review of offline RL methods with applicability to healthcare problems</li>
+</ul>
+<p><strong>External References (Tooling):</strong></p>
+<ul>
+<li><a href="https://github.com/takuseno/d3rlpy">d3rlpy</a>: production-grade offline RL library</li>
+<li><a href="https://github.com/py-why/dowhy">DoWhy</a>: causal inference library with sequential-treatment support</li>
+<li><a href="https://github.com/py-why/EconML">EconML</a>: meta-learners and causal forests for treatment effect estimation</li>
+<li><a href="https://github.com/uber/causalml">CausalML</a>: treatment effect and uplift modeling library</li>
+</ul>
+<p><strong>External References (Regulatory and Standards):</strong></p>
+<ul>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd">FDA Software as a Medical Device (SaMD) framework</a></li>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence">FDA Predetermined Change Control Plan guidance for AI/ML SaMD</a></li>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles">FDA-Health Canada-MHRA Good Machine Learning Practice (GMLP) for Medical Device Development</a></li>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software">FDA Clinical Decision Support Software guidance</a></li>
+</ul>
+<p><strong>External References (Clinical Content):</strong></p>
+<ul>
+<li><a href="https://www.science.org/doi/10.1126/science.aax2342">Obermeyer Z. et al. 2019, <em>Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations</em></a>: the canonical cautionary tale for fairness failures in healthcare AI; required reading for anyone building dynamic treatment regimes</li>
+<li><a href="https://www.hl7.org/fhir/task.html">HL7 FHIR <code>Task</code> Resource</a>: the FHIR specification for action assignment and tracking</li>
+<li><a href="https://www.hl7.org/fhir/servicerequest.html">HL7 FHIR <code>ServiceRequest</code> Resource</a>: the FHIR specification for service requests including treatments and procedures</li>
+<li><a href="https://www.uspreventiveservicestaskforce.org/uspstf/">USPSTF Recommendations</a>: preventive-care recommendations relevant to action catalogs in preventive-care regimes</li>
+<li><a href="https://www.ncqa.org/hedis/">HEDIS Measures</a>: healthcare-quality measures relevant to reward function specifications</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>One clinical area (e.g., diabetes stepwise therapy) + curated state representation + small action catalog (5-8 actions) + Q-learning policy estimation + doubly-robust OPE with overall and 2-3 cohort axes + sensitivity analysis + clinician-facing recommendation API with structured comparison + LLM narrative with validator + manual override workflow + basic surveillance (adherence and outcome tracking)</td>
+<td>8-12 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full pipeline: 2-3 clinical areas with complete trajectory pipelines + behavior policy estimation with cohort calibration + multi-method regime estimation (Q-learning + offline RL + A-learning) + comprehensive OPE with multiple estimators, cohort stratification across all standard axes, and sensitivity analysis + governance package generation + SageMaker Model Registry integration + recommendation API via SMART on FHIR + clinician-facing narrative with strict four-layer validator + patient-facing narrative variant + EHR integration with override capture + cross-recipe orchestration with 4.5 through 4.9 + drift detection and retraining automation + cohort-stratified surveillance dashboards + regime-deprecation handling + complete regulatory documentation + clinician engagement program</td>
+<td>36-54 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add multi-objective regimes, patient-driven reward weighting, federated and consortium estimation, real-time RPM-driven decision points, consultation-mode advice, multi-regime composition, counterfactual explanation surfaces, value-of-information analysis, prospective comparison studies</td>
+<td>18-36 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter04.10-dynamic-treatment-regime-recommendation.html">Main Recipe 4.10</a> · <a href="chapter04.10-python-example.html">Python Example</a> · <a href="chapter04-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

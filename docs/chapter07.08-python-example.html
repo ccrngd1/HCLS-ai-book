@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 7.8: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-78-python-implementation-example">Recipe 7.8: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the disease progression modeling concepts from Recipe 7.8. It demonstrates the shape of the solution using synthetic CKD (chronic kidney disease) data, a survival model, and SageMaker deployment patterns. It is not production-ready. Real disease progression modeling requires years of validated longitudinal data, careful causal inference, and extensive clinical validation. Think of this as a sketchpad for understanding the architecture, not something you'd deploy to a nephrology clinic next week.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and a few ML libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>sagemaker<span class="w"> </span>pandas<span class="w"> </span>numpy<span class="w"> </span>scikit-learn<span class="w"> </span>lifelines<span class="w"> </span>shap
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>sagemaker:CreateTrainingJob</code>, <code>sagemaker:CreateModel</code>, <code>sagemaker:CreateEndpoint</code>, <code>sagemaker:InvokeEndpoint</code></li>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code> (scoped to your training data and model artifact buckets)</li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code> (scoped to your prediction cache table)</li>
+<li><code>healthlake:SearchWithPost</code> (if using HealthLake as your FHIR data source)</li>
+</ul>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before the logic, here's the configuration that drives the pipeline. These thresholds, feature definitions, and model parameters live at the top so they're easy to find and adjust. In production, these would come from a parameter store or config file, not hardcoded constants.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. Never log PHI values (patient names, MRNs, raw lab results).</span>
+<span class="c1"># Log patient IDs only when necessary for debugging, and ensure logs are in a</span>
+<span class="c1"># HIPAA-compliant destination (CloudWatch Logs with encryption).</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># --- Model Configuration ---</span>
+
+<span class="c1"># Prediction horizons in months. These are the time windows we predict over.</span>
+<span class="c1"># 6 months is short-term (useful for immediate care planning).</span>
+<span class="c1"># 36 months is the outer edge of what&#39;s clinically actionable for CKD.</span>
+<span class="n">PREDICTION_HORIZONS_MONTHS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">36</span><span class="p">]</span>
+
+<span class="c1"># Clinical alert threshold: if probability of progression exceeds this</span>
+<span class="c1"># at the 12-month horizon, generate a clinical alert for the care team.</span>
+<span class="n">ALERT_THRESHOLD_12MO</span> <span class="o">=</span> <span class="mf">0.60</span>
+
+<span class="c1"># Key biomarkers tracked for CKD progression modeling.</span>
+<span class="c1"># Each gets trajectory features (slope, variability, current value).</span>
+<span class="n">CKD_BIOMARKERS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;eGFR&quot;</span><span class="p">,</span> <span class="s2">&quot;creatinine&quot;</span><span class="p">,</span> <span class="s2">&quot;albumin&quot;</span><span class="p">,</span> <span class="s2">&quot;hemoglobin&quot;</span><span class="p">,</span> <span class="s2">&quot;potassium&quot;</span><span class="p">]</span>
+
+<span class="c1"># Medication classes relevant to CKD progression.</span>
+<span class="c1"># Duration on these medications is a protective feature.</span>
+<span class="n">PROTECTIVE_MED_CLASSES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ACE_inhibitor&quot;</span><span class="p">,</span> <span class="s2">&quot;ARB&quot;</span><span class="p">,</span> <span class="s2">&quot;SGLT2_inhibitor&quot;</span><span class="p">]</span>
+
+<span class="c1"># DynamoDB table for prediction cache.</span>
+<span class="n">PREDICTION_TABLE</span> <span class="o">=</span> <span class="s2">&quot;disease-progression-predictions&quot;</span>
+
+<span class="c1"># S3 bucket for training data and model artifacts.</span>
+<span class="n">MODEL_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-progression-models&quot;</span>
+
+<span class="c1"># SageMaker endpoint name for real-time inference.</span>
+<span class="n">ENDPOINT_NAME</span> <span class="o">=</span> <span class="s2">&quot;ckd-progression-v2&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-assemble-longitudinal-patient-history">Step 1: Assemble Longitudinal Patient History</h2>
+<p><em>The pseudocode calls this <code>assemble_patient_timeline(patient_id, lookback_years)</code>. This step gathers a patient's full temporal record from the clinical data store. Here we simulate it with synthetic data, but in production you'd query HealthLake or your EHR's FHIR API.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_synthetic_patient_timeline</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">progression_rate</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;moderate&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a synthetic longitudinal patient record for CKD.</span>
+
+<span class="sd">    In production, this function would query Amazon HealthLake via FHIR:</span>
+<span class="sd">        POST https://&lt;healthlake-endpoint&gt;/r4/Observation/_search</span>
+<span class="sd">        with parameters for patient, date range, and category.</span>
+
+<span class="sd">    For this example, we generate realistic synthetic data that mimics</span>
+<span class="sd">    what you&#39;d get from a real clinical data store. The progression_rate</span>
+<span class="sd">    parameter controls how fast the synthetic patient&#39;s kidney function</span>
+<span class="sd">    declines, so we can test the model against different trajectories.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: Unique patient identifier.</span>
+<span class="sd">        progression_rate: &quot;slow&quot;, &quot;moderate&quot;, or &quot;fast&quot; decline pattern.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A timeline dict with labs, medications, conditions, and demographics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="nb">hash</span><span class="p">(</span><span class="n">patient_id</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">)</span>
+
+    <span class="c1"># Simulate 4 years of quarterly lab measurements (irregular intervals).</span>
+    <span class="c1"># Real patients don&#39;t come in on a perfect schedule. We add jitter.</span>
+    <span class="n">n_observations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>  <span class="c1"># 10-20 lab visits over 4 years</span>
+    <span class="n">days_offsets</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1460</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_observations</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">base_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2022</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+    <span class="n">observation_dates</span> <span class="o">=</span> <span class="p">[</span><span class="n">base_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">days_offsets</span><span class="p">]</span>
+
+    <span class="c1"># eGFR trajectory: starts between 45-65, declines at a rate determined</span>
+    <span class="c1"># by the progression_rate parameter. Add noise because real labs fluctuate.</span>
+    <span class="n">starting_egfr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">63</span><span class="p">)</span>
+    <span class="n">decline_rates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;slow&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="s2">&quot;moderate&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span> <span class="s2">&quot;fast&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">7.0</span><span class="p">}</span>
+    <span class="n">annual_decline</span> <span class="o">=</span> <span class="n">decline_rates</span><span class="p">[</span><span class="n">progression_rate</span><span class="p">]</span>
+
+    <span class="n">egfr_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">days_offsets</span><span class="p">:</span>
+        <span class="n">years_elapsed</span> <span class="o">=</span> <span class="n">d</span> <span class="o">/</span> <span class="mf">365.25</span>
+        <span class="c1"># True trajectory plus measurement noise (SD ~3 for eGFR)</span>
+        <span class="n">egfr</span> <span class="o">=</span> <span class="n">starting_egfr</span> <span class="o">+</span> <span class="p">(</span><span class="n">annual_decline</span> <span class="o">*</span> <span class="n">years_elapsed</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">egfr_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">egfr</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># eGFR can&#39;t go below ~8 clinically</span>
+
+    <span class="c1"># Creatinine (inversely related to eGFR, roughly)</span>
+    <span class="n">creatinine_values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="mf">1.2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">60</span> <span class="o">-</span> <span class="n">e</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">egfr_values</span><span class="p">]</span>
+
+    <span class="c1"># HbA1c (diabetes control, if diabetic)</span>
+    <span class="n">has_diabetes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.4</span>  <span class="c1"># 60% of CKD patients have diabetes</span>
+    <span class="k">if</span> <span class="n">has_diabetes</span><span class="p">:</span>
+        <span class="n">hba1c_values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">8.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">days_offsets</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hba1c_values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">5.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">days_offsets</span><span class="p">]</span>
+
+    <span class="c1"># Assemble labs into FHIR-like observation records</span>
+    <span class="c1"># Note: we only simulate eGFR, creatinine, and HbA1c for brevity.</span>
+    <span class="c1"># Albumin, hemoglobin, and potassium would come from real lab data.</span>
+    <span class="c1"># The feature engineering step handles missing biomarkers gracefully</span>
+    <span class="c1"># (fills with zero/sentinel values), so the pipeline still runs.</span>
+    <span class="n">labs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">date</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">observation_dates</span><span class="p">):</span>
+        <span class="n">labs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;eGFR&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">egfr_values</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;mL/min/1.73m2&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()})</span>
+        <span class="n">labs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;creatinine&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">creatinine_values</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;mg/dL&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()})</span>
+        <span class="k">if</span> <span class="n">has_diabetes</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># HbA1c measured less frequently</span>
+            <span class="n">labs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;HbA1c&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">hba1c_values</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;%&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()})</span>
+
+    <span class="c1"># Medication history</span>
+    <span class="n">medications</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.3</span><span class="p">:</span>  <span class="c1"># 70% on ACE/ARB</span>
+        <span class="n">med_start</span> <span class="o">=</span> <span class="n">base_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">200</span><span class="p">)))</span>
+        <span class="n">medications</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;drug_class&quot;</span><span class="p">:</span> <span class="s2">&quot;ACE_inhibitor&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;drug_name&quot;</span><span class="p">:</span> <span class="s2">&quot;lisinopril&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dose&quot;</span><span class="p">:</span> <span class="s2">&quot;10mg daily&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="n">med_start</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># still active</span>
+        <span class="p">})</span>
+    <span class="k">if</span> <span class="n">has_diabetes</span><span class="p">:</span>
+        <span class="n">medications</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;drug_class&quot;</span><span class="p">:</span> <span class="s2">&quot;SGLT2_inhibitor&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;drug_name&quot;</span><span class="p">:</span> <span class="s2">&quot;empagliflozin&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dose&quot;</span><span class="p">:</span> <span class="s2">&quot;10mg daily&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">base_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">90</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">})</span>
+
+    <span class="c1"># Active conditions</span>
+    <span class="n">conditions</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;CKD_stage_3a&quot;</span><span class="p">,</span> <span class="s2">&quot;onset&quot;</span><span class="p">:</span> <span class="n">base_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;active&quot;</span><span class="p">}]</span>
+    <span class="k">if</span> <span class="n">has_diabetes</span><span class="p">:</span>
+        <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;type_2_diabetes&quot;</span><span class="p">,</span> <span class="s2">&quot;onset&quot;</span><span class="p">:</span> <span class="s2">&quot;2019-03-01&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;active&quot;</span><span class="p">})</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;hypertension&quot;</span><span class="p">,</span> <span class="s2">&quot;onset&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-06-15&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;active&quot;</span><span class="p">})</span>
+
+    <span class="c1"># Demographics</span>
+    <span class="n">demographics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">45</span><span class="p">,</span> <span class="mi">78</span><span class="p">)),</span>
+        <span class="s2">&quot;sex&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">]),</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;labs&quot;</span><span class="p">:</span> <span class="n">labs</span><span class="p">,</span>
+        <span class="s2">&quot;medications&quot;</span><span class="p">:</span> <span class="n">medications</span><span class="p">,</span>
+        <span class="s2">&quot;conditions&quot;</span><span class="p">:</span> <span class="n">conditions</span><span class="p">,</span>
+        <span class="s2">&quot;demographics&quot;</span><span class="p">:</span> <span class="n">demographics</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-engineer-temporal-features">Step 2: Engineer Temporal Features</h2>
+<p><em>The pseudocode calls this <code>engineer_progression_features(timeline)</code>. This transforms raw longitudinal data into the features that actually predict progression: rates of change, variability, treatment duration, and comorbidity burden.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_slope</span><span class="p">(</span><span class="n">dates</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the linear slope (rate of change per year) for a biomarker series.</span>
+
+<span class="sd">    Uses simple linear regression: fit a line to (time_in_years, value) pairs.</span>
+<span class="sd">    The slope tells you how fast the biomarker is changing on average.</span>
+
+<span class="sd">    For eGFR: negative slope = declining kidney function.</span>
+<span class="sd">    A slope of -4.0 means losing 4 eGFR points per year (concerning).</span>
+<span class="sd">    A slope of -1.0 means losing 1 point per year (typical age-related decline).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Convert dates to fractional years from the first observation.</span>
+    <span class="n">first_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">dates</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">years</span> <span class="o">=</span> <span class="p">[(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">-</span> <span class="n">first_date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="o">/</span> <span class="mf">365.25</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">]</span>
+
+    <span class="c1"># Simple linear regression via numpy polyfit (degree 1 = line).</span>
+    <span class="c1"># Returns [slope, intercept].</span>
+    <span class="n">coefficients</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">coefficients</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">engineer_progression_features</span><span class="p">(</span><span class="n">timeline</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Transform a patient timeline into model-ready features.</span>
+
+<span class="sd">    The most predictive features for disease progression aren&#39;t the current</span>
+<span class="sd">    values alone. They&#39;re the dynamics: how fast is eGFR declining? Is the</span>
+<span class="sd">    decline accelerating? How long has the patient been on protective medications?</span>
+<span class="sd">    How many comorbidities are compounding the kidney stress?</span>
+
+<span class="sd">    This function computes all of those from the raw timeline.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        timeline: Output of assemble_patient_timeline (or the synthetic generator).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A flat dictionary of feature_name -&gt; numeric_value, ready for model input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">labs</span> <span class="o">=</span> <span class="n">timeline</span><span class="p">[</span><span class="s2">&quot;labs&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Define the 12-month lookback cutoff up front. Used for recent slope</span>
+    <span class="c1"># calculations and medication change counts.</span>
+    <span class="n">cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">365</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="c1"># --- Biomarker trajectory features ---</span>
+    <span class="k">for</span> <span class="n">biomarker</span> <span class="ow">in</span> <span class="n">CKD_BIOMARKERS</span><span class="p">:</span>
+        <span class="c1"># Extract this biomarker&#39;s time series from the labs list.</span>
+        <span class="n">bio_records</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">labs</span> <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">biomarker</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">bio_records</span><span class="p">:</span>
+            <span class="c1"># Missing biomarker: fill with sentinel values.</span>
+            <span class="c1"># The model should learn that missing data is informative</span>
+            <span class="c1"># (patients with missing labs may be less engaged in care).</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_slope&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_current&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_variability&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_n_measurements&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">continue</span>
+
+        <span class="n">dates</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">bio_records</span><span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">bio_records</span><span class="p">]</span>
+
+        <span class="c1"># Overall slope: average rate of change per year across full history.</span>
+        <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_slope&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_slope</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+        <span class="c1"># Recent slope: rate of change in the last 12 months only.</span>
+        <span class="c1"># If recent slope is steeper than overall slope, the decline is accelerating.</span>
+        <span class="n">recent</span> <span class="o">=</span> <span class="p">[(</span><span class="n">d</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;=</span> <span class="n">cutoff</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">recent</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">recent_dates</span><span class="p">,</span> <span class="n">recent_values</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">recent</span><span class="p">)</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_recent_slope&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_slope</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">recent_dates</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">recent_values</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_recent_slope&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_slope&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Current value (most recent measurement).</span>
+        <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_current&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Variability (standard deviation). High variability in eGFR suggests</span>
+        <span class="c1"># unstable kidney function or acute-on-chronic episodes.</span>
+        <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_variability&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">values</span><span class="p">)),</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Number of measurements (data density). More measurements = more</span>
+        <span class="c1"># reliable slope estimates. Also a proxy for healthcare engagement.</span>
+        <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">biomarker</span><span class="si">}</span><span class="s2">_n_measurements&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="c1"># --- Medication features ---</span>
+    <span class="n">meds</span> <span class="o">=</span> <span class="n">timeline</span><span class="p">[</span><span class="s2">&quot;medications&quot;</span><span class="p">]</span>
+    <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">med_class</span> <span class="ow">in</span> <span class="n">PROTECTIVE_MED_CLASSES</span><span class="p">:</span>
+        <span class="n">class_meds</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">meds</span> <span class="k">if</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;drug_class&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">med_class</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">class_meds</span><span class="p">:</span>
+            <span class="c1"># Duration on this medication class (in months).</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">class_meds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;start_date&quot;</span><span class="p">])</span>
+            <span class="n">duration_months</span> <span class="o">=</span> <span class="p">(</span><span class="n">today</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="o">/</span> <span class="mf">30.44</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">med_class</span><span class="si">}</span><span class="s2">_duration_months&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">duration_months</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">med_class</span><span class="si">}</span><span class="s2">_active&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">med_class</span><span class="si">}</span><span class="s2">_duration_months&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">features</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">med_class</span><span class="si">}</span><span class="s2">_active&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Total medication changes in last 12 months (instability signal).</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;medication_changes_12mo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">meds</span>
+        <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_date&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;end_date&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">cutoff</span>
+    <span class="p">)</span>
+
+    <span class="c1"># --- Comorbidity features ---</span>
+    <span class="n">conditions</span> <span class="o">=</span> <span class="n">timeline</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]</span>
+    <span class="n">condition_codes</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">conditions</span><span class="p">]</span>
+
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;diabetes_present&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;diabetes&quot;</span> <span class="ow">in</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">condition_codes</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;hypertension_present&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="s2">&quot;hypertension&quot;</span> <span class="ow">in</span> <span class="n">condition_codes</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;heart_failure_present&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="s2">&quot;heart_failure&quot;</span> <span class="ow">in</span> <span class="n">condition_codes</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;comorbidity_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># exclude CKD itself</span>
+
+    <span class="c1"># --- Demographics ---</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeline</span><span class="p">[</span><span class="s2">&quot;demographics&quot;</span><span class="p">][</span><span class="s2">&quot;age&quot;</span><span class="p">]</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">&quot;sex_male&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">timeline</span><span class="p">[</span><span class="s2">&quot;demographics&quot;</span><span class="p">][</span><span class="s2">&quot;sex&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;M&quot;</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">features</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-train-the-progression-model">Step 3: Train the Progression Model</h2>
+<p><em>The pseudocode calls this <code>train_progression_model(training_cohort, prediction_horizons)</code>. Here we train a survival model using the <code>lifelines</code> library locally. In production, you'd run this as a SageMaker training job with a much larger cohort and more sophisticated model architecture.</em></p>
+<div class="code"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lifelines</span><span class="w"> </span><span class="kn">import</span> <span class="n">CoxPHFitter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lifelines.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">concordance_index</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_training_cohort</span><span class="p">(</span><span class="n">n_patients</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a synthetic training cohort with known outcomes.</span>
+
+<span class="sd">    Each patient has:</span>
+<span class="sd">    - Features computed from their longitudinal history</span>
+<span class="sd">    - A known outcome: did they progress to CKD Stage 4 (eGFR &lt; 30)?</span>
+<span class="sd">    - Time to event (or time to censoring if they didn&#39;t progress)</span>
+
+<span class="sd">    In production, this cohort comes from your clinical data warehouse:</span>
+<span class="sd">    patients with at least 2 years of follow-up after their index date,</span>
+<span class="sd">    with outcomes determined by chart review or lab thresholds.</span>
+
+<span class="sd">    The synthetic data here mimics realistic distributions so the model</span>
+<span class="sd">    training code is exercised properly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">):</span>
+        <span class="n">patient_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;train-</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Assign a true progression rate (this is what the model tries to learn)</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;slow&quot;</span><span class="p">,</span> <span class="s2">&quot;moderate&quot;</span><span class="p">,</span> <span class="s2">&quot;fast&quot;</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">])</span>
+
+        <span class="c1"># Generate timeline and features</span>
+        <span class="n">timeline</span> <span class="o">=</span> <span class="n">generate_synthetic_patient_timeline</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">progression_rate</span><span class="o">=</span><span class="n">rate</span><span class="p">)</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">engineer_progression_features</span><span class="p">(</span><span class="n">timeline</span><span class="p">)</span>
+
+        <span class="c1"># Determine outcome based on the progression rate and some randomness.</span>
+        <span class="c1"># &quot;event&quot; = progressed to Stage 4. &quot;duration&quot; = months until event or censoring.</span>
+        <span class="k">if</span> <span class="n">rate</span> <span class="o">==</span> <span class="s2">&quot;fast&quot;</span><span class="p">:</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.2</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">duration</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">24</span><span class="p">)</span> <span class="k">if</span> <span class="n">event</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">36</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">rate</span> <span class="o">==</span> <span class="s2">&quot;moderate&quot;</span><span class="p">:</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">duration</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span> <span class="k">if</span> <span class="n">event</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.8</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">duration</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span> <span class="k">if</span> <span class="n">event</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">36</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+
+        <span class="n">features</span><span class="p">[</span><span class="s2">&quot;duration_months&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">features</span><span class="p">[</span><span class="s2">&quot;event&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event</span>  <span class="c1"># 1 = progressed, 0 = censored</span>
+        <span class="n">features</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_id</span>
+
+        <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">records</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">train_progression_model</span><span class="p">(</span><span class="n">cohort_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoxPHFitter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train a Cox proportional hazards model for CKD progression.</span>
+
+<span class="sd">    Cox PH is the workhorse of survival analysis. It models the hazard</span>
+<span class="sd">    (instantaneous risk of progression) as a function of patient features,</span>
+<span class="sd">    while properly handling censored observations (patients who haven&#39;t</span>
+<span class="sd">    progressed yet during the observation period).</span>
+
+<span class="sd">    Why Cox PH for a first implementation:</span>
+<span class="sd">    - Handles censoring natively (critical for disease progression)</span>
+<span class="sd">    - Interpretable coefficients (clinicians can understand what drives risk)</span>
+<span class="sd">    - Well-validated in clinical research</span>
+<span class="sd">    - Doesn&#39;t require specifying the baseline hazard shape</span>
+
+<span class="sd">    For production, you&#39;d likely upgrade to a DeepSurv or Random Survival</span>
+<span class="sd">    Forest for better nonlinear capture, but Cox PH is the right starting</span>
+<span class="sd">    point for validating your data pipeline and feature engineering.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cohort_df: Training data with features, duration_months, and event columns.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A fitted CoxPHFitter model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Select features for the model. Drop identifiers and the outcome columns.</span>
+    <span class="n">exclude_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">,</span> <span class="s2">&quot;duration_months&quot;</span><span class="p">,</span> <span class="s2">&quot;event&quot;</span><span class="p">]</span>
+    <span class="n">feature_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cohort_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exclude_cols</span><span class="p">]</span>
+
+    <span class="c1"># Handle any missing values. Cox PH doesn&#39;t tolerate NaN.</span>
+    <span class="c1"># In production, use more sophisticated imputation (MICE, etc.).</span>
+    <span class="n">model_df</span> <span class="o">=</span> <span class="n">cohort_df</span><span class="p">[</span><span class="n">feature_cols</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;duration_months&quot;</span><span class="p">,</span> <span class="s2">&quot;event&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Temporal split: use first 80% of patients for training, last 20% for validation.</span>
+    <span class="c1"># In production, split by enrollment date (train on 2018-2021, validate on 2022-2023).</span>
+    <span class="n">split_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">model_df</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span>
+    <span class="n">train_df</span> <span class="o">=</span> <span class="n">model_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">split_idx</span><span class="p">]</span>
+    <span class="n">valid_df</span> <span class="o">=</span> <span class="n">model_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">split_idx</span><span class="p">:]</span>
+
+    <span class="c1"># Fit the Cox model.</span>
+    <span class="c1"># penalizer adds L2 regularization to prevent overfitting on small cohorts.</span>
+    <span class="c1"># Higher penalizer = more conservative model (fewer extreme coefficients).</span>
+    <span class="n">cph</span> <span class="o">=</span> <span class="n">CoxPHFitter</span><span class="p">(</span><span class="n">penalizer</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">cph</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+        <span class="n">train_df</span><span class="p">,</span>
+        <span class="n">duration_col</span><span class="o">=</span><span class="s2">&quot;duration_months&quot;</span><span class="p">,</span>
+        <span class="n">event_col</span><span class="o">=</span><span class="s2">&quot;event&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Evaluate on validation set.</span>
+    <span class="c1"># C-index: probability that the model correctly ranks two patients</span>
+    <span class="c1"># (the one who progressed first gets a higher risk score).</span>
+    <span class="c1"># 0.5 = random, 0.7+ = useful, 0.8+ = excellent.</span>
+    <span class="n">valid_predictions</span> <span class="o">=</span> <span class="n">cph</span><span class="o">.</span><span class="n">predict_partial_hazard</span><span class="p">(</span><span class="n">valid_df</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">])</span>
+    <span class="n">c_index</span> <span class="o">=</span> <span class="n">concordance_index</span><span class="p">(</span>
+        <span class="n">valid_df</span><span class="p">[</span><span class="s2">&quot;duration_months&quot;</span><span class="p">],</span>
+        <span class="o">-</span><span class="n">valid_predictions</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+        <span class="c1"># Negate because concordance_index expects higher values to predict</span>
+        <span class="c1"># longer survival, but predict_partial_hazard returns higher values</span>
+        <span class="c1"># for higher risk (shorter survival). The negation aligns the scales.</span>
+        <span class="n">valid_df</span><span class="p">[</span><span class="s2">&quot;event&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model trained. Validation C-index: </span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">c_index</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Top risk factors (positive = accelerates progression):&quot;</span><span class="p">)</span>
+    <span class="c1"># Show the top features by absolute coefficient magnitude.</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">cph</span><span class="o">.</span><span class="n">summary</span>
+    <span class="n">top_features</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s2">&quot;coef&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">top_features</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;accelerates&quot;</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;coef&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;protects&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%s</span><span class="s2">: coef=</span><span class="si">%.3f</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;coef&quot;</span><span class="p">],</span> <span class="n">direction</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">cph</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-generate-individual-patient-predictions">Step 4: Generate Individual Patient Predictions</h2>
+<p><em>The pseudocode calls this <code>predict_progression(model, patient_features, horizons)</code>. Given a trained model and one patient's features, produce a trajectory prediction with uncertainty bounds and explanations.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">predict_progression</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">CoxPHFitter</span><span class="p">,</span> <span class="n">patient_features</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a disease progression prediction for a single patient.</span>
+
+<span class="sd">    This is the inference function that runs in production. Given a patient&#39;s</span>
+<span class="sd">    current features (computed from their longitudinal history), it produces:</span>
+<span class="sd">    - Probability of progression at each time horizon</span>
+<span class="sd">    - Confidence intervals (uncertainty bounds)</span>
+<span class="sd">    - Top risk factors driving this patient&#39;s prediction</span>
+<span class="sd">    - Top protective factors slowing progression</span>
+
+<span class="sd">    The output is structured for clinical consumption: a clinician should be</span>
+<span class="sd">    able to glance at it and understand the patient&#39;s trajectory.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Trained CoxPHFitter model.</span>
+<span class="sd">        patient_features: Feature dict from engineer_progression_features().</span>
+<span class="sd">        patient_id: For labeling the output.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Prediction dict matching the expected output format from Recipe 7.8.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Prepare features as a single-row DataFrame (what lifelines expects).</span>
+    <span class="n">feature_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">params_</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">patient_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([{</span><span class="n">col</span><span class="p">:</span> <span class="n">patient_features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">feature_cols</span><span class="p">}])</span>
+
+    <span class="c1"># Get the survival function for this patient.</span>
+    <span class="c1"># This gives P(survival &gt; t) for every time point t.</span>
+    <span class="n">survival_fn</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_survival_function</span><span class="p">(</span><span class="n">patient_df</span><span class="p">)</span>
+
+    <span class="c1"># Generate predictions at each horizon.</span>
+    <span class="n">horizons</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">months</span> <span class="ow">in</span> <span class="n">PREDICTION_HORIZONS_MONTHS</span><span class="p">:</span>
+        <span class="c1"># P(progression by time t) = 1 - P(survival &gt; t)</span>
+        <span class="k">if</span> <span class="n">months</span> <span class="ow">in</span> <span class="n">survival_fn</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="n">survival_prob</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">survival_fn</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">months</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Interpolate if exact month isn&#39;t in the survival function index.</span>
+            <span class="n">survival_prob</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">months</span><span class="p">,</span> <span class="n">survival_fn</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">survival_fn</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
+
+        <span class="n">progression_prob</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">survival_prob</span>
+
+        <span class="c1"># Confidence interval via bootstrap-like approach.</span>
+        <span class="c1"># IMPORTANT: These intervals are purely illustrative placeholders.</span>
+        <span class="c1"># They do NOT reflect actual model uncertainty. In production, use</span>
+        <span class="c1"># cph.predict_survival_function with confidence intervals via the</span>
+        <span class="c1"># alpha parameter in lifelines, or bootstrap resampling, or ensemble</span>
+        <span class="c1"># disagreement across multiple trained models.</span>
+        <span class="c1"># Wider intervals at longer horizons (uncertainty compounds over time).</span>
+        <span class="n">se_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">months</span> <span class="o">/</span> <span class="mf">36.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span>  <span class="c1"># grows with horizon</span>
+        <span class="n">base_se</span> <span class="o">=</span> <span class="mf">0.08</span> <span class="o">*</span> <span class="n">se_multiplier</span>
+        <span class="n">ci_lower</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">progression_prob</span> <span class="o">-</span> <span class="mf">1.645</span> <span class="o">*</span> <span class="n">base_se</span><span class="p">)</span>
+        <span class="n">ci_upper</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">progression_prob</span> <span class="o">+</span> <span class="mf">1.645</span> <span class="o">*</span> <span class="n">base_se</span><span class="p">)</span>
+
+        <span class="n">horizons</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">months</span><span class="si">}</span><span class="s2">_months&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;probability_of_progression&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">progression_prob</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;confidence_interval_lower&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">ci_lower</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;confidence_interval_upper&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">ci_upper</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Feature importance for this specific patient.</span>
+    <span class="c1"># Which features are pushing this patient toward faster/slower progression?</span>
+    <span class="c1"># Using model coefficients * feature values as a simple attribution.</span>
+    <span class="c1"># In production, use SHAP values for more accurate per-patient explanations.</span>
+    <span class="n">attributions</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">feature_cols</span><span class="p">:</span>
+        <span class="n">coef</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">params_</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">patient_features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">attributions</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">coef</span> <span class="o">*</span> <span class="n">value</span>
+
+    <span class="c1"># Top risk accelerators (positive attribution = increases hazard)</span>
+    <span class="n">sorted_attrs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">attributions</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">risk_factors</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: contribution=</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">sorted_attrs</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Top protective factors (negative attribution = decreases hazard)</span>
+    <span class="n">protective_factors</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: contribution=</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">sorted_attrs</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="p">]</span>
+
+    <span class="n">prediction</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;prediction_date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;current_eGFR&quot;</span><span class="p">:</span> <span class="n">patient_features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eGFR_current&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s2">&quot;eGFR_slope_per_year&quot;</span><span class="p">:</span> <span class="n">patient_features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eGFR_slope&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s2">&quot;horizons&quot;</span><span class="p">:</span> <span class="n">horizons</span><span class="p">,</span>
+        <span class="s2">&quot;risk_factors&quot;</span><span class="p">:</span> <span class="n">risk_factors</span><span class="p">,</span>
+        <span class="s2">&quot;protective_factors&quot;</span><span class="p">:</span> <span class="n">protective_factors</span><span class="p">,</span>
+        <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;ckd-progression-cox-v1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data_freshness&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">prediction</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-store-predictions-and-generate-alerts">Step 5: Store Predictions and Generate Alerts</h2>
+<p><em>The pseudocode calls this <code>integrate_and_monitor(prediction, patient_id)</code>. This stores the prediction in DynamoDB for low-latency clinical retrieval and checks whether the prediction crosses an actionable threshold. Note: the monitoring function from the main recipe's pseudocode Step 5 is omitted here for brevity; see the main recipe for the calibration and drift detection pattern.</em></p>
+<div class="code"><pre><span></span><span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">store_prediction</span><span class="p">(</span><span class="n">prediction</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write the progression prediction to DynamoDB for clinical retrieval.</span>
+
+<span class="sd">    Clinicians need sub-second access to predictions during patient encounters.</span>
+<span class="sd">    DynamoDB provides single-digit-millisecond reads. The TTL ensures stale</span>
+<span class="sd">    predictions are automatically cleaned up (predictions should be refreshed</span>
+<span class="sd">    when new lab data arrives).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prediction: The output of predict_progression().</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The stored record (with TTL and alert metadata added).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">PREDICTION_TABLE</span><span class="p">)</span>
+
+    <span class="c1"># Add TTL: predictions expire after 30 days.</span>
+    <span class="c1"># When new lab results arrive, the pipeline regenerates predictions.</span>
+    <span class="c1"># Stale predictions (based on old data) should not persist indefinitely.</span>
+    <span class="n">ttl_timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Check if this prediction crosses the clinical alert threshold.</span>
+    <span class="n">twelve_month_prob</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;horizons&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;12_months&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s2">&quot;probability_of_progression&quot;</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="p">)</span>
+    <span class="n">needs_alert</span> <span class="o">=</span> <span class="n">twelve_month_prob</span> <span class="o">&gt;</span> <span class="n">ALERT_THRESHOLD_12MO</span>
+
+    <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;prediction_date&quot;</span><span class="p">:</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;prediction_date&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;prediction&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">prediction</span><span class="p">),</span> <span class="n">parse_float</span><span class="o">=</span><span class="n">Decimal</span><span class="p">),</span>
+        <span class="c1"># DynamoDB requires Decimal for numeric values, not float.</span>
+        <span class="c1"># json round-trip with parse_float=Decimal handles nested structures.</span>
+        <span class="s2">&quot;ttl&quot;</span><span class="p">:</span> <span class="n">ttl_timestamp</span><span class="p">,</span>
+        <span class="s2">&quot;needs_alert&quot;</span><span class="p">:</span> <span class="n">needs_alert</span><span class="p">,</span>
+        <span class="s2">&quot;alert_generated_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">needs_alert</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span>
+
+    <span class="k">if</span> <span class="n">needs_alert</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;ALERT: Patient </span><span class="si">%s</span><span class="s2"> has </span><span class="si">%.0f%%</span><span class="s2"> probability of progression within 12 months. &quot;</span>
+            <span class="s2">&quot;Consider nephrology referral and treatment escalation review.&quot;</span><span class="p">,</span>
+            <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+            <span class="n">twelve_month_prob</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">record</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-upload-training-data-and-train-on-sagemaker">Step 6: Upload Training Data and Train on SageMaker</h2>
+<p><em>In production, model training runs on SageMaker rather than locally. This step shows how to package your training data, upload it to S3, and kick off a SageMaker training job. For this example, we use a SageMaker built-in algorithm (Linear Learner in survival mode), but a real implementation would use a custom training container with lifelines, DeepSurv, or a Random Survival Forest.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sagemaker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.sklearn</span><span class="w"> </span><span class="kn">import</span> <span class="n">SKLearn</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">upload_training_data</span><span class="p">(</span><span class="n">cohort_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">s3_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training-data&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upload the training cohort to S3 for SageMaker training.</span>
+
+<span class="sd">    SageMaker training jobs read input data from S3. This function serializes</span>
+<span class="sd">    the training DataFrame to CSV and uploads it to the model bucket.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cohort_df: The training cohort DataFrame.</span>
+<span class="sd">        s3_prefix: S3 key prefix for the training data.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The full S3 URI where the training data was uploaded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+
+    <span class="c1"># Save to CSV (SageMaker&#39;s built-in algorithms expect CSV or RecordIO).</span>
+    <span class="n">local_path</span> <span class="o">=</span> <span class="s2">&quot;/tmp/training_cohort.csv&quot;</span>
+    <span class="n">cohort_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Upload to S3.</span>
+    <span class="n">s3_uri</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span>
+        <span class="n">path</span><span class="o">=</span><span class="n">local_path</span><span class="p">,</span>
+        <span class="n">bucket</span><span class="o">=</span><span class="n">MODEL_BUCKET</span><span class="p">,</span>
+        <span class="n">key_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">s3_prefix</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Training data uploaded to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">s3_uri</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s3_uri</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">launch_sagemaker_training</span><span class="p">(</span><span class="n">training_data_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Launch a SageMaker training job for the progression model.</span>
+
+<span class="sd">    This uses the SKLearn estimator to run a custom training script on</span>
+<span class="sd">    SageMaker managed infrastructure. The training script would contain</span>
+<span class="sd">    the model fitting logic from Step 3, but running on a larger instance</span>
+<span class="sd">    with more data than you&#39;d want to process locally.</span>
+
+<span class="sd">    In production, you&#39;d use:</span>
+<span class="sd">    - ml.m5.xlarge for Cox PH / Random Survival Forest (CPU-bound)</span>
+<span class="sd">    - ml.p3.2xlarge for DeepSurv / neural survival models (GPU-bound)</span>
+<span class="sd">    - SageMaker Experiments for tracking hyperparameter tuning runs</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        training_data_uri: S3 URI of the training data.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The SageMaker training job name (for tracking).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">get_execution_role</span><span class="p">()</span>  <span class="c1"># IAM role for SageMaker</span>
+
+    <span class="c1"># Define the estimator. In production, this points to your custom</span>
+    <span class="c1"># training script that implements the full model training pipeline.</span>
+    <span class="n">estimator</span> <span class="o">=</span> <span class="n">SKLearn</span><span class="p">(</span>
+        <span class="n">entry_point</span><span class="o">=</span><span class="s2">&quot;train_progression_model.py&quot;</span><span class="p">,</span>  <span class="c1"># your training script</span>
+        <span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span>
+        <span class="n">instance_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">instance_type</span><span class="o">=</span><span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+        <span class="n">framework_version</span><span class="o">=</span><span class="s2">&quot;1.2-1&quot;</span><span class="p">,</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">MODEL_BUCKET</span><span class="si">}</span><span class="s2">/model-artifacts/&quot;</span><span class="p">,</span>
+        <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;penalizer&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">&quot;horizons&quot;</span><span class="p">:</span> <span class="s2">&quot;6,12,24,36&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Launch the training job.</span>
+    <span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">({</span><span class="s2">&quot;training&quot;</span><span class="p">:</span> <span class="n">training_data_uri</span><span class="p">},</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">job_name</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">latest_training_job</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SageMaker training job launched: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">job_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">job_name</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single callable flow. This demonstrates the end-to-end process: generate data, engineer features, train a model, and produce predictions.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_full_pipeline</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute the complete disease progression modeling pipeline.</span>
+
+<span class="sd">    This function demonstrates the end-to-end flow:</span>
+<span class="sd">    1. Generate a synthetic training cohort</span>
+<span class="sd">    2. Train a survival model</span>
+<span class="sd">    3. Generate predictions for a test patient</span>
+<span class="sd">    4. Store predictions for clinical retrieval</span>
+
+<span class="sd">    In production, steps 1-2 run as a scheduled batch job (weekly or on new data).</span>
+<span class="sd">    Steps 3-4 run in real-time when a clinician opens a patient chart.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Disease Progression Modeling Pipeline&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="c1"># --- Training Phase (batch, runs periodically) ---</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Phase 1: Generate Training Cohort ---&quot;</span><span class="p">)</span>
+    <span class="n">cohort_df</span> <span class="o">=</span> <span class="n">generate_training_cohort</span><span class="p">(</span><span class="n">n_patients</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generated </span><span class="si">%d</span><span class="s2"> patient records&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cohort_df</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Event rate: </span><span class="si">%.1f%%</span><span class="s2"> progressed&quot;</span><span class="p">,</span> <span class="n">cohort_df</span><span class="p">[</span><span class="s2">&quot;event&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Phase 2: Train Progression Model ---&quot;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">train_progression_model</span><span class="p">(</span><span class="n">cohort_df</span><span class="p">)</span>
+
+    <span class="c1"># --- Inference Phase (real-time, per patient) ---</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Phase 3: Predict for Test Patient ---&quot;</span><span class="p">)</span>
+    <span class="c1"># Simulate a patient with moderate-to-fast progression.</span>
+    <span class="n">test_timeline</span> <span class="o">=</span> <span class="n">generate_synthetic_patient_timeline</span><span class="p">(</span><span class="s2">&quot;pat-test-001&quot;</span><span class="p">,</span> <span class="n">progression_rate</span><span class="o">=</span><span class="s2">&quot;moderate&quot;</span><span class="p">)</span>
+    <span class="n">test_features</span> <span class="o">=</span> <span class="n">engineer_progression_features</span><span class="p">(</span><span class="n">test_timeline</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Engineered </span><span class="si">%d</span><span class="s2"> features for test patient&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_features</span><span class="p">))</span>
+
+    <span class="n">prediction</span> <span class="o">=</span> <span class="n">predict_progression</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">test_features</span><span class="p">,</span> <span class="s2">&quot;pat-test-001&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Display the prediction in a clinician-friendly format.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Prediction Results ---&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Patient: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Current eGFR: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;current_eGFR&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;eGFR slope: </span><span class="si">%s</span><span class="s2"> points/year&quot;</span><span class="p">,</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;eGFR_slope_per_year&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Progression probabilities:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">horizon</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;horizons&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;  </span><span class="si">%s</span><span class="s2">: </span><span class="si">%.0f%%</span><span class="s2"> [CI: </span><span class="si">%.0f%%</span><span class="s2"> - </span><span class="si">%.0f%%</span><span class="s2">]&quot;</span><span class="p">,</span>
+            <span class="n">horizon</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;probability_of_progression&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;confidence_interval_lower&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;confidence_interval_upper&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Risk factors: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;risk_factors&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Protective factors: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;protective_factors&quot;</span><span class="p">])</span>
+
+    <span class="c1"># --- Storage Phase ---</span>
+    <span class="c1"># Note: Uncomment the following to actually write to DynamoDB.</span>
+    <span class="c1"># Requires the table to exist and proper IAM permissions.</span>
+    <span class="c1"># logger.info(&quot;\n--- Phase 4: Store Prediction ---&quot;)</span>
+    <span class="c1"># store_prediction(prediction)</span>
+
+    <span class="k">return</span> <span class="n">prediction</span>
+
+<span class="c1"># Run the pipeline.</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">run_full_pipeline</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Full prediction output:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example trains a model, generates predictions, and produces clinically structured output. But there's a significant distance between &quot;runs in a notebook&quot; and &quot;informs treatment decisions for real patients.&quot; Here's where that gap lives:</p>
+<p><strong>Real longitudinal data assembly.</strong> The synthetic data generator here produces clean, well-structured timelines. Real clinical data is fragmented across EHR systems, claims databases, lab interfaces, and pharmacy records. Assembling a complete patient timeline requires ETL pipelines that handle: different coding systems (ICD-10, SNOMED, LOINC), missing data (labs that were ordered but never resulted), duplicate records (same lab reported by multiple systems), and temporal alignment (when a medication &quot;start date&quot; in claims doesn't match the EHR prescription date). This is 70% of the work in a real implementation.</p>
+<p><strong>Censoring and outcome definition.</strong> The synthetic data has clean event/censoring labels. In reality, determining whether a patient &quot;progressed&quot; requires careful outcome definition: which eGFR threshold counts? Do you use a single measurement below 30, or two consecutive measurements? What about patients who started dialysis (which artificially changes eGFR)? What about patients who died from cardiovascular disease before reaching Stage 4? These definitional choices significantly affect model performance and clinical utility.</p>
+<p><strong>Treatment confounding.</strong> This example trains naively on observational data. A real implementation needs to account for the fact that patients who received aggressive treatment (ACE inhibitors, SGLT2 inhibitors, dietary interventions) may have had their progression slowed by that treatment. Without causal adjustment, the model learns &quot;patients on ACE inhibitors progress slowly&quot; rather than &quot;ACE inhibitors slow progression.&quot; Marginal structural models or inverse probability weighting are the standard approaches.</p>
+<p><strong>Model validation and fairness.</strong> A production model requires: temporal validation (train on 2018-2021, validate on 2022-2023), subgroup analysis (does the model perform equally well across age groups, races, and sexes?), calibration assessment (when the model says 60% risk, do 60% of patients actually progress?), and comparison against clinical baselines (does the model outperform the KFRE or other established risk equations?). The C-index alone is insufficient for clinical deployment.</p>
+<p><strong>Uncertainty quantification.</strong> The confidence intervals in this example are approximated using standard errors. A production system needs proper uncertainty quantification: Bayesian posterior predictive intervals, ensemble disagreement, or conformal prediction. The intervals must be well-calibrated (90% CIs should contain the true outcome 90% of the time) and must widen appropriately with prediction horizon.</p>
+<p><strong>SageMaker deployment and monitoring.</strong> This example trains locally. Production uses SageMaker for: managed training infrastructure (GPU instances for deep survival models), model registry (versioning, approval workflows, lineage tracking), real-time endpoints (for inference during clinical encounters), and Model Monitor (detecting data drift, prediction drift, and feature distribution changes over time). When the population shifts or new treatments become available, the model needs retraining.</p>
+<p><strong>Clinical integration.</strong> Predictions need to reach clinicians at the right moment in their workflow. This means: FHIR-based integration with the EHR (writing predictions as RiskAssessment resources), CDS Hooks for real-time alerts during chart review, and careful UX design for communicating uncertainty without overwhelming the clinician. A prediction that lives in a standalone dashboard will be ignored.</p>
+<p><strong>Error handling and resilience.</strong> Every external call (HealthLake queries, SageMaker inference, DynamoDB writes) can fail. Production code wraps each in try/except with specific handling for throttling, timeouts, and service unavailability. Failed predictions should degrade gracefully (show &quot;prediction unavailable&quot; rather than crashing the clinical application).</p>
+<p><strong>Regulatory considerations.</strong> Disease progression models that inform treatment decisions may fall under FDA oversight as clinical decision support software. The regulatory pathway depends on whether the model provides information (lower risk) or recommendations (higher risk). Documentation of training data, validation methodology, intended use, and known limitations is required regardless of regulatory classification.</p>
+<p>The recipe in 7.8 covers the architectural decisions and honest tradeoffs. This code shows the mechanical shape of the solution. The distance between them is where the real engineering lives.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter07.08-disease-progression-modeling.html">Recipe 7.8</a> for the full architectural walkthrough, pseudocode, and honest take on where disease progression modeling gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 8.6: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-86-python-implementation-example">Recipe 8.6: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 8.6. It shows one way you could translate those concepts into working Python code using boto3, Amazon Comprehend Medical, and Amazon Comprehend custom classification. It is not production-ready. Think of it as a sketchpad: useful for understanding the shape of the solution, not something you'd deploy against real patient notes on Monday morning. A starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>comprehendmedical:DetectEntitiesV2</code></li>
+<li><code>comprehend:ClassifyDocument</code></li>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code></li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:GetItem</code></li>
+<li><code>sqs:ReceiveMessage</code>, <code>sqs:DeleteMessage</code></li>
+</ul>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get into the logic, here are the configuration values and lookup tables that drive the pipeline. The SDOH keyword list determines which notes get full NLP processing (and which ones we skip to save cost). The domain code map connects extracted categories to standard terminology for downstream interoperability.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. In production, use JSON-formatted output for</span>
+<span class="c1"># CloudWatch Logs Insights queries. Never log PHI field values.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Adaptive retry handles burst throttling from Comprehend Medical.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># AWS clients</span>
+<span class="n">comprehend_medical</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;comprehendmedical&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">comprehend</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;comprehend&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># Table name. Replace with your actual DynamoDB table name.</span>
+<span class="n">SDOH_PROFILES_TABLE</span> <span class="o">=</span> <span class="s2">&quot;sdoh-profiles&quot;</span>
+
+<span class="c1"># The ARN of your trained Comprehend custom classifier endpoint.</span>
+<span class="c1"># You must train and deploy this before running the pipeline.</span>
+<span class="c1"># See the main recipe for training data requirements.</span>
+<span class="n">SDOH_CLASSIFIER_ENDPOINT_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:comprehend:us-east-1:123456789012:document-classifier-endpoint/sdoh-classifier&quot;</span>
+
+<span class="c1"># Confidence threshold for accepting an SDOH classification.</span>
+<span class="c1"># Below this, we still extract but flag for human review.</span>
+<span class="n">CONFIDENCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.75</span>
+
+<span class="c1"># SDOH relevance keywords: terms that suggest a note may contain</span>
+<span class="c1"># social determinant information. This is a high-recall filter.</span>
+<span class="c1"># False positives are cheap (we just run NLP on a note that turns out</span>
+<span class="c1"># to have nothing). False negatives are expensive (we miss a real need).</span>
+<span class="n">SDOH_KEYWORDS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;housing&quot;</span><span class="p">,</span> <span class="s2">&quot;homeless&quot;</span><span class="p">,</span> <span class="s2">&quot;unhoused&quot;</span><span class="p">,</span> <span class="s2">&quot;shelter&quot;</span><span class="p">,</span> <span class="s2">&quot;evict&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;food&quot;</span><span class="p">,</span> <span class="s2">&quot;hungry&quot;</span><span class="p">,</span> <span class="s2">&quot;meal&quot;</span><span class="p">,</span> <span class="s2">&quot;nutrition&quot;</span><span class="p">,</span> <span class="s2">&quot;food bank&quot;</span><span class="p">,</span> <span class="s2">&quot;snap&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;transportation&quot;</span><span class="p">,</span> <span class="s2">&quot;ride&quot;</span><span class="p">,</span> <span class="s2">&quot;bus&quot;</span><span class="p">,</span> <span class="s2">&quot;car&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;employ&quot;</span><span class="p">,</span> <span class="s2">&quot;job&quot;</span><span class="p">,</span> <span class="s2">&quot;unemploy&quot;</span><span class="p">,</span> <span class="s2">&quot;income&quot;</span><span class="p">,</span> <span class="s2">&quot;afford&quot;</span><span class="p">,</span> <span class="s2">&quot;financial&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;isolat&quot;</span><span class="p">,</span> <span class="s2">&quot;alone&quot;</span><span class="p">,</span> <span class="s2">&quot;support&quot;</span><span class="p">,</span> <span class="s2">&quot;caregiver&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;utility&quot;</span><span class="p">,</span> <span class="s2">&quot;electric&quot;</span><span class="p">,</span> <span class="s2">&quot;heat&quot;</span><span class="p">,</span> <span class="s2">&quot;water&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;safe&quot;</span><span class="p">,</span> <span class="s2">&quot;violence&quot;</span><span class="p">,</span> <span class="s2">&quot;abuse&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;education&quot;</span><span class="p">,</span> <span class="s2">&quot;literacy&quot;</span><span class="p">,</span> <span class="s2">&quot;language barrier&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;incarcerat&quot;</span><span class="p">,</span> <span class="s2">&quot;legal&quot;</span><span class="p">,</span> <span class="s2">&quot;immigration&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># Section header patterns for clinical notes. These help us identify</span>
+<span class="c1"># which part of the note a sentence came from, which affects interpretation.</span>
+<span class="c1"># A mention in &quot;social history&quot; is more likely an active patient need</span>
+<span class="c1"># than one in &quot;family history.&quot;</span>
+<span class="n">SECTION_PATTERNS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;social_history&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;social history&quot;</span><span class="p">,</span> <span class="s2">&quot;social hx&quot;</span><span class="p">,</span> <span class="s2">&quot;shx&quot;</span><span class="p">,</span> <span class="s2">&quot;psychosocial&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;social assessment&quot;</span><span class="p">,</span> <span class="s2">&quot;social work&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;assessment_plan&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;assessment&quot;</span><span class="p">,</span> <span class="s2">&quot;plan&quot;</span><span class="p">,</span> <span class="s2">&quot;a/p&quot;</span><span class="p">,</span> <span class="s2">&quot;assessment and plan&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;family_history&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;family history&quot;</span><span class="p">,</span> <span class="s2">&quot;family hx&quot;</span><span class="p">,</span> <span class="s2">&quot;fhx&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;discharge&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;discharge&quot;</span><span class="p">,</span> <span class="s2">&quot;disposition&quot;</span><span class="p">,</span> <span class="s2">&quot;discharge plan&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;nursing_intake&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;intake&quot;</span><span class="p">,</span> <span class="s2">&quot;admission screening&quot;</span><span class="p">,</span> <span class="s2">&quot;social screening&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sdoh screening&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+<span class="c1"># Sections where SDOH mentions are most clinically relevant.</span>
+<span class="n">HIGH_PRIORITY_SECTIONS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;social_history&quot;</span><span class="p">,</span> <span class="s2">&quot;assessment_plan&quot;</span><span class="p">,</span> <span class="s2">&quot;nursing_intake&quot;</span><span class="p">,</span> <span class="s2">&quot;discharge&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># Standard code mappings for SDOH domains.</span>
+<span class="c1"># Based on the Gravity Project taxonomy and ICD-10-CM Z-codes.</span>
+<span class="n">SDOH_CODE_MAP</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;housing_instability&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z59.0&quot;</span><span class="p">,</span> <span class="s2">&quot;Z59.1&quot;</span><span class="p">,</span> <span class="s2">&quot;Z59.8&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;71802-3&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;32911000&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Problems related to housing and economic circumstances&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;food_insecurity&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z59.4&quot;</span><span class="p">,</span> <span class="s2">&quot;Z59.48&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;88122-7&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;733423003&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Lack of adequate food and safe drinking water&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;transportation_barrier&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z59.82&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;93031-3&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;160695008&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Transportation insecurity&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;financial_strain&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z59.5&quot;</span><span class="p">,</span> <span class="s2">&quot;Z59.6&quot;</span><span class="p">,</span> <span class="s2">&quot;Z59.7&quot;</span><span class="p">,</span> <span class="s2">&quot;Z56.0&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;76513-1&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;454061000124102&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Financial strain and employment problems&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;social_isolation&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z60.2&quot;</span><span class="p">,</span> <span class="s2">&quot;Z60.4&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;76506-5&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;422587007&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Social isolation and inadequate social support&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;interpersonal_safety&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z63.0&quot;</span><span class="p">,</span> <span class="s2">&quot;T74&quot;</span><span class="p">,</span> <span class="s2">&quot;T76&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;76501-6&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;706893006&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Interpersonal violence and safety concerns&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;education_literacy&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z55.0&quot;</span><span class="p">,</span> <span class="s2">&quot;Z55.9&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;82589-3&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;105421008&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Problems related to education and literacy&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;utility_insecurity&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Z59.81&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;loinc&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;93033-9&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;snomed&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="s2">&quot;Utility insecurity&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-relevance-filtering">Step 1: Relevance Filtering</h2>
+<p><em>The pseudocode calls this <code>should_process_note(note_text)</code>. Before running expensive NLP extraction on every note, apply a quick keyword scan to identify notes worth processing. Most progress notes contain zero SDOH information, and Comprehend Medical charges per character.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">should_process_note</span><span class="p">(</span><span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Quick keyword scan to decide if a note is worth full SDOH extraction.</span>
+
+<span class="sd">    This is intentionally permissive (high recall, lower precision).</span>
+<span class="sd">    We&#39;d rather spend $0.05 processing an irrelevant note than miss</span>
+<span class="sd">    a real SDOH mention in a note we skipped.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        note_text: The full clinical note text.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if the note contains any SDOH-related keywords, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lower_text</span> <span class="o">=</span> <span class="n">note_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">SDOH_KEYWORDS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">lower_text</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-section-detection-and-sentence-segmentation">Step 2: Section Detection and Sentence Segmentation</h2>
+<p><em>The pseudocode calls this <code>segment_note(note_text)</code>. We identify note sections (social history, assessment/plan, etc.) and split into sentences. Section context matters because &quot;patient's mother was homeless&quot; in family history means something different than &quot;patient is homeless&quot; in social history.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">detect_sections</span><span class="p">(</span><span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify sections within a clinical note based on header patterns.</span>
+
+<span class="sd">    Clinical notes have implicit structure. Headers like &quot;Social History:&quot;</span>
+<span class="sd">    or &quot;Assessment and Plan:&quot; divide the note into meaningful segments.</span>
+<span class="sd">    We detect these headers and tag each chunk of text with its section type.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        note_text: The full clinical note text.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of dicts, each with:</span>
+<span class="sd">        - text: the section content (string)</span>
+<span class="sd">        - section_type: one of the keys in SECTION_PATTERNS, or &quot;unknown&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Build a combined regex that matches any known section header.</span>
+    <span class="c1"># We look for these at the start of a line, optionally followed by a colon.</span>
+    <span class="n">all_patterns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">pattern_to_section</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">section_type</span><span class="p">,</span> <span class="n">headers</span> <span class="ow">in</span> <span class="n">SECTION_PATTERNS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">headers</span><span class="p">:</span>
+            <span class="n">all_patterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">header</span><span class="p">))</span>
+            <span class="n">pattern_to_section</span><span class="p">[</span><span class="n">header</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">section_type</span>
+
+    <span class="c1"># Match section headers at the start of a line (case-insensitive).</span>
+    <span class="n">header_regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">&quot;^(&quot;</span> <span class="o">+</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">all_patterns</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;)\s*:?\s*$&quot;</span><span class="p">,</span>
+        <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Find all header positions in the note.</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">header_regex</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">note_text</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="c1"># No recognized headers found. Treat the entire note as one &quot;unknown&quot; section.</span>
+        <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">note_text</span><span class="p">,</span> <span class="s2">&quot;section_type&quot;</span><span class="p">:</span> <span class="s2">&quot;unknown&quot;</span><span class="p">}]</span>
+
+    <span class="n">sections</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Add text before the first header as &quot;unknown&quot; section.</span>
+    <span class="k">if</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pre_text</span> <span class="o">=</span> <span class="n">note_text</span><span class="p">[:</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pre_text</span><span class="p">:</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">pre_text</span><span class="p">,</span> <span class="s2">&quot;section_type&quot;</span><span class="p">:</span> <span class="s2">&quot;unknown&quot;</span><span class="p">})</span>
+
+    <span class="c1"># Walk through each header and capture the text until the next header.</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">match</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">matches</span><span class="p">):</span>
+        <span class="n">header_text</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">section_type</span> <span class="o">=</span> <span class="n">pattern_to_section</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">header_text</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Section content runs from end of this header to start of next header</span>
+        <span class="c1"># (or end of note).</span>
+        <span class="n">content_start</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+        <span class="n">content_end</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">note_text</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">note_text</span><span class="p">[</span><span class="n">content_start</span><span class="p">:</span><span class="n">content_end</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">content</span><span class="p">:</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span> <span class="s2">&quot;section_type&quot;</span><span class="p">:</span> <span class="n">section_type</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">sections</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">segment_into_sentences</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split text into sentences using simple heuristics.</span>
+
+<span class="sd">    Clinical text doesn&#39;t follow standard English sentence rules.</span>
+<span class="sd">    Abbreviations (Dr., pt., q.d.) create false positive splits.</span>
+<span class="sd">    This is a &quot;good enough&quot; approach. Production systems use more</span>
+<span class="sd">    sophisticated sentence boundary detection (spaCy, scispacy, or</span>
+<span class="sd">    Comprehend Medical&#39;s own sentence detection).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        text: A block of text (typically one note section).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of sentence strings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Split on period followed by space and uppercase, or on newlines.</span>
+    <span class="c1"># This is deliberately conservative to avoid splitting on &quot;Dr. Smith&quot;</span>
+    <span class="c1"># or &quot;q.d. dosing&quot;.</span>
+    <span class="n">sentences</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?&lt;=[.!?])\s+(?=[A-Z])&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+
+    <span class="c1"># Also split on newlines (clinical notes often use line breaks as separators).</span>
+    <span class="n">expanded</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">sentences</span><span class="p">:</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">sent</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">expanded</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parts</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span>
+
+    <span class="k">return</span> <span class="n">expanded</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">segment_note</span><span class="p">(</span><span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Full segmentation: detect sections, split into sentences, tag each sentence</span>
+<span class="sd">    with its section context and priority level.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        note_text: The full clinical note text.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of dicts, each representing one sentence with metadata:</span>
+<span class="sd">        - text: the sentence string</span>
+<span class="sd">        - section_type: which section it came from</span>
+<span class="sd">        - is_priority: whether this section is high-priority for SDOH</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sections</span> <span class="o">=</span> <span class="n">detect_sections</span><span class="p">(</span><span class="n">note_text</span><span class="p">)</span>
+    <span class="n">segmented</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">sections</span><span class="p">:</span>
+        <span class="n">sentences</span> <span class="o">=</span> <span class="n">segment_into_sentences</span><span class="p">(</span><span class="n">section</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">sentences</span><span class="p">:</span>
+            <span class="c1"># Skip very short fragments (likely artifacts).</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sentence</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">segmented</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">sentence</span><span class="p">,</span>
+                <span class="s2">&quot;section_type&quot;</span><span class="p">:</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;section_type&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;is_priority&quot;</span><span class="p">:</span> <span class="n">section</span><span class="p">[</span><span class="s2">&quot;section_type&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">HIGH_PRIORITY_SECTIONS</span><span class="p">,</span>
+            <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">segmented</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-medical-context-extraction-with-comprehend-medical">Step 3: Medical Context Extraction with Comprehend Medical</h2>
+<p><em>The pseudocode calls this <code>extract_medical_context(note_text)</code>. We pass the note through Comprehend Medical to get negation detection and entity context. The main value here is the negation map: &quot;patient denies food insecurity&quot; should not be flagged as an active need.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">extract_medical_context</span><span class="p">(</span><span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Call Comprehend Medical to get foundational NLP context.</span>
+
+<span class="sd">    We primarily care about negation detection here. Comprehend Medical</span>
+<span class="sd">    identifies which entities in the text are negated (&quot;denies,&quot; &quot;no history of,&quot;</span>
+<span class="sd">    &quot;patient does not have&quot;). We use this to override assertion classification</span>
+<span class="sd">    in the next step.</span>
+
+<span class="sd">    Comprehend Medical&#39;s DetectEntitiesV2 handles up to 20,000 UTF-8 characters.</span>
+<span class="sd">    For longer notes, you&#39;d need to chunk the text (maintaining sentence boundaries)</span>
+<span class="sd">    and merge results.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        note_text: The full clinical note text (max 20,000 characters).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict with:</span>
+<span class="sd">        - entities: the full list of detected entities</span>
+<span class="sd">        - negation_spans: list of (begin, end) tuples for negated text spans</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Truncate to API limit if needed. In production, chunk properly.</span>
+    <span class="n">text_to_process</span> <span class="o">=</span> <span class="n">note_text</span><span class="p">[:</span><span class="mi">20000</span><span class="p">]</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend_medical</span><span class="o">.</span><span class="n">detect_entities_v2</span><span class="p">(</span><span class="n">Text</span><span class="o">=</span><span class="n">text_to_process</span><span class="p">)</span>
+
+    <span class="n">entities</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Entities&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="c1"># Build negation map: character spans where Comprehend Medical detected negation.</span>
+    <span class="c1"># &quot;Patient denies food insecurity&quot; would mark &quot;food insecurity&quot; as negated.</span>
+    <span class="n">negation_spans</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">entities</span><span class="p">:</span>
+        <span class="n">traits</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Traits&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">trait</span> <span class="ow">in</span> <span class="n">traits</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">trait</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;NEGATION&quot;</span><span class="p">:</span>
+                <span class="n">negation_spans</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">entity</span><span class="p">[</span><span class="s2">&quot;BeginOffset&quot;</span><span class="p">],</span> <span class="n">entity</span><span class="p">[</span><span class="s2">&quot;EndOffset&quot;</span><span class="p">])</span>
+                <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">entities</span><span class="p">,</span>
+        <span class="s2">&quot;negation_spans&quot;</span><span class="p">:</span> <span class="n">negation_spans</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-sdoh-sentence-classification">Step 4: SDOH Sentence Classification</h2>
+<p><em>The pseudocode calls this <code>classify_sdoh_sentences(segmented_sentences, negation_spans)</code>. This is the core extraction step. For each sentence, we call the custom Comprehend classifier to determine whether it contains SDOH information and, if so, which domain it belongs to.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">is_within_negation</span><span class="p">(</span><span class="n">sentence_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">negation_spans</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether a sentence overlaps with any negated span from Comprehend Medical.</span>
+
+<span class="sd">    This is a simplified check: we find the sentence&#39;s position in the full note</span>
+<span class="sd">    and check if any negation span overlaps with it. In production, you&#39;d use</span>
+<span class="sd">    character offsets tracked from segmentation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sentence_text: The sentence to check.</span>
+<span class="sd">        note_text: The full note text (for finding position).</span>
+<span class="sd">        negation_spans: List of (begin, end) tuples from Step 3.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if the sentence overlaps a negated span, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Find where this sentence appears in the original note.</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">note_text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">sentence_text</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pos</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">sent_begin</span> <span class="o">=</span> <span class="n">pos</span>
+    <span class="n">sent_end</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">sentence_text</span><span class="p">)</span>
+
+    <span class="c1"># Check overlap with any negation span.</span>
+    <span class="k">for</span> <span class="n">neg_begin</span><span class="p">,</span> <span class="n">neg_end</span> <span class="ow">in</span> <span class="n">negation_spans</span><span class="p">:</span>
+        <span class="c1"># Overlap exists if spans intersect.</span>
+        <span class="k">if</span> <span class="n">sent_begin</span> <span class="o">&lt;</span> <span class="n">neg_end</span> <span class="ow">and</span> <span class="n">sent_end</span> <span class="o">&gt;</span> <span class="n">neg_begin</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="kc">False</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">classify_sdoh_sentences</span><span class="p">(</span>
+    <span class="n">segmented_sentences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+    <span class="n">negation_spans</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Classify each sentence for SDOH domain and assertion status.</span>
+
+<span class="sd">    For each sentence from Step 2, call the Comprehend custom classifier</span>
+<span class="sd">    to determine: (a) whether it contains SDOH content, and (b) which domain</span>
+<span class="sd">    it belongs to (housing, food, transportation, etc.).</span>
+
+<span class="sd">    Then cross-reference with negation spans from Step 3 to determine</span>
+<span class="sd">    assertion status. Negated mentions get marked &quot;absent&quot; rather than</span>
+<span class="sd">    &quot;active_need.&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        segmented_sentences: Output of segment_note() (list of sentence dicts).</span>
+<span class="sd">        negation_spans: Negation spans from extract_medical_context().</span>
+<span class="sd">        note_text: The full original note text.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of SDOH findings, each with domain, assertion, confidence,</span>
+<span class="sd">        and source text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">findings</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">sentence_data</span> <span class="ow">in</span> <span class="n">segmented_sentences</span><span class="p">:</span>
+        <span class="n">sentence_text</span> <span class="o">=</span> <span class="n">sentence_data</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Call the custom classifier endpoint.</span>
+        <span class="c1"># The response includes a list of classes sorted by confidence score.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">comprehend</span><span class="o">.</span><span class="n">classify_document</span><span class="p">(</span>
+                <span class="n">Text</span><span class="o">=</span><span class="n">sentence_text</span><span class="p">,</span>
+                <span class="n">EndpointArn</span><span class="o">=</span><span class="n">SDOH_CLASSIFIER_ENDPOINT_ARN</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Log but don&#39;t crash the whole pipeline for one sentence.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Classification failed for sentence: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">continue</span>
+
+        <span class="n">classes</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Classes&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">classes</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># The top class is the most likely domain.</span>
+        <span class="n">top_class</span> <span class="o">=</span> <span class="n">classes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">top_class</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="n">top_class</span><span class="p">[</span><span class="s2">&quot;Score&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Skip sentences classified as &quot;none&quot; (no SDOH content).</span>
+        <span class="k">if</span> <span class="n">domain</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Skip low-confidence classifications.</span>
+        <span class="k">if</span> <span class="n">confidence</span> <span class="o">&lt;</span> <span class="n">CONFIDENCE_THRESHOLD</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Determine assertion: is this an active need or a negated one?</span>
+        <span class="k">if</span> <span class="n">is_within_negation</span><span class="p">(</span><span class="n">sentence_text</span><span class="p">,</span> <span class="n">note_text</span><span class="p">,</span> <span class="n">negation_spans</span><span class="p">):</span>
+            <span class="n">assertion</span> <span class="o">=</span> <span class="s2">&quot;absent&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Simple heuristic for assertion beyond negation:</span>
+            <span class="c1"># - Past tense markers suggest &quot;resolved&quot;</span>
+            <span class="c1"># - &quot;referred to&quot; or &quot;connected with&quot; suggest &quot;resource_connected&quot;</span>
+            <span class="c1"># - Everything else defaults to &quot;active_need&quot;</span>
+            <span class="n">assertion</span> <span class="o">=</span> <span class="n">determine_assertion</span><span class="p">(</span><span class="n">sentence_text</span><span class="p">)</span>
+
+        <span class="n">findings</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">sentence_text</span><span class="p">,</span>
+            <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="n">domain</span><span class="p">,</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">confidence</span><span class="p">,</span>
+            <span class="s2">&quot;assertion&quot;</span><span class="p">:</span> <span class="n">assertion</span><span class="p">,</span>
+            <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">sentence_data</span><span class="p">[</span><span class="s2">&quot;section_type&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;is_priority&quot;</span><span class="p">:</span> <span class="n">sentence_data</span><span class="p">[</span><span class="s2">&quot;is_priority&quot;</span><span class="p">],</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">findings</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">determine_assertion</span><span class="p">(</span><span class="n">sentence_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple rule-based assertion classification for SDOH mentions.</span>
+
+<span class="sd">    In production, this would be a second classifier or a more sophisticated</span>
+<span class="sd">    model. Here we use keyword heuristics to distinguish active needs from</span>
+<span class="sd">    resolved ones or connected resources.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sentence_text: The sentence containing the SDOH mention.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        One of: &quot;active_need&quot;, &quot;resolved&quot;, &quot;at_risk&quot;, &quot;resource_connected&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">sentence_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="c1"># Resource-connected indicators.</span>
+    <span class="n">resource_patterns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;referred to&quot;</span><span class="p">,</span> <span class="s2">&quot;connected with&quot;</span><span class="p">,</span> <span class="s2">&quot;enrolled in&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;receiving services&quot;</span><span class="p">,</span> <span class="s2">&quot;food bank providing&quot;</span><span class="p">,</span> <span class="s2">&quot;voucher&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;approved for&quot;</span><span class="p">,</span> <span class="s2">&quot;started receiving&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">resource_patterns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">lower</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;resource_connected&quot;</span>
+
+    <span class="c1"># Resolved indicators.</span>
+    <span class="n">resolved_patterns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;no longer&quot;</span><span class="p">,</span> <span class="s2">&quot;resolved&quot;</span><span class="p">,</span> <span class="s2">&quot;now has stable&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;secured housing&quot;</span><span class="p">,</span> <span class="s2">&quot;found employment&quot;</span><span class="p">,</span> <span class="s2">&quot;obtained&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">resolved_patterns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">lower</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;resolved&quot;</span>
+
+    <span class="c1"># At-risk indicators (not yet a need, but heading that direction).</span>
+    <span class="n">risk_patterns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;at risk&quot;</span><span class="p">,</span> <span class="s2">&quot;may lose&quot;</span><span class="p">,</span> <span class="s2">&quot;lease expir&quot;</span><span class="p">,</span> <span class="s2">&quot;worried about&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;concerned about&quot;</span><span class="p">,</span> <span class="s2">&quot;might not be able&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">risk_patterns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">lower</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;at_risk&quot;</span>
+
+    <span class="c1"># Default: active need.</span>
+    <span class="k">return</span> <span class="s2">&quot;active_need&quot;</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-code-normalization">Step 5: Code Normalization</h2>
+<p><em>The pseudocode calls this <code>normalize_to_codes(sdoh_findings, code_map)</code>. We map each classified finding to standard terminology codes (ICD-10 Z-codes, LOINC, SNOMED) for downstream interoperability.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">normalize_to_codes</span><span class="p">(</span><span class="n">findings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Attach standard terminology codes to each SDOH finding.</span>
+
+<span class="sd">    This enables extraction results to flow into EHR structured fields,</span>
+<span class="sd">    quality dashboards, and population health platforms without custom</span>
+<span class="sd">    integration per consumer. The codes come from the Gravity Project</span>
+<span class="sd">    value sets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        findings: Output of classify_sdoh_sentences().</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The same findings list, enriched with icd10_codes, loinc_codes,</span>
+<span class="sd">        snomed_codes, and display text for each domain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">finding</span> <span class="ow">in</span> <span class="n">findings</span><span class="p">:</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SDOH_CODE_MAP</span><span class="p">:</span>
+            <span class="c1"># Unknown domain from classifier. Log and skip normalization</span>
+            <span class="c1"># but still include the finding.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No code mapping for domain: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+            <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;icd10_codes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;loinc_codes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;snomed_codes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;display&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain</span>
+            <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">finding</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">codes</span> <span class="o">=</span> <span class="n">SDOH_CODE_MAP</span><span class="p">[</span><span class="n">domain</span><span class="p">]</span>
+        <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;icd10_codes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">codes</span><span class="p">[</span><span class="s2">&quot;icd10&quot;</span><span class="p">]</span>
+        <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;loinc_codes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">codes</span><span class="p">[</span><span class="s2">&quot;loinc&quot;</span><span class="p">]</span>
+        <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;snomed_codes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">codes</span><span class="p">[</span><span class="s2">&quot;snomed&quot;</span><span class="p">]</span>
+        <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;display&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">codes</span><span class="p">[</span><span class="s2">&quot;display&quot;</span><span class="p">]</span>
+        <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">finding</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">normalized</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-store-patient-level-sdoh-profile">Step 6: Store Patient-Level SDOH Profile</h2>
+<p><em>The pseudocode calls this <code>store_sdoh_profile(patient_id, note_id, note_date, findings)</code>. We write each finding to DynamoDB with provenance (which note, which date) so care managers can trace back to the source.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_sdoh_profile</span><span class="p">(</span>
+    <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">note_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">note_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">findings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write SDOH findings to the patient&#39;s profile in DynamoDB.</span>
+
+<span class="sd">    Each finding becomes a separate item, partitioned by patient_id and</span>
+<span class="sd">    sorted by domain + note_date. This schema supports queries like:</span>
+<span class="sd">    - &quot;All SDOH findings for patient X&quot; (query on partition key)</span>
+<span class="sd">    - &quot;All housing findings for patient X&quot; (query with sort key prefix)</span>
+<span class="sd">    - &quot;All findings from the last 6 months&quot; (query with date range)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: The patient&#39;s unique identifier.</span>
+<span class="sd">        note_id: The source note&#39;s identifier (for traceability).</span>
+<span class="sd">        note_date: When the note was written (ISO date string).</span>
+<span class="sd">        findings: Normalized findings from Step 5.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The list of records written to DynamoDB.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">SDOH_PROFILES_TABLE</span><span class="p">)</span>
+    <span class="n">records_written</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">finding</span> <span class="ow">in</span> <span class="n">findings</span><span class="p">:</span>
+        <span class="c1"># Sort key combines domain and date for efficient range queries.</span>
+        <span class="n">sort_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">finding</span><span class="p">[</span><span class="s1">&#39;domain&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">note_date</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+            <span class="s2">&quot;sort_key&quot;</span><span class="p">:</span> <span class="n">sort_key</span><span class="p">,</span>
+            <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;assertion&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;assertion&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">finding</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span> <span class="mi">4</span><span class="p">))),</span>
+            <span class="c1"># DynamoDB does not accept Python floats. Wrap in Decimal()</span>
+            <span class="c1"># via str() to avoid floating-point artifacts.</span>
+            <span class="s2">&quot;source_text&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;source_note&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
+            <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="n">note_date</span><span class="p">,</span>
+            <span class="s2">&quot;extraction_ts&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;icd10_codes&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;icd10_codes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="s2">&quot;loinc_codes&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loinc_codes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="s2">&quot;snomed_codes&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;snomed_codes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;display&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;section&quot;</span><span class="p">:</span> <span class="n">finding</span><span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;reviewed&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>
+        <span class="n">records_written</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">records_written</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single function. This is what your Lambda handler would call when a note arrives via SQS.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">process_note_for_sdoh</span><span class="p">(</span>
+    <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">note_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">note_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">note_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full SDOH extraction pipeline for one clinical note.</span>
+
+<span class="sd">    This is the main entry point. In a Lambda deployment, your handler</span>
+<span class="sd">    would parse the SQS message (which contains the note metadata and text),</span>
+<span class="sd">    and call this function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: The patient&#39;s unique identifier.</span>
+<span class="sd">        note_id: The note&#39;s unique identifier (for audit trail).</span>
+<span class="sd">        note_date: When the note was written (YYYY-MM-DD).</span>
+<span class="sd">        note_text: The full clinical note text.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A summary dict with extraction results and metadata.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Quick relevance check. Skip notes with no SDOH keywords.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 1: Relevance filtering for note </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">note_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">should_process_note</span><span class="p">(</span><span class="n">note_text</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  No SDOH keywords found. Skipping full extraction.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+            <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
+            <span class="s2">&quot;skipped&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no_sdoh_keywords&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;findings&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Step 2: Section detection and sentence segmentation.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 2: Segmenting note into sections and sentences&quot;</span><span class="p">)</span>
+    <span class="n">segmented</span> <span class="o">=</span> <span class="n">segment_note</span><span class="p">(</span><span class="n">note_text</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Found </span><span class="si">%d</span><span class="s2"> sentences across sections&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">segmented</span><span class="p">))</span>
+
+    <span class="c1"># Step 3: Get negation context from Comprehend Medical.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 3: Extracting medical context (negation detection)&quot;</span><span class="p">)</span>
+    <span class="n">medical_context</span> <span class="o">=</span> <span class="n">extract_medical_context</span><span class="p">(</span><span class="n">note_text</span><span class="p">)</span>
+    <span class="n">negation_spans</span> <span class="o">=</span> <span class="n">medical_context</span><span class="p">[</span><span class="s2">&quot;negation_spans&quot;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Found </span><span class="si">%d</span><span class="s2"> negation spans&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">negation_spans</span><span class="p">))</span>
+
+    <span class="c1"># Step 4: Classify each sentence for SDOH content.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 4: Classifying sentences for SDOH domains&quot;</span><span class="p">)</span>
+    <span class="n">findings</span> <span class="o">=</span> <span class="n">classify_sdoh_sentences</span><span class="p">(</span><span class="n">segmented</span><span class="p">,</span> <span class="n">negation_spans</span><span class="p">,</span> <span class="n">note_text</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Found </span><span class="si">%d</span><span class="s2"> SDOH findings above threshold&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">findings</span><span class="p">))</span>
+
+    <span class="c1"># Step 5: Normalize findings to standard codes.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 5: Normalizing to ICD-10/LOINC/SNOMED codes&quot;</span><span class="p">)</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">normalize_to_codes</span><span class="p">(</span><span class="n">findings</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Store in patient profile.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 6: Storing SDOH profile in DynamoDB&quot;</span><span class="p">)</span>
+    <span class="n">stored</span> <span class="o">=</span> <span class="n">store_sdoh_profile</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">note_id</span><span class="p">,</span> <span class="n">note_date</span><span class="p">,</span> <span class="n">normalized</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Wrote </span><span class="si">%d</span><span class="s2"> records to DynamoDB&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">stored</span><span class="p">))</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;note_id&quot;</span><span class="p">:</span> <span class="n">note_id</span><span class="p">,</span>
+        <span class="s2">&quot;note_date&quot;</span><span class="p">:</span> <span class="n">note_date</span><span class="p">,</span>
+        <span class="s2">&quot;extraction_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;skipped&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;sentences_evaluated&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">segmented</span><span class="p">),</span>
+        <span class="s2">&quot;sdoh_findings_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">normalized</span><span class="p">),</span>
+        <span class="s2">&quot;findings&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;assertion&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;assertion&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;source_text&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;icd10_codes&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;icd10_codes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;display&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">normalized</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done. Found </span><span class="si">%d</span><span class="s2"> SDOH findings.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">normalized</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="c1"># --- Example execution with synthetic data ---</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Synthetic social work assessment note.</span>
+    <span class="c1"># This is completely fabricated. No real patient data.</span>
+    <span class="n">SAMPLE_NOTE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Social History:</span>
+<span class="s2">Patient is a 62-year-old male, lives alone in a one-bedroom apartment.</span>
+<span class="s2">Reports that his lease expires next month and has been unable to find</span>
+<span class="s2">affordable alternatives in the area. States he has been skipping meals</span>
+<span class="s2">3-4 times per week due to cost of medications taking priority over groceries.</span>
+<span class="s2">No family in the immediate area. Spouse passed away 18 months ago.</span>
+<span class="s2">Patient reports feeling isolated and has not attended church or social</span>
+<span class="s2">activities since the death. Denies any safety concerns at home.</span>
+<span class="s2">Previously received SNAP benefits but was discontinued after missing</span>
+<span class="s2">recertification appointment due to lack of transportation.</span>
+
+<span class="s2">Assessment and Plan:</span>
+<span class="s2">1. Diabetes management: A1c 9.2%, up from 8.4</span><span class="si">% la</span><span class="s2">st visit. Suspect</span>
+<span class="s2">   non-adherence related to food insecurity and financial constraints.</span>
+<span class="s2">2. Refer to hospital food pantry program and assist with SNAP re-enrollment.</span>
+<span class="s2">3. Social work to assess transportation options for medical appointments.</span>
+<span class="s2">4. Consider referral to grief counseling and senior center for social support.</span>
+
+<span class="s2">Family History:</span>
+<span class="s2">Mother had diabetes. Father was homeless in his later years.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">process_note_for_sdoh</span><span class="p">(</span>
+        <span class="n">patient_id</span><span class="o">=</span><span class="s2">&quot;PAT-2026-00847&quot;</span><span class="p">,</span>
+        <span class="n">note_id</span><span class="o">=</span><span class="s2">&quot;NOTE-SW-20260215-003&quot;</span><span class="p">,</span>
+        <span class="n">note_date</span><span class="o">=</span><span class="s2">&quot;2026-02-15&quot;</span><span class="p">,</span>
+        <span class="n">note_text</span><span class="o">=</span><span class="n">SAMPLE_NOTE</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+</pre></div>
+
+<p><strong>Expected output (approximate, depending on classifier training):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PAT-2026-00847&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;note_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;NOTE-SW-20260215-003&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;note_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-15&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;extraction_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-15T18:44:22Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sentences_evaluated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sdoh_findings_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;findings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;domain&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;housing_instability&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assertion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;at_risk&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.87</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Reports that his lease expires next month and has been unable to find affordable alternatives in the area.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;icd10_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Z59.0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Z59.1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Z59.8&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Problems related to housing and economic circumstances&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;domain&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;food_insecurity&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assertion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active_need&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;States he has been skipping meals 3-4 times per week due to cost of medications taking priority over groceries.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;icd10_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Z59.4&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Z59.48&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Lack of adequate food and safe drinking water&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;domain&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;social_isolation&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assertion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active_need&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.81</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Patient reports feeling isolated and has not attended church or social activities since the death.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;icd10_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Z60.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Z60.4&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Social isolation and inadequate social support&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;domain&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transportation_barrier&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assertion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active_need&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.79</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Previously received SNAP benefits but was discontinued after missing recertification appointment due to lack of transportation.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;icd10_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Z59.82&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Transportation insecurity&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;domain&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;interpersonal_safety&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;assertion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;absent&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.76</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Denies any safety concerns at home.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;icd10_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Z63.0&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;T74&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;T76&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Interpersonal violence and safety concerns&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Notice how the &quot;Denies any safety concerns&quot; sentence gets extracted with assertion &quot;absent&quot; because Comprehend Medical detected the negation. And &quot;Father was homeless in his later years&quot; from the family history section would ideally be filtered out (it's about a family member, not the patient). The section context from Step 2 helps downstream consumers decide how to weight findings from different sections.</p>
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example works. Run it against a real clinical note (with a trained classifier endpoint) and it will return structured SDOH findings with standard codes. But there's a meaningful distance between &quot;works in a script&quot; and &quot;runs at scale processing thousands of notes daily.&quot; Here's where that gap lives:</p>
+<p><strong>Custom classifier training.</strong> This code assumes a trained Comprehend custom classifier endpoint already exists. Training that classifier requires annotated data: at minimum 1,000 labeled sentences across SDOH domains. Use de-identified datasets (MIMIC, i2b2/n2c2 SDOH shared task data) for initial development. Your local documentation patterns will differ from academic medical center notes, so plan for a local annotation round with clinical staff.</p>
+<p><strong>Error handling.</strong> If Comprehend Medical or the custom classifier returns an error, this code logs and skips that sentence. A production system needs circuit breakers (stop calling a failing service), dead letter queues (don't lose notes that failed processing), and alerting (know when extraction is degraded).</p>
+<p><strong>Retries and backoff.</strong> The adaptive retry config handles basic throttling, but at high throughput (thousands of notes per hour), you'll hit Comprehend Medical's transactions-per-second limits. Production systems use SQS with visibility timeout and retry policies to handle sustained load gracefully.</p>
+<p><strong>Input validation.</strong> This code trusts its inputs. A production system validates note length (Comprehend Medical caps at 20,000 characters), handles empty or malformed notes gracefully, and rejects notes without required metadata (patient_id, note_id, note_date).</p>
+<p><strong>Note chunking.</strong> Comprehend Medical has a 20,000 character limit per API call. Many clinical notes (especially H&amp;P or social work assessments) exceed this. Production code splits long notes at sentence boundaries, processes chunks independently, and merges results with proper offset tracking.</p>
+<p><strong>Assertion classification depth.</strong> The <code>determine_assertion()</code> function here is a handful of keyword heuristics. A production system would train a second classifier specifically for assertion status, or use temporal reasoning (past tense verbs, date references) to distinguish active from historical needs. The keyword approach misses subtle cases.</p>
+<p><strong>Logging and observability.</strong> The <code>logger.info()</code> calls here are placeholders. A real system uses structured JSON logging with consistent fields (patient_id, note_id, step, duration, error) and publishes CloudWatch metrics for extraction rate, SDOH finding rate, classifier confidence distributions, and per-domain recall estimates.</p>
+<p><strong>IAM least-privilege.</strong> The IAM role for this Lambda should have exactly: <code>comprehendmedical:DetectEntitiesV2</code> on all resources, <code>comprehend:ClassifyDocument</code> scoped to the specific endpoint ARN, <code>dynamodb:PutItem</code> scoped to the specific table, and <code>sqs:ReceiveMessage</code> + <code>sqs:DeleteMessage</code> scoped to the specific queue. Not <code>comprehend:*</code>. Not <code>dynamodb:*</code>.</p>
+<p><strong>VPC configuration.</strong> Clinical notes contain PHI. In production, this Lambda runs inside a VPC with private subnets and VPC endpoints for Comprehend Medical, Comprehend, DynamoDB, SQS, S3, and CloudWatch Logs. Traffic never traverses the public internet.</p>
+<p><strong>Encryption.</strong> This example relies on default encryption. Production uses KMS customer-managed keys for DynamoDB, SQS, and any S3 buckets holding notes or results. Key rotation should be enabled.</p>
+<p><strong>DynamoDB data types.</strong> This example already wraps confidence scores in <code>Decimal</code> (DynamoDB's float requirement). Any new numeric fields you add must also use <code>Decimal</code>. The <code>boto3</code> DynamoDB resource layer raises a <code>TypeError</code> on raw floats in <code>put_item</code> calls.</p>
+<p><strong>Human review workflow.</strong> Findings below the confidence threshold are dropped in this example. A production system routes low-confidence findings to a review queue where clinical staff can confirm or reject them. This provides both quality assurance and training data for classifier improvement.</p>
+<p><strong>Feedback loop.</strong> When care managers act on (or dismiss) SDOH findings, that signal should flow back to improve the classifier. &quot;False positive: this wasn't actually food insecurity&quot; is training data. Without this loop, the system never improves beyond its initial training.</p>
+<p><strong>Testing.</strong> There are no tests here. A production pipeline has: unit tests for <code>determine_assertion()</code> and <code>detect_sections()</code> with known inputs, integration tests against a real Comprehend Medical call with synthetic notes, and an evaluation suite that measures precision/recall against a gold-standard annotated set. Never use real patient notes in test fixtures.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter08.06-sdoh-extraction.html">Recipe 8.6</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

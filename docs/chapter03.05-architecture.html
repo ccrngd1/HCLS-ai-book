@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.5 Architecture and Implementation: Lab Result Outlier Detection</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested nav-active" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-35-architecture-and-implementation-lab-result-outlier-detection">Recipe 3.5 Architecture and Implementation: Lab Result Outlier Detection</h1>
+<p><em>Companion to <a href="chapter03.05-lab-result-outlier-detection.html">Recipe 3.5: Lab Result Outlier Detection</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Kinesis Data Streams for the result feed.</strong> The result ingest pipeline accepts HL7 ORU messages (from the LIS), JSON payloads (from POCT data managers), and batch file feeds (from reference labs) with different throughput profiles. Kinesis provides durable, ordered event streams with multi-consumer fan-out, which matters because the same result gets read by the real-time outlier service, the batch cohort pipelines, and the audit archive. HIPAA-eligible under the BAA.</p>
+<p><strong>Amazon MQ for HL7 v2 ingress.</strong> LIS-to-AWS integration usually uses MLLP (Minimal Lower Layer Protocol) over TCP. An on-premises MLLP listener (Mirth Connect, Rhapsody, Corepoint, or a simple listener built on the HL7 libraries) republishes to Amazon MQ (ActiveMQ) or to a Kinesis-backed ingress Lambda. ActiveMQ is the common bridge because most integration engines have pre-built ActiveMQ connectors.</p>
+<p><strong>AWS Lambda for the real-time outlier service.</strong> The hot path (rule evaluation, patient-context cache lookup, delta-check computation, specimen-quality fusion, severity tiering) needs to complete in tens to low hundreds of milliseconds because autoverification and callback timing depend on it. A Kinesis-triggered Lambda fits this profile. Keep it thin; offload heavy statistical work to async downstream steps.</p>
+<p><strong>Amazon DynamoDB for the patient-context cache and patient-history store.</strong> Low-latency key-value reads. The cache is keyed by patient ID and stores demographics, pregnancy status, active problems, active meds, and (via a separate item) the recent-results map per analyte. The recent-results data supports delta checks and rolling-mean computations without hitting the LIS for every incoming result. HIPAA-eligible under the BAA with customer-managed KMS.</p>
+<p><strong>Amazon SageMaker Feature Store for analyte-cohort baselines.</strong> Population reference statistics (robust median, MAD, percentiles) per analyte per cohort live here with point-in-time correctness. The real-time Lambda queries the online store; the retraining jobs use the offline store for historical cohort reconstruction. HIPAA-eligible.</p>
+<p><strong>Amazon SageMaker Processing for batch pattern work.</strong> Isolation Forest scoring on panels, CUSUM computation on patient time series, cohort baseline recomputation all run in containerized scikit-learn scripts on SageMaker Processing, scheduled by Step Functions. For the supervised artifact classifier, SageMaker built-in XGBoost is the default.</p>
+<p><strong>Amazon S3 with AWS KMS.</strong> Raw result archive (HL7 ORU as parsed JSON, POCT payloads as-is), panel-level Parquet for batch analysis, model artifacts, labels parquet from feedback capture. Customer-managed KMS on everything. Lifecycle to Glacier for long-term retention (state regulations and CLIA retention vary; 2 years minimum under CLIA for most records, 10+ years for some specialty lab records).</p>
+<p><strong>Amazon OpenSearch Service for the outlier index and audit.</strong> Every flag produced gets indexed. The lab director dashboards, pathologist review interfaces, and the audit team queries all read from OpenSearch. Fine-grained access control matters because pathology, laboratory QA, and IT compliance need different slices.</p>
+<p><strong>Amazon EventBridge for routing flags.</strong> Flags fan out via EventBridge rather than hard-coded integrations. Subscribers include the critical-value callback service, the tech-review queue service, the autoverification release service, the audit logger, the metrics aggregator, and the feedback-capture service.</p>
+<p><strong>Amazon SNS and Amazon Pinpoint for alert delivery.</strong> Critical-value callbacks usually route through an existing callback platform (Vocera, TigerConnect, a custom service) over an SNS topic. Less-urgent flags go to email or the lab tech review application. Pinpoint handles patient-facing outreach when a patient-reported outpatient test result (home A1C, home INR) looks anomalous.</p>
+<p><strong>Amazon Step Functions for orchestration.</strong> The batch pipelines (hourly panel Isolation Forest scoring, daily cohort baseline recomputation, weekly retraining, daily reference-range validation) are multi-step workflows. State machines provide the retry, timeout, and visibility semantics that multi-step pipelines need.</p>
+<p><strong>Amazon Comprehend Medical for clinical context extraction.</strong> When the patient's chart has recent free-text clinical notes, Comprehend Medical extracts diagnoses, medications, and symptoms to attach to the patient-context cache. Used sparingly (extract-once-and-cache) because per-page cost adds up at lab-data volumes.</p>
+<p><strong>Amazon Bedrock for LLM-assisted interpretation (optional, advanced).</strong> For results that have been flagged by the statistical layers, a HIPAA-eligible LLM can read the patient's clinical context and the flagged result together and produce a triage recommendation (likely artifact given specimen quality; likely real given clinical picture; insufficient evidence). Not a primary detector; a triage accelerator for the review queue.</p>
+<p><strong>Amazon QuickSight for lab operations dashboards.</strong> Autoverification rate by analyte, critical-value callback volume and compliance, delta-check override rates, specimen-rejection trends, analyzer-specific drift metrics. QuickSight on top of Athena over S3 plus OpenSearch queries. HIPAA-eligible.</p>
+<p><strong>AWS CloudTrail and Amazon CloudWatch.</strong> CloudTrail data events on PHI-bearing stores. CloudWatch dashboards for pipeline health, alert latency (especially the critical-value callback timing), autoverification rate, and rule-level override rates. Drift on the core metrics (a sudden drop in autoverification rate, a climb in specimen-rejection rate) triggers on-call attention.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[Analyzers / Middleware&lt;br/&gt;HL7 v2 ORU] --&gt; M[On-Prem MLLP Bridge&lt;br/&gt;+ Amazon MQ]
+    B[POCT Data Manager&lt;br/&gt;JSON/HTTPS] --&gt; D[API Gateway]
+    C[Reference Lab Feeds&lt;br/&gt;SFTP / HL7 batch] --&gt; E[AWS Transfer Family]
+
+    M --&gt; F[Amazon Kinesis&lt;br/&gt;lab-results]
+    D --&gt; F
+    E --&gt; G[AWS Lambda&lt;br/&gt;batch-file-parser]
+    G --&gt; F
+
+    F --&gt; H[AWS Lambda&lt;br/&gt;result-normalizer]
+    H --&gt;|LOINC + units| I[(Amazon DynamoDB&lt;br/&gt;patient-context-cache)]
+    H --&gt; J[AWS Lambda&lt;br/&gt;real-time-outlier-service]
+
+    J --&gt;|reads cache| I
+    J --&gt;|reads baselines| K[(SageMaker Feature Store&lt;br/&gt;analyte-cohort-baselines)]
+    J --&gt;|rule library| L[(S3&lt;br/&gt;lab-rules-versioned)]
+    J --&gt; N[Amazon EventBridge&lt;br/&gt;outlier-events]
+
+    N --&gt; O1[AWS Lambda&lt;br/&gt;critical-value-callback]
+    N --&gt; O2[Amazon OpenSearch&lt;br/&gt;outlier-audit-index]
+    N --&gt; O3[AWS Lambda&lt;br/&gt;tech-review-queue]
+    N --&gt; O4[AWS Lambda&lt;br/&gt;autoverify-release]
+    N --&gt; O5[AWS Lambda&lt;br/&gt;feedback-capture]
+
+    O1 --&gt; P1[Amazon SNS&lt;br/&gt;callback-topic]
+
+    Q[EventBridge Scheduler&lt;br/&gt;hourly / daily] --&gt; R[AWS Step Functions&lt;br/&gt;batch-pattern-pipeline]
+    R --&gt; S[SageMaker Processing&lt;br/&gt;panel-isolation-forest]
+    R --&gt; T[SageMaker Processing&lt;br/&gt;patient-cusum-scoring]
+    R --&gt; U[SageMaker Processing&lt;br/&gt;cohort-baseline-refresh]
+    S --&gt; N
+    T --&gt; N
+    U --&gt; K
+
+    O5 --&gt; V[S3&lt;br/&gt;feedback-labels]
+    V --&gt; W[Quarterly SageMaker&lt;br/&gt;Training Job]
+    W --&gt; K
+
+    O2 --&gt; X[Amazon Athena]
+    X --&gt; Y[Amazon QuickSight&lt;br/&gt;lab-director-dashboard]
+
+    J --&gt; Z[Amazon CloudWatch&lt;br/&gt;latency + autoverification&lt;br/&gt;+ override-rate metrics]
+
+    style I fill:#9ff,stroke:#333
+    style K fill:#9ff,stroke:#333
+    style L fill:#f9f,stroke:#333
+    style V fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Kinesis Data Streams, Amazon MQ, API Gateway, AWS Transfer Family, AWS Lambda, Amazon DynamoDB, Amazon SageMaker (Processing, Training, Feature Store), Amazon OpenSearch Service, Amazon S3, AWS Step Functions, Amazon EventBridge, Amazon SNS, Amazon Pinpoint, Amazon Comprehend Medical, Amazon Bedrock (optional), Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Least-privilege per role. Real-time outlier Lambda: <code>dynamodb:GetItem</code> on patient-context-cache, <code>sagemaker-featurestore-runtime:GetRecord</code> on analyte-cohort-baselines, <code>s3:GetObject</code> on lab-rules bucket, <code>events:PutEvents</code> to the outlier-events bus, <code>kinesis:GetRecords</code>. Result normalizer Lambda: <code>kinesis:GetRecords</code>, <code>dynamodb:PutItem</code>. Callback Lambda: <code>sns:Publish</code> only on the callback topic. Batch pipelines scoped to specific S3 prefixes. No <code>*</code> actions in production.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Every service above is HIPAA-eligible under the BAA when configured properly. See the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a>.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Kinesis: SSE with CMK. OpenSearch: at rest and in transit. SageMaker: KMS on volumes, model artifacts, Feature Store. TLS 1.2 or higher in transit everywhere.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas, SageMaker jobs, and OpenSearch in a VPC with VPC endpoints for S3, DynamoDB, Kinesis, SageMaker runtime, Comprehend Medical, Bedrock, and KMS. No public endpoints on OpenSearch.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on patient-context-cache, lab-rules bucket, feedback-labels bucket, OpenSearch domain operations, and the critical-value callback topic. Every flag decision and every callback is audit-logged.</td>
+</tr>
+</tbody>
+</table>
+<p>| <strong>CLIA and Lab Regulatory</strong> | The pipeline participates in a regulated laboratory workflow. Critical-value callbacks have documented-timing requirements under CLIA and state licensure. Autoverification rules require documented validation per CLSI AUTO10. Changes to rules require laboratory director sign-off. Validation records retained per regulatory retention schedule (minimum 2 years under CLIA; longer in many states). |
+| <strong>Clinical Governance</strong> | Lab director signs off on all rule thresholds, severity tier definitions, and callback protocols. Pathology and clinical leadership jointly own the governance of outlier suppression rules (the rules that quiet alerts on patients whose history makes the result unsurprising). Changes logged and periodically reviewed. |
+| <strong>Sample Data</strong> | <a href="https://github.com/synthetichealth/synthea">Synthea</a> generates synthetic lab data with realistic distributions. <a href="https://mimic.mit.edu/">MIMIC-IV</a> has dense ICU lab data suitable for developing patient-baseline algorithms; access requires PhysioNet credentialing and a data use agreement. <a href="https://loinc.org/">LOINC</a> is free and essential for normalization prototyping. Never use real PHI in development. |
+| <strong>Reference Data</strong> | LOINC (free from Regenstrief Institute) for test identification. Reference ranges from the lab's validated sources (instrument inserts, validation studies, published consensus). An analyte metadata table (canonical unit, expected stability, delta-check thresholds, specimen-quality sensitivity) maintained jointly by the lab and the analytics team. |
+| <strong>Lab Integration</strong> | LIS system (Cerner Millennium, Epic Beaker, Sunquest, SoftLab, Orchard, others) producing HL7 v2 ORU messages or FHIR DiagnosticReport/Observation resources. Middleware (Data Innovations, Beckman, Sysmex Caresphere) that captures and forwards specimen-quality indices. POCT data manager integration if POCT is in scope. |
+| <strong>Retention</strong> | CLIA baseline is 2 years for most records, 5 years for blood bank. State regulations often extend this (5-10 years common). Pathology reports often 20 years or longer. Confirm retention schedule with legal and compliance before production. |
+| <strong>Cost Estimate</strong> | For a mid-size hospital lab (say, 3 million results per year, including chemistry, hematology, immunology, microbiology culture results): Kinesis and Lambda real-time path: ~$150-400/month. DynamoDB patient-context cache: ~$80-250/month. SageMaker Feature Store: ~$30-90/month. SageMaker Processing: ~$200-500/month for batch scoring. OpenSearch outlier index: ~$300-700/month. Comprehend Medical and optional Bedrock: usage-dependent, typically $100-600/month. Total infrastructure: typically $1,200-3,500/month. Compare to cost avoidance: pre-analytical error recollections cost $10-50 per event in supplies and labor plus the unmeasurable clinical-workflow cost, and sentinel-event-level errors from a missed critical value have costs that dwarf the infrastructure.  |</p>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Durable, multi-consumer event stream for incoming lab results</td>
+</tr>
+<tr>
+<td><strong>Amazon MQ</strong></td>
+<td>HL7 v2 MLLP ingress bridge from on-prem LIS integration engines</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>POCT data manager webhook ingress</td>
+</tr>
+<tr>
+<td><strong>AWS Transfer Family</strong></td>
+<td>SFTP endpoint for reference lab batch file feeds</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (result-normalizer)</strong></td>
+<td>LOINC mapping, unit harmonization, reference-range attachment, specimen-quality index capture</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (real-time-outlier-service)</strong></td>
+<td>Rule screening, delta checks, robust z-score lookup, specimen-quality fusion, severity tiering</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (critical-value-callback)</strong></td>
+<td>CLIA-compliant callback workflow with timing and read-back tracking</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (tech-review-queue)</strong></td>
+<td>Hold-for-review routing with priority queue semantics</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (autoverify-release)</strong></td>
+<td>Autoverified result release to the LIS-to-EHR bridge</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (feedback-capture)</strong></td>
+<td>Tech override reasons, recollect outcomes, confirmed artifact linkage</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB (patient-context-cache)</strong></td>
+<td>Low-latency patient attribute reads including recent-results map</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Analyte-cohort baseline statistics with point-in-time correctness</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Processing</strong></td>
+<td>Panel Isolation Forest, patient CUSUM, cohort baseline refresh</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Training</strong></td>
+<td>Supervised artifact classifier retraining when feedback labels accumulate</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Service</strong></td>
+<td>Outlier flag index for lab director and pathologist dashboards</td>
+</tr>
+<tr>
+<td><strong>Amazon S3 (lab-rules)</strong></td>
+<td>Versioned rule library with reference-range source tracking</td>
+</tr>
+<tr>
+<td><strong>Amazon S3 (result-archive)</strong></td>
+<td>Long-term raw and normalized result archive</td>
+</tr>
+<tr>
+<td><strong>Amazon S3 (feedback-labels)</strong></td>
+<td>Tech overrides, recollect outcomes, confirmed artifact events for retraining</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates batch pattern pipelines and retraining workflows</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Decouples outlier detection from callback, review, autoverify, audit, and feedback</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Critical-value callback delivery to paging and messaging platforms</td>
+</tr>
+<tr>
+<td><strong>Amazon Pinpoint</strong></td>
+<td>Patient-facing outreach for outpatient self-test outliers (home A1C, home INR)</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Clinical entity extraction from notes for patient context</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock (optional)</strong></td>
+<td>LLM-assisted clinical interpretation for flagged results in the review queue</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Lab operations dashboards (autoverification rate, override rates, drift)</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed keys for every PHI-bearing store</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Real-time latency, alert volume, autoverification rate, drift metrics</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging on every PHI-bearing store, rule changes, and callback actions</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> These aws-samples repositories demonstrate patterns that apply here:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Isolation Forest and Random Cut Forest patterns applicable to panel-level multivariate anomaly detection; Feature Store integration examples that match the analyte-cohort baseline architecture.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: search for &quot;healthcare,&quot; &quot;hl7,&quot; and &quot;fhir&quot; for adjacent LIS integration patterns.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Normalize the incoming result.</strong> Whether the result came from the LIS as an HL7 ORU, from a POCT data manager as JSON, or from a reference lab as a batch file row, the first job is to produce a canonical representation keyed on LOINC with harmonized units and attached specimen-quality indices. Skipping this step means downstream detectors treat &quot;glucose 110 mg/dL&quot; and &quot;glucose 6.1 mmol/L&quot; as different analytes.</p>
+<pre class="code code-plain"><code>FUNCTION normalize_result(raw_result):
+    // Map the test identifier to LOINC. The mapping crosswalk is maintained
+    // in a versioned reference file; unknown identifiers go to a dead-letter
+    // queue for curation rather than being silently dropped.
+    loinc_code = null
+    IF raw_result.has(&quot;loinc&quot;):
+        loinc_code = raw_result.loinc
+    ELSE IF raw_result.has(&quot;lis_test_code&quot;):
+        loinc_code = lis_to_loinc_crosswalk.lookup(raw_result.lis_test_code, analyzer = raw_result.analyzer)
+
+    IF loinc_code == null:
+        emit_metric(&quot;unmapped_test&quot;, 1, dimensions = { analyzer: raw_result.analyzer })
+        route_to_dead_letter_queue(raw_result, reason = &quot;loinc_unresolved&quot;)
+        return null
+
+    // Canonical unit harmonization. The analyte metadata table defines the
+    // canonical unit per LOINC (e.g., mg/dL for glucose in the US; SI units
+    // for markets where that&#x27;s the convention). Convert reported value to
+    // canonical form; preserve the original for audit.
+    analyte_meta = analyte_metadata.get(loinc_code)
+    canonical_value = convert_units(raw_result.value, raw_result.unit, analyte_meta.canonical_unit)
+
+    // Capture specimen quality indices from the analyzer payload. These are
+    // the indicators that make many apparent outliers explainable.
+    specimen_quality = {
+        hemolysis_index:  raw_result.get(&quot;hemolysis_index&quot;),
+        icterus_index:    raw_result.get(&quot;icterus_index&quot;),
+        lipemia_index:    raw_result.get(&quot;lipemia_index&quot;),
+        clot_detected:    raw_result.get(&quot;clot_detected&quot;),
+        qns_flag:         raw_result.get(&quot;qns_flag&quot;),
+        short_sample:     raw_result.get(&quot;short_sample&quot;),
+        collection_site:  raw_result.get(&quot;collection_site&quot;),   // &quot;peripheral&quot; | &quot;central_line&quot; | &quot;arterial&quot;
+        transport_delay_minutes: compute_transport_delay(raw_result)
+    }
+
+    // Resolve to enterprise patient ID. This is the same master-patient-index
+    // join that appears everywhere else; getting it wrong produces the worst
+    // possible outcome (result attached to the wrong patient).
+    patient_id = patient_master.resolve(
+        mrn           = raw_result.patient_mrn,
+        source_system = raw_result.source
+    )
+
+    // Reference range attachment is patient-aware: age, sex, and pregnancy
+    // status drive the selection. Method and analyzer also matter because
+    // different methods have different ranges.
+    reference_range = reference_range_library.get(
+        loinc_code = loinc_code,
+        method     = raw_result.method,
+        analyzer   = raw_result.analyzer,
+        patient_attributes = patient_context_attributes_for_range_selection(patient_id)
+    )
+
+    canonical_result = {
+        event_id:         generate_event_id(),
+        source_event_id:  raw_result.source_event_id,
+        source:           raw_result.source,       // &quot;lis&quot; | &quot;poct&quot; | &quot;reference_lab&quot;
+        analyzer:         raw_result.analyzer,
+        method:           raw_result.method,
+        patient_id:       patient_id,
+        loinc_code:       loinc_code,
+        loinc_display:    analyte_meta.display_name,
+        value:            canonical_value.value,
+        unit:             canonical_value.unit,
+        reference_range:  reference_range,
+        reference_range_version: reference_range.version,
+        specimen_quality: specimen_quality,
+        collected_at:     raw_result.collected_at,
+        resulted_at:      raw_result.resulted_at,
+        accession:        raw_result.accession,
+        raw:              {
+            reported_value: raw_result.value,
+            reported_unit:  raw_result.unit,
+            test_code:      raw_result.get(&quot;lis_test_code&quot;)
+        }
+    }
+    return canonical_result
+</code></pre>
+<p><strong>Step 2: Join patient context and pull recent-history data.</strong> Delta checks and patient-baseline z-scores need the patient's recent results for this analyte. Pull from the patient-context cache; fall back to a cache miss refresh from DynamoDB or the LIS only when necessary.</p>
+<pre class="code code-plain"><code>FUNCTION enrich_with_patient_context(canonical_result):
+    context = DynamoDB.GetItem(&quot;patient-context-cache&quot;, { patient_id: canonical_result.patient_id })
+
+    // Look up the patient&#x27;s recent results for this analyte. The cache stores
+    // a rolling window (last 30 days for acute-care analytes, longer for
+    // chronic markers like A1C). Fall through to LIS query only on cache miss,
+    // because the latency impact of an LIS query is substantial.
+    recent_results = context.recent_results.get(canonical_result.loinc_code, [])
+
+    // Compute patient-baseline statistics on the fly if not pre-computed.
+    baseline_stats = null
+    IF length(recent_results) &gt;= MIN_HISTORY_FOR_BASELINE:
+        values = [r.value for r in recent_results]
+        baseline_stats = {
+            median: median(values),
+            mad:    median_absolute_deviation(values),
+            min:    min(values),
+            max:    max(values),
+            trend_slope: compute_trend_slope(recent_results),
+            sample_size: length(values),
+            earliest_observed_at: min(r.resulted_at for r in recent_results),
+            latest_observed_at:   max(r.resulted_at for r in recent_results)
+        }
+
+    // Most recent prior result is the input for the delta check.
+    previous_result = null
+    IF length(recent_results) &gt; 0:
+        previous_result = max_by(recent_results, r.resulted_at)
+
+    enriched = canonical_result.copy()
+    enriched.patient_attributes = {
+        age_years:         context.age_years,
+        sex:               context.sex,
+        pregnancy_status:  context.pregnancy_status,
+        active_problems:   context.active_problems,         // list of ICD-10 codes
+        active_medications: context.active_medications,     // list of RxNorm IDs
+        on_dialysis:       context.is_on_dialysis,
+        acuity:            context.acuity,
+        location:          context.unit
+    }
+    enriched.recent_results     = recent_results
+    enriched.previous_result    = previous_result
+    enriched.baseline_stats     = baseline_stats
+
+    return enriched
+</code></pre>
+<p><strong>Step 3: Apply the rule engine (critical values, reference range, specimen quality).</strong> Every enriched result goes through the rule engine first. Critical value rules are the regulatory floor; they always fire when threshold is crossed. Reference range checks produce the low-/high-abnormal flag that's a standard part of the lab report. Specimen quality rules identify results where the specimen itself invalidates or calls into question the value.</p>
+<pre class="code code-plain"><code>FUNCTION rule_screen(enriched_result):
+    flags = []
+    rules = lab_rules.get_active_rules_for_loinc(enriched_result.loinc_code)
+
+    FOR each rule in rules:
+        CASE rule.type:
+
+            &quot;critical_value&quot;:
+                // Critical value rules are regulatory-required. They always fire.
+                IF rule.applies_to_patient(enriched_result.patient_attributes):
+                    IF rule.direction == &quot;high&quot; AND enriched_result.value &gt;= rule.threshold:
+                        flags.append({
+                            rule_id:    rule.id,
+                            rule_type:  &quot;critical_value_high&quot;,
+                            severity:   &quot;critical_callback&quot;,   // CLIA-regulated callback required
+                            value:      enriched_result.value,
+                            threshold:  rule.threshold,
+                            message:    rule.message,
+                            reference:  rule.reference_source
+                        })
+                    ELSE IF rule.direction == &quot;low&quot; AND enriched_result.value &lt;= rule.threshold:
+                        flags.append({
+                            rule_id:    rule.id,
+                            rule_type:  &quot;critical_value_low&quot;,
+                            severity:   &quot;critical_callback&quot;,
+                            value:      enriched_result.value,
+                            threshold:  rule.threshold,
+                            message:    rule.message,
+                            reference:  rule.reference_source
+                        })
+
+            &quot;reference_range&quot;:
+                IF enriched_result.value &lt; enriched_result.reference_range.low:
+                    flags.append({
+                        rule_id:    rule.id,
+                        rule_type:  &quot;below_reference_range&quot;,
+                        severity:   &quot;informational&quot;,
+                        value:      enriched_result.value,
+                        range:      enriched_result.reference_range,
+                        message:    f&quot;Result below reference range ({enriched_result.reference_range.low}-{enriched_result.reference_range.high})&quot;
+                    })
+                ELSE IF enriched_result.value &gt; enriched_result.reference_range.high:
+                    flags.append({
+                        rule_id:    rule.id,
+                        rule_type:  &quot;above_reference_range&quot;,
+                        severity:   &quot;informational&quot;,
+                        value:      enriched_result.value,
+                        range:      enriched_result.reference_range,
+                        message:    f&quot;Result above reference range ({enriched_result.reference_range.low}-{enriched_result.reference_range.high})&quot;
+                    })
+
+            &quot;specimen_quality_gate&quot;:
+                // Specimen quality rules identify results that are likely artifactual.
+                // Example: potassium with hemolysis index above the analyte-specific threshold.
+                IF rule.quality_index_name == &quot;hemolysis_index&quot; \
+                   AND enriched_result.specimen_quality.hemolysis_index &gt;= rule.threshold:
+                    flags.append({
+                        rule_id:    rule.id,
+                        rule_type:  &quot;specimen_quality_invalidating&quot;,
+                        severity:   &quot;tech_review_hold&quot;,
+                        quality_index: &quot;hemolysis_index&quot;,
+                        quality_value: enriched_result.specimen_quality.hemolysis_index,
+                        threshold:    rule.threshold,
+                        message:      f&quot;Hemolysis index {enriched_result.specimen_quality.hemolysis_index} above {rule.threshold}; {enriched_result.loinc_display} likely artifactual&quot;,
+                        recommended_action: rule.recommended_action     // &quot;recollect&quot; | &quot;note_and_hold&quot; | &quot;suppress&quot;
+                    })
+
+                // Similar rules for icterus, lipemia, clot detection, QNS, short sample.
+
+            &quot;collection_site_gate&quot;:
+                // Some analytes should not be drawn from certain sites.
+                // Example: potassium drawn above an IV with dextrose running.
+                IF rule.prohibited_site == enriched_result.specimen_quality.collection_site:
+                    flags.append({
+                        rule_id:    rule.id,
+                        rule_type:  &quot;prohibited_collection_site&quot;,
+                        severity:   &quot;tech_review_hold&quot;,
+                        collection_site: enriched_result.specimen_quality.collection_site,
+                        message:         rule.message
+                    })
+
+    return flags
+</code></pre>
+<p><strong>Step 4: Delta check and patient-baseline z-score.</strong> The patient-specific checks run next. These are the detectors that catch real clinical changes and suspicious non-clinical changes.</p>
+<pre class="code code-plain"><code>FUNCTION patient_baseline_checks(enriched_result):
+    flags = []
+
+    // Delta check: compare to the most recent prior result within the window.
+    IF enriched_result.previous_result is not null:
+        time_delta_hours = hours_between(enriched_result.previous_result.resulted_at, enriched_result.resulted_at)
+        analyte_meta = analyte_metadata.get(enriched_result.loinc_code)
+
+        IF time_delta_hours &lt;= analyte_meta.delta_check_window_hours:
+            absolute_delta = enriched_result.value - enriched_result.previous_result.value
+            percent_delta  = (absolute_delta / enriched_result.previous_result.value) * 100 if enriched_result.previous_result.value != 0 else null
+
+            // Delta thresholds are analyte-specific and patient-aware.
+            // A 2 g/dL hemoglobin drop is significant in anyone; the same drop
+            // in a patient with sickle cell disease on chronic transfusion may
+            // be within expected range. Analyte metadata includes the context
+            // rules that modulate the default thresholds.
+            effective_thresholds = analyte_meta.delta_thresholds.for_patient(enriched_result.patient_attributes)
+
+            IF abs(absolute_delta) &gt;= effective_thresholds.absolute \
+               OR (percent_delta is not null AND abs(percent_delta) &gt;= effective_thresholds.percent):
+                flags.append({
+                    rule_type:  &quot;delta_check_failure&quot;,
+                    severity:   delta_severity(enriched_result, absolute_delta, percent_delta),
+                    absolute_delta: absolute_delta,
+                    percent_delta:  percent_delta,
+                    previous_value: enriched_result.previous_result.value,
+                    previous_resulted_at: enriched_result.previous_result.resulted_at,
+                    hours_between_results: time_delta_hours,
+                    message: build_delta_message(enriched_result, absolute_delta, percent_delta)
+                })
+
+    // Patient-history robust z-score. Requires enough prior data to be stable.
+    IF enriched_result.baseline_stats is not null AND enriched_result.baseline_stats.mad &gt; 0:
+        robust_z = (enriched_result.value - enriched_result.baseline_stats.median) / (1.4826 * enriched_result.baseline_stats.mad)
+
+        IF abs(robust_z) &gt;= PATIENT_ZSCORE_THRESHOLD:       // e.g., 3.0
+            flags.append({
+                rule_type:  &quot;patient_history_zscore&quot;,
+                severity:   zscore_severity(robust_z),
+                robust_z:   robust_z,
+                patient_median: enriched_result.baseline_stats.median,
+                patient_mad:    enriched_result.baseline_stats.mad,
+                history_size:   enriched_result.baseline_stats.sample_size,
+                message: build_baseline_message(enriched_result, robust_z)
+            })
+
+    return flags
+</code></pre>
+<p><strong>Step 5: Cohort (population) z-score.</strong> When the patient baseline is unavailable or too thin, compare against the population cohort baseline from the Feature Store.</p>
+<pre class="code code-plain"><code>FUNCTION cohort_zscore_check(enriched_result):
+    flags = []
+
+    // Cohort selection: age band, sex, pregnancy, core clinical attributes.
+    cohort_key = build_cohort_key(
+        loinc_code:        enriched_result.loinc_code,
+        age_band:          age_to_band(enriched_result.patient_attributes.age_years),
+        sex:               enriched_result.patient_attributes.sex,
+        pregnancy_status:  enriched_result.patient_attributes.pregnancy_status,
+        on_dialysis:       enriched_result.patient_attributes.on_dialysis
+    )
+
+    baseline = FeatureStore.GetRecord(
+        feature_group = &quot;analyte-cohort-baselines&quot;,
+        record_id     = cohort_key
+    )
+
+    IF baseline is null or baseline.sample_size &lt; MIN_COHORT_SIZE:
+        return flags
+
+    IF baseline.mad &gt; 0:
+        robust_z = (enriched_result.value - baseline.median) / (1.4826 * baseline.mad)
+        IF abs(robust_z) &gt;= COHORT_ZSCORE_THRESHOLD:
+            flags.append({
+                rule_type:  &quot;cohort_zscore&quot;,
+                severity:   zscore_severity(robust_z),
+                robust_z:   robust_z,
+                cohort_key: cohort_key,
+                cohort_median: baseline.median,
+                cohort_mad:    baseline.mad,
+                cohort_sample_size: baseline.sample_size,
+                message:    f&quot;Value {enriched_result.value} at cohort robust z {robust_z:.2f}&quot;
+            })
+
+    return flags
+</code></pre>
+<p><strong>Step 6: Aggregate flags, determine severity, and route.</strong> Combine flags from all paths. Determine overall routing based on the highest-severity flag and the combination of flag types (a critical value combined with an invalidating specimen quality index routes differently from a critical value with clean specimen quality).</p>
+<pre class="code code-plain"><code>FUNCTION route_result(enriched_result, all_flags):
+    IF length(all_flags) == 0:
+        // No flags, no delta, specimen quality clean, in reference range.
+        // Autoverify and release.
+        autoverify_release(enriched_result)
+        OpenSearch.Index(&quot;result-audit&quot;, enriched_result)
+        return
+
+    // Determine overall routing.
+    routing = determine_routing(all_flags)
+    // routing: &quot;autoverify_with_flag&quot; | &quot;critical_callback&quot; |
+    //          &quot;tech_review_hold&quot; | &quot;recollect_requested&quot;
+
+    outlier_event = {
+        event_id:            enriched_result.event_id,
+        patient_id:          enriched_result.patient_id,
+        loinc_code:          enriched_result.loinc_code,
+        loinc_display:       enriched_result.loinc_display,
+        value:               enriched_result.value,
+        unit:                enriched_result.unit,
+        resulted_at:         enriched_result.resulted_at,
+        accession:           enriched_result.accession,
+        flags:               all_flags,
+        specimen_quality:    enriched_result.specimen_quality,
+        patient_context_summary: summary_of(enriched_result.patient_attributes),
+        previous_result:     enriched_result.previous_result,
+        routing:             routing,
+        detected_at:         NOW()
+    }
+
+    EventBridge.PutEvent(
+        bus     = &quot;lab-outlier-events&quot;,
+        detail  = outlier_event,
+        source  = &quot;lab-outlier-service&quot;,
+        detail_type = f&quot;LabOutlier.{routing}&quot;
+    )
+
+    OpenSearch.Index(&quot;lab-outliers&quot;, outlier_event)
+
+    CASE routing:
+        &quot;critical_callback&quot;:
+            // CLIA-regulated callback. The callback service owns timing,
+            // read-back, and documentation. Critical values are still
+            // released to the chart; the callback is the separate
+            // notification workflow.
+            SNS.Publish(
+                topic   = CRITICAL_CALLBACK_TOPIC,
+                message = build_callback_payload(outlier_event)
+            )
+            autoverify_release(enriched_result, with_flag = &quot;critical_value&quot;)
+
+        &quot;tech_review_hold&quot;:
+            // Hold the result from release to the chart until a tech reviews.
+            hold_for_tech_review(enriched_result, outlier_event)
+
+        &quot;recollect_requested&quot;:
+            // Hold and request a new specimen.
+            hold_for_tech_review(enriched_result, outlier_event, request_recollect = True)
+
+        &quot;autoverify_with_flag&quot;:
+            // Release to chart with an attached informational flag.
+            autoverify_release(enriched_result, with_flag = routing_to_chart_flag(all_flags))
+</code></pre>
+<p><strong>Step 7: Run the panel-level multivariate check and patient trajectory analytics.</strong> Panel-level Isolation Forest runs when all components of a multi-analyte panel are available. Patient-trajectory CUSUM and change-point detection run on a scheduled cadence for patients with dense chronic-monitoring data.</p>
+<pre class="code code-plain"><code>FUNCTION panel_multivariate_check(panel):
+    // A panel is a set of related results from the same specimen
+    // (e.g., basic metabolic panel: Na, K, Cl, CO2, BUN, creatinine, glucose, Ca).
+    // When all components are present, build the multivariate feature vector.
+    panel_vector = build_panel_vector(panel)
+
+    // Patient context becomes features too.
+    context_features = patient_context_to_features(panel.patient_attributes)
+    feature_vector = concatenate(panel_vector, context_features)
+
+    // Score against the Isolation Forest trained on the patient&#x27;s cohort.
+    if_score = isolation_forest_by_panel.get(panel.panel_id).score(feature_vector)
+
+    IF if_score &lt;= PANEL_ISOLATION_FOREST_THRESHOLD:
+        flag = {
+            rule_type:       &quot;panel_multivariate_outlier&quot;,
+            severity:        &quot;tech_review_hold&quot;,
+            anomaly_score:   if_score,
+            top_contributors: shap_explain(isolation_forest_by_panel.get(panel.panel_id), feature_vector, top_k = 5),
+            panel:           panel.panel_id,
+            message:         f&quot;Panel combination is a multivariate outlier; unusual combination of {top_k_feature_names}&quot;
+        }
+        EventBridge.PutEvent(
+            bus         = &quot;lab-outlier-events&quot;,
+            source      = &quot;lab-outlier-service&quot;,
+            detail_type = f&quot;LabOutlier.{flag.severity}&quot;,
+            detail      = { panel_id: panel.panel_id, flag: flag }
+        )
+
+FUNCTION patient_trajectory_scoring(as_of_timestamp):
+    // Runs on schedule (hourly for acute care, daily for ambulatory).
+    active_patients = get_patients_with_recent_activity(as_of = as_of_timestamp)
+
+    FOR each patient in active_patients:
+        FOR each analyte in TREND_MONITORED_ANALYTES:     // creatinine, hemoglobin, TSH, A1C, others
+            series = get_analyte_series(patient_id = patient.id, loinc = analyte, window = ANALYTE_TREND_WINDOW[analyte])
+
+            IF length(series) &lt; MIN_SERIES_LENGTH:
+                continue
+
+            // CUSUM for sustained shifts.
+            cusum = cusum_detect(series, analyte_cusum_params(analyte))
+
+            IF cusum.signal_fired:
+                flag = {
+                    rule_type:         &quot;patient_trajectory_cusum&quot;,
+                    severity:          &quot;synchronous&quot;,
+                    patient_id:        patient.id,
+                    loinc_code:        analyte,
+                    change_point:      cusum.change_point,
+                    pre_change_mean:   cusum.pre_mean,
+                    post_change_mean:  cusum.post_mean,
+                    shift_magnitude:   cusum.post_mean - cusum.pre_mean,
+                    message:           build_trajectory_message(analyte, cusum)
+                }
+                EventBridge.PutEvent(
+                    bus         = &quot;lab-outlier-events&quot;,
+                    source      = &quot;lab-outlier-service&quot;,
+                    detail_type = f&quot;LabOutlier.{flag.severity}&quot;,
+                    detail      = flag
+                )
+</code></pre>
+<p><strong>Step 8: Capture feedback and close the loop.</strong> Tech review decisions, recollect outcomes, and critical-value callback responses all get logged and linked back to the original flag. Confirmed artifact events (the recollected specimen showed a clinically different value) become high-value labels for retraining.</p>
+<pre class="code code-plain"><code>FUNCTION on_tech_review_decision(decision_event):
+    // decision_event: { outlier_event_id, decision, decision_reason, deciding_tech,
+    //                   recollect_requested, recollect_accession }
+    outlier = OpenSearch.Get(&quot;lab-outliers&quot;, decision_event.outlier_event_id)
+    outlier.tech_review = {
+        decision:               decision_event.decision,   // &quot;released_as_is&quot; | &quot;recollected&quot; | &quot;suppressed&quot;
+        decision_reason:        decision_event.decision_reason,
+        deciding_tech:          decision_event.deciding_tech,
+        decided_at:             decision_event.decided_at,
+        recollect_requested:    decision_event.recollect_requested,
+        recollect_accession:    decision_event.recollect_accession
+    }
+    OpenSearch.Update(&quot;lab-outliers&quot;, decision_event.outlier_event_id, outlier)
+
+    FOR each flag in outlier.flags:
+        emit_metric(&quot;flag_tech_decision&quot;, 1, dimensions = {
+            rule_type: flag.rule_type,
+            decision:  decision_event.decision,
+            severity:  flag.severity
+        })
+
+FUNCTION on_recollect_result(original_outlier_event_id, recollect_result):
+    // When a recollect comes back, compare to the original.
+    original = OpenSearch.Get(&quot;lab-outliers&quot;, original_outlier_event_id)
+
+    value_difference = abs(original.value - recollect_result.value)
+    clinically_significant = is_clinically_significant_difference(
+        loinc_code = original.loinc_code,
+        original_value = original.value,
+        recollect_value = recollect_result.value
+    )
+
+    IF clinically_significant:
+        // The original was likely artifactual; the recollect shows a different
+        // reality. Label this as a confirmed artifact event.
+        label_row = {
+            original_event_id:   original.event_id,
+            loinc_code:          original.loinc_code,
+            original_value:      original.value,
+            recollect_value:     recollect_result.value,
+            specimen_quality:    original.specimen_quality,
+            patient_context:     original.patient_context_summary,
+            flags_that_fired:    original.flags,
+            label:               &quot;confirmed_artifact&quot;,
+            labeled_at:          recollect_result.resulted_at
+        }
+        S3.PutObject(
+            bucket = &quot;lab-outlier-labels&quot;,
+            key    = date_partitioned_key(recollect_result.resulted_at) + &quot;/&quot; + uuid() + &quot;.parquet&quot;,
+            body   = parquet_encode([label_row])
+        )
+
+    ELSE:
+        // Recollect confirmed the original value; the original was real.
+        label_row = {
+            original_event_id:   original.event_id,
+            loinc_code:          original.loinc_code,
+            original_value:      original.value,
+            recollect_value:     recollect_result.value,
+            label:               &quot;confirmed_real&quot;,
+            labeled_at:          recollect_result.resulted_at
+        }
+        S3.PutObject(
+            bucket = &quot;lab-outlier-labels&quot;,
+            key    = date_partitioned_key(recollect_result.resulted_at) + &quot;/&quot; + uuid() + &quot;.parquet&quot;,
+            body   = parquet_encode([label_row])
+        )
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter03.05-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<blockquote>
+<p>Sample timestamps and event IDs in the examples below are illustrative and reflect the draft date. Production output uses real ISO-8601 timestamps from the event handler's invocation time.</p>
+</blockquote>
+<p><strong>Sample critical-value-with-artifact-context flag:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LAB-2026-05-12T06:42:11Z-771244&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-0044221&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loinc_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2823-3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loinc_display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Potassium [Moles/volume] in Serum or Plasma&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">7.8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mEq/L&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;resulted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T06:42:11Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;accession&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CHEM-2026-128821&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;routing&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical_callback&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CRITICAL_K_HIGH&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical_value_high&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical_callback&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">7.8</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;threshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">6.5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Potassium 7.8 mEq/L exceeds critical high threshold 6.5 mEq/L&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HEMOLYSIS_GATE_K&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;specimen_quality_invalidating&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tech_review_hold&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quality_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hemolysis_index&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quality_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;threshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hemolysis index 4+ above threshold 3 for potassium; result likely artifactual from pseudohyperkalemia&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;recommended_action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;recollect&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;delta_check_failure&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;synchronous&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;absolute_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;percent_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">85.7</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;previous_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;previous_resulted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-11T06:15:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;hours_between_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">24.5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Potassium shifted from 4.2 to 7.8 in 24.5 hours, an 85.7% change&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;specimen_quality&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;hemolysis_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;icterus_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;lipemia_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;clot_detected&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;qns_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;short_sample&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;collection_site&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;peripheral&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;transport_delay_minutes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">92</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;patient_context_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;age_years&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">74</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sex&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;M&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;acuity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ward&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;active_problems&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;J18.9 Pneumonia, unspecified&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;I10 Essential hypertension&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;active_medications_flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nt">&quot;on_dialysis&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;previous_result&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mEq/L&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;resulted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-11T06:15:00Z&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;interpretation_hint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Critical value fires; hemolysis index 4+ and transport delay 92 minutes suggest pseudohyperkalemia. Recommend a properly drawn peripheral recollect with immediate transport before treating. Callback must still occur within the CLIA-mandated window; the callback payload includes this artifact context for faster clinical disposition.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T06:42:11.180Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample delta-check flag for clinically meaningful change:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LAB-2026-05-12T14:30:22Z-812918&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-0077331&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loinc_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;718-7&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loinc_display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hemoglobin [Mass/volume] in Blood&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.4</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;g/dL&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;resulted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T14:30:22Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;routing&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;autoverify_with_flag&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;below_reference_range&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;informational&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;range&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">11.5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">14.5</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hemoglobin 8.4 g/dL below reference range 11.5-14.5&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;delta_check_failure&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;synchronous&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;absolute_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-2.8</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;percent_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-25.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;previous_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">11.2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;previous_resulted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T10:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;hours_between_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hemoglobin dropped 2.8 g/dL (25%) in 4.5 hours&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient_history_zscore&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;synchronous&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;robust_z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-4.2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;patient_median&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">11.4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;patient_mad&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;history_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Value 3.7 standard deviations below this patient&#39;s historical median of 11.4&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;specimen_quality&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;hemolysis_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;clot_detected&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;qns_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;collection_site&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;peripheral&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;transport_delay_minutes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">18</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;interpretation_hint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;No specimen quality concerns; delta and patient-baseline z-score consistent with acute blood loss. Patient has an open surgical wound per active problem list. Recommend clinical correlation for potential post-op bleeding.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T14:30:22.450Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample tech-review-hold flag driven by specimen quality:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LAB-2026-05-12T18:05:41Z-918772&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-0099402&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loinc_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2345-7&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loinc_display&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Glucose [Mass/volume] in Serum or Plasma&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mg/dL&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;resulted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T18:05:41Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;routing&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tech_review_hold&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;above_reference_range&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;informational&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;range&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">70</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">99</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Glucose 412 mg/dL above reference range 70-99&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;delta_check_failure&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical_callback&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;absolute_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">310</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;percent_delta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">305</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;previous_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">102</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;previous_resulted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T10:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;hours_between_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">7.6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Glucose jumped from 102 to 412 in 7.6 hours&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prohibited_collection_site&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tech_review_hold&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;collection_site&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;peripheral&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Specimen annotation indicates draw from arm with active D5W infusion; glucose likely contaminated by IV fluid&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;interpretation_hint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Large glucose delta combined with collection-site concern strongly suggests IV fluid contamination. Recommend recollect from opposite arm before clinical action.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T18:05:41.102Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative; measure against your own data):</strong></p>
+<blockquote>
+<p>These ranges are directional from typical lab analytics project experience, not measured numbers. Two specifically warrant additional caveat. The &quot;real critical-value miss rate&quot; requires multi-month chart-review measurement to establish ground truth, which most labs do not have. The &quot;pre-analytical artifact catch rate&quot; requires a recollect-confirmed-artifact denominator that production systems typically approximate rather than measure directly. Replace with measured numbers for your environment and methodology before relying on them as targets.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Rules only</th>
+<th>Rules + delta</th>
+<th>Full pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flags per 1,000 results</td>
+<td>50-120</td>
+<td>80-180</td>
+<td>60-140</td>
+</tr>
+<tr>
+<td>Tech review volume (% of results)</td>
+<td>3-8%</td>
+<td>6-12%</td>
+<td>4-9%</td>
+</tr>
+<tr>
+<td>Autoverification rate</td>
+<td>85-92%</td>
+<td>80-88%</td>
+<td>88-95%</td>
+</tr>
+<tr>
+<td>Pre-analytical artifact catch rate</td>
+<td>25-50%</td>
+<td>35-65%</td>
+<td>65-85%</td>
+</tr>
+<tr>
+<td>Real critical-value miss rate</td>
+<td>&lt;2%</td>
+<td>&lt;1%</td>
+<td>&lt;1%</td>
+</tr>
+<tr>
+<td>Delta-check override rate</td>
+<td>n/a</td>
+<td>40-70%</td>
+<td>25-50%</td>
+</tr>
+<tr>
+<td>Critical-callback timeliness (%&lt; 60 min)</td>
+<td>88-95%</td>
+<td>88-95%</td>
+<td>90-97%</td>
+</tr>
+<tr>
+<td>Real-time latency p95</td>
+<td>30-100ms</td>
+<td>50-150ms</td>
+<td>80-250ms</td>
+</tr>
+<tr>
+<td>Batch panel IF cadence</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>per-panel (sub-second)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>New patients with no history.</strong> Delta checks and patient-baseline z-scores require prior results. First-time patient encounters fall back to population-level checks, which are less specific. The first result for a new patient typically gets flagged more often than necessary, settling down as history accumulates.</li>
+<li><strong>Patients with chronic conditions that produce stable-but-abnormal baselines.</strong> A dialysis patient's creatinine of 8 is their baseline; flagging it on every result is noise. Patient-baseline z-score helps here, but only after enough history. Explicit patient-attribute gating (on_dialysis flag suppresses certain reference-range flags) is usually needed.</li>
+<li><strong>Analytes with high intra-individual variability.</strong> Some analytes (random glucose in non-diabetics, WBC in stress states, troponin near the 99th percentile) are naturally noisy. Patient-baseline approaches produce nonsense if applied without analyte-specific calibration of thresholds.</li>
+<li><strong>Reference lab send-outs with delayed resulting.</strong> A send-out result may arrive days or weeks after the specimen was collected. Delta checks on stale data are usually not useful; the detector has to know when to suppress delta checks based on the time-between-results.</li>
+<li><strong>Unusual-but-real clinical events.</strong> DKA with glucose of 650. Acute MI with troponin 15x upper limit. Acute hemolysis with LDH 3000. The system will flag these (correctly), and the clinical team will act (correctly). The expected-results noise is that the flag fires alongside the real event; the challenge is making sure the flag doesn't slow down the clinical response.</li>
+<li><strong>Mislabeled specimens.</strong> If the wrong patient's label is on the tube, every result looks like it came from the labeled patient. Delta checks and patient-baseline z-scores may catch this (all results will be highly discordant from that patient's history). But if the mislabeled patient's baselines happen to align, the error is invisible to result-pattern detection. Two-person verification at draw time and positive-patient-identification workflows are the actual fix; the detector is a backstop.</li>
+<li><strong>Method changes without range updates.</strong> When the lab changes an analyzer, switches to a different reagent supplier, or revalidates a method, reference ranges may shift. Results processed against the old range produce systematic bias. Pipeline needs method-change awareness and a validation workflow to update ranges.</li>
+<li><strong>Pregnancy status not captured.</strong> Many reference ranges shift significantly in pregnancy. If the EHR doesn't have a reliable pregnancy flag, the detector will flag normal-for-pregnancy values as outliers. Gender and age alone are insufficient; pregnancy status has to be first-class patient context.</li>
+<li><strong>Pediatric data sparsity.</strong> Pediatric reference ranges are age-banded at narrow intervals, and the population data for each age band is thinner. Cohort baselines for pediatric populations are often less stable than adult ones, and more population-level false positives occur. Specialty pediatric ranges from published consensus documents are often more reliable than locally-derived cohort stats for these patients.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode shows the shape. A production lab outlier detection system closes several gaps the recipe leaves intentionally light.</p>
+<p><strong>Clinical rule authoring is a continuous laboratory program.</strong> Lab rule libraries are owned by laboratory directors, pathologists, and clinical chemists, with input from clinical specialty leaders (endocrinology for TSH rules, cardiology for troponin rules, hepatology for LFT rules). Each rule has a clinical justification, a validation study (what sample was it tested on, what were the performance metrics), and a governance process for updates. Rules that fire high callback volumes get peer-reviewed before production. The analytics team does not write clinical rules unilaterally; they build the infrastructure that lets the clinical teams define, version, validate, and deploy them.</p>
+<p><strong>CLIA validation is not optional.</strong> Autoverification and intelligent alerting live inside a CLIA-regulated workflow. CLSI AUTO10 defines the expected validation approach for autoverification algorithms. Any algorithm that affects whether a result is released or held must have documented validation before production deployment, and substantive algorithm changes trigger revalidation. Laboratory accreditation bodies (CAP, COLA, Joint Commission) inspect these validations during surveys. Skipping the validation discipline can result in loss of accreditation, which shuts down the lab.</p>
+<p><strong>Critical-value callback workflow has specific compliance requirements.</strong> CLIA requires documented critical-value callbacks with timing, recipient, read-back, and closure tracking. Callback timing is measured and reported; many states and accreditation bodies set 30 or 60 minute expectations for the callback to reach the ordering provider. The callback service in the pipeline must be designed around this workflow, not as an afterthought. It also must have a documented fallback when automated callback fails (page the lab supervisor, require manual phone calls, document the fallback invocation).</p>
+<p><strong>LIS integration latency and ordering constraints.</strong> HL7 v2 ORU messages often arrive in a specific order (preliminary, final, corrected) and the pipeline has to handle corrections cleanly. A preliminary result that fires a critical callback followed by a corrected result that shows the initial was wrong requires an explicit &quot;retract callback&quot; workflow. The LIS vendor's message semantics have to be honored; skipping this produces missed corrections and incorrect audit trails.</p>
+<p><strong>Method and reagent change management.</strong> Analyzer method changes, reagent lot changes, and calibration updates all shift analyte distributions. A production pipeline has to be aware of method changes and suppress comparison-based flags across method boundaries. The metadata to do this lives in the QC program, not in the clinical rule library, and integrating the two is a nontrivial data engineering problem.</p>
+<p><strong>Reference range lifecycle.</strong> Reference ranges are reviewed periodically (every few years) and may be updated after population validation studies, method changes, or regulatory guidance updates. Every range has a version and an effective date. Historical results have to be interpretable against the range that was in force at the time. Pipeline must not retroactively re-apply current ranges to historical flags; the audit trail requires range preservation.</p>
+<p><strong>POCT integration differs from central lab.</strong> Point-of-care tests (bedside glucose, iSTAT blood gases, rapid strep, ACT) have different data flows, different quality control schemes, and different error modes than central lab results. POCT results are often logged by the floor nurse or respiratory therapist, not a trained lab tech, and have different validation requirements. A pipeline that treats POCT data the same as central lab data will miss POCT-specific artifact patterns (a glucose meter drawn from a hand with D50W on it, an iSTAT cartridge that was out of temp spec). POCT devices also usually have less rich specimen quality metadata than central lab analyzers.</p>
+<p><strong>Reference lab send-out data.</strong> Results from reference labs (Quest, LabCorp, specialty molecular labs, send-outs for unusual tests) arrive as HL7 or as a file feed, often lack specimen quality metadata from the performing lab, and may not be delta-checkable because they're rare tests. The pipeline has to handle these gracefully (suppress delta checks, suppress cohort z-scores when the cohort is too small, accept that some send-out results are just going to be released with minimal automated review).</p>
+<p><strong>Patient-level alerting suppression governance.</strong> A patient with known end-stage renal disease doesn't need a &quot;creatinine above reference range&quot; alert on every result. Patient-level suppression rules (expressed as &quot;suppress high creatinine reference-range flag if on_dialysis == true&quot;) are clinically useful but introduce governance complexity: who authorizes which suppressions, how are they versioned, what happens when the suppression decision is wrong? This is a longer-term program, not a sprint 1 feature.</p>
+<p><strong>Bias and equity monitoring.</strong> Reference ranges derived from historical populations may encode bias. The creatinine-GFR race coefficient discussion from the last several years is the example everyone points to. Cohort-level z-scores can flag legitimately-different values for populations underrepresented in the training data. Subgroup monitoring dashboards (flag rate by patient race, ethnicity, language, insurance status) are part of the minimum deployment. Reference range validation should include representative population sampling. These are ongoing concerns, not check-the-box items.</p>
+<p><strong>FDA regulatory considerations.</strong> Laboratory-developed tests and some autoverification software fall under FDA oversight in evolving ways. The FDA's final rule on laboratory-developed tests (issued 2024, implementation phased through the late 2020s) subjects many previously-exempt LDTs to FDA premarket review. Autoverification algorithms that alter clinical reporting may cross into regulated software territory. Coordinate with regulatory affairs, laboratory leadership, and legal before production deployment; do not assume the pre-2024 landscape applies.</p>
+<p><strong>Disaster recovery for the lab.</strong> The outlier pipeline is in the result-release path. If the pipeline is down, results cannot be held indefinitely; clinical care needs results. The documented downtime behavior has to specify which alerts continue to fire (critical values, at minimum) versus which are degraded (cohort z-score, for example, can pause). The rules layer should be deployable as a standalone fallback. The lab doesn't stop running because AWS has a regional issue; plan accordingly.</p>
+<p><strong>Autoverification rate targets are business decisions.</strong> The goal is not to maximize autoverification rate; the goal is to maximize the rate at which safe-to-autoverify results are released without human review, while catching the unsafe-to-autoverify cases for review. Those are different targets. A pipeline that aggressively autoverifies will produce a high rate but at the cost of missed artifacts. A pipeline that conservatively holds will have a low rate and frustrated techs. The operating point is a governance decision driven by lab leadership, not a technical optimization.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Point-of-care test (POCT) specific path.</strong> POCT results (bedside glucose, arterial blood gases from an iSTAT, coagulation from a CoaguChek, rapid strep, urine dipstick) flow through a POCT data manager rather than the central lab LIS. The analytical characteristics differ: lower dynamic range on many tests, different quality control architecture, the operator is often a floor nurse rather than a trained tech. A POCT-aware path uses POCT-specific reference ranges and POCT-specific rules (hold bedside glucose results outside physiological range for lab confirmation, for example). Often layered on top of the core pipeline rather than built as a parallel system.</p>
+<p><strong>Blood bank critical value and compatibility pipeline.</strong> Blood bank testing (type and screen, crossmatch, antibody identification) has its own critical-value workflow with particularly strict compliance requirements. An antibody detected against a common antigen that was missed would be a sentinel event. Pipeline extension to blood bank requires specialized reference data (blood group antigens, antibody cross-reactivities, compatibility rules), different vendor data feeds, and particularly rigorous audit. Usually structured as a parallel dedicated pipeline sharing the ingest and storage layers.</p>
+<p><strong>Microbiology result interpretation assist.</strong> Microbiology results are semi-structured (organism identification, antibiotic susceptibility in a grid of MIC values, Gram stain findings in free text). Outlier detection for microbiology looks for unusual organism-antibiotic susceptibility patterns (emerging resistance), organism-source mismatches (a gut organism growing in a blood culture might be contamination or might be translocation), and culture growth in unexpected contexts. LLM-assisted interpretation of culture results alongside the patient's clinical context is an active development area.</p>
+<p><strong>Coagulation panel specialty detection.</strong> Coagulation results (PT/INR, aPTT, fibrinogen, D-dimer, thromboelastography) have complex interactions with medications, clinical state, and specimen quality (poorly filled blue-top tubes produce spuriously prolonged PT). A coagulation-specific detection path uses coagulation-aware rules (PT/INR delta checks adjusted for warfarin initiation, aPTT in the context of heparin infusion). Often paired with anticoagulation management workflows.</p>
+<p><strong>Oncology biomarker trend detection.</strong> Tumor markers (CA-125, CEA, PSA, CA 19-9) are evaluated primarily as trends rather than single values. Patient trajectory detection with change-point analysis is the right architecture; population-level thresholds are nearly useless. Extension requires analyte-specific trend logic (what constitutes a significant doubling time, what constitutes response vs. progression) that's typically maintained by oncology clinical leadership.</p>
+<p><strong>Therapeutic drug monitoring integration.</strong> Drug levels (vancomycin trough, tacrolimus level, digoxin, anticonvulsants) are evaluated against therapeutic ranges that depend on the patient's indication, timing of the dose relative to the sample, and concurrent medications. A drug-monitoring-specific extension of the pipeline cross-references the sample timing with the dose timing from the medication administration record, the target range from the indication, and the concurrent drug list. Particularly useful for drugs with narrow therapeutic windows.</p>
+<p><strong>Cross-facility result harmonization.</strong> When results come from multiple labs (own central lab, outreach labs, reference lab send-outs, POCT, prior-system results from legacy EHR migration), methods and reference ranges differ. A cross-facility harmonization layer computes method-agnostic canonical values for comparison (useful for patients who receive care at multiple facilities in an integrated delivery network). Requires method crosswalks and harmonization coefficients maintained by the clinical chemistry team.</p>
+<p><strong>Patient-facing result interpretation (with caution).</strong> Patient portals increasingly deliver lab results directly to patients, often before the clinician has reviewed them. An outlier-aware portal layer can provide context-appropriate wording (&quot;this result is in your normal range,&quot; &quot;this result is slightly outside the typical range; your clinician will discuss,&quot; &quot;this result is unusual and may need follow-up&quot;) rather than raw numbers. Requires careful clinical and communications review to avoid causing unnecessary patient alarm or false reassurance.</p>
+<p><strong>LLM-assisted pathology review queue prioritization.</strong> For the tech and pathologist review queue, an LLM can read the patient's recent notes alongside the flagged result and produce a triage priority recommendation. Not a decision-maker; a prioritization aid. Helps the most clinically urgent holds surface first when queue depth is high. Adds cost and latency; appropriate for the review queue, not the real-time path.</p>
+<p><strong>Sepsis early warning integration.</strong> Lab trends (lactate climbing, creatinine climbing, WBC deviating, platelets dropping, bicarbonate dropping) are heavily correlated with sepsis onset. The trajectory detection layer of this pipeline feeds directly into sepsis early warning (Recipe 3.7). In mature deployments, the two pipelines share infrastructure, and the lab trajectory signals become features in the sepsis risk model.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html">Amazon SageMaker Processing</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/randomcutforest.html">Amazon SageMaker Random Cut Forest Algorithm</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html">Amazon OpenSearch Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/welcome.html">Amazon MQ Developer Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Random Cut Forest and Isolation Forest patterns applicable to the multivariate panel-level layer; Feature Store examples matching the analyte-cohort baseline architecture.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: search for &quot;healthcare,&quot; &quot;hl7,&quot; &quot;fhir,&quot; and &quot;clinical decision support&quot; for adjacent LIS integration patterns.</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter by AI/ML + Healthcare): browse for clinical decision support and laboratory analytics reference architectures.</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search for &quot;anomaly detection,&quot; &quot;clinical decision support,&quot; and &quot;laboratory&quot; for architectural deep-dives.</li>
+<li><a href="https://aws.amazon.com/healthlake/">AWS HealthLake</a>: managed FHIR repository that can serve as the patient-context data source for FHIR-native deployments.</li>
+</ul>
+<p><strong>Industry, Clinical, and Regulatory References:</strong></p>
+<ul>
+<li><a href="https://loinc.org/">LOINC (Logical Observation Identifiers Names and Codes)</a>: the standard for identifying lab tests; maintained by Regenstrief Institute; free.</li>
+<li><a href="https://clsi.org/">CLSI AUTO10 (Autoverification of Clinical Laboratory Test Results)</a>: CLSI guideline defining the expected approach to autoverification validation.</li>
+<li><a href="https://www.cap.org/laboratory-improvement/accreditation">CAP (College of American Pathologists) Accreditation Resources</a>: CAP accreditation standards for laboratory operations, including critical-value callback expectations and autoverification validation.</li>
+<li><a href="https://www.cms.gov/regulations-and-guidance/legislation/clia">CMS CLIA Regulations</a>: federal regulations governing clinical laboratory operations including result reporting and critical-value callback requirements.</li>
+<li><a href="https://www.fda.gov/medical-devices/in-vitro-diagnostics/laboratory-developed-tests">FDA Laboratory Developed Tests (LDTs)</a>: FDA guidance and rulemaking on LDTs, with evolving applicability to autoverification software.</li>
+<li><a href="https://www.hl7.org/">HL7 International</a> and <a href="https://www.hl7.org/fhir/">HL7 FHIR</a>: standards bodies for healthcare data interchange. HL7 v2 ORU for legacy result reporting, FHIR R4 Observation/DiagnosticReport for modern integrations.</li>
+<li><a href="https://www.cdc.gov/labquality/">Institute for Quality in Laboratory Medicine</a>: CDC resources on laboratory quality improvement.</li>
+<li><a href="https://www.jointcommission.org/resources/sentinel-event/">The Joint Commission Patient Safety Advisories on Lab-Related Events</a>: periodic advisories on laboratory-related sentinel events, useful for prioritizing detection rules.</li>
+</ul>
+<p><strong>External References (Conceptual):</strong></p>
+<ul>
+<li><a href="https://cs.nju.edu.cn/zhouzh/zhouzh.files/publication/icdm08b.pdf">Isolation Forest (Liu, Ting, Zhou, 2008)</a>: original Isolation Forest paper for multivariate unsupervised anomaly detection.</li>
+<li><a href="https://en.wikipedia.org/wiki/Statistical_process_control">Statistical Process Control (Wikipedia)</a>: conceptual background on CUSUM and EWMA control charts applicable to lab trajectory monitoring.</li>
+<li><a href="https://github.com/shap/shap">SHAP (SHapley Additive exPlanations)</a>: per-prediction explanation library, essential for analyst-facing explanations of multivariate flags.</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient and lab data generator for non-PHI development environments.</li>
+<li><a href="https://mimic.mit.edu/">MIMIC-IV</a>: deidentified ICU data including dense lab results, available through PhysioNet with a data use agreement.</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Real-time rule-based critical values, delta checks on top 20 analytes, specimen quality fusion for chemistry panels, single-analyzer and single-LIS integration, CLIA-compliant critical-value callback workflow</td>
+<td>4-7 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full rules library across the lab's formulary, patient-history robust z-scores, cohort baselines per analyte, panel-level Isolation Forest, autoverification integration with the LIS, full reference-range versioning, subgroup fairness dashboards, full audit and governance, disaster recovery mode</td>
+<td>9-15 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>POCT integration, blood bank extension, microbiology interpretation assist, oncology biomarker trend detection, therapeutic drug monitoring integration, cross-facility harmonization, LLM-assisted triage, patient-portal context layer</td>
+<td>12-24 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter03.05-lab-result-outlier-detection.html">Main Recipe 3.5</a> · <a href="chapter03.05-python-example.html">Python Example</a> · <a href="chapter03-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

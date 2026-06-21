@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 7.4: ED Visit Prediction (Python Example)</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-74-ed-visit-prediction-python-example">Recipe 7.4: ED Visit Prediction (Python Example)</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of an ED visit prediction pipeline. It generates synthetic patient data, trains a gradient boosted tree model, and scores patients for 30-day ED visit risk. It is not production-ready. The feature engineering is minimal, the synthetic data is unrealistically clean, and the model evaluation skips half the things you'd need for a real deployment (fairness audits, calibration curves, clinical validation). Think of it as a sketch that shows the shape of the solution. A starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and a few standard ML libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>pandas<span class="w"> </span>numpy<span class="w"> </span>scikit-learn
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code> on your data bucket</li>
+<li><code>sagemaker:CreateTrainingJob</code>, <code>sagemaker:CreateEndpoint</code>, <code>sagemaker:InvokeEndpoint</code></li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:Query</code> on your patient risk score table</li>
+</ul>
+<p>For the SageMaker training path, you'll also need a SageMaker execution role with S3 access. This example runs the model locally with scikit-learn for clarity, then shows how you'd deploy via SageMaker.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>These define the feature schema, risk thresholds, and model parameters. They live at the top because they're really configuration decisions, not logic. Readers should see what levers exist before seeing the code that uses them.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+
+<span class="c1"># ─── Risk Tier Thresholds ───────────────────────────────────────────────────</span>
+<span class="c1"># These thresholds determine which patients get outreach. They&#39;re not magic</span>
+<span class="c1"># numbers: you calibrate them based on your care management team&#39;s capacity.</span>
+<span class="c1"># If you can only call 200 patients per week, set HIGH_RISK_THRESHOLD so that</span>
+<span class="c1"># roughly 200 patients land above it in each scoring run.</span>
+<span class="c1">#</span>
+<span class="c1"># The gap between medium and high matters operationally. High-risk patients</span>
+<span class="c1"># get a nurse call within 48 hours. Medium-risk get a mailer and a pharmacy</span>
+<span class="c1"># check-in. Low-risk get nothing (for now).</span>
+
+<span class="n">HIGH_RISK_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>    <span class="c1"># top tier: proactive nurse outreach</span>
+<span class="n">MEDIUM_RISK_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.40</span>  <span class="c1"># middle tier: automated outreach</span>
+<span class="c1"># Below 0.40: no intervention (standard care)</span>
+
+<span class="c1"># ─── Feature Configuration ──────────────────────────────────────────────────</span>
+<span class="c1"># These are the features we&#39;ll engineer from claims and clinical data.</span>
+<span class="c1"># In production, you&#39;d pull these from a feature store. Here we generate</span>
+<span class="c1"># synthetic versions to demonstrate the pipeline shape.</span>
+
+<span class="n">FEATURE_COLUMNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;age&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ed_visits_last_12m&quot;</span><span class="p">,</span>          <span class="c1"># prior ED utilization (strongest signal)</span>
+    <span class="s2">&quot;ed_visits_last_3m&quot;</span><span class="p">,</span>           <span class="c1"># recent acceleration</span>
+    <span class="s2">&quot;chronic_condition_count&quot;</span><span class="p">,</span>     <span class="c1"># comorbidity burden</span>
+    <span class="s2">&quot;has_diabetes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;has_chf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;has_copd&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;has_mental_health_dx&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;missed_appointments_last_6m&quot;</span><span class="p">,</span> <span class="c1"># engagement proxy</span>
+    <span class="s2">&quot;days_since_last_pcp_visit&quot;</span><span class="p">,</span>   <span class="c1"># care continuity gap</span>
+    <span class="s2">&quot;rx_fills_last_3m&quot;</span><span class="p">,</span>            <span class="c1"># medication adherence proxy</span>
+    <span class="s2">&quot;inpatient_admits_last_12m&quot;</span><span class="p">,</span>   <span class="c1"># hospitalization history</span>
+    <span class="s2">&quot;lives_alone&quot;</span><span class="p">,</span>                 <span class="c1"># social isolation (if available)</span>
+    <span class="s2">&quot;distance_to_nearest_ed_miles&quot;</span><span class="p">,</span><span class="c1"># geographic access</span>
+<span class="p">]</span>
+
+<span class="c1"># ─── Model Parameters ───────────────────────────────────────────────────────</span>
+<span class="c1"># Gradient boosted trees work well here because:</span>
+<span class="c1"># 1. They handle mixed feature types (continuous + binary) without scaling</span>
+<span class="c1"># 2. They capture non-linear interactions (age + CHF + lives alone)</span>
+<span class="c1"># 3. They produce feature importance rankings for clinical explainability</span>
+<span class="c1"># 4. They&#39;re robust to missing values (common in claims data)</span>
+
+<span class="n">MODEL_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>           <span class="c1"># shallow trees reduce overfitting on small cohorts</span>
+    <span class="s2">&quot;learning_rate&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>   <span class="c1"># prevents fitting to tiny subgroups</span>
+    <span class="s2">&quot;subsample&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>         <span class="c1"># row sampling for regularization</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># ─── Prediction Window ──────────────────────────────────────────────────────</span>
+<span class="n">PREDICTION_WINDOW_DAYS</span> <span class="o">=</span> <span class="mi">30</span>  <span class="c1"># predict ED visits within next 30 days</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-generate-synthetic-patient-data">Step 1: Generate Synthetic Patient Data</h2>
+<p><em>In production, this data comes from your claims warehouse, EHR extracts, and ADT feeds. Here we generate realistic synthetic data to demonstrate the pipeline without touching any real PHI. The distributions are loosely based on published literature on ED utilization patterns.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_synthetic_patients</span><span class="p">(</span><span class="n">n_patients</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate synthetic patient data with realistic ED visit patterns.</span>
+
+<span class="sd">    The key insight: ED visits cluster. A small percentage of patients account</span>
+<span class="sd">    for a disproportionate share of ED utilization. Our synthetic data reflects</span>
+<span class="sd">    this: roughly 15-20% of patients will have the outcome (ED visit in next</span>
+<span class="sd">    30 days), with prior ED use being the strongest predictor.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_patients: Number of synthetic patients to generate.</span>
+<span class="sd">        seed: Random seed for reproducibility.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame with features and a binary outcome column.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="c1"># Age distribution: skewed toward older adults (higher ED utilization)</span>
+    <span class="n">age</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">58</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">95</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Chronic conditions: prevalence increases with age</span>
+    <span class="n">age_factor</span> <span class="o">=</span> <span class="p">(</span><span class="n">age</span> <span class="o">-</span> <span class="mi">18</span><span class="p">)</span> <span class="o">/</span> <span class="mi">77</span>  <span class="c1"># normalized 0-1</span>
+    <span class="n">has_diabetes</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.15</span> <span class="o">+</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="n">age_factor</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="n">has_chf</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.05</span> <span class="o">+</span> <span class="mf">0.12</span> <span class="o">*</span> <span class="n">age_factor</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="n">has_copd</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.06</span> <span class="o">+</span> <span class="mf">0.10</span> <span class="o">*</span> <span class="n">age_factor</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="n">has_mental_health_dx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+
+    <span class="n">chronic_condition_count</span> <span class="o">=</span> <span class="n">has_diabetes</span> <span class="o">+</span> <span class="n">has_chf</span> <span class="o">+</span> <span class="n">has_copd</span> <span class="o">+</span> <span class="n">has_mental_health_dx</span>
+    <span class="c1"># Add some additional conditions not individually tracked</span>
+    <span class="n">chronic_condition_count</span> <span class="o">+=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+
+    <span class="c1"># Prior ED utilization: the single strongest predictor of future ED use.</span>
+    <span class="c1"># Most patients have 0-1 visits. A small group has 4+.</span>
+    <span class="n">ed_base_rate</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="p">(</span><span class="n">chronic_condition_count</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span>
+    <span class="n">ed_visits_last_12m</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">ed_base_rate</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="n">ed_visits_last_3m</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">ed_base_rate</span> <span class="o">*</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="c1"># Ensure 3-month count doesn&#39;t exceed 12-month count</span>
+    <span class="n">ed_visits_last_3m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">ed_visits_last_3m</span><span class="p">,</span> <span class="n">ed_visits_last_12m</span><span class="p">)</span>
+
+    <span class="c1"># Care engagement signals</span>
+    <span class="n">missed_appointments_last_6m</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="n">days_since_last_pcp_visit</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">730</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">rx_fills_last_3m</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="n">chronic_condition_count</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+
+    <span class="c1"># Hospitalization history</span>
+    <span class="n">inpatient_admits_last_12m</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">0.2</span> <span class="o">+</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="p">(</span><span class="n">chronic_condition_count</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="n">n_patients</span><span class="p">)</span>
+
+    <span class="c1"># Social/geographic factors</span>
+    <span class="n">lives_alone</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.25</span> <span class="o">+</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="p">(</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">70</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">n_patients</span><span class="p">)</span>
+    <span class="n">distance_to_nearest_ed_miles</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="c1"># ─── Generate outcome (ED visit in next 30 days) ────────────────────────</span>
+    <span class="c1"># The outcome is driven by a combination of factors with realistic weights.</span>
+    <span class="c1"># This is NOT how you&#39;d build a real model (that&#39;s circular). This just</span>
+    <span class="c1"># creates a dataset where the features have predictive signal.</span>
+    <span class="n">log_odds</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="o">-</span><span class="mf">2.5</span>                                          <span class="c1"># base rate ~8%</span>
+        <span class="o">+</span> <span class="mf">0.6</span> <span class="o">*</span> <span class="n">ed_visits_last_12m</span>                    <span class="c1"># strongest signal</span>
+        <span class="o">+</span> <span class="mf">0.9</span> <span class="o">*</span> <span class="n">ed_visits_last_3m</span>                     <span class="c1"># recent acceleration</span>
+        <span class="o">+</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="n">chronic_condition_count</span>
+        <span class="o">+</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">has_chf</span>
+        <span class="o">+</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">has_copd</span>
+        <span class="o">+</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">has_mental_health_dx</span>
+        <span class="o">+</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">missed_appointments_last_6m</span>
+        <span class="o">+</span> <span class="mf">0.003</span> <span class="o">*</span> <span class="n">days_since_last_pcp_visit</span>
+        <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">rx_fills_last_3m</span>                     <span class="c1"># adherence is protective</span>
+        <span class="o">+</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="n">inpatient_admits_last_12m</span>
+        <span class="o">+</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">lives_alone</span>
+        <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>              <span class="c1"># noise</span>
+    <span class="p">)</span>
+    <span class="n">probability</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_odds</span><span class="p">))</span>
+    <span class="n">ed_visit_next_30d</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">probability</span><span class="p">,</span> <span class="n">n_patients</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;SYN-</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">)],</span>
+        <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="n">age</span><span class="p">,</span>
+        <span class="s2">&quot;ed_visits_last_12m&quot;</span><span class="p">:</span> <span class="n">ed_visits_last_12m</span><span class="p">,</span>
+        <span class="s2">&quot;ed_visits_last_3m&quot;</span><span class="p">:</span> <span class="n">ed_visits_last_3m</span><span class="p">,</span>
+        <span class="s2">&quot;chronic_condition_count&quot;</span><span class="p">:</span> <span class="n">chronic_condition_count</span><span class="p">,</span>
+        <span class="s2">&quot;has_diabetes&quot;</span><span class="p">:</span> <span class="n">has_diabetes</span><span class="p">,</span>
+        <span class="s2">&quot;has_chf&quot;</span><span class="p">:</span> <span class="n">has_chf</span><span class="p">,</span>
+        <span class="s2">&quot;has_copd&quot;</span><span class="p">:</span> <span class="n">has_copd</span><span class="p">,</span>
+        <span class="s2">&quot;has_mental_health_dx&quot;</span><span class="p">:</span> <span class="n">has_mental_health_dx</span><span class="p">,</span>
+        <span class="s2">&quot;missed_appointments_last_6m&quot;</span><span class="p">:</span> <span class="n">missed_appointments_last_6m</span><span class="p">,</span>
+        <span class="s2">&quot;days_since_last_pcp_visit&quot;</span><span class="p">:</span> <span class="n">days_since_last_pcp_visit</span><span class="p">,</span>
+        <span class="s2">&quot;rx_fills_last_3m&quot;</span><span class="p">:</span> <span class="n">rx_fills_last_3m</span><span class="p">,</span>
+        <span class="s2">&quot;inpatient_admits_last_12m&quot;</span><span class="p">:</span> <span class="n">inpatient_admits_last_12m</span><span class="p">,</span>
+        <span class="s2">&quot;lives_alone&quot;</span><span class="p">:</span> <span class="n">lives_alone</span><span class="p">,</span>
+        <span class="s2">&quot;distance_to_nearest_ed_miles&quot;</span><span class="p">:</span> <span class="n">distance_to_nearest_ed_miles</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;ed_visit_next_30d&quot;</span><span class="p">:</span> <span class="n">ed_visit_next_30d</span><span class="p">,</span>
+    <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-train-the-prediction-model">Step 2: Train the Prediction Model</h2>
+<p><em>This step trains a gradient boosted classifier on historical data. In production, you'd run this on SageMaker with a larger dataset and proper cross-validation. Here we use scikit-learn locally to keep the focus on the pipeline logic rather than infrastructure.</em></p>
+<div class="code"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">GradientBoostingClassifier</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.calibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">calibration_curve</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">roc_auc_score</span><span class="p">,</span>
+    <span class="n">precision_recall_curve</span><span class="p">,</span>
+    <span class="n">average_precision_score</span><span class="p">,</span>
+    <span class="n">classification_report</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">train_ed_prediction_model</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train a gradient boosted tree model to predict 30-day ED visits.</span>
+
+<span class="sd">    Why gradient boosting over logistic regression? Two reasons:</span>
+<span class="sd">    1. It captures interactions automatically. A 75-year-old with CHF who</span>
+<span class="sd">       lives alone is much higher risk than any of those factors individually.</span>
+<span class="sd">       Logistic regression needs you to manually specify those interactions.</span>
+<span class="sd">    2. It handles the non-linear relationship between features and risk.</span>
+<span class="sd">       The jump from 0 to 1 prior ED visits matters more than 5 to 6.</span>
+
+<span class="sd">    Why not a neural network? For tabular data with &lt;50 features and &lt;100k rows,</span>
+<span class="sd">    gradient boosting consistently matches or beats deep learning. It&#39;s also</span>
+<span class="sd">    far easier to explain to clinicians (&quot;prior ED visits was the top factor&quot;).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: DataFrame with features and &#39;ed_visit_next_30d&#39; outcome column.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (trained_model, X_test, y_test) for evaluation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">FEATURE_COLUMNS</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;ed_visit_next_30d&quot;</span><span class="p">]</span>
+
+    <span class="c1"># 80/20 train/test split. Stratify to maintain outcome ratio in both sets.</span>
+    <span class="c1"># IMPORTANT: This random split is for demonstration only. In production,</span>
+    <span class="c1"># you MUST use a temporal split (e.g., train on months 1-9, test on months</span>
+    <span class="c1"># 10-12). Random splits leak future information and produce optimistically</span>
+    <span class="c1"># biased AUC estimates for time-dependent outcomes like ED visits. A model</span>
+    <span class="c1"># that shows AUC 0.82 on a random split may drop to 0.72 on a temporal split.</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">y</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Training set: </span><span class="si">%d</span><span class="s2"> patients (</span><span class="si">%d</span><span class="s2"> positive, </span><span class="si">%.1f%%</span><span class="s2"> prevalence)&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">),</span> <span class="n">y_train</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">y_train</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Test set: </span><span class="si">%d</span><span class="s2"> patients (</span><span class="si">%d</span><span class="s2"> positive, </span><span class="si">%.1f%%</span><span class="s2"> prevalence)&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">),</span> <span class="n">y_test</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">y_test</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+    <span class="c1"># Train the model. GradientBoostingClassifier builds trees sequentially,</span>
+    <span class="c1"># each one correcting the errors of the previous ensemble.</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">GradientBoostingClassifier</span><span class="p">(</span><span class="o">**</span><span class="n">MODEL_PARAMS</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-evaluate-model-performance">Step 3: Evaluate Model Performance</h2>
+<p><em>Before deploying any risk model, you need to understand how well it discriminates (AUC), how well it's calibrated (do patients scored at 0.7 actually have ~70% event rates?), and whether it performs equitably across subgroups. This step covers discrimination. Calibration and fairness audits are noted in the gap-to-production section.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">evaluate_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_test</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y_test</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the trained model on held-out test data.</span>
+
+<span class="sd">    Key metrics for ED prediction:</span>
+<span class="sd">    - AUC-ROC: Overall discrimination. How well does the model rank patients?</span>
+<span class="sd">      An AUC of 0.75+ is typical for ED prediction models in the literature.</span>
+<span class="sd">    - Average Precision (AUC-PR): More informative than AUC-ROC when the</span>
+<span class="sd">      outcome is imbalanced (which it always is for ED visits).</span>
+<span class="sd">    - Precision at the high-risk threshold: Of patients we flag for outreach,</span>
+<span class="sd">      what fraction actually visits the ED? This drives care manager workload.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Trained GradientBoostingClassifier.</span>
+<span class="sd">        X_test: Test features.</span>
+<span class="sd">        y_test: Test outcomes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary of evaluation metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get predicted probabilities (not binary predictions).</span>
+    <span class="c1"># For risk scoring, we always want probabilities. Binary yes/no loses</span>
+    <span class="c1"># the information about HOW high-risk someone is.</span>
+    <span class="n">y_prob</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_test</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># AUC-ROC: probability that a randomly chosen positive patient is scored</span>
+    <span class="c1"># higher than a randomly chosen negative patient.</span>
+    <span class="n">auc_roc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_prob</span><span class="p">)</span>
+
+    <span class="c1"># Average precision: area under the precision-recall curve.</span>
+    <span class="c1"># More sensitive to performance on the minority class (ED visitors).</span>
+    <span class="n">avg_precision</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_prob</span><span class="p">)</span>
+
+    <span class="c1"># Calibration check: do predicted probabilities match actual event rates?</span>
+    <span class="c1"># GBTs are notoriously poorly calibrated out of the box. A model might</span>
+    <span class="c1"># output &quot;0.70&quot; but only 50% of those patients actually visit the ED.</span>
+    <span class="c1"># Since our risk tiers are probability-based (HIGH &gt;= 0.70), miscalibration</span>
+    <span class="c1"># means the tiers don&#39;t mean what care managers think they mean.</span>
+    <span class="c1">#</span>
+    <span class="c1"># We bin predictions into 5 groups and compare predicted vs. actual rates.</span>
+    <span class="c1"># In production, you&#39;d apply Platt scaling or isotonic regression to fix</span>
+    <span class="c1"># miscalibration before serving scores.</span>
+    <span class="n">fraction_of_positives</span><span class="p">,</span> <span class="n">mean_predicted_value</span> <span class="o">=</span> <span class="n">calibration_curve</span><span class="p">(</span>
+        <span class="n">y_test</span><span class="p">,</span> <span class="n">y_prob</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;uniform&quot;</span>
+    <span class="p">)</span>
+    <span class="n">calibration_error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">fraction_of_positives</span> <span class="o">-</span> <span class="n">mean_predicted_value</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Mean calibration error (5 bins): </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">calibration_error</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calibration bins (predicted -&gt; actual):&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">pred</span><span class="p">,</span> <span class="n">actual</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">mean_predicted_value</span><span class="p">,</span> <span class="n">fraction_of_positives</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%.2f</span><span class="s2"> -&gt; </span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">actual</span><span class="p">)</span>
+
+    <span class="c1"># Apply our operational thresholds to see tier distribution</span>
+    <span class="n">high_risk_count</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_prob</span> <span class="o">&gt;=</span> <span class="n">HIGH_RISK_THRESHOLD</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">medium_risk_count</span> <span class="o">=</span> <span class="p">((</span><span class="n">y_prob</span> <span class="o">&gt;=</span> <span class="n">MEDIUM_RISK_THRESHOLD</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y_prob</span> <span class="o">&lt;</span> <span class="n">HIGH_RISK_THRESHOLD</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">low_risk_count</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_prob</span> <span class="o">&lt;</span> <span class="n">MEDIUM_RISK_THRESHOLD</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># Precision at high-risk threshold: of patients we&#39;d call, how many</span>
+    <span class="c1"># actually have an ED visit? This is the &quot;positive predictive value&quot;</span>
+    <span class="c1"># that care managers care about most.</span>
+    <span class="n">high_risk_mask</span> <span class="o">=</span> <span class="n">y_prob</span> <span class="o">&gt;=</span> <span class="n">HIGH_RISK_THRESHOLD</span>
+    <span class="k">if</span> <span class="n">high_risk_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">precision_at_high</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[</span><span class="n">high_risk_mask</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">precision_at_high</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Feature importance: which factors drive the model&#39;s predictions?</span>
+    <span class="c1"># This is critical for clinical buy-in. If the model says &quot;prior ED visits&quot;</span>
+    <span class="c1"># is the top factor, clinicians nod. If it says &quot;distance to ED&quot; is #1,</span>
+    <span class="c1"># they&#39;ll (rightly) question whether it&#39;s capturing access vs. acuity.</span>
+    <span class="n">importances</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">feature_importances_</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">FEATURE_COLUMNS</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;auc_roc&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">auc_roc</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;average_precision&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">avg_precision</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;precision_at_high_risk&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">precision_at_high</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;mean_calibration_error&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">calibration_error</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;high_risk_count&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">high_risk_count</span><span class="p">),</span>
+        <span class="s2">&quot;medium_risk_count&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">medium_risk_count</span><span class="p">),</span>
+        <span class="s2">&quot;low_risk_count&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">low_risk_count</span><span class="p">),</span>
+        <span class="s2">&quot;top_features&quot;</span><span class="p">:</span> <span class="n">importances</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;AUC-ROC: </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">auc_roc</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Average Precision: </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">avg_precision</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Precision at high-risk threshold: </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">precision_at_high</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Risk tier distribution: </span><span class="si">%d</span><span class="s2"> high / </span><span class="si">%d</span><span class="s2"> medium / </span><span class="si">%d</span><span class="s2"> low&quot;</span><span class="p">,</span>
+                <span class="n">high_risk_count</span><span class="p">,</span> <span class="n">medium_risk_count</span><span class="p">,</span> <span class="n">low_risk_count</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Top 5 features: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">importances</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">metrics</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-score-new-patients">Step 4: Score New Patients</h2>
+<p><em>This is the inference step that runs on a schedule (daily or weekly). It takes the trained model and scores the current patient population, assigning each patient a risk tier and generating an outreach list for care management.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">score_patients</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">patients_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Score a batch of patients and assign risk tiers.</span>
+
+<span class="sd">    In production, this runs as a scheduled job (daily or weekly). It pulls</span>
+<span class="sd">    the latest feature values from your feature store, runs inference, and</span>
+<span class="sd">    writes results to a table that the care management platform reads from.</span>
+
+<span class="sd">    The output is an actionable worklist: patient ID, risk score, risk tier,</span>
+<span class="sd">    and the top contributing factors for that specific patient.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Trained model (or SageMaker endpoint in production).</span>
+<span class="sd">        patients_df: DataFrame with current feature values for each patient.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame with risk scores, tiers, and top contributing factors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">patients_df</span><span class="p">[</span><span class="n">FEATURE_COLUMNS</span><span class="p">]</span>
+
+    <span class="c1"># Get probability of ED visit in next 30 days</span>
+    <span class="n">risk_scores</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Assign risk tiers based on operational thresholds</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assign_tier</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">HIGH_RISK_THRESHOLD</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;HIGH&quot;</span>
+        <span class="k">elif</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">MEDIUM_RISK_THRESHOLD</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;MEDIUM&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;LOW&quot;</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">patients_df</span><span class="p">[[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;risk_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk_scores</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;risk_tier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">assign_tier</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">risk_scores</span><span class="p">]</span>
+    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scored_at&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;prediction_window_days&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PREDICTION_WINDOW_DAYS</span>
+
+    <span class="c1"># For each patient, identify the top 3 contributing factors.</span>
+    <span class="c1"># WARNING: This approach (feature_value * global_importance) is dominated</span>
+    <span class="c1"># by feature scale and produces incorrect per-patient attributions. A patient</span>
+    <span class="c1"># with age=75 (importance 0.05) gets contribution 3.75, while</span>
+    <span class="c1"># ed_visits_last_12m=4 (importance 0.30) gets contribution 1.2. The code</span>
+    <span class="c1"># would incorrectly report &quot;age&quot; as the top factor. Do NOT show these</span>
+    <span class="c1"># explanations to clinicians. Use SHAP values for any patient-facing or</span>
+    <span class="c1"># clinician-facing explanations in production.</span>
+    <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">feature_importances_</span>
+    <span class="n">X_min</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">X_max</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">patient_features</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="c1"># Normalize to 0-1 range so feature scale doesn&#39;t dominate</span>
+        <span class="n">patient_normalized</span> <span class="o">=</span> <span class="p">(</span><span class="n">patient_features</span> <span class="o">-</span> <span class="n">X_min</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">X_max</span> <span class="o">-</span> <span class="n">X_min</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+        <span class="n">contributions</span> <span class="o">=</span> <span class="n">patient_normalized</span> <span class="o">*</span> <span class="n">feature_importances</span>
+        <span class="n">top_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">contributions</span><span class="p">)[</span><span class="o">-</span><span class="mi">3</span><span class="p">:][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">top_factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">FEATURE_COLUMNS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">top_indices</span><span class="p">]</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s2">&quot;top_factors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">top_factors</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-store-risk-scores-dynamodb">Step 5: Store Risk Scores (DynamoDB)</h2>
+<p><em>Risk scores need to be queryable by patient ID (for point-of-care alerts) and by risk tier (for generating outreach worklists). DynamoDB handles both access patterns with a partition key on patient_id and a GSI on risk_tier.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># In a VPC with no internet egress (required for PHI workloads), ensure gateway</span>
+<span class="c1"># VPC endpoints exist for S3 and DynamoDB, and interface VPC endpoints for</span>
+<span class="c1"># SageMaker Runtime. Without these, boto3 calls will timeout silently.</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># Table name. In production, this comes from environment variables or</span>
+<span class="c1"># SSM Parameter Store, not hardcoded strings.</span>
+<span class="n">RISK_SCORES_TABLE</span> <span class="o">=</span> <span class="s2">&quot;ed-risk-scores&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">store_risk_scores</span><span class="p">(</span><span class="n">scored_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write patient risk scores to DynamoDB for downstream consumption.</span>
+
+<span class="sd">    Two consumers read this table:</span>
+<span class="sd">    1. Care management platform: queries by risk_tier (via GSI) to build</span>
+<span class="sd">       daily outreach worklists.</span>
+<span class="sd">    2. EHR integration: queries by patient_id to show risk badges at the</span>
+<span class="sd">       point of care (e.g., a red flag on the patient chart).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        scored_df: DataFrame from score_patients() with risk scores and tiers.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Number of records written.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">RISK_SCORES_TABLE</span><span class="p">)</span>
+    <span class="n">records_written</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Batch write for efficiency. DynamoDB batch_writer handles chunking</span>
+    <span class="c1"># into groups of 25 and retries for unprocessed items.</span>
+    <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">()</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">scored_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="c1"># Only store medium and high risk patients. Low-risk patients</span>
+            <span class="c1"># don&#39;t need to be in the outreach table (saves cost and keeps</span>
+            <span class="c1"># the worklist focused).</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;risk_tier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;LOW&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;risk_score&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;risk_score&quot;</span><span class="p">])),</span>
+                <span class="s2">&quot;risk_tier&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;risk_tier&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;scored_at&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;scored_at&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;prediction_window_days&quot;</span><span class="p">:</span> <span class="n">PREDICTION_WINDOW_DAYS</span><span class="p">,</span>
+                <span class="s2">&quot;top_factors&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;top_factors&quot;</span><span class="p">],</span>
+                <span class="c1"># TTL: auto-expire records after the prediction window passes.</span>
+                <span class="c1"># No point keeping a &quot;30-day risk&quot; score that&#39;s 45 days old.</span>
+                <span class="s2">&quot;ttl&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">PREDICTION_WINDOW_DAYS</span><span class="p">))</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+
+            <span class="n">batch</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">records_written</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Wrote </span><span class="si">%d</span><span class="s2"> risk scores to DynamoDB (medium + high risk only)&quot;</span><span class="p">,</span>
+                <span class="n">records_written</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">records_written</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-upload-training-data-to-s3-for-sagemaker">Step 6: Upload Training Data to S3 (for SageMaker)</h2>
+<p><em>When you're ready to move from local scikit-learn to SageMaker training (larger datasets, GPU instances, automated retraining), you'll need your data in S3. This step shows the handoff.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="n">DATA_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-healthcare-ml-data&quot;</span>
+<span class="n">MODEL_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;ed-prediction/v1&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">upload_training_data</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DATA_BUCKET</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upload training data to S3 in CSV format for SageMaker consumption.</span>
+
+<span class="sd">    SageMaker&#39;s built-in XGBoost algorithm expects CSV with the target column</span>
+<span class="sd">    first and no header row. So that&#39;s what we give it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Training DataFrame with features and outcome.</span>
+<span class="sd">        bucket: S3 bucket for ML artifacts.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        S3 URI of the uploaded training data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># SageMaker XGBoost expects: target_column, feature_1, feature_2, ...</span>
+    <span class="c1"># No header row. Target must be first column.</span>
+    <span class="n">columns_ordered</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ed_visit_next_30d&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">FEATURE_COLUMNS</span>
+    <span class="n">training_data</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">columns_ordered</span><span class="p">]</span>
+
+    <span class="c1"># Write to CSV in memory, then upload</span>
+    <span class="n">csv_buffer</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">training_data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_buffer</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">s3_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">MODEL_PREFIX</span><span class="si">}</span><span class="s2">/train/training_data.csv&quot;</span>
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">s3_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">csv_buffer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>  <span class="c1"># encrypt at rest with KMS</span>
+    <span class="p">)</span>
+
+    <span class="n">s3_uri</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">s3_key</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Uploaded training data to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">s3_uri</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s3_uri</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single callable flow. This demonstrates the end-to-end sequence from data generation through scoring and storage.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_ed_prediction_pipeline</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the complete ED visit prediction pipeline.</span>
+
+<span class="sd">    In production, this would be split across multiple components:</span>
+<span class="sd">    - Training: SageMaker training job (runs weekly or monthly)</span>
+<span class="sd">    - Scoring: Lambda or SageMaker batch transform (runs daily)</span>
+<span class="sd">    - Storage: DynamoDB write (part of scoring job)</span>
+
+<span class="sd">    Here we run everything sequentially for demonstration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ED Visit Prediction Pipeline&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Generate synthetic patient data</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 1] Generating synthetic patient data...&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">generate_synthetic_patients</span><span class="p">(</span><span class="n">n_patients</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> patients&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ED visit rate (outcome): </span><span class="si">{</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ed_visit_next_30d&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Train the model</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 2] Training gradient boosted model...&quot;</span><span class="p">)</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_ed_prediction_model</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Training complete.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Evaluate</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 3] Evaluating model performance...&quot;</span><span class="p">)</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluate_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  AUC-ROC: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;auc_roc&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Average Precision: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;average_precision&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Precision at high-risk: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;precision_at_high_risk&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Calibration error: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;mean_calibration_error&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Risk tiers: </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;high_risk_count&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> high / &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;medium_risk_count&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> medium / </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;low_risk_count&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> low&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Top features: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;top_features&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Score a new batch of patients (simulating daily scoring run)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 4] Scoring patient population...&quot;</span><span class="p">)</span>
+    <span class="c1"># In production, you&#39;d pull fresh feature values here.</span>
+    <span class="c1"># For demo, we score the test set as if they&#39;re today&#39;s population.</span>
+    <span class="n">scoring_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">X_test</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">scored</span> <span class="o">=</span> <span class="n">score_patients</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">scoring_df</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Scored </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">scored</span><span class="p">)</span><span class="si">}</span><span class="s2"> patients&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  High risk: </span><span class="si">{</span><span class="p">(</span><span class="n">scored</span><span class="p">[</span><span class="s1">&#39;risk_tier&#39;</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;HIGH&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Medium risk: </span><span class="si">{</span><span class="p">(</span><span class="n">scored</span><span class="p">[</span><span class="s1">&#39;risk_tier&#39;</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;MEDIUM&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Show sample high-risk patients (the outreach worklist)</span>
+    <span class="n">high_risk</span> <span class="o">=</span> <span class="n">scored</span><span class="p">[</span><span class="n">scored</span><span class="p">[</span><span class="s2">&quot;risk_tier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+        <span class="s2">&quot;risk_score&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Sample high-risk patients (top 5):&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">high_risk</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: score=</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;risk_score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;factors=[</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;top_factors&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Store results (uncomment when DynamoDB table exists)</span>
+    <span class="c1"># print(&quot;\n[Step 5] Storing risk scores in DynamoDB...&quot;)</span>
+    <span class="c1"># records = store_risk_scores(scored)</span>
+    <span class="c1"># print(f&quot;  Wrote {records} records&quot;)</span>
+
+    <span class="c1"># Step 6: Upload training data to S3 (uncomment when bucket exists)</span>
+    <span class="c1"># print(&quot;\n[Step 6] Uploading training data to S3...&quot;)</span>
+    <span class="c1"># s3_uri = upload_training_data(df)</span>
+    <span class="c1"># print(f&quot;  Uploaded to {s3_uri}&quot;)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pipeline complete.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">scored</span>
+
+<span class="c1"># Run the pipeline</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">metrics</span><span class="p">,</span> <span class="n">scored</span> <span class="o">=</span> <span class="n">run_ed_prediction_pipeline</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example trains a model, scores patients, and produces an outreach worklist. It works. But there's a meaningful distance between &quot;runs in a notebook&quot; and &quot;drives clinical interventions for 50,000 patients.&quot; Here's where that gap lives:</p>
+<p><strong>Feature engineering from raw data.</strong> This example starts with pre-computed features. A real pipeline starts with raw claims (837/835 files), ADT feeds, pharmacy data, and EHR extracts. The feature engineering layer (computing &quot;ED visits in last 12 months&quot; from individual claim records) is often 80% of the work. You'd typically use a feature store (SageMaker Feature Store or a custom solution on Athena/Glue) to maintain point-in-time-correct features.</p>
+<p><strong>Synthetic data performance is not a benchmark.</strong> This synthetic data produces artificially high AUC because the outcome was generated from the same features the model uses. Real-world ED prediction models typically achieve AUC 0.70-0.78 due to unmeasured confounders, data quality issues, and temporal drift. Don't use synthetic-data performance as a benchmark for production readiness.</p>
+<p><strong>Temporal validation.</strong> We used a random train/test split. In production, you must validate temporally: train on data from months 1-9, test on months 10-12. Random splits leak future information and produce optimistic AUC estimates. A model that looks great on random splits can fail badly when deployed forward in time.</p>
+<p><strong>Calibration.</strong> Our model outputs probabilities, but are they calibrated? If the model says &quot;0.70 risk,&quot; do 70% of those patients actually visit the ED? Calibration matters because care managers make resource allocation decisions based on these numbers. Use Platt scaling or isotonic regression to calibrate, and plot reliability diagrams to verify.</p>
+<p><strong>Fairness and bias auditing.</strong> ED prediction models can encode existing disparities. If Black patients historically face longer wait times and are more likely to leave without being seen (not counted as an &quot;ED visit&quot;), the model learns a lower baseline for that group. You must evaluate AUC, calibration, and false negative rates across demographic subgroups. SageMaker Clarify provides bias detection, but you still need to decide what to do when you find disparities.</p>
+<p><strong>SHAP values for explainability.</strong> The &quot;top factors&quot; approach in Step 4 is a rough approximation. For clinical deployment, use SHAP (SHapley Additive exPlanations) to generate proper per-patient feature attributions. Clinicians need to understand why a specific patient was flagged, not just that they were.</p>
+<p><strong>Model monitoring and drift detection.</strong> Patient populations change. New chronic disease codes get introduced. Flu season shifts utilization patterns. You need automated monitoring that tracks prediction distribution, feature distributions, and actual vs. predicted rates over time. SageMaker Model Monitor handles this, but you still need to define what &quot;drift&quot; means for your use case and what action to take when it's detected.</p>
+<p><strong>Retraining cadence.</strong> How often do you retrain? Monthly is typical for ED prediction. You need an automated pipeline (SageMaker Pipelines or Step Functions) that retrains, evaluates against the current production model, and promotes the new version only if it improves on key metrics.</p>
+<p><strong>Integration with care management workflows.</strong> The DynamoDB table is just storage. The real integration is with whatever system your care managers use to manage their worklists. That might be an Epic BPA (Best Practice Alert), a Salesforce Health Cloud task, or a custom outreach platform. The &quot;last mile&quot; of getting a risk score into a clinician's workflow is often harder than building the model.</p>
+<p><strong>Consumer-specific field access.</strong> The <code>top_factors</code> field exposes behavioral and social determinant data (e.g., &quot;lives_alone&quot;). An EHR risk badge showing this to patients in a portal may be inappropriate. Consider separating detailed explanations into a DynamoDB attribute that requires elevated IAM permissions. The EHR badge may only need <code>risk_tier</code> (HIGH/MEDIUM/LOW), while care managers need the full explanation. Use IAM conditions or application-layer filtering to restrict field access by consumer identity.</p>
+<p><strong>Consent and opt-out.</strong> Some patients may opt out of predictive analytics or proactive outreach. Your scoring pipeline needs to respect those preferences, which means checking a consent registry before writing scores and before triggering outreach.</p>
+<p><strong>Error handling and retries.</strong> If the feature store query fails mid-batch, do you skip those patients (dangerous: they might be high-risk) or retry (could delay the entire scoring run)? If DynamoDB throttles during the write, do stale scores remain visible to care managers? These operational edge cases matter when the system runs daily at scale.</p>
+<p><strong>IAM least-privilege.</strong> The scoring Lambda needs <code>sagemaker:InvokeEndpoint</code> for the specific endpoint ARN, <code>dynamodb:PutItem</code> and <code>dynamodb:BatchWriteItem</code> for the specific table, and <code>s3:GetObject</code> for the feature data. Not <code>sagemaker:*</code>. Not <code>AmazonDynamoDBFullAccess</code>. Split into separate roles: a SageMaker execution role (S3 read/write on model bucket, KMS decrypt), a scoring role (InvokeEndpoint, DynamoDB write), and a data upload role (S3 PutObject on training prefix only).</p>
+<p><strong>DynamoDB encryption for PHI.</strong> DynamoDB encrypts at rest by default with an AWS-owned key. For PHI tables (like <code>ed-risk-scores</code>, which stores patient_id linked to health predictions), use a customer-managed KMS key (CMK) to maintain control over key rotation, access policies, and CloudTrail audit of key usage. Specify this when creating the table, not after.</p>
+<p><strong>VPC and network isolation.</strong> Patient data (even derived risk scores) is PHI. The scoring job runs in a private subnet with VPC endpoints for SageMaker, DynamoDB, and S3. No internet egress. CloudTrail logs every API call for the audit trail.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter07.04-ed-visit-prediction.html">Recipe 7.4</a> for the full architectural walkthrough, pseudocode, and honest take on where ED prediction gets complicated.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

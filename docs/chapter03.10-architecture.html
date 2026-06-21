@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.10 Architecture and Implementation: Epidemic / Outbreak Detection</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested nav-active" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-310-architecture-and-implementation-epidemic--outbreak-detection">Recipe 3.10 Architecture and Implementation: Epidemic / Outbreak Detection</h1>
+<p><em>Companion to <a href="chapter03.10-epidemic-outbreak-detection.html">Recipe 3.10: Epidemic / Outbreak Detection</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Kinesis Data Streams for the encounter and lab event backbone.</strong> Clinical encounter feeds, lab feeds, and auxiliary-source feeds flow into Kinesis streams as they're produced. Kinesis handles the volume (a state-level surveillance system might process millions of encounter events per day across all participating facilities), provides ordered delivery for time-series analysis, supports replay for backfill and retraining, and integrates cleanly with the downstream Lambda and analytics components.</p>
+<p><strong>AWS Lambda for ingest, normalization, and syndrome classification.</strong> Each source type (HL7 v2 ADT feeds, HL7 v2 lab feeds, FHIR encounter feeds, NWSS wastewater feeds, eCR feeds, NHSN feeds) has its own Lambda that pulls or receives the source-specific format and writes canonical events. Downstream Lambdas perform geocoding, demographic stratification, and syndrome classification. Lambda's auto-scaling fits the bursty pattern of clinical encounter data well.</p>
+<p><strong>Amazon Comprehend Medical for chief-complaint and triage-note NLP.</strong> Free-text chief complaints carry signal that ICD codes miss in real time. Comprehend Medical extracts conditions, anatomy, medications, and signs/symptoms. Combined with rules-based syndromic classification, it provides higher-fidelity syndrome assignment than structured data alone.</p>
+<p><strong>Amazon SageMaker for syndrome classifier training and hosting.</strong> Custom syndrome classifiers (especially for organization-specific syndrome categories or sentinel-event triggers) train as SageMaker Training Jobs and deploy to SageMaker endpoints. SageMaker Feature Store provides online and offline feature consistency.</p>
+<p><strong>Amazon DynamoDB for the cell state and cluster state stores.</strong> Per-cell state (current count, baseline expected, recent flag history) and per-cluster state (open investigations, suppression status, evidence pointers) live in DynamoDB. Single-digit-millisecond reads on cell lookup; DynamoDB streams trigger downstream re-evaluation when cells update.</p>
+<p><strong>Amazon Timestream for time-series cell counts and baselines.</strong> Per-cell time-series of counts, baselines, and detector scores are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-year baseline window cost-effectively.</p>
+<p><strong>Amazon Location Service for geocoding.</strong> Patient address fields (where authority and configuration permit) get geocoded to coordinates and to administrative geographies (census tract, ZIP code tabulation area, county). Combined with custom geography reference data (sewersheds, school districts, hospital catchments) for the multi-resolution geographic stratification.</p>
+<p><strong>Amazon Aurora PostgreSQL with PostGIS for geographic operations.</strong> The geography hierarchy and the geographic operations (point-in-polygon for assigning encounters to administrative areas, polygon-overlap for cluster aggregation, distance computations for cross-jurisdiction routing) fit PostGIS naturally. Aurora provides managed Postgres with HIPAA eligibility.</p>
+<p><strong>Amazon Neptune for the contact and exposure graph (when used).</strong> Contact tracing and exposure-network modeling fit the property-graph model. Less central than for Recipe 3.9, but useful when contact-tracing investigations or exposure-network analyses are part of the surveillance program.</p>
+<p><strong>Amazon OpenSearch Service for case search, line list, and surveillance analytics.</strong> Surveillance line-list data, encounter-search archives, and the searchable history of clusters and investigations live in OpenSearch. OpenSearch supports the kind of ad-hoc query the surveillance team needs (&quot;show me every fever-respiratory ED visit in this ZIP in the last 14 days,&quot; &quot;show me every confirmed Salmonella case in the state for the last 90 days, sorted by serotype&quot;).</p>
+<p><strong>AWS Batch and Amazon SageMaker Processing for SaTScan and other compute-heavy aberration detection.</strong> SaTScan is a compiled tool that can run as a containerized batch job on AWS Batch. SageMaker Processing handles the regression-based detectors and the time-series modeling at scale. Both fit the daily-cadence &quot;run all the detectors against today's data&quot; pattern.</p>
+<p><strong>AWS Step Functions for orchestration.</strong> The daily surveillance run, the cluster-building pipeline, and the periodic retraining are multi-step workflows. Step Functions handles orchestration with retry and error handling.</p>
+<p><strong>Amazon Bedrock for cluster narrative generation.</strong> The cluster builder hands the structured evidence to a Bedrock-hosted LLM that produces the investigator-facing narrative (&quot;A spatiotemporal cluster of 14 fever-respiratory ED visits in census tracts 36055-001100 through 36055-001400 over the past 7 days. Pediatric (under 12) cases account for 11 of 14. Geographic centroid is within 0.4 miles of three elementary schools. No lab-confirmed pathogen in the cluster yet; respiratory panels pending on 4 cases. Compared to the historical baseline for these tracts and this week, the observed count exceeds the 99th percentile.&quot;). Decision support, not decision-making.</p>
+<p><strong>Amazon SageMaker Model Monitor.</strong> Continuously monitors data drift, prediction drift, and (with labels) model quality. Critical for catching baseline drift caused by EHR upgrades, behavioral shifts, demographic changes, or COVID-era reset effects.</p>
+<p><strong>Amazon EventBridge for routing.</strong> Detector outputs publish to EventBridge with cluster context and case-class metadata. Subscribers include the cluster builder, the eCR/NEDSS connector, the audit logger, and the metrics collector.</p>
+<p><strong>Amazon API Gateway and AWS AppSync for the surveillance UI.</strong> The surveillance team's case queue UI consumes data through AppSync (GraphQL flexibility for cluster-detail views with related geographic, temporal, and demographic data) or API Gateway (simpler integrations). When the organization uses ESSENCE or another surveillance product, integration is API-driven.</p>
+<p><strong>AWS Glue and Amazon Athena for the data lake.</strong> Historical encounters, baselines, cluster outcomes, and surveillance archives live in S3 partitioned by date and source. Glue catalogs the schema; Athena provides SQL access for ad-hoc analysis and retraining feature extraction. Athena geospatial functions support some geographic analyses without lifting data into Aurora/PostGIS.</p>
+<p><strong>Amazon QuickSight for surveillance dashboards.</strong> Public-facing dashboards (with appropriate suppression rules), internal surveillance team dashboards (full detail), and leadership briefing dashboards (high-level trends and indicators). Geospatial visualizations through QuickSight or external tools (Mapbox, Esri) integrated through QuickSight embedding.</p>
+<p><strong>Amazon S3 for the data lake and surveillance archive.</strong> Partitioned by date and event source, encrypted with customer-managed KMS keys. Used by SageMaker for training, Athena for ad-hoc analysis, and as the long-term archive for compliance and historical-baseline retention.</p>
+<p><strong>AWS IAM Identity Center.</strong> Workforce single sign-on for the surveillance UI, integrated with the public health agency's identity provider. Per-role permissions: surveillance epidemiologists (read access to clusters, write access to outcomes), surveillance leadership (read access plus reporting), data-science team (training-data access with appropriate de-identification), operations team (pipeline monitoring without case-data access). Cross-organizational users (state health department staff accessing local-jurisdiction data, CDC staff accessing state data) get access through federation with appropriate scoping.</p>
+<p><strong>Amazon CloudWatch and AWS X-Ray.</strong> Pipeline health, ingest latency, end-to-end traces. Latency budgets matter: time from &quot;patient arrives at ED&quot; to &quot;encounter scored in surveillance pipeline&quot; is part of the operational metric. Most surveillance programs target same-day or next-day inclusion of new encounters.</p>
+<p><strong>AWS CloudTrail.</strong> Audit logging on every PHI-bearing store and every API call against the case management system.</p>
+<p><strong>AWS KMS.</strong> Customer-managed keys on every PHI-bearing store: Kinesis, DynamoDB, Aurora, Neptune, Timestream, S3, OpenSearch, SageMaker volumes and Feature Store. Public health authority data-handling rules often require additional controls beyond standard HIPAA.</p>
+<p><strong>AWS Secrets Manager.</strong> Source-system credentials (HL7 feed authentication, FHIR API tokens, NWSS access keys, eCR endpoint credentials, NHSN credentials), and external-system integration credentials.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[ED encounter feeds&lt;br/&gt;HL7 v2 ADT,&lt;br/&gt;FHIR Encounter] --&gt; B[AWS Lambda&lt;br/&gt;encounter-ingest]
+    C[Lab feeds&lt;br/&gt;HL7 v2 ORU,&lt;br/&gt;state PHL] --&gt; D[AWS Lambda&lt;br/&gt;lab-ingest]
+    E[Wastewater feeds&lt;br/&gt;NWSS, direct] --&gt; F[AWS Lambda&lt;br/&gt;wastewater-ingest]
+    G[Pharmacy /&lt;br/&gt;OTC sales feeds] --&gt; H[AWS Lambda&lt;br/&gt;pharmacy-ingest]
+    I[School&lt;br/&gt;absenteeism] --&gt; J[AWS Lambda&lt;br/&gt;absenteeism-ingest]
+    K[eCR / NEDSS&lt;br/&gt;case feeds] --&gt; L[AWS Lambda&lt;br/&gt;case-ingest]
+
+    B --&gt; M[Amazon Kinesis&lt;br/&gt;surveillance-events]
+    D --&gt; M
+    F --&gt; M
+    H --&gt; M
+    J --&gt; M
+    L --&gt; M
+
+    M --&gt; N[AWS Lambda&lt;br/&gt;event-normalizer]
+    N --&gt; O[AWS Lambda&lt;br/&gt;geocoding&lt;br/&gt;+ Amazon Location]
+    O --&gt; P[AWS Lambda&lt;br/&gt;syndrome-classifier]
+    P --&gt; Q[Amazon Comprehend&lt;br/&gt;Medical]
+    P --&gt; R[SageMaker Endpoint&lt;br/&gt;syndrome-NLP-model]
+
+    P --&gt; S[(Amazon DynamoDB&lt;br/&gt;cell-state)]
+    P --&gt; T[(Amazon Timestream&lt;br/&gt;cell-time-series)]
+    P --&gt; U[(Amazon S3&lt;br/&gt;raw-events lake)]
+    P --&gt; V[(Amazon OpenSearch&lt;br/&gt;line-list-search)]
+    P --&gt; W[(Amazon Aurora&lt;br/&gt;PostGIS geography)]
+
+    T --&gt; X[AWS Step Functions&lt;br/&gt;daily-surveillance-run]
+    X --&gt; Y[AWS Lambda&lt;br/&gt;baseline-computer]
+    X --&gt; Z[AWS Batch&lt;br/&gt;SaTScan-runner]
+    X --&gt; AA[SageMaker Processing&lt;br/&gt;regression-detectors]
+    X --&gt; AB[AWS Lambda&lt;br/&gt;control-chart-detectors]
+    X --&gt; AC[AWS Lambda&lt;br/&gt;multi-source-fusion]
+
+    Y --&gt; AD[(Amazon S3&lt;br/&gt;baseline-store)]
+    Z --&gt; AE[AWS Lambda&lt;br/&gt;cluster-aggregator]
+    AA --&gt; AE
+    AB --&gt; AE
+    AC --&gt; AE
+
+    AE --&gt; AF[AWS Lambda&lt;br/&gt;cluster-builder]
+    AF --&gt; AG[Amazon Bedrock&lt;br/&gt;narrative-LLM]
+    AF --&gt; AH[(Amazon DynamoDB&lt;br/&gt;cluster-state)]
+    AF --&gt; AI[Amazon EventBridge&lt;br/&gt;cluster-bus]
+
+    AI --&gt; AJ[Surveillance Team&lt;br/&gt;UI&lt;br/&gt;AppSync/API Gateway]
+    AI --&gt; AK[eCR / NEDSS&lt;br/&gt;connector]
+    AI --&gt; AL[(OpenSearch&lt;br/&gt;cluster-index)]
+    AI --&gt; AM[NSSP / NORS /&lt;br/&gt;NHSN connector]
+
+    AN[Investigator&lt;br/&gt;adjudication] --&gt; AO[AWS Lambda&lt;br/&gt;outcome-capture]
+    AO --&gt; AH
+    AO --&gt; AL
+    AO --&gt; AP[(Amazon S3&lt;br/&gt;training-labels)]
+
+    AP --&gt; AQ[SageMaker Training&lt;br/&gt;+ Model Monitor]
+    AQ --&gt; R
+
+    AL --&gt; AR[Amazon Athena]
+    U --&gt; AR
+    AR --&gt; AS[Amazon QuickSight&lt;br/&gt;surveillance dashboards]
+
+    AT[CloudTrail&lt;br/&gt;data events] -.-&gt; S
+    AT -.-&gt; T
+    AT -.-&gt; U
+    AT -.-&gt; V
+    AT -.-&gt; W
+    AT -.-&gt; AH
+    AT -.-&gt; AL
+    AT -.-&gt; AP
+
+    style S fill:#9ff,stroke:#333
+    style T fill:#9ff,stroke:#333
+    style W fill:#9ff,stroke:#333
+    style AH fill:#f9f,stroke:#333
+    style AL fill:#f9f,stroke:#333
+    style R fill:#ffc,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon Aurora PostgreSQL (PostGIS), Amazon Neptune (optional), Amazon Timestream, Amazon OpenSearch Service, Amazon S3, Amazon SageMaker (Training, Hosting, Feature Store, Processing, Model Monitor, Model Registry), Amazon Comprehend Medical, Amazon Bedrock, Amazon Location Service, Amazon EventBridge, AWS Step Functions, AWS Batch, AWS AppSync, Amazon API Gateway, AWS Glue, Amazon Athena, Amazon QuickSight, AWS IAM Identity Center, AWS Secrets Manager, AWS KMS, AWS CloudTrail, Amazon CloudWatch, AWS X-Ray.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Least-privilege per role. Ingest Lambdas write to the event stream and read from clinical-source endpoints. Detection Lambdas read from cell state and write scores. Cluster builder reads scores and assembles clusters. Surveillance epidemiologists read cluster data and write outcomes only. Data science roles can train and deploy with appropriate de-identification of training data. No <code>*</code> permissions; every action scoped to specific resources.</td>
+</tr>
+<tr>
+<td><strong>BAA and Public Health Data Use Agreements</strong></td>
+<td>Signed AWS BAA. All services configured per BAA requirements. Each clinical data source must have its own data-sharing arrangement (BAA, Data Use Agreement, public health authority memorandum). For state-level surveillance, the legal authority typically derives from state public health statutes; for institutional surveillance, from the institution's own privacy authority. See the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a>.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Customer-managed KMS keys on every PHI-bearing store: Kinesis, DynamoDB, Aurora, Neptune, Timestream, S3, OpenSearch, SageMaker (volumes, Feature Store, model artifacts). TLS 1.2 or higher in transit. Encounter payloads include PHI (patient identifier, demographics, address) and clinical data; both categories must be protected. Suppressed-cell rules apply at the publication layer for any data products distributed beyond the surveillance team.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production deployment in a VPC with VPC endpoints for S3, DynamoDB, KMS, Comprehend Medical, Bedrock, Aurora, Neptune, SageMaker runtime, EventBridge, and Step Functions. Lambdas that touch PHI run in the VPC. Source-system integrations (HL7 feeds, FHIR endpoints) typically use site-to-site VPN or Direct Connect, depending on the source's deployment topology.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail and Data Events</strong></td>
+<td>Enabled with data events on every PHI-bearing store, on the case management indexes, and on the model endpoints. Log retention per organizational policy and applicable regulations (some surveillance programs require multi-year retention for outbreak investigation records and longer for nationally notifiable conditions).</td>
+</tr>
+<tr>
+<td><strong>Public Health Authority Coordination</strong></td>
+<td>The surveillance program must operate under an explicit legal authority. State public health statutes, institutional privacy policies, and intergovernmental agreements should all be in place before the system goes live. Coordination with the state public health department, local health departments, and (for institutional programs) hospital privacy officers must be established.</td>
+</tr>
+<tr>
+<td><strong>Clinical Data Source Integrations</strong></td>
+<td>HL7 v2 feeds from EDs, urgent care facilities, and hospital ADT systems are the primary source; coordination with each source institution and (where applicable) state-level data aggregators is required. FHIR-based feeds are emerging but coverage varies. eCR integration follows the eCR Now framework and the AIMS platform; rollout is increasing but not universal. Plan for parallel multi-quarter integration projects per source class.</td>
+</tr>
+<tr>
+<td><strong>Geographic Reference Data</strong></td>
+<td>Census tract boundaries (TIGER/Line shapefiles), ZIP code tabulation areas, county boundaries, school district boundaries, sewershed boundaries (where wastewater surveillance is in scope), hospital service areas. Refresh annually; some boundaries change with the decennial census and with administrative changes.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthetic data generators exist for syndromic surveillance (the BARDA-funded synthetic generators, academic research datasets) but produce data that's structurally simpler than real EHR feeds. Pseudonymization for development is essential; the relationship structure (which patients live in which tracts, which providers see which patients) must be preserved while identifiers are replaced. The CDC NSSP provides aggregate data products (with appropriate access controls) that can support algorithm development without exposing PHI.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>For a state-level surveillance system covering a population of 5-10 million across 100-500 facilities: Kinesis ingest: ~$500-1,500/month. Lambda for ingest, normalization, classification, detection: ~$2,000-5,000/month. DynamoDB cell-state and cluster-state: ~$500-1,500/month. Aurora PostGIS: ~$700-2,500/month. Timestream cell time-series: ~$300-800/month. OpenSearch line-list and cluster index: ~$2,000-6,000/month (scales with retention; many programs retain multiple years online). AWS Batch for SaTScan and other heavy detectors: ~$300-1,000/month. SageMaker endpoints (modest instance class for daily-cadence scoring): ~$500-1,500/month. SageMaker training and Model Monitor: ~$200-500/month. Comprehend Medical for chief-complaint NLP: ~$500-2,000/month (scales with encounter volume). Bedrock for cluster narratives: ~$200-700/month. S3, supporting services: ~$300-700/month. Total infrastructure: typically $8,000-22,000/month for a state-level deployment. Public health staffing (epidemiologists, data analysts, communications) is the dominant program cost; one experienced epidemiologist's loaded cost can equal several months of infrastructure. The infrastructure pays for itself by detecting one or two outbreaks earlier; the cost of a delayed outbreak response (extended community spread, healthcare system strain, mortality) substantially exceeds typical surveillance infrastructure costs.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Canonical surveillance-event stream</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (encounter-ingest)</strong></td>
+<td>ED and urgent-care encounter ingestion (HL7 v2, FHIR)</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (lab-ingest)</strong></td>
+<td>Laboratory result ingestion from hospital labs and state public health labs</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (wastewater-ingest)</strong></td>
+<td>NWSS and direct-source wastewater pathogen-concentration data</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (pharmacy-ingest)</strong></td>
+<td>Pharmacy and OTC product-sales data (where available and authorized)</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (absenteeism-ingest)</strong></td>
+<td>School absenteeism and ILI clinic-visit data</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (case-ingest)</strong></td>
+<td>eCR and NEDSS notifiable-condition case ingestion</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (event-normalizer)</strong></td>
+<td>Canonical event format, identifier resolution, deduplication</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (geocoding)</strong></td>
+<td>Address-to-tract/ZIP/county/sewershed assignment using Amazon Location and reference geography</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (syndrome-classifier)</strong></td>
+<td>Rules-based plus ML syndrome classification</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Free-text chief-complaint and triage-note entity extraction</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (baseline-computer)</strong></td>
+<td>Per-cell baseline expected counts with seasonality and trend</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (control-chart-detectors)</strong></td>
+<td>CUSUM, EWMA, Shewhart per-cell aberration detection</td>
+</tr>
+<tr>
+<td><strong>AWS Batch (SaTScan-runner)</strong></td>
+<td>Spatial and spatiotemporal scan-statistic clustering</td>
+</tr>
+<tr>
+<td><strong>SageMaker Processing (regression-detectors)</strong></td>
+<td>Farrington Flexible and negative-binomial GLM-based detection</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (multi-source-fusion)</strong></td>
+<td>Combine clinical, wastewater, pharmacy, and auxiliary signals</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (cluster-aggregator)</strong></td>
+<td>Group flagged cells into spatiotemporal clusters</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (cluster-builder)</strong></td>
+<td>Assemble cluster evidence; line list, geographic visualization, narrative LLM</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (outcome-capture)</strong></td>
+<td>Record investigator adjudications and feed the label store</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB (cell-state)</strong></td>
+<td>Per-cell current state, baseline summary, recent flag history</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB (cluster-state)</strong></td>
+<td>Open and recently-closed cluster state, suppression rules</td>
+</tr>
+<tr>
+<td><strong>Amazon Aurora PostgreSQL (PostGIS)</strong></td>
+<td>Geographic reference data and geographic operations</td>
+</tr>
+<tr>
+<td><strong>Amazon Neptune</strong></td>
+<td>Optional: contact and exposure graph for contact-tracing-driven analyses</td>
+</tr>
+<tr>
+<td><strong>Amazon Timestream</strong></td>
+<td>Time-series of per-cell counts, baselines, and detector scores</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Service</strong></td>
+<td>Searchable line list and cluster archive; surveillance ad-hoc queries</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Raw event lake, baseline store, training data, label store</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Endpoint (syndrome-NLP-model)</strong></td>
+<td>Custom syndrome classification beyond Comprehend Medical</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Training and Model Registry</strong></td>
+<td>Periodic retraining and versioning of classifiers and detection models</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Online and offline feature consistency for training and scoring</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Model Monitor</strong></td>
+<td>Data drift, prediction drift, and quality drift monitoring</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Investigator-facing cluster-narrative generation</td>
+</tr>
+<tr>
+<td><strong>Amazon Location Service</strong></td>
+<td>Geocoding and reverse-geocoding for encounter addresses</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Routes scoring and cluster events to subscribers (case queue, eCR connector, archive)</td>
+</tr>
+<tr>
+<td><strong>AWS AppSync / API Gateway</strong></td>
+<td>Surveillance team UI back end</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Daily surveillance run orchestration</td>
+</tr>
+<tr>
+<td><strong>AWS Glue + Amazon Athena</strong></td>
+<td>Data lake catalog and SQL-over-S3 for ad-hoc analysis</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Surveillance dashboards (internal full-detail, leadership briefing, public with suppression)</td>
+</tr>
+<tr>
+<td><strong>AWS IAM Identity Center</strong></td>
+<td>Surveillance team SSO and federation with public health agency identity</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Source-system and downstream-integration credentials</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed keys for every PHI-bearing store</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging on every store and every API operation</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch + AWS X-Ray</strong></td>
+<td>Pipeline health, ingest latency, end-to-end traces</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="pseudocode-walkthrough">Pseudocode Walkthrough</h3>
+<p>The pipeline runs continuously for ingest and on a daily cadence for the heavyweight detectors. The pseudocode below walks through the principal stages: encounter ingest and syndrome classification, baseline computation, the detector bank, multi-source fusion, cluster building, and outcome capture. Each stage is independently deployable; the operational pattern is to stand each up, validate it against historical data, and then connect them.</p>
+<p><strong>Step 1: Ingest a clinical encounter and produce a canonical event.</strong> Source feeds arrive in vendor-specific formats (HL7 v2 ADT and ORU, FHIR Encounter and Observation, eCR documents). The ingester translates each into a canonical surveillance event with consistent fields and identifier semantics.</p>
+<pre class="code code-plain"><code>FUNCTION ingest_encounter(raw_message, source_id):
+    // Parse the source-specific format. Each source class has its own parser.
+    parsed = parse_by_source(raw_message, source_id)
+    // parsed includes: encounter_id, patient_identifier, encounter_type
+    //                  (ED, urgent care, inpatient), arrival_at, discharge_at,
+    //                  facility_id, chief_complaint_text, triage_note_text,
+    //                  diagnosis_codes (final and admit), demographics,
+    //                  patient_address (residence), encounter_address (facility)
+
+    // De-identify aggressively at ingest. Surveillance does not need direct
+    // identifiers in the analytic store; PHI lives in a separate, tightly
+    // controlled case-detail store accessed only by authorized epidemiologists.
+    canonical = {
+        event_id:            generate_event_id(),
+        source_id:           source_id,
+        source_event_id:     parsed.encounter_id,
+        observed_at:         parsed.arrival_at,
+        ingested_at:         NOW(),
+        encounter_type:      parsed.encounter_type,
+        facility_id:         parsed.facility_id,
+        // Patient identifier is replaced with a pseudonymized surveillance ID.
+        // The mapping is stored in a separate, access-controlled service.
+        surveillance_pid:    pseudonymize(parsed.patient_identifier),
+        chief_complaint:     parsed.chief_complaint_text,
+        triage_note:         parsed.triage_note_text,
+        diagnoses_admit:     parsed.diagnosis_codes.admit,
+        diagnoses_final:     parsed.diagnosis_codes.final,
+        age_years:           parsed.demographics.age,
+        age_group:           bucket_age(parsed.demographics.age),
+        sex:                  parsed.demographics.sex,
+        race_ethnicity:      parsed.demographics.race_ethnicity,
+        residence_address:   parsed.patient_address,    // for geocoding only
+        residence_zip:       parsed.patient_address.zip
+    }
+
+    // Append to the canonical surveillance-event stream.
+    Kinesis.PutRecord(
+        stream_name = &quot;surveillance-events&quot;,
+        partition_key = canonical.surveillance_pid,
+        data        = canonical
+    )
+
+    // Persist the raw event in the lake for replay and audit.
+    S3.PutObject(
+        bucket = &quot;surveillance-raw-events&quot;,
+        key    = f&quot;source={source_id}/year={year(NOW())}/month={month(NOW())}/{canonical.event_id}.json&quot;,
+        body   = parsed
+    )
+
+    return canonical.event_id
+</code></pre>
+<p><strong>Step 2: Geocode the encounter and assign it to multi-resolution geographies.</strong> Patient residence is geocoded once (cached on subsequent visits) and assigned to the relevant administrative geographies. Multi-resolution geocoding lets the detectors run at different scales in parallel.</p>
+<pre class="code code-plain"><code>FUNCTION geocode_and_stratify(canonical_event):
+    // Geocode the residence address. Cache the result keyed on the
+    // address hash so repeat encounters from the same patient don&#x27;t
+    // re-geocode unnecessarily.
+    address_hash = hash(canonical_event.residence_address)
+    cached = DynamoDB.GetItem(
+        table = &quot;address-geocode-cache&quot;,
+        key   = { address_hash: address_hash }
+    )
+    IF cached:
+        coords = cached.coords
+        admin_geographies = cached.admin_geographies
+    ELSE:
+        coords = AmazonLocation.SearchPlaceIndexForText(
+            text = format_address(canonical_event.residence_address)
+        )
+        // Spatial joins against geographic reference data in PostGIS.
+        admin_geographies = Aurora.PostGIS.SpatialJoin(
+            point = coords,
+            layers = [&quot;census_tract&quot;, &quot;zcta&quot;, &quot;county&quot;, &quot;school_district&quot;,
+                       &quot;sewershed&quot;, &quot;hospital_service_area&quot;]
+        )
+        DynamoDB.PutItem(
+            table = &quot;address-geocode-cache&quot;,
+            item  = {
+                address_hash:       address_hash,
+                coords:             coords,
+                admin_geographies:  admin_geographies,
+                geocoded_at:        NOW()
+            }
+        )
+
+    // Attach geographies to the event.
+    canonical_event.coords            = coords
+    canonical_event.census_tract      = admin_geographies.census_tract
+    canonical_event.zcta              = admin_geographies.zcta
+    canonical_event.county            = admin_geographies.county
+    canonical_event.school_district   = admin_geographies.school_district
+    canonical_event.sewershed         = admin_geographies.sewershed
+    canonical_event.hospital_service_area = admin_geographies.hospital_service_area
+
+    return canonical_event
+</code></pre>
+<p><strong>Step 3: Classify the encounter into syndromic categories.</strong> Structured-data rules plus NLP on the chief complaint and triage note produce a multi-label syndromic classification. NSSP's syndromic categories are the standard target taxonomy; organization-specific categories can be added.</p>
+<pre class="code code-plain"><code>FUNCTION classify_syndrome(canonical_event):
+    syndromes = set()
+
+    // Structured-data rules: ICD-10 patterns map to syndromic categories.
+    FOR each code in canonical_event.diagnoses_admit + canonical_event.diagnoses_final:
+        FOR each rule in ICD_TO_SYNDROME_RULES:
+            IF code matches rule.pattern:
+                syndromes.add(rule.syndrome)
+
+    // NLP on the chief complaint and triage notes.
+    free_text = (canonical_event.chief_complaint or &quot;&quot;) + &quot; &quot; + (canonical_event.triage_note or &quot;&quot;)
+    IF free_text.strip():
+        // Comprehend Medical extracts conditions, signs, and symptoms.
+        cm_response = ComprehendMedical.DetectEntitiesV2(text = free_text)
+
+        // Map detected entities to syndromic categories.
+        FOR each entity in cm_response.entities:
+            IF entity.category in [&quot;MEDICAL_CONDITION&quot;, &quot;SIGN_SYMPTOM&quot;]:
+                FOR each rule in ENTITY_TO_SYNDROME_RULES:
+                    IF entity.text.lower() matches rule.pattern OR entity.code in rule.codes:
+                        syndromes.add(rule.syndrome)
+
+        // Custom syndrome classifier handles patterns the rules miss.
+        // Trained on labeled chief complaints; fine-tuned periodically on
+        // adjudicated cases.
+        custom_predictions = SageMaker.Endpoint.Invoke(
+            endpoint_name = &quot;syndrome-classifier-v3&quot;,
+            payload       = { text: free_text, age_group: canonical_event.age_group }
+        )
+        FOR each prediction in custom_predictions:
+            IF prediction.confidence &gt; SYNDROME_CONFIDENCE_THRESHOLD:
+                syndromes.add(prediction.syndrome)
+
+    // Lab-confirmed pathogens promote the encounter to specific
+    // pathogen-level syndrome categories. (Lab events arrive on a separate
+    // stream; this is the encounter-side hook.)
+    lab_results = lookup_recent_lab_results(canonical_event.surveillance_pid,
+                                             window_days = 14)
+    FOR each lab in lab_results:
+        IF lab.result_positive:
+            FOR each rule in PATHOGEN_TO_SYNDROME_RULES:
+                IF lab.pathogen in rule.pathogens:
+                    syndromes.add(rule.syndrome)
+
+    canonical_event.syndromes = list(syndromes)
+    return canonical_event
+</code></pre>
+<p><strong>Step 4: Update per-cell counters across the geography x demographic x syndrome x time grid.</strong> Each event increments the relevant cell counters, which are the substrate for aberration detection.</p>
+<pre class="code code-plain"><code>FUNCTION update_cell_counters(canonical_event):
+    // Build the cell key set: every combination of geography x stratification
+    // x syndrome the event participates in. A single event might update
+    // dozens of cells.
+    cell_keys = []
+    FOR each geo in [canonical_event.census_tract, canonical_event.zcta,
+                      canonical_event.county, canonical_event.school_district,
+                      canonical_event.sewershed]:
+        IF geo is null: continue
+        FOR each strat in stratifications_for(canonical_event):
+            // Stratifications include: all-ages, age-group, sex,
+            // race-ethnicity (where reliably collected), insurance category.
+            FOR each syndrome in canonical_event.syndromes:
+                FOR each window in [1d, 7d, 14d, 28d]:
+                    cell_keys.append({
+                        geo:       geo,
+                        strat:     strat,
+                        syndrome:  syndrome,
+                        window:    window
+                    })
+
+    FOR each cell_key in cell_keys:
+        // Atomic increment in DynamoDB; the cell-state table tracks
+        // current rolling-window count, last update, and recent flag history.
+        DynamoDB.UpdateItem(
+            table = &quot;cell-state&quot;,
+            key   = cell_key,
+            update_expression = &quot;ADD count :one SET last_event_at = :now&quot;,
+            attribute_values  = { &quot;:one&quot;: 1, &quot;:now&quot;: NOW() }
+        )
+
+        // Append to the time-series store for baseline computation.
+        Timestream.WriteRecords(
+            database = &quot;surveillance&quot;,
+            table    = &quot;cell-time-series&quot;,
+            records  = [{
+                dimensions: cell_key,
+                measure_name:  &quot;count_increment&quot;,
+                measure_value: 1,
+                time:          canonical_event.observed_at
+            }]
+        )
+
+    return cell_keys
+</code></pre>
+<p><strong>Step 5: Compute baseline expected counts per cell.</strong> Daily (or weekly) job that recomputes per-cell baselines using historical data with seasonal, trend, and day-of-week terms. Hierarchical pooling stabilizes small cells.</p>
+<pre class="code code-plain"><code>FUNCTION compute_baselines(reference_date):
+    // Load multi-year history for every cell from Timestream.
+    cells = enumerate_active_cells()
+
+    FOR each cell in cells:
+        history = Timestream.Query(f&quot;&quot;&quot;
+            SELECT bin(time, 1d) AS day, sum(measure_value) AS count
+            FROM surveillance.cell_time_series
+            WHERE geo = &#x27;{cell.geo}&#x27;
+              AND strat = &#x27;{cell.strat}&#x27;
+              AND syndrome = &#x27;{cell.syndrome}&#x27;
+              AND window = &#x27;1d&#x27;
+              AND time BETWEEN &#x27;{reference_date - 5_years}&#x27; AND &#x27;{reference_date}&#x27;
+            GROUP BY bin(time, 1d)
+        &quot;&quot;&quot;)
+
+        // Negative binomial regression with seasonal harmonics (annual and
+        // weekly), trend term, and day-of-week effects. Hierarchical pooling
+        // borrows strength from the parent geography for small cells.
+        IF len(history) &lt; MIN_HISTORY_DAYS or sum(history.count) &lt; MIN_HISTORY_COUNT:
+            // Use parent geography&#x27;s model with cell-specific offset.
+            parent_model = get_parent_baseline_model(cell)
+            cell_baseline = downscale_parent(parent_model, cell)
+            baseline_source = &quot;parent_pooled&quot;
+        ELSE:
+            cell_baseline = fit_negative_binomial_glm(
+                counts        = history.count,
+                dates         = history.day,
+                seasonal_terms = [&quot;annual_harmonic_1&quot;, &quot;annual_harmonic_2&quot;,
+                                   &quot;weekly_harmonic&quot;],
+                trend_term     = &quot;linear&quot;,
+                dow_term       = &quot;categorical&quot;,
+                exclude_dates  = known_outbreak_dates(cell)   // avoid contamination
+            )
+            baseline_source = &quot;cell_specific&quot;
+
+        // Per-day expected count, plus 95th and 99th percentile prediction
+        // intervals, are persisted for the next reference_date window.
+        S3.PutObject(
+            bucket = &quot;surveillance-baseline-store&quot;,
+            key    = f&quot;baseline/{cell.geo}/{cell.strat}/{cell.syndrome}/{reference_date}.json&quot;,
+            body   = {
+                cell:               cell,
+                expected_per_day:   cell_baseline.predict_next_window(),
+                upper_95:            cell_baseline.upper_95(),
+                upper_99:            cell_baseline.upper_99(),
+                model_summary:       cell_baseline.summary,
+                source:              baseline_source,
+                computed_at:         NOW()
+            }
+        )
+
+        // Update DynamoDB cell-state with the latest expected counts.
+        DynamoDB.UpdateItem(
+            table = &quot;cell-state&quot;,
+            key   = cell,
+            update_expression = &quot;SET expected = :e, upper_95 = :u95, upper_99 = :u99&quot;,
+            attribute_values  = {
+                &quot;:e&quot;:   cell_baseline.predict_today(),
+                &quot;:u95&quot;: cell_baseline.upper_95_today(),
+                &quot;:u99&quot;: cell_baseline.upper_99_today()
+            }
+        )
+</code></pre>
+<p><strong>Step 6: Run the detector bank.</strong> Each detector runs against the cell time series and produces per-cell or per-cluster scores. Multiple detectors run in parallel; their outputs are combined later.</p>
+<pre class="code code-plain"><code>FUNCTION run_detector_bank(reference_date):
+    detector_results = []
+
+    // Detector A: control charts (CUSUM, EWMA) per cell.
+    cells = enumerate_active_cells()
+    FOR each cell in cells:
+        recent_counts = Timestream.Query_RecentCounts(cell, window_days = 60)
+        baseline      = load_baseline(cell, reference_date)
+
+        cusum_score = compute_cusum(
+            observed = recent_counts,
+            expected = baseline.expected_per_day,
+            sigma    = baseline.std_per_day,
+            k        = CUSUM_REFERENCE_K,
+            h        = CUSUM_DECISION_H
+        )
+        ewma_score = compute_ewma(
+            observed   = recent_counts,
+            expected   = baseline.expected_per_day,
+            sigma      = baseline.std_per_day,
+            lambda_val = EWMA_LAMBDA,
+            limit      = EWMA_CONTROL_LIMIT
+        )
+        detector_results.append({
+            detector:   &quot;control_chart&quot;,
+            cell:       cell,
+            cusum:      cusum_score,
+            ewma:       ewma_score,
+            flagged:    (cusum_score.signal or ewma_score.signal),
+            reference_date: reference_date
+        })
+
+    // Detector B: Farrington Flexible regression-based aberration.
+    FOR each cell in cells:
+        farrington_result = SageMaker.Processing.Run(
+            container       = &quot;farrington-flexible-runner&quot;,
+            inputs          = { cell: cell, reference_date: reference_date,
+                                history_days: 5 * 365 }
+        )
+        detector_results.append({
+            detector:   &quot;farrington_flexible&quot;,
+            cell:       cell,
+            score:      farrington_result.exceedance_score,
+            flagged:    farrington_result.exceedance &gt; 0,
+            reference_date: reference_date
+        })
+
+    // Detector C: spatial scan statistic across cells.
+    FOR each scan_geography in [&quot;county_zcta&quot;, &quot;state_tract&quot;]:
+        satscan_result = AWS.Batch.SubmitJob(
+            job_definition = &quot;satscan-spatial-runner&quot;,
+            parameters     = {
+                geography: scan_geography,
+                reference_date: reference_date,
+                method: &quot;poisson&quot;,
+                max_window_pct: 25
+            }
+        )
+        FOR each cluster in satscan_result.significant_clusters:
+            detector_results.append({
+                detector:   &quot;satscan_spatial&quot;,
+                cluster:    cluster,
+                p_value:    cluster.p_value,
+                rr:         cluster.relative_risk,
+                flagged:    cluster.p_value &lt; SCAN_PVALUE_THRESHOLD,
+                reference_date: reference_date
+            })
+
+    // Detector D: spatiotemporal scan (space-time permutation).
+    FOR each scan_geography in [&quot;county_zcta&quot;, &quot;state_tract&quot;]:
+        st_result = AWS.Batch.SubmitJob(
+            job_definition = &quot;satscan-spacetime-runner&quot;,
+            parameters     = {
+                geography: scan_geography,
+                reference_date: reference_date,
+                method: &quot;space_time_permutation&quot;,
+                max_temporal_window_days: 14
+            }
+        )
+        FOR each cluster in st_result.significant_clusters:
+            detector_results.append({
+                detector:   &quot;satscan_spacetime&quot;,
+                cluster:    cluster,
+                p_value:    cluster.p_value,
+                rr:         cluster.relative_risk,
+                flagged:    cluster.p_value &lt; SCAN_PVALUE_THRESHOLD,
+                reference_date: reference_date
+            })
+
+    // Detector E: cross-syndrome correlation.
+    FOR each geo in active_geographies():
+        corr_result = compute_cross_syndrome_correlation(
+            geo            = geo,
+            reference_date = reference_date,
+            syndrome_pairs = SURVEILLANCE_SYNDROME_PAIRS
+        )
+        IF corr_result.has_concurrent_signal:
+            detector_results.append({
+                detector:    &quot;cross_syndrome&quot;,
+                geo:         geo,
+                pair:        corr_result.pair,
+                co_score:    corr_result.score,
+                flagged:     corr_result.score &gt; CROSS_SYNDROME_THRESHOLD,
+                reference_date: reference_date
+            })
+
+    // Persist detector outputs.
+    FOR each result in detector_results:
+        EventBridge.PutEvent(
+            bus = &quot;surveillance-events&quot;,
+            source = &quot;detector-bank&quot;,
+            detail_type = &quot;DetectorResult&quot;,
+            detail = result
+        )
+        OpenSearch.Index(&quot;detector-results&quot;, result)
+
+    return detector_results
+</code></pre>
+<p><strong>Step 7: Run auxiliary-source detectors and fuse signals.</strong> Wastewater, pharmacy, school absenteeism, and other auxiliary sources have their own detectors; the fusion layer combines signals from multiple sources into per-cluster composite scores.</p>
+<pre class="code code-plain"><code>FUNCTION run_auxiliary_and_fuse(reference_date, clinical_results):
+    auxiliary_results = []
+
+    // Wastewater anomaly detection per sewershed and pathogen.
+    FOR each sewershed in NWSS_active_sewersheds():
+        FOR each pathogen in NWSS_pathogens():
+            ww_history = load_ww_concentration_history(sewershed, pathogen)
+            ww_baseline = fit_ww_baseline(ww_history)
+            current     = current_ww_concentration(sewershed, pathogen, reference_date)
+
+            ww_score = standardized_anomaly(current, ww_baseline)
+            IF ww_score &gt; WW_ANOMALY_THRESHOLD:
+                auxiliary_results.append({
+                    detector:       &quot;wastewater&quot;,
+                    sewershed:       sewershed,
+                    pathogen:        pathogen,
+                    anomaly_score:   ww_score,
+                    flagged:         true,
+                    reference_date:  reference_date
+                })
+
+    // Pharmacy spike detection (where data is available).
+    FOR each (geo, drug_class) in pharmacy_active_combos():
+        rx_history  = load_rx_history(geo, drug_class)
+        rx_baseline = fit_rx_baseline(rx_history)
+        current     = current_rx_volume(geo, drug_class, reference_date)
+        rx_score = (current - rx_baseline.expected) / rx_baseline.std
+        IF rx_score &gt; RX_SPIKE_THRESHOLD:
+            auxiliary_results.append({
+                detector:    &quot;pharmacy_spike&quot;,
+                geo:         geo,
+                drug_class:  drug_class,
+                spike_score: rx_score,
+                flagged:     true,
+                reference_date: reference_date
+            })
+
+    // School absenteeism (where data is shared).
+    FOR each district in absenteeism_active_districts():
+        abs_history  = load_absenteeism_history(district)
+        abs_baseline = fit_absenteeism_baseline(abs_history)
+        current      = current_absenteeism_rate(district, reference_date)
+        abs_score    = (current - abs_baseline.expected) / abs_baseline.std
+        IF abs_score &gt; ABSENTEEISM_THRESHOLD:
+            auxiliary_results.append({
+                detector:        &quot;school_absenteeism&quot;,
+                district:        district,
+                absenteeism_score: abs_score,
+                flagged:         true,
+                reference_date:  reference_date
+            })
+
+    // Fusion: combine clinical, auxiliary signals at the geography x window
+    // level. Concordant signals across sources elevate the composite score.
+    fused_signals = []
+    FOR each candidate_geo_window in candidate_geo_windows(clinical_results, auxiliary_results):
+        clinical_signal   = max_score_for(clinical_results, candidate_geo_window)
+        wastewater_signal = max_score_for(auxiliary_results, candidate_geo_window, &quot;wastewater&quot;)
+        pharmacy_signal   = max_score_for(auxiliary_results, candidate_geo_window, &quot;pharmacy_spike&quot;)
+        absenteeism_signal = max_score_for(auxiliary_results, candidate_geo_window, &quot;school_absenteeism&quot;)
+
+        // Decision-level fusion: weighted combination with concordance bonus.
+        composite = (
+            FUSION_WEIGHTS.clinical    * clinical_signal
+          + FUSION_WEIGHTS.wastewater  * wastewater_signal
+          + FUSION_WEIGHTS.pharmacy    * pharmacy_signal
+          + FUSION_WEIGHTS.absenteeism * absenteeism_signal
+        )
+        concordance_bonus = count_concordant_sources(
+            clinical_signal, wastewater_signal,
+            pharmacy_signal, absenteeism_signal,
+            threshold = CONCORDANCE_SIGNAL_THRESHOLD
+        ) * CONCORDANCE_BONUS_PER_SOURCE
+        composite_with_concordance = composite + concordance_bonus
+
+        // Calibrate per cohort.
+        calibrated = apply_fusion_calibration(
+            score    = composite_with_concordance,
+            cohort   = (candidate_geo_window.geo_class,
+                        candidate_geo_window.syndrome_class),
+            calibration = FUSION_CALIBRATION
+        )
+
+        fused_signals.append({
+            geo_window:           candidate_geo_window,
+            clinical_signal:      clinical_signal,
+            wastewater_signal:    wastewater_signal,
+            pharmacy_signal:      pharmacy_signal,
+            absenteeism_signal:   absenteeism_signal,
+            composite_raw:        composite,
+            concordance_bonus:    concordance_bonus,
+            composite_calibrated: calibrated,
+            reference_date:       reference_date
+        })
+
+    return fused_signals
+</code></pre>
+<p><strong>Step 8: Build cluster candidates from fused signals.</strong> The cluster builder groups geographically and temporally adjacent flagged cells into cluster candidates, attaches the line list and supporting evidence, generates the LLM narrative, and applies suppression rules against open and recently-resolved clusters.</p>
+<pre class="code code-plain"><code>FUNCTION build_clusters(fused_signals, reference_date):
+    // Aggregate adjacent flagged cells into proto-clusters using spatial
+    // adjacency on the geography hierarchy and temporal proximity.
+    proto_clusters = aggregate_adjacent_flags(
+        signals               = fused_signals,
+        spatial_adjacency_db   = AuroraPostGIS,
+        temporal_window_days   = CLUSTER_TEMPORAL_WINDOW
+    )
+
+    cluster_candidates = []
+    FOR each proto in proto_clusters:
+        // Suppress against open clusters covering the same geography x syndrome.
+        existing_cluster = find_existing_open_cluster(proto)
+        IF existing_cluster:
+            update_existing_cluster(existing_cluster, proto)
+            continue
+
+        // Suppress against recently-resolved false-alarm patterns.
+        IF check_recent_dismissal(proto, reason_class = &quot;false_alarm&quot;):
+            log_suppression(proto, reason = &quot;matches_recent_dismissal&quot;)
+            continue
+
+        // Assemble the line list. Pull the per-encounter data from the
+        // case-detail store under appropriate authority.
+        line_list = LineListService.Build(
+            geographies   = proto.geographies,
+            syndromes     = proto.syndromes,
+            window_start  = proto.window_start,
+            window_end    = proto.window_end,
+            authority     = &quot;surveillance&quot;
+        )
+
+        // Compute cluster-level stats.
+        observed = len(line_list)
+        expected = sum_of_expected_for(proto.geographies, proto.syndromes,
+                                         proto.window_start, proto.window_end)
+        relative_risk = observed / max(expected, 1.0)
+        excess        = max(0, observed - expected)
+
+        // Demographic distribution of cases.
+        demographic_breakdown = summarize_demographics(line_list)
+
+        // Geographic visualization payload (for the surveillance UI).
+        geo_visualization = build_geo_payload(
+            line_list_coords = [case.coords for case in line_list],
+            heatmap_resolution = &quot;h3_level_8&quot;
+        )
+
+        // Lab and genomic context (where available).
+        lab_context     = lookup_lab_results_for_cases(line_list, days = 14)
+        genomic_context = lookup_genomic_clusters(lab_context)
+
+        // LLM narrative for investigator review. Structured prompt with
+        // pre-extracted evidence; the LLM does not generate facts, it
+        // narrates the structured data.
+        narrative_prompt = build_cluster_narrative_prompt({
+            geographies:       proto.geographies,
+            syndromes:         proto.syndromes,
+            window:            (proto.window_start, proto.window_end),
+            observed:          observed,
+            expected:          expected,
+            relative_risk:     relative_risk,
+            demographic_breakdown: demographic_breakdown,
+            lab_context:       lab_context,
+            genomic_context:   genomic_context,
+            multi_source_concordance: proto.signal_summary
+        })
+        bedrock_response = Bedrock.InvokeModel(
+            model_id = &quot;anthropic.claude-XX&quot;,  // HIPAA-eligible per current eligibility
+            body     = { prompt: narrative_prompt, max_tokens: 800, temperature: 0.0 }
+        )
+        narrative = parse_bedrock_response(bedrock_response)
+
+        // Build the cluster record.
+        cluster = {
+            cluster_id:           generate_cluster_id(),
+            opened_at:            NOW(),
+            reference_date:        reference_date,
+            geographies:          proto.geographies,
+            syndromes:            proto.syndromes,
+            window_start:         proto.window_start,
+            window_end:           proto.window_end,
+            observed:             observed,
+            expected:             expected,
+            relative_risk:        relative_risk,
+            excess:               excess,
+            composite_score:      proto.composite_calibrated,
+            multi_source_concordance: proto.signal_summary,
+            line_list:            line_list_summary(line_list),  // de-identified summary
+            line_list_pointer:    persist_line_list(line_list),  // PHI-bearing detail
+            demographic_breakdown: demographic_breakdown,
+            geo_visualization:    geo_visualization,
+            lab_context:          lab_context,
+            genomic_context:      genomic_context,
+            narrative:            narrative,
+            tier:                  tier_from_composite(proto.composite_calibrated),
+            status:                &quot;open_for_review&quot;,
+            assigned_to:           null,
+            outcome:               null
+        }
+
+        DynamoDB.PutItem(table = &quot;cluster-state&quot;, item = cluster)
+        OpenSearch.Index(&quot;cluster-index&quot;, cluster)
+
+        EventBridge.PutEvent(
+            bus = &quot;surveillance-events&quot;,
+            source = &quot;cluster-builder&quot;,
+            detail_type = &quot;ClusterOpened&quot;,
+            detail = {
+                cluster_id:       cluster.cluster_id,
+                tier:             cluster.tier,
+                composite_score:  cluster.composite_score,
+                geographies:      cluster.geographies,
+                syndromes:        cluster.syndromes
+            }
+        )
+
+        cluster_candidates.append(cluster)
+
+    return cluster_candidates
+</code></pre>
+<p><strong>Step 9: Capture investigation outcomes and feed the learning loop.</strong> Public health epidemiologists adjudicate clusters in the surveillance UI. Outcomes flow back to update suppression rules, recalibrate fusion weights, and (when enough labels accumulate) retrain syndrome classifiers and detection models.</p>
+<pre class="code code-plain"><code>FUNCTION on_investigator_action(action):
+    cluster = DynamoDB.GetItem(
+        table = &quot;cluster-state&quot;,
+        key   = { cluster_id: action.cluster_id }
+    )
+
+    cluster.outcome           = action.outcome
+    // outcome: confirmed_outbreak, false_alarm, indeterminate,
+    //          continuing_investigation, hai_cluster, foodborne_cluster,
+    //          respiratory_pathogen, sti_cluster, environmental_exposure
+    cluster.outcome_subtype   = action.outcome_subtype
+    cluster.outcome_notes     = action.notes
+    cluster.outcome_at         = NOW()
+    cluster.assigned_to        = action.investigator_id
+    cluster.status             = &quot;closed&quot; if action.outcome != &quot;continuing_investigation&quot; else &quot;active_investigation&quot;
+
+    // Confirmed outbreaks trigger downstream workflows.
+    IF action.outcome == &quot;confirmed_outbreak&quot;:
+        // Notifiable conditions go to NEDSS / eCR / NORS / NHSN as appropriate.
+        IF cluster.condition in NOTIFIABLE_CONDITIONS:
+            initiate_external_reporting(cluster)
+
+        // Cross-jurisdictional coordination.
+        IF cluster.crosses_jurisdictions:
+            notify_neighboring_jurisdictions(cluster)
+
+        // Response coordination workflow.
+        initiate_response_coordination(cluster)
+
+    IF action.outcome == &quot;false_alarm&quot;:
+        // Add a suppression rule keyed on the cluster&#x27;s signature.
+        add_suppression_rule(
+            geographies   = cluster.geographies,
+            syndromes     = cluster.syndromes,
+            reason         = action.dismissal_reason,
+            valid_until    = NOW() + DISMISSAL_VALIDITY_PERIOD
+        )
+
+    DynamoDB.PutItem(table = &quot;cluster-state&quot;, item = cluster)
+    OpenSearch.Index(&quot;cluster-index&quot;, cluster)
+
+    // Persist the label for retraining.
+    label_record = {
+        cluster_id:           cluster.cluster_id,
+        feature_snapshot:     cluster_feature_snapshot(cluster),
+        composite_score:      cluster.composite_score,
+        outcome:              cluster.outcome,
+        outcome_subtype:      cluster.outcome_subtype,
+        outcome_at:           cluster.outcome_at,
+        time_to_adjudication:  cluster.outcome_at - cluster.opened_at,
+        geographies:          cluster.geographies,
+        syndromes:            cluster.syndromes
+    }
+    S3.PutObject(
+        bucket = &quot;surveillance-training-labels&quot;,
+        key    = f&quot;labels/year={year(cluster.outcome_at)}/month={month(cluster.outcome_at)}/{cluster.cluster_id}.json&quot;,
+        body   = label_record
+    )
+
+    EventBridge.PutEvent(
+        bus = &quot;surveillance-events&quot;,
+        source = &quot;outcome-capture&quot;,
+        detail_type = &quot;ClusterClosed&quot;,
+        detail = label_record
+    )
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter03.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample cluster candidate (high-tier, multi-source concordance):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CL-2026-10-23-000412&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;opened_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-10-23T06:14:08Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;reference_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-10-23&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;geographies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;census_tract&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;36055-001100&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;census_tract&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;36055-001200&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;census_tract&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;36055-001300&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;census_tract&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;36055-001400&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;syndromes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fever_respiratory&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ili&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;window_start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-10-16&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;window_end&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-10-23&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;observed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;expected&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">6.4</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;relative_risk&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.59</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;excess&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">16.6</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;composite_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;multi_source_concordance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;clinical_syndromic&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.88</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wastewater&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;school_absenteeism&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.69</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;pharmacy_spike&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;concordant_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;demographic_breakdown&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;age_group_under_5&quot;</span><span class="p">:</span><span class="w">     </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_group_5_17&quot;</span><span class="p">:</span><span class="w">        </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_group_18_49&quot;</span><span class="p">:</span><span class="w">       </span><span class="mi">6</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_group_50_64&quot;</span><span class="p">:</span><span class="w">       </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_group_65_plus&quot;</span><span class="p">:</span><span class="w">     </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sex_female&quot;</span><span class="p">:</span><span class="w">            </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sex_male&quot;</span><span class="p">:</span><span class="w">              </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;race_ethnicity_distribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;matches_tract_demographics_within_expected_range&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;lab_context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;respiratory_panels_run&quot;</span><span class="p">:</span><span class="w">       </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;respiratory_panels_positive&quot;</span><span class="p">:</span><span class="w">  </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;positives_by_pathogen&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rhinovirus&quot;</span><span class="p">:</span><span class="w">          </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;rsv&quot;</span><span class="p">:</span><span class="w">                 </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;panels_pending&quot;</span><span class="p">:</span><span class="w">               </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;novel_pathogen_signals&quot;</span><span class="p">:</span><span class="w">       </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;pcr_panel_negative_with_clinical_picture&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;genomic_context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;sequencing_in_progress&quot;</span><span class="p">:</span><span class="w">  </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;preliminary_clusters&quot;</span><span class="p">:</span><span class="w">    </span><span class="p">[],</span>
+<span class="w">    </span><span class="nt">&quot;alerting_signal&quot;</span><span class="p">:</span><span class="w">         </span><span class="s2">&quot;no_genomic_cluster_yet_identified&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;narrative&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A spatiotemporal cluster of 23 fever-respiratory and ILI ED visits across census tracts 36055-001100 through 36055-001400 over the past 7 days. The observed count is 3.6 times the historical baseline for these tracts and this calendar week, with an excess of approximately 17 cases. Cases are demographically skewed toward school-aged children (5-17) who account for 12 of 23 cases. The geographic centroid is within 0.4 miles of three elementary schools serving the affected tracts. Wastewater surveillance from the watershed serving these tracts shows a 1.8x increase in non-pathogen-specific viral RNA concentration over the past 10 days. School-district absenteeism is 18 percent over the past 5 school days, compared to a 5-year baseline of 7.5 percent for this week. Respiratory panels have been run on 8 of 23 cases; 2 are positive for routine seasonal pathogens (1 rhinovirus, 1 RSV) and 6 are negative despite a clinical picture suggestive of viral respiratory infection. 4 panels are pending. No genomic-cluster signal has been identified yet; sequencing is in progress on the panel-negative cases. Clinical, wastewater, and absenteeism signals are concordant. Recommended for surveillance team same-day review and coordination with the local health department on the school-district context.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tier_1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;open_for_review&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;assigned_to&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample dismissed cluster (false alarm, data-quality root cause):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CL-2026-10-22-000388&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;false_alarm&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_subtype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data_quality_artifact&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Apparent spatiotemporal cluster of GI syndrome in census tracts 36055-002100 through 36055-002400 between October 18 and October 22 was determined to be a data-quality artifact. Two of the four contributing facilities had a coding-mapping change on October 17 that reclassified a previously distinct chief-complaint category into the GI syndromic category. The change inflated GI counts by approximately 40 percent at those facilities for the affected window. The actual GI rate, after excluding the affected facilities, is consistent with the historical baseline. Adding suppression rule for these four tracts plus the GI syndrome through the remainder of the chief-complaint mapping rollout (estimated three weeks). Coordination ticket opened with the source-data feed team to update the chief-complaint mapping to align with the new coding. No public health concern at this time.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;investigator_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EPI-022&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-10-22T15:33:41Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;time_to_adjudication_hours&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">9.2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;suppression_rule_added&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GI_SYNDROME -&gt; TRACTS_36055-002100_THROUGH_36055-002400 for 21 days&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample confirmed outbreak (Salmonella, multi-jurisdictional):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CL-2026-08-04-000119&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;confirmed_outbreak&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_subtype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foodborne_salmonella&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Lab-confirmed cluster of 47 Salmonella Enteritidis cases across 7 counties, all genomically clustered (PulseNet hqSNP analysis, 0-3 SNP differences). Investigation in progress; preliminary epidemiologic interviews implicate a common ready-to-eat food product distributed through three regional grocery chains. Coordination with state PHL, FDA, and neighboring state health departments. NORS report submitted; food-product traceback in progress with FDA. Public health advisory issued to the affected regions. Continuing through outbreak control: case finding through provider notifications, retail-product recall coordination, and follow-up testing on suspect product samples.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;investigator_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EPI-007&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;outcome_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-08-05T11:14:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;time_to_adjudication_hours&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">26.3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;external_reporting&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;nors_report_id&quot;</span><span class="p">:</span><span class="w">    </span><span class="s2">&quot;NORS-2026-NY-014&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;pulsenet_cluster_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PNUSAS123456&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;fda_traceback_initiated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative; measure against your own data):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Rules + control charts only</th>
+<th>+ Regression (Farrington Flexible)</th>
+<th>+ Spatial scan (SaTScan)</th>
+<th>+ Multi-source fusion</th>
+<th>LLM-assisted triage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Daily flagged-cell volume (state-wide)</td>
+<td>200-600</td>
+<td>300-800</td>
+<td>250-700</td>
+<td>200-500</td>
+<td>similar</td>
+</tr>
+<tr>
+<td>Daily cluster candidates after aggregation and suppression</td>
+<td>20-60</td>
+<td>25-70</td>
+<td>20-60</td>
+<td>15-45</td>
+<td>10-30</td>
+</tr>
+<tr>
+<td>Surveillance team throughput per epidemiologist-day</td>
+<td>5-12</td>
+<td>5-12</td>
+<td>5-12</td>
+<td>5-12</td>
+<td>10-20 (with LLM triage time savings)</td>
+</tr>
+<tr>
+<td>Confirmed-outbreak rate at top tier</td>
+<td>5-12%</td>
+<td>5-15%</td>
+<td>8-18%</td>
+<td>12-25%</td>
+<td>15-30%</td>
+</tr>
+<tr>
+<td>False-alarm rate at top tier</td>
+<td>50-70%</td>
+<td>45-65%</td>
+<td>40-60%</td>
+<td>30-50%</td>
+<td>25-45%</td>
+</tr>
+<tr>
+<td>Lead time vs. clinician recognition (median)</td>
+<td>1-3 days</td>
+<td>2-5 days</td>
+<td>3-7 days</td>
+<td>5-10 days</td>
+<td>5-10 days</td>
+</tr>
+<tr>
+<td>Median time-to-detection for confirmed outbreaks (cases at flag)</td>
+<td>8-15 cases</td>
+<td>6-12 cases</td>
+<td>4-10 cases</td>
+<td>3-7 cases</td>
+<td>3-7 cases</td>
+</tr>
+<tr>
+<td>Subgroup precision range across syndrome categories</td>
+<td>±0.05-0.20</td>
+<td>±0.05-0.15</td>
+<td>±0.04-0.12</td>
+<td>±0.04-0.10</td>
+<td>±0.04-0.10</td>
+</tr>
+<tr>
+<td>End-to-end latency (encounter ingest to surveillance score)</td>
+<td>&lt;30 minutes</td>
+<td>&lt;30 minutes</td>
+<td>&lt;2 hours (daily SaTScan)</td>
+<td>&lt;2 hours</td>
+<td>&lt;2 hours</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Year-one programs.</strong> A program in its first surveillance season has limited historical baseline data, no cohort calibration, and an unfamiliar review tempo. Expect higher false-alarm rates and slower review cadence during the first 6-12 months. Plan for it in the rollout schedule.</li>
+<li><strong>Novel pathogens.</strong> A pathogen the surveillance system hasn't seen before (a novel variant, an emerging zoonotic, an imported tropical pathogen) often presents as a non-specific syndromic signal first. The detector flags the syndromic anomaly; the lab and genomics work that identifies the agent comes later. The surveillance team has to investigate the syndromic signal without immediate diagnostic clarity.</li>
+<li><strong>Year-over-year shifts.</strong> A flu season that starts six weeks early, an RSV resurgence after a quiet year, a behavioral shift in care-seeking, a structural change in care delivery (telehealth expansion, urgent-care growth, retail-clinic adoption) all create year-over-year baseline mismatches. The detector either over-flags during the transition (every week looks like an outbreak) or under-flags (the baseline absorbs the shift and signals weaken).</li>
+<li><strong>Small-cell instability.</strong> Cells with low historical counts are unstable; a baseline of 2 cases per week with a sample standard deviation of 1.2 has an upper-95 of 4 or 5, which trivially gets exceeded. Hierarchical pooling helps but doesn't eliminate the issue. Programs that try to detect at very fine spatial granularity end up with noise-dominated cells that flag constantly.</li>
+<li><strong>Multi-jurisdictional cluster invisibility.</strong> A cluster centered on a regional airport, a multi-state distribution event, or a cross-border cluster can be invisible to any single jurisdiction's detector. Federated detection helps but requires coordination patterns that don't exist uniformly across the country.</li>
+<li><strong>Sub-clinical and pre-symptomatic infection.</strong> Wastewater surveillance and wearable signals capture some of this, but most of the infection picture is invisible until symptoms drive care-seeking. The detector is fundamentally lagged by the incubation period and the care-seeking interval.</li>
+<li><strong>Care-seeking behavior shifts.</strong> A storm, a holiday, news coverage of an unrelated story, a major sporting event, an urgent-care chain opening or closing in the area, or a structural shift in insurance coverage can all swing care-seeking volumes by 10-30 percent over short periods. The detector either flags these as outbreaks (false alarm) or absorbs them into the baseline (concealing real signals).</li>
+<li><strong>Coding latency for the early cases.</strong> The first cases of a novel outbreak are usually coded with whatever ICD code the chief complaint suggests. Final diagnostic codes appear hours or days later, sometimes weeks later for conditions requiring confirmatory testing. Real-time detection has to lean on chief complaints and triage notes, where NLP error rates are non-trivial.</li>
+<li><strong>Suppressed-cell rules constrain publication.</strong> Counts below the suppression threshold (typically 5 or 10, depending on jurisdiction) cannot be published in geographic detail without re-identification risk. This affects the public-facing dashboard, the cross-jurisdictional information products, and the press communication packages. The internal investigation has full detail; the published version may show only aggregated geography.</li>
+<li><strong>Holiday and special-event effects.</strong> The week of Thanksgiving, the week between Christmas and New Year's, the days surrounding major sporting events all have unusual care-seeking patterns. Programs that don't model these explicitly produce predictable false alarms during these windows.</li>
+<li><strong>The underfunded-public-health reality.</strong> Investigation capacity is the binding constraint. A surveillance system that detects perfectly but flags more clusters than the public health team can investigate produces no operational value because the alerts that matter are buried in alerts that don't.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode shows the shape. A production surveillance program closes several gaps the recipe leaves intentionally light.</p>
+<p><strong>Public health governance is the program.</strong> Same lesson as Recipes 3.6, 3.7, 3.8, and 3.9. The detection pipeline is maybe 25% of the work; the public health authority, the investigation procedures, the laboratory coordination, the cross-jurisdictional protocols, the response planning, and the public communication infrastructure are the other 75%. A pipeline without an active surveillance program, a defined investigation methodology, and a clear response chain will produce alerts that don't lead to outcomes. Build the program before the technology.</p>
+<p><strong>Legal authority must be explicit.</strong> The surveillance program must operate under a defined legal authority: state public health statute, institutional privacy authority, intergovernmental agreement, or some combination. Operating without that authority is both legally risky and operationally fragile. Coordinate with the state public health legal team before going live.</p>
+<p><strong>Source-feed integrations are multi-quarter projects.</strong> HL7 v2 ADT and ORU feeds, FHIR Encounter and Observation feeds, eCR document feeds, and NHSN feeds each have their own configuration, throughput, and latency characteristics. Plan for 3-9 months of integration work per source class, plus ongoing maintenance as upstream systems upgrade. Test integration completeness: missing encounter types, sampled feeds (some configurations sample rather than send everything), latency variability, and identifier-stability issues are common gotchas.</p>
+<p><strong>Geographic reference data is its own data engineering project.</strong> Census tract boundaries shift with the decennial census; school district boundaries change with redistricting; sewershed boundaries are operational rather than administrative; hospital service areas evolve with merger activity. Maintain a versioned geographic-reference dataset, refresh annually, and reconcile against historical baselines when boundaries change.</p>
+<p><strong>Syndrome taxonomy must be governed.</strong> NSSP's syndromic categories are a starting point, not an end-state. Organization-specific categories (sentinel-event triggers, jurisdiction-specific concerns, emerging-pathogen categories) need explicit definition, versioning, and validation. Changes to the syndrome taxonomy invalidate historical baselines for the changed categories; plan for the recomputation cost and the operational disruption.</p>
+<p><strong>NLP on chief complaints needs continuous validation.</strong> The accuracy of syndromic classification depends on the chief-complaint text and the NLP model's handling of it. EHR upgrades, chief-complaint template changes, triage-process changes, and provider documentation patterns all shift the input distribution. Validate NLP performance quarterly against a held-out labeled set and retrain when drift is detected.</p>
+<p><strong>Case-detail PHI store separation is critical.</strong> Surveillance analytic data should be aggregated to cells; the case-detail data with patient identifiers should live in a separate store with its own access controls. Investigators access case detail under specific authority; the analytic pipeline operates on de-identified or pseudonymized data. The architectural separation is a privacy-by-design requirement that's easy to skip and hard to retrofit.</p>
+<p><strong>Cross-jurisdictional coordination must be tested before it's needed.</strong> When an outbreak crosses jurisdictional lines, the detection system, the case-management workflow, and the public messaging all have to span jurisdictions. Tabletop the cross-jurisdictional protocols quarterly; the first time you exercise them shouldn't be the first time you need them.</p>
+<p><strong>Lab integration is its own program.</strong> State public health labs, hospital microbiology labs, and commercial reference labs each have their own data formats and integration mechanisms. Lab data is the highest-fidelity surveillance signal because it's pathogen-specific, but the integration work is substantial. Plan for parallel multi-quarter integration with each lab class. Genomic data integration (PulseNet, NCBI Pathogen Detection, organization-specific sequencing) adds another layer of integration complexity.</p>
+<p><strong>eCR and NEDSS integration follow public health interoperability frameworks.</strong> The eCR Now framework, the AIMS platform, the NEDSS Base System (NBS) and NEDSS-compatible products (Maven, Trisano, etc.) define how clinical systems and public health authorities exchange notifiable-condition data. Coverage is increasing but uneven. Plan for both eCR-integrated sources and legacy reporting channels (faxed and phoned-in reports for some conditions and jurisdictions).</p>
+<p><strong>Wastewater integration is non-trivial when it's part of the program.</strong> NWSS provides a national framework, but most local programs work directly with sample-processing labs and may use multiple labs across a sewershed network. Wastewater data has its own quality issues: sample collection variability, normalization considerations (against population estimates, against sewershed flow rates, against indicator pathogens like PMMoV), pathogen-specific concentration dynamics, and reporting cadence. Don't underestimate the analytic complexity of converting wastewater concentrations into a usable surveillance signal.</p>
+<p><strong>Investigation-team capacity sets the operational ceiling.</strong> A state surveillance team with a few dozen epidemiologists for a population of millions can investigate 10-30 clusters per day, not 100. Threshold tuning should match the team's actual throughput. A precision improvement that produces a queue larger than the team can review is not an improvement. Plan to retune thresholds quarterly as the program evolves and as team capacity changes.</p>
+<p><strong>Equity and subgroup performance audits are mandatory.</strong> Track flag rates, cluster-confirmation rates, and time-to-investigation by demographic group, geography, language, insurance category, and rurality. Wide variation warrants investigation. Surveillance systems that flag clusters disproportionately in some communities or under-flag in others reproduce existing inequities in care access and outbreak response.</p>
+<p><strong>Public communication infrastructure must precede deployment.</strong> When a confirmed outbreak warrants public notification, the communication infrastructure (health advisories, press releases, public dashboards, multilingual messaging, social media coordination) needs to be in place. Programs that detect outbreaks faster than they can communicate them produce situations where the press finds out before the public health team is ready, which damages program credibility.</p>
+<p><strong>Notifiable-condition reporting integration is its own engineering effort.</strong> NEDSS, NORS, NHSN, NMI, and (for some conditions) bilateral reporting to neighboring jurisdictions or international bodies each have their own protocols, data formats, and reporting cadences. Build reporting integration into the cluster-builder workflow rather than retrofitting it.</p>
+<p><strong>Suppression-rule lifecycle management.</strong> Suppression rules accumulate. After a few years of operation, the suppression-rule store can contain thousands of entries, some still valid, some stale, some legitimately superseded. Build a suppression-rule audit and renewal process from the start; without it, the system either over-suppresses (concealing real signals) or under-suppresses (re-flagging known patterns).</p>
+<p><strong>Decommissioning criteria.</strong> Pre-approved criteria for when specific detector classes get tuned, suppressed, or retired. Without pre-approved criteria, every tuning conversation becomes a political conversation; with them, it's a public-health-effectiveness decision driven by data.</p>
+<p><strong>Disaster recovery and continuity.</strong> Multi-AZ deployment for the active components is the minimum. The fallback during system outage is the manual surveillance process: weekly aggregate reports from facilities, manual review by the surveillance team, and the legacy NSSP/ESSENCE process. Both should be documented and exercised, because the system will be down sometime and outbreak risk doesn't pause.</p>
+<p><strong>Vendor-tool considerations.</strong> Many surveillance programs use ESSENCE (through NSSP/BioSense), commercial NEDSS-compatible products (Maven, Trisano), or specialized infection-prevention products (Theradoc, MedMined, VigiLanz, others) for parts of the workflow. The decision to build versus buy versus extend depends on existing tooling, the organization's engineering capacity, and the specific patterns the program needs to support. Many programs run a hybrid: ESSENCE through NSSP for the bulk of syndromic surveillance plus AWS-native components for organization-specific patterns, advanced analytics, and integration with auxiliary data sources. Honest framing matters: this recipe describes the underlying patterns, not a competitor to NSSP/BioSense or commercial products.</p>
+<p><strong>Records retention and legal hold.</strong> Surveillance data, case data, and outbreak investigation records must be retained per applicable retention policies, and may be subject to legal hold during active investigations or litigation. Public health investigation records often have multi-year retention requirements. Build retention and legal-hold capabilities into the storage layer from the start; retrofitting them later is painful.</p>
+<p><strong>Self-monitoring of the surveillance system.</strong> The surveillance system itself contains highly sensitive data: encounter detail, line lists, investigation histories, demographic distributions. Access to the surveillance system must be tightly controlled, fully audited, and regularly reviewed. The system should monitor itself: an investigator's access to case detail is itself an audit event, and access patterns within the surveillance system warrant the same scrutiny applied to clinical EHRs.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>ESSENCE / NSSP / BioSense integration rather than replacement.</strong> The most common variation is using AWS-native components to extend rather than replace ESSENCE through NSSP. ESSENCE handles the bulk of standard syndromic surveillance with established methodology and a well-known interface; the AWS-native layer handles organization-specific syndromes, advanced multi-source fusion, LLM-assisted triage, and integration with auxiliary data sources NSSP doesn't support. Many state programs operate this way: NSSP/ESSENCE for the federal-aligned syndromic surveillance plus organization-specific extensions for state-priority work.</p>
+<p><strong>Hospital-level HAI surveillance.</strong> The same architectural patterns apply at the hospital scale, with different data sources (NHSN feeds, microbiology, antibiotic stewardship data, OR scheduling, staff assignments) and different geographic units (units, ORs, procedures, devices). The detection patterns (control charts on standardized infection ratios, scan statistics on procedure-team graphs, genomic clustering for HAI strains) are conceptually similar to community-level outbreak detection. Many academic medical centers run institutional HAI surveillance alongside (or in coordination with) the public health programs.</p>
+<p><strong>Genomic-cluster integrated surveillance.</strong> Tighter integration with sequencing results: PulseNet-style genomic-cluster detection for foodborne pathogens, SARS-CoV-2-style variant tracking, TB strain typing, healthcare-associated infection genomics. Requires close coordination with the sequencing lab (state PHL, hospital lab, or commercial reference lab) and the bioinformatics team. The resulting signal is high-fidelity; the integration work is substantial.</p>
+<p><strong>Wastewater-led surveillance.</strong> A variation where wastewater is the primary surveillance signal and clinical surveillance is the confirmatory signal. Useful for pathogens where wastewater leads clinical by enough to matter (SARS-CoV-2 was the canonical case). Requires reliable wastewater sampling, processing capacity, and the analytic infrastructure to convert concentrations into a usable surveillance signal.</p>
+<p><strong>Wearable-aggregate signal integration.</strong> Population-level deviations in resting heart rate, sleep, and activity from consumer wearables (Fitbit, Apple Watch, Oura, Garmin) can lead clinical signals by days. The Stanford wearable surveillance work, the DETECT Study, and several research programs have demonstrated the signal. Operationally early-stage in 2026; aggregation, privacy, and partnership patterns are still evolving.</p>
+<p><strong>LLM-assisted investigation copilot.</strong> An LLM-driven copilot for surveillance epidemiologists that can answer questions about a cluster (&quot;show me every fever-respiratory ED visit in this ZIP in the last 14 days,&quot; &quot;what's the historical pattern for this syndrome in this season&quot;), retrieve evidence on demand, and assist with note drafting. Distinct from the cluster-narrative LLM, which compiles the initial summary. Emerging in 2026; substantial productivity potential.</p>
+<p><strong>Cross-jurisdictional federated surveillance.</strong> A federated detection model where each jurisdiction runs its own surveillance and shares higher-level signals upstream. State health departments aggregate from local; CDC aggregates from states; international surveillance (WHO, ECDC, Africa CDC, others) aggregates from national. The federation pattern preserves jurisdictional control while enabling cross-boundary cluster detection. Architectural complexity is real; the legal and operational frameworks vary by region.</p>
+<p><strong>Climate and weather-aware surveillance.</strong> Some pathogens (vector-borne, waterborne, heat-illness) are tightly coupled to weather. Integrating weather and climate data into the baseline (so the detector knows that a heat wave is in progress when heat-illness counts spike) reduces false alarms during predictable weather events and surfaces real anomalies. Useful for vector-borne disease surveillance (West Nile, EEE, Powassan, dengue, malaria), waterborne disease surveillance (cholera, leptospirosis), and heat-illness surveillance.</p>
+<p><strong>One Health surveillance integration.</strong> Combining human, animal, and environmental surveillance for zoonotic disease detection. Integration with veterinary surveillance (USDA APHIS), wildlife surveillance (state wildlife agencies, USGS), and environmental monitoring (EPA, state DEP) catches emerging zoonotic threats earlier than human-only surveillance. Operationally complex; the data-sharing patterns across federal agencies and state organizations are bespoke.</p>
+<p><strong>Mass-gathering surveillance.</strong> Temporary intensified surveillance around large events (sporting events, conventions, religious gatherings, music festivals) and post-disaster contexts. Sub-daily aggregation, more aggressive threshold sensitivity, and specific syndromic categories (foodborne, heat illness, injury, mental health) appropriate to the event type. Operationally well-defined; CDC and academic programs have established protocols.</p>
+<p><strong>Pharmacy-based surveillance.</strong> OTC product sales (where the data is shared, typically through retail-pharmacy partnerships), prescription-fill data for antiviral and antibiotic agents, and over-the-counter rapid-test sales (where available, especially post-pandemic). Useful for influenza-like illness surveillance, and increasingly for COVID-19 detection given the over-the-counter testing landscape.</p>
+<p><strong>Provider-network and telehealth surveillance.</strong> Integrating telehealth visit data into the surveillance system. Telehealth visits often have different geographic semantics (the patient's home, not the clinic location) and different clinical-data completeness. The integration provides additional coverage for populations and geographies that don't otherwise show up in ED-based surveillance.</p>
+<p><strong>Death-certificate surveillance.</strong> State vital records data integrated with surveillance for excess-mortality detection. Lagged compared to syndromic data (death certificates take days to weeks to be filed and processed) but provides a different and important signal. Excess mortality during the early COVID-19 pandemic was a leading indicator that complemented case counts.</p>
+<p><strong>Syndromic surveillance for non-communicable conditions.</strong> The same machinery applied to non-communicable conditions: opioid overdose surveillance, suicide-attempt surveillance, intimate-partner violence surveillance, environmental-exposure surveillance. Different syndrome taxonomies, different geographic and demographic considerations, different response infrastructures. The architectural pattern transfers; the operational program is distinct.</p>
+<p><strong>Privacy-preserving multi-organization surveillance.</strong> Federated learning, secure multi-party computation, and differential privacy approaches that allow cross-organization surveillance without raw-data sharing. Operationally early-stage in healthcare surveillance; the research is active and a few pilots exist. Useful for cross-state cluster detection and for surveillance involving sensitive populations where data-sharing is legally constrained.</p>
+<p><strong>Conversational AI for the public.</strong> A patient-facing chatbot that allows individuals to report symptoms anonymously and aggregates the reports for public health surveillance. Provides a complementary signal to provider-based surveillance because it captures people who don't seek care. Privacy considerations are significant; the surveillance value depends on participation rates that are hard to predict.</p>
+<p><strong>Patient-facing transparency on outbreaks.</strong> Public-facing dashboards that show current outbreak status (with appropriate suppression) and historical patterns, integrated with the patient portal so individuals can see whether elevated activity is occurring in their area. Operationally early-stage but consistent with broader patient-rights movements toward health-data transparency.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html">Amazon Aurora PostgreSQL User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/timestream/latest/developerguide/what-is-timestream.html">Amazon Timestream Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html">Amazon OpenSearch Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html">Amazon SageMaker Processing</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html">Amazon SageMaker Model Monitor</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/location/latest/developerguide/welcome.html">Amazon Location Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html">Amazon EventBridge User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/batch/latest/userguide/what-is-batch.html">AWS Batch User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/appsync/latest/devguide/welcome.html">AWS AppSync Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/athena/latest/ug/what-is.html">Amazon Athena User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: time-series forecasting, anomaly detection, and Processing-job examples relevant to baseline computation and detection.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: search for &quot;FHIR,&quot; &quot;HL7,&quot; &quot;geospatial analytics,&quot; &quot;Athena geospatial,&quot; and &quot;public health&quot; for adjacent integration and analytics patterns.</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter by Healthcare and AI/ML): healthcare reference architectures.</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS Industries Blog (Healthcare and Life Sciences)</a>: healthcare-specific AWS architectures and customer stories.</li>
+<li><a href="https://aws.amazon.com/blogs/publicsector/">AWS Public Sector Blog</a>: government and public-sector use cases including some public health surveillance work.</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search for &quot;anomaly detection,&quot; &quot;time series,&quot; and &quot;geospatial analytics&quot; for technique deep-dives.</li>
+</ul>
+<p><strong>Public Health and Surveillance References:</strong></p>
+<ul>
+<li><a href="https://www.cdc.gov/nssp/">CDC National Syndromic Surveillance Program (NSSP)</a>: the federal program coordinating ED-based syndromic surveillance.</li>
+<li><a href="https://www.cdc.gov/nssp/biosense/index.html">CDC BioSense Platform</a>: the NSSP's hosted analytics platform used by participating jurisdictions.</li>
+<li><a href="https://www.jhuapl.edu/work/projects-and-missions/essence">ESSENCE (JHUAPL)</a>: the analytical engine used by NSSP and many state and local programs.</li>
+<li><a href="https://www.cdc.gov/nedss/">CDC NEDSS</a>: the National Electronic Disease Surveillance System framework for state-level case management.</li>
+<li><a href="https://ecr.aimsplatform.org/">CDC eCR Now</a>: the electronic case reporting framework and AIMS platform.</li>
+<li><a href="https://www.cdc.gov/nndss/">CDC National Notifiable Diseases Surveillance System (NNDSS)</a>: the federal nationally notifiable diseases system.</li>
+<li><a href="https://www.cdc.gov/nors/">CDC NORS (National Outbreak Reporting System)</a>: waterborne, foodborne, and enteric outbreak reporting.</li>
+<li><a href="https://www.cdc.gov/nhsn/">CDC NHSN (National Healthcare Safety Network)</a>: healthcare-associated infection surveillance.</li>
+<li><a href="https://www.cdc.gov/nwss/wastewater-surveillance.html">CDC National Wastewater Surveillance System (NWSS)</a>: wastewater-based surveillance.</li>
+<li><a href="https://www.cdc.gov/pulsenet/">CDC PulseNet</a>: the molecular subtyping network for foodborne disease surveillance.</li>
+<li><a href="https://www.cste.org/">Council of State and Territorial Epidemiologists (CSTE)</a>: notifiable-disease list and surveillance methodology coordination.</li>
+<li><a href="https://www.aphl.org/">Association of Public Health Laboratories (APHL)</a>: public health laboratory coordination including AIMS platform.</li>
+<li><a href="https://www.satscan.org/">SaTScan</a>: the canonical spatial and spatiotemporal scan-statistic software.</li>
+<li><a href="https://nextstrain.org/">Nextstrain</a>: real-time tracking of pathogen evolution and genomic-cluster surveillance.</li>
+</ul>
+<p><strong>Regulatory and Compliance References:</strong></p>
+<ul>
+<li><a href="https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E/section-164.512#p-164.512(b)">HIPAA Privacy Rule, Public Health Exception (45 CFR 164.512(b))</a>: the regulatory basis for public-health-authority access to PHI.</li>
+<li><a href="https://www.cdc.gov/phlp/publications/topic/index.html">State Public Health Statutes</a>: jurisdiction-specific authorities; varies by state.</li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/special-topics/public-health/index.html">HHS Office for Civil Rights (OCR) Public Health Guidance</a>: OCR guidance on the public health exception.</li>
+</ul>
+<p><strong>Industry Frameworks and Standards:</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185">HL7 v2 ADT and ORU</a>: the dominant clinical-encounter and lab-result data formats.</li>
+<li><a href="https://www.hl7.org/fhir/">HL7 FHIR</a>: the modern interoperability standard underpinning eCR and emerging surveillance integrations.</li>
+<li><a href="https://loinc.org/">LOINC</a>: laboratory test and observation codes.</li>
+<li><a href="https://www.snomed.org/">SNOMED CT</a>: clinical terminology.</li>
+<li><a href="https://www.cdc.gov/nchs/icd/icd10cm.htm">ICD-10-CM</a>: diagnosis coding.</li>
+<li><a href="https://www.cdc.gov/nndss/data-and-resources/surveillance-message-mapping-guides.html">SaNDS (Surveillance and Notifiable Disease Standards)</a>: CDC standards for surveillance message structure.</li>
+</ul>
+<p><strong>Academic and Industry Literature:</strong></p>
+<ul>
+<li><a href="https://cran.r-project.org/package=surveillance"><code>R/surveillance</code> package</a>: the canonical R package for outbreak detection methodology, including Farrington Flexible and related algorithms.</li>
+<li><a href="https://www.satscan.org/">SaTScan documentation</a>: user guide and methodology references for spatial and spatiotemporal scan statistics.</li>
+</ul>
+<p><strong>Operational and Vendor References (informational; not endorsements):</strong></p>
+<ul>
+<li><a href="https://www.conduent.com/government/health/disease-surveillance/">Maven (Conduent)</a>: commercial NEDSS-compatible surveillance platform.</li>
+<li><a href="https://www.trisano.org/">Trisano</a>: open-source NEDSS-compatible surveillance platform.</li>
+<li><a href="https://bluedot.global/">BlueDot</a>: commercial outbreak intelligence platform.</li>
+<li><a href="https://healthmap.org/en/">HealthMap</a>: outbreak news monitoring.</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Single state-level ED encounter feed (HL7 v2 ADT through state aggregator), control-chart and Farrington Flexible detection on 4-6 syndromes at the county level, manual surveillance team queue, basic governance, parallel comparison with the existing NSSP/ESSENCE process</td>
+<td>6-12 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Statewide ED and urgent-care feeds (or institutional equivalent), lab feed integration, eCR/NEDSS integration for notifiable conditions, syndrome classification with Comprehend Medical and a custom NLP model, multi-resolution geographic stratification, control-chart plus regression-based plus spatial-scan detection, multi-source fusion with at least wastewater and one auxiliary source, LLM-assisted cluster narrative, surveillance UI, full surveillance program governance with cross-jurisdictional protocols, retraining pipeline, public-facing dashboards with suppression, NSSP and CSTE reporting integration</td>
+<td>18-30 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Additional states/jurisdictions, genomic-cluster integration, wearable-aggregate signal integration, conversational AI investigator copilot, patient-facing transparency dashboards, federated cross-jurisdictional surveillance, One Health integration with veterinary and environmental surveillance, climate and weather-aware baseline modeling, mass-gathering temporary surveillance overlays, advanced equity audits with formalized disparate-impact analysis</td>
+<td>24-60 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter03.10-epidemic-outbreak-detection.html">Main Recipe 3.10</a> · <a href="chapter03.10-python-example.html">Python Example</a> · <a href="chapter03-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

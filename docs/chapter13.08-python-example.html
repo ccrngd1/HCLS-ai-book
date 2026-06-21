@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 13.8: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-138-python-implementation-example">Recipe 13.8: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 13.8. It shows one way you could translate those concepts into working Python using boto3 and the Neptune graph client. It is not production-ready. The real UMLS has millions of concepts and complex relationship semantics that this example only scratches the surface of. Think of it as a sketch that helps you understand the shape of the solution. A starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and the Neptune graph client:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>gremlinpython<span class="w"> </span>requests
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>neptune-db:*</code> scoped to your Neptune cluster</li>
+<li><code>s3:GetObject</code> and <code>s3:PutObject</code> on your terminology buckets</li>
+<li><code>elasticache:Connect</code> for the Redis cache cluster</li>
+</ul>
+<p>You'll also need network access to your Neptune cluster endpoint (Neptune lives in a VPC, so your code must run inside that VPC or have connectivity via VPN/peering).</p>
+<p>For the UMLS data, you need a free license from the National Library of Medicine. Register at https://uts.nlm.nih.gov/uts/ and download the Metathesaurus files.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the steps, here's the configuration that drives the whole system. Terminology file formats, Neptune connection details, and the relationship type mappings all live here so they're easy to find and update.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. In production, use JSON-formatted output for</span>
+<span class="c1"># CloudWatch Logs Insights queries.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># boto3 retry configuration. Neptune and S3 can throttle under load.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># AWS clients</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># Neptune connection. Neptune uses a WebSocket-based protocol for Gremlin</span>
+<span class="c1"># and an HTTP endpoint for openCypher. We&#39;ll use the HTTP/openCypher endpoint</span>
+<span class="c1"># because the query syntax is more readable for this use case.</span>
+<span class="n">NEPTUNE_ENDPOINT</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s2">&quot;NEPTUNE_ENDPOINT&quot;</span><span class="p">,</span> <span class="s2">&quot;your-neptune-cluster.cluster-xxxx.us-east-1.neptune.amazonaws.com&quot;</span>
+<span class="p">)</span>
+<span class="n">NEPTUNE_PORT</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;NEPTUNE_PORT&quot;</span><span class="p">,</span> <span class="s2">&quot;8182&quot;</span><span class="p">))</span>
+
+<span class="c1"># S3 bucket for terminology files (raw downloads and processed load files).</span>
+<span class="n">TERMINOLOGY_BUCKET</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TERMINOLOGY_BUCKET&quot;</span><span class="p">,</span> <span class="s2">&quot;my-terminology-data&quot;</span><span class="p">)</span>
+
+<span class="c1"># Redis cache configuration. ElastiCache endpoint for caching normalization results.</span>
+<span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;REDIS_HOST&quot;</span><span class="p">,</span> <span class="s2">&quot;my-cache-cluster.xxxx.use1.cache.amazonaws.com&quot;</span><span class="p">)</span>
+<span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;REDIS_PORT&quot;</span><span class="p">,</span> <span class="s2">&quot;6379&quot;</span><span class="p">))</span>
+
+<span class="c1"># Cache TTL in seconds. 24 hours is reasonable because terminology releases</span>
+<span class="c1"># happen at most monthly. After a new load, you&#39;d selectively invalidate.</span>
+<span class="n">CACHE_TTL_SECONDS</span> <span class="o">=</span> <span class="mi">86400</span>
+
+<span class="c1"># Relationship type mappings. UMLS uses short codes (REL field) to describe</span>
+<span class="c1"># how two concepts relate. We translate these into human-readable edge labels</span>
+<span class="c1"># for the graph.</span>
+<span class="n">UMLS_REL_TO_EDGE_TYPE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;SY&quot;</span><span class="p">:</span> <span class="s2">&quot;synonym_of&quot;</span><span class="p">,</span>         <span class="c1"># Synonymy: same meaning</span>
+    <span class="s2">&quot;RO&quot;</span><span class="p">:</span> <span class="s2">&quot;related_to&quot;</span><span class="p">,</span>         <span class="c1"># Other related: associated but not equivalent</span>
+    <span class="s2">&quot;RB&quot;</span><span class="p">:</span> <span class="s2">&quot;broader_than&quot;</span><span class="p">,</span>       <span class="c1"># Broader: source is more general than target</span>
+    <span class="s2">&quot;RN&quot;</span><span class="p">:</span> <span class="s2">&quot;narrower_than&quot;</span><span class="p">,</span>      <span class="c1"># Narrower: source is more specific than target</span>
+    <span class="s2">&quot;PAR&quot;</span><span class="p">:</span> <span class="s2">&quot;parent_of&quot;</span><span class="p">,</span>         <span class="c1"># Hierarchical parent</span>
+    <span class="s2">&quot;CHD&quot;</span><span class="p">:</span> <span class="s2">&quot;child_of&quot;</span><span class="p">,</span>          <span class="c1"># Hierarchical child</span>
+    <span class="s2">&quot;AQ&quot;</span><span class="p">:</span> <span class="s2">&quot;allowed_qualifier&quot;</span><span class="p">,</span>  <span class="c1"># Qualifier relationship</span>
+    <span class="s2">&quot;QB&quot;</span><span class="p">:</span> <span class="s2">&quot;qualified_by&quot;</span><span class="p">,</span>       <span class="c1"># Qualified by</span>
+<span class="p">}</span>
+
+<span class="c1"># Terminologies we care about. UMLS contains 200+ source vocabularies,</span>
+<span class="c1"># but for healthcare concept normalization, these are the ones that matter.</span>
+<span class="n">TARGET_TERMINOLOGIES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;SNOMEDCT_US&quot;</span><span class="p">,</span>  <span class="c1"># SNOMED CT (US Edition)</span>
+    <span class="s2">&quot;ICD10CM&quot;</span><span class="p">,</span>      <span class="c1"># ICD-10-CM (diagnosis codes)</span>
+    <span class="s2">&quot;ICD10PCS&quot;</span><span class="p">,</span>     <span class="c1"># ICD-10-PCS (procedure codes)</span>
+    <span class="s2">&quot;LNC&quot;</span><span class="p">,</span>          <span class="c1"># LOINC (lab observations)</span>
+    <span class="s2">&quot;RXNORM&quot;</span><span class="p">,</span>       <span class="c1"># RxNorm (medications)</span>
+    <span class="s2">&quot;CPT&quot;</span><span class="p">,</span>          <span class="c1"># CPT (outpatient procedures)</span>
+    <span class="s2">&quot;HCPCS&quot;</span><span class="p">,</span>        <span class="c1"># HCPCS (supplies, equipment)</span>
+<span class="p">}</span>
+
+<span class="c1"># Neptune bulk load CSV headers. These define the schema for the graph.</span>
+<span class="n">NODE_CSV_HEADERS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;~id&quot;</span><span class="p">,</span> <span class="s2">&quot;~label&quot;</span><span class="p">,</span> <span class="s2">&quot;code:String&quot;</span><span class="p">,</span> <span class="s2">&quot;display:String&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;terminology:String&quot;</span><span class="p">,</span> <span class="s2">&quot;version:String&quot;</span><span class="p">,</span> <span class="s2">&quot;status:String&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;semantic_type:String&quot;</span><span class="p">,</span> <span class="s2">&quot;cui:String&quot;</span>
+<span class="p">]</span>
+
+<span class="n">EDGE_CSV_HEADERS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;~id&quot;</span><span class="p">,</span> <span class="s2">&quot;~from&quot;</span><span class="p">,</span> <span class="s2">&quot;~to&quot;</span><span class="p">,</span> <span class="s2">&quot;~label&quot;</span><span class="p">,</span> <span class="s2">&quot;relationship_type:String&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;confidence:Double&quot;</span><span class="p">,</span> <span class="s2">&quot;provenance:String&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_date:Date&quot;</span>
+<span class="p">]</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-parse-umls-terminology-files">Step 1: Parse UMLS Terminology Files</h2>
+<p><em>The pseudocode calls this <code>ingest_terminology()</code>. UMLS distributes its data in RRF (Rich Release Format), which is pipe-delimited with specific column positions. This step parses MRCONSO.RRF (concepts) and MRREL.RRF (relationships) into structured Python objects.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">parse_umls_concepts</span><span class="p">(</span><span class="n">mrconso_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse UMLS MRCONSO.RRF to extract concepts from our target terminologies.</span>
+
+<span class="sd">    MRCONSO.RRF is the core concept file in UMLS. Each row represents one</span>
+<span class="sd">    &quot;atom&quot; (a specific name for a concept in a specific source vocabulary).</span>
+<span class="sd">    Multiple atoms can share a CUI (Concept Unique Identifier), meaning</span>
+<span class="sd">    they represent the same clinical idea in different terminologies.</span>
+
+<span class="sd">    The file is pipe-delimited with these columns (among others):</span>
+<span class="sd">      0: CUI    - Concept Unique Identifier</span>
+<span class="sd">      1: LAT    - Language</span>
+<span class="sd">      4: LUI    - Lexical Unique Identifier</span>
+<span class="sd">      6: ISPREF - Is preferred presentation (Y/N)</span>
+<span class="sd">      11: SAB   - Source Abbreviation (terminology name)</span>
+<span class="sd">      12: TTY   - Term Type (e.g., PT=Preferred Term)</span>
+<span class="sd">      13: CODE  - Code in the source terminology</span>
+<span class="sd">      14: STR   - String (the display name)</span>
+<span class="sd">      16: SUPPRESS - Suppression flag (O=obsolete, E=non-human, Y=suppressed)</span>
+
+<span class="sd">    We filter to:</span>
+<span class="sd">      - English language only (LAT = &quot;ENG&quot;)</span>
+<span class="sd">      - Our target terminologies only</span>
+<span class="sd">      - Non-suppressed atoms only</span>
+<span class="sd">      - Preferred terms where available (for the display name)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mrconso_path: Local file path to MRCONSO.RRF</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of concept dictionaries ready for graph loading.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">concepts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># Track (terminology, code) pairs to avoid duplicates</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parsing MRCONSO.RRF from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mrconso_path</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">mrconso_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Filter: English only.</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;ENG&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Filter: target terminologies only.</span>
+            <span class="n">terminology</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">terminology</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">TARGET_TERMINOLOGIES</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Filter: skip suppressed/obsolete atoms.</span>
+            <span class="n">suppress</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">suppress</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">cui</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span>
+            <span class="n">display</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span>
+            <span class="n">term_type</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span>
+
+            <span class="c1"># Deduplicate: keep only one entry per (terminology, code).</span>
+            <span class="c1"># Prefer the Preferred Term (PT) for the display name.</span>
+            <span class="n">dedup_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">terminology</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dedup_key</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Only take preferred terms or, if none available, any term.</span>
+            <span class="c1"># PT = Preferred Term in most vocabularies.</span>
+            <span class="k">if</span> <span class="n">term_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;PT&quot;</span><span class="p">,</span> <span class="s2">&quot;PF&quot;</span><span class="p">,</span> <span class="s2">&quot;SY&quot;</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dedup_key</span><span class="p">)</span>
+            <span class="n">concepts</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;cui&quot;</span><span class="p">:</span> <span class="n">cui</span><span class="p">,</span>
+                <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+                <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="n">display</span><span class="p">,</span>
+                <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">,</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;active&quot;</span><span class="p">,</span>
+            <span class="p">})</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parsed </span><span class="si">%d</span><span class="s2"> concepts from </span><span class="si">%d</span><span class="s2"> target terminologies&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">concepts</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">TARGET_TERMINOLOGIES</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">concepts</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_umls_relationships</span><span class="p">(</span><span class="n">mrrel_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">valid_cuis</span><span class="p">:</span> <span class="nb">set</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse UMLS MRREL.RRF to extract relationships between concepts.</span>
+
+<span class="sd">    MRREL.RRF contains relationships between concepts. Each row describes</span>
+<span class="sd">    a directed relationship from one concept to another.</span>
+
+<span class="sd">    Key columns:</span>
+<span class="sd">      0: CUI1   - Source concept CUI</span>
+<span class="sd">      2: REL    - Relationship type (SY, RO, RB, RN, PAR, CHD, etc.)</span>
+<span class="sd">      3: RELA   - Relationship attribute (more specific type)</span>
+<span class="sd">      4: CUI2   - Target concept CUI</span>
+<span class="sd">      7: SAB    - Source of the relationship</span>
+<span class="sd">      10: SUPPRESS - Suppression flag</span>
+
+<span class="sd">    We filter to:</span>
+<span class="sd">      - Relationships where both CUIs are in our concept set</span>
+<span class="sd">      - Non-suppressed relationships</span>
+<span class="sd">      - Relationship types we care about</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mrrel_path: Local file path to MRREL.RRF</span>
+<span class="sd">        valid_cuis: Set of CUIs that exist in our concept set (from parse_umls_concepts)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of relationship dictionaries ready for graph loading.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">relationships</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parsing MRREL.RRF from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mrrel_path</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">mrrel_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+
+            <span class="n">cui1</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">rel</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">cui2</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+            <span class="n">suppress</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="c1"># Skip suppressed relationships.</span>
+            <span class="k">if</span> <span class="n">suppress</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Skip if either concept isn&#39;t in our set.</span>
+            <span class="k">if</span> <span class="n">cui1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_cuis</span> <span class="ow">or</span> <span class="n">cui2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_cuis</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Skip relationship types we don&#39;t map.</span>
+            <span class="k">if</span> <span class="n">rel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">UMLS_REL_TO_EDGE_TYPE</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Skip self-referential relationships.</span>
+            <span class="k">if</span> <span class="n">cui1</span> <span class="o">==</span> <span class="n">cui2</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">relationships</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;source_cui&quot;</span><span class="p">:</span> <span class="n">cui1</span><span class="p">,</span>
+                <span class="s2">&quot;target_cui&quot;</span><span class="p">:</span> <span class="n">cui2</span><span class="p">,</span>
+                <span class="s2">&quot;relationship_type&quot;</span><span class="p">:</span> <span class="n">UMLS_REL_TO_EDGE_TYPE</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span>
+                <span class="s2">&quot;provenance&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;UMLS_</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">})</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parsed </span><span class="si">%d</span><span class="s2"> relationships&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">relationships</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">relationships</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-build-neptune-bulk-load-files">Step 2: Build Neptune Bulk Load Files</h2>
+<p><em>The pseudocode calls this <code>build_graph_load_files()</code>. Neptune's bulk loader reads CSV files from S3 with specific header conventions. The <code>~id</code>, <code>~from</code>, <code>~to</code>, and <code>~label</code> columns are reserved by Neptune for node IDs, edge endpoints, and labels.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_node_id</span><span class="p">(</span><span class="n">terminology</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a deterministic, unique node ID from terminology and code.</span>
+
+<span class="sd">    We use a hash to keep IDs short and consistent. The same terminology + code</span>
+<span class="sd">    always produces the same ID, which makes loads idempotent: reloading the</span>
+<span class="sd">    same data doesn&#39;t create duplicate nodes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">terminology</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">16</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_edge_id</span><span class="p">(</span><span class="n">from_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rel_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a deterministic edge ID from source, target, and relationship type.</span>
+<span class="sd">    Same logic as node IDs: idempotent and collision-resistant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">from_id</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">to_id</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">rel_type</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">16</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_node_csv</span><span class="p">(</span><span class="n">concepts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build the Neptune bulk load CSV for concept nodes.</span>
+
+<span class="sd">    Each concept becomes one row. The ~id column is the deterministic hash,</span>
+<span class="sd">    ~label is always &quot;Concept&quot; (our node type), and the remaining columns</span>
+<span class="sd">    are properties stored on the node.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        concepts: List of concept dicts from parse_umls_concepts()</span>
+<span class="sd">        version: The UMLS release version (e.g., &quot;2025AB&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        CSV content as a string, ready to upload to S3.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">NODE_CSV_HEADERS</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
+        <span class="n">node_id</span> <span class="o">=</span> <span class="n">generate_node_id</span><span class="p">(</span><span class="n">concept</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">],</span> <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">])</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+            <span class="n">node_id</span><span class="p">,</span>                    <span class="c1"># ~id</span>
+            <span class="s2">&quot;Concept&quot;</span><span class="p">,</span>                  <span class="c1"># ~label</span>
+            <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">],</span>            <span class="c1"># code:String</span>
+            <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;display&quot;</span><span class="p">],</span>         <span class="c1"># display:String</span>
+            <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">],</span>     <span class="c1"># terminology:String</span>
+            <span class="n">version</span><span class="p">,</span>                    <span class="c1"># version:String</span>
+            <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">],</span>          <span class="c1"># status:String</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>                         <span class="c1"># semantic_type:String (populated separately from MRSTY)</span>
+            <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;cui&quot;</span><span class="p">],</span>             <span class="c1"># cui:String</span>
+        <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_edge_csv</span><span class="p">(</span><span class="n">concepts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">relationships</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build the Neptune bulk load CSV for relationship edges.</span>
+
+<span class="sd">    This creates two types of edges:</span>
+<span class="sd">    1. Cross-terminology equivalence edges (concepts sharing a CUI)</span>
+<span class="sd">    2. Explicit UMLS relationships (from MRREL.RRF)</span>
+
+<span class="sd">    The cross-terminology links are the heart of normalization: they connect</span>
+<span class="sd">    the same clinical idea across different coding systems.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        concepts: List of concept dicts (need CUI to group by)</span>
+<span class="sd">        relationships: List of relationship dicts from parse_umls_relationships()</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        CSV content as a string, ready to upload to S3.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">EDGE_CSV_HEADERS</span><span class="p">)</span>
+
+    <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># First: create cross-terminology equivalence edges.</span>
+    <span class="c1"># Group concepts by CUI. Concepts sharing a CUI represent the same</span>
+    <span class="c1"># clinical meaning in different terminologies.</span>
+    <span class="n">cui_groups</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
+        <span class="n">cui</span> <span class="o">=</span> <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;cui&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cui</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cui_groups</span><span class="p">:</span>
+            <span class="n">cui_groups</span><span class="p">[</span><span class="n">cui</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cui_groups</span><span class="p">[</span><span class="n">cui</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">concept</span><span class="p">)</span>
+
+    <span class="n">edge_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">cui</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">cui_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># For each pair of concepts in different terminologies sharing this CUI,</span>
+        <span class="c1"># create a bidirectional equivalence edge.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">concept_a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">concept_b</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="n">concept_a</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">concept_b</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">]:</span>
+                    <span class="k">continue</span>  <span class="c1"># Same terminology, skip (intra-terminology handled separately)</span>
+
+                <span class="n">from_id</span> <span class="o">=</span> <span class="n">generate_node_id</span><span class="p">(</span><span class="n">concept_a</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">],</span> <span class="n">concept_a</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">])</span>
+                <span class="n">to_id</span> <span class="o">=</span> <span class="n">generate_node_id</span><span class="p">(</span><span class="n">concept_b</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">],</span> <span class="n">concept_b</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">])</span>
+                <span class="n">edge_id</span> <span class="o">=</span> <span class="n">generate_edge_id</span><span class="p">(</span><span class="n">from_id</span><span class="p">,</span> <span class="n">to_id</span><span class="p">,</span> <span class="s2">&quot;equivalent_to&quot;</span><span class="p">)</span>
+
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+                    <span class="n">edge_id</span><span class="p">,</span>            <span class="c1"># ~id</span>
+                    <span class="n">from_id</span><span class="p">,</span>            <span class="c1"># ~from</span>
+                    <span class="n">to_id</span><span class="p">,</span>              <span class="c1"># ~to</span>
+                    <span class="s2">&quot;equivalent_to&quot;</span><span class="p">,</span>    <span class="c1"># ~label</span>
+                    <span class="s2">&quot;equivalent_to&quot;</span><span class="p">,</span>    <span class="c1"># relationship_type:String</span>
+                    <span class="mf">0.95</span><span class="p">,</span>               <span class="c1"># confidence:Double (CUI-based = high confidence)</span>
+                    <span class="sa">f</span><span class="s2">&quot;UMLS_CUI_</span><span class="si">{</span><span class="n">cui</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>  <span class="c1"># provenance:String</span>
+                    <span class="n">today</span><span class="p">,</span>              <span class="c1"># effective_date:Date</span>
+                <span class="p">])</span>
+                <span class="n">edge_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Second: create edges from explicit UMLS relationships.</span>
+    <span class="c1"># These capture hierarchical and associative relationships.</span>
+    <span class="c1"># We need a CUI-to-node-id lookup for this.</span>
+    <span class="n">cui_to_nodes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
+        <span class="n">cui</span> <span class="o">=</span> <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;cui&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cui</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cui_to_nodes</span><span class="p">:</span>
+            <span class="n">cui_to_nodes</span><span class="p">[</span><span class="n">cui</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cui_to_nodes</span><span class="p">[</span><span class="n">cui</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">generate_node_id</span><span class="p">(</span><span class="n">concept</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">],</span> <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">])</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">relationships</span><span class="p">:</span>
+        <span class="n">source_nodes</span> <span class="o">=</span> <span class="n">cui_to_nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rel</span><span class="p">[</span><span class="s2">&quot;source_cui&quot;</span><span class="p">],</span> <span class="p">[])</span>
+        <span class="n">target_nodes</span> <span class="o">=</span> <span class="n">cui_to_nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rel</span><span class="p">[</span><span class="s2">&quot;target_cui&quot;</span><span class="p">],</span> <span class="p">[])</span>
+
+        <span class="c1"># Create edges between all node pairs for this relationship.</span>
+        <span class="c1"># In practice you might limit this to same-terminology pairs for</span>
+        <span class="c1"># hierarchical relationships.</span>
+        <span class="k">for</span> <span class="n">from_id</span> <span class="ow">in</span> <span class="n">source_nodes</span><span class="p">[:</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># Limit to first node to avoid explosion</span>
+            <span class="k">for</span> <span class="n">to_id</span> <span class="ow">in</span> <span class="n">target_nodes</span><span class="p">[:</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">edge_id</span> <span class="o">=</span> <span class="n">generate_edge_id</span><span class="p">(</span><span class="n">from_id</span><span class="p">,</span> <span class="n">to_id</span><span class="p">,</span> <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;relationship_type&quot;</span><span class="p">])</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+                    <span class="n">edge_id</span><span class="p">,</span>
+                    <span class="n">from_id</span><span class="p">,</span>
+                    <span class="n">to_id</span><span class="p">,</span>
+                    <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;relationship_type&quot;</span><span class="p">],</span>
+                    <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;relationship_type&quot;</span><span class="p">],</span>
+                    <span class="mf">0.85</span><span class="p">,</span>
+                    <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;provenance&quot;</span><span class="p">],</span>
+                    <span class="n">today</span><span class="p">,</span>
+                <span class="p">])</span>
+                <span class="n">edge_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Built </span><span class="si">%d</span><span class="s2"> edges (cross-terminology + explicit relationships)&quot;</span><span class="p">,</span> <span class="n">edge_count</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">upload_load_files_to_s3</span><span class="p">(</span><span class="n">node_csv</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">edge_csv</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upload the Neptune bulk load CSV files to S3.</span>
+
+<span class="sd">    Neptune&#39;s bulk loader reads directly from S3. The files must be in the</span>
+<span class="sd">    same region as the Neptune cluster.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with S3 URIs for both files (needed for the bulk load API call).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">node_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;terminology-processed/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">/nodes.csv&quot;</span>
+    <span class="n">edge_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;terminology-processed/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">/edges.csv&quot;</span>
+
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">TERMINOLOGY_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">node_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">node_csv</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">TERMINOLOGY_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">edge_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">edge_csv</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Uploaded load files to s3://</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2"> and </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">TERMINOLOGY_BUCKET</span><span class="p">,</span> <span class="n">node_key</span><span class="p">,</span> <span class="n">edge_key</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;node_s3_uri&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">TERMINOLOGY_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">node_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;edge_s3_uri&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">TERMINOLOGY_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">edge_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-trigger-neptune-bulk-load">Step 3: Trigger Neptune Bulk Load</h2>
+<p><em>The pseudocode describes loading data into Neptune. The Neptune bulk loader is an HTTP API on the Neptune cluster itself. You POST a load request with the S3 URI, IAM role ARN, and format details. It runs asynchronously and you poll for completion.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">requests_aws4auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">AWS4Auth</span>
+
+<span class="c1"># Neptune&#39;s bulk loader uses IAM authentication via SigV4.</span>
+<span class="c1"># This role must have access to both Neptune and the S3 bucket.</span>
+<span class="n">NEPTUNE_LOAD_ROLE_ARN</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s2">&quot;NEPTUNE_LOAD_ROLE_ARN&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;arn:aws:iam::123456789012:role/NeptuneLoadFromS3&quot;</span>
+<span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_neptune_auth</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create SigV4 auth for Neptune HTTP requests.</span>
+<span class="sd">    Neptune uses IAM authentication, not username/password.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+    <span class="n">credentials</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_credentials</span><span class="p">()</span><span class="o">.</span><span class="n">get_frozen_credentials</span><span class="p">()</span>
+    <span class="n">region</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">region_name</span> <span class="ow">or</span> <span class="s2">&quot;us-east-1&quot;</span>
+
+    <span class="k">return</span> <span class="n">AWS4Auth</span><span class="p">(</span>
+        <span class="n">credentials</span><span class="o">.</span><span class="n">access_key</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">.</span><span class="n">secret_key</span><span class="p">,</span>
+        <span class="n">region</span><span class="p">,</span>
+        <span class="s2">&quot;neptune-db&quot;</span><span class="p">,</span>
+        <span class="n">session_token</span><span class="o">=</span><span class="n">credentials</span><span class="o">.</span><span class="n">token</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">start_bulk_load</span><span class="p">(</span><span class="n">s3_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">load_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;nodes&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Trigger Neptune&#39;s bulk loader to ingest a CSV file from S3.</span>
+
+<span class="sd">    The bulk loader is dramatically faster than individual insert queries</span>
+<span class="sd">    for large datasets. A full UMLS load (millions of nodes) takes minutes</span>
+<span class="sd">    via bulk loader vs. hours via individual queries.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        s3_uri: S3 URI of the CSV file to load</span>
+<span class="sd">        load_type: &quot;nodes&quot; or &quot;edges&quot; (affects error handling expectations)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The load ID for polling status.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">NEPTUNE_ENDPOINT</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">NEPTUNE_PORT</span><span class="si">}</span><span class="s2">/loader&quot;</span>
+
+    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">s3_uri</span><span class="p">,</span>
+        <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;iamRoleArn&quot;</span><span class="p">:</span> <span class="n">NEPTUNE_LOAD_ROLE_ARN</span><span class="p">,</span>
+        <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span><span class="o">.</span><span class="n">region_name</span> <span class="ow">or</span> <span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;failOnError&quot;</span><span class="p">:</span> <span class="s2">&quot;FALSE&quot;</span><span class="p">,</span>  <span class="c1"># Continue loading even if some rows fail</span>
+        <span class="s2">&quot;parallelism&quot;</span><span class="p">:</span> <span class="s2">&quot;MEDIUM&quot;</span><span class="p">,</span>  <span class="c1"># Balance speed vs. cluster load</span>
+        <span class="s2">&quot;updateSingleCardinalityProperties&quot;</span><span class="p">:</span> <span class="s2">&quot;TRUE&quot;</span><span class="p">,</span>  <span class="c1"># Upsert behavior for existing nodes</span>
+    <span class="p">}</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">get_neptune_auth</span><span class="p">())</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="n">load_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">][</span><span class="s2">&quot;loadId&quot;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Started Neptune bulk load: </span><span class="si">%s</span><span class="s2"> (source: </span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">load_id</span><span class="p">,</span> <span class="n">s3_uri</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">load_id</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_load_status</span><span class="p">(</span><span class="n">load_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Poll the Neptune bulk loader for completion status.</span>
+
+<span class="sd">    Returns the full status response including:</span>
+<span class="sd">    - overallStatus: LOAD_COMPLETED, LOAD_IN_PROGRESS, LOAD_FAILED</span>
+<span class="sd">    - totalRecords: how many rows were processed</span>
+<span class="sd">    - totalErrors: how many rows failed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">NEPTUNE_ENDPOINT</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">NEPTUNE_PORT</span><span class="si">}</span><span class="s2">/loader/</span><span class="si">{</span><span class="n">load_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">get_neptune_auth</span><span class="p">())</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-normalization-query-service">Step 4: Normalization Query Service</h2>
+<p><em>The pseudocode calls this <code>normalize_concept()</code>. This is the API that consuming systems call. Given a code and terminology, it returns the canonical representation and all known cross-terminology mappings. Redis caching keeps latency low for repeated lookups.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">redis</span>
+
+<span class="c1"># Redis client for caching normalization results.</span>
+<span class="c1"># In production, use redis-py-cluster for ElastiCache cluster mode.</span>
+<span class="n">redis_client</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">Redis</span><span class="p">(</span>
+    <span class="n">host</span><span class="o">=</span><span class="n">REDIS_HOST</span><span class="p">,</span>
+    <span class="n">port</span><span class="o">=</span><span class="n">REDIS_PORT</span><span class="p">,</span>
+    <span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ssl</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># ElastiCache encryption in transit</span>
+<span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_concept</span><span class="p">(</span>
+    <span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">terminology</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">target_terminologies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalize a clinical concept: find its canonical form and all cross-terminology mappings.</span>
+
+<span class="sd">    This is the primary API that consuming systems call. Given &quot;E11&quot; in ICD10CM,</span>
+<span class="sd">    it returns the SNOMED equivalent, the UMLS CUI, and mappings to any other</span>
+<span class="sd">    requested terminologies.</span>
+
+<span class="sd">    The function checks Redis first (most common lookups are repeated thousands</span>
+<span class="sd">    of times across claims and clinical data). On cache miss, it queries Neptune</span>
+<span class="sd">    directly.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code: The concept code (e.g., &quot;E11&quot;, &quot;44054006&quot;, &quot;2160-0&quot;)</span>
+<span class="sd">        terminology: The source terminology (e.g., &quot;ICD10CM&quot;, &quot;SNOMEDCT_US&quot;, &quot;LNC&quot;)</span>
+<span class="sd">        target_terminologies: Which terminologies to map to. None = all available.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with source concept info and list of mappings with confidence scores.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">target_terminologies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">target_terminologies</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">TARGET_TERMINOLOGIES</span><span class="p">)</span>
+
+    <span class="c1"># Build cache key. Include target terminologies so different query scopes</span>
+    <span class="c1"># don&#39;t collide in the cache.</span>
+    <span class="n">targets_key</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">target_terminologies</span><span class="p">))</span>
+    <span class="n">cache_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;norm:</span><span class="si">{</span><span class="n">terminology</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">targets_key</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Check cache first.</span>
+    <span class="n">cached</span> <span class="o">=</span> <span class="n">redis_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cache_key</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cached</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cache hit for </span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">cached</span><span class="p">)</span>
+
+    <span class="c1"># Cache miss. Query Neptune via openCypher.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cache miss for </span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">, querying Neptune&quot;</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">query_neptune_for_mappings</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">terminology</span><span class="p">,</span> <span class="n">target_terminologies</span><span class="p">)</span>
+
+    <span class="c1"># Cache the result for future lookups.</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;found&quot;</span><span class="p">:</span>
+        <span class="n">redis_client</span><span class="o">.</span><span class="n">setex</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">CACHE_TTL_SECONDS</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">query_neptune_for_mappings</span><span class="p">(</span>
+    <span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">terminology</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">target_terminologies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Query Neptune to find a concept and its cross-terminology mappings.</span>
+
+<span class="sd">    Uses openCypher (Neptune&#39;s Cypher-compatible query language) to:</span>
+<span class="sd">    1. Find the source concept node</span>
+<span class="sd">    2. Traverse equivalence/mapping edges to other terminologies</span>
+<span class="sd">    3. Return all mappings with confidence and provenance metadata</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code: Source concept code</span>
+<span class="sd">        terminology: Source terminology name</span>
+<span class="sd">        target_terminologies: List of target terminology names</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Structured result with source info and mappings list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># openCypher query: find the source node and traverse one hop to</span>
+    <span class="c1"># find all connected concepts in target terminologies.</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH (source:Concept {code: $code, terminology: $terminology})</span>
+<span class="s2">        OPTIONAL MATCH (source)-[r]-&gt;(target:Concept)</span>
+<span class="s2">        WHERE target.terminology IN $targets</span>
+<span class="s2">        AND target.status = &#39;active&#39;</span>
+<span class="s2">        RETURN source.code AS source_code,</span>
+<span class="s2">               source.display AS source_display,</span>
+<span class="s2">               source.terminology AS source_terminology,</span>
+<span class="s2">               source.cui AS source_cui,</span>
+<span class="s2">               source.semantic_type AS source_semantic_type,</span>
+<span class="s2">               target.code AS target_code,</span>
+<span class="s2">               target.display AS target_display,</span>
+<span class="s2">               target.terminology AS target_terminology,</span>
+<span class="s2">               type(r) AS rel_type,</span>
+<span class="s2">               r.confidence AS confidence,</span>
+<span class="s2">               r.provenance AS provenance</span>
+<span class="s2">        ORDER BY r.confidence DESC</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+        <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">,</span>
+        <span class="s2">&quot;targets&quot;</span><span class="p">:</span> <span class="n">target_terminologies</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Execute against Neptune&#39;s openCypher endpoint.</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">NEPTUNE_ENDPOINT</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">NEPTUNE_PORT</span><span class="si">}</span><span class="s2">/openCypher&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+        <span class="n">url</span><span class="p">,</span>
+        <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span> <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">)},</span>
+        <span class="n">auth</span><span class="o">=</span><span class="n">get_neptune_auth</span><span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">}</span>
+
+    <span class="c1"># Build the response structure.</span>
+    <span class="n">first_row</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">source_info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">first_row</span><span class="p">[</span><span class="s2">&quot;source_code&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">first_row</span><span class="p">[</span><span class="s2">&quot;source_terminology&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="n">first_row</span><span class="p">[</span><span class="s2">&quot;source_display&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;cui&quot;</span><span class="p">:</span> <span class="n">first_row</span><span class="p">[</span><span class="s2">&quot;source_cui&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;semantic_type&quot;</span><span class="p">:</span> <span class="n">first_row</span><span class="p">[</span><span class="s2">&quot;source_semantic_type&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">mappings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_code&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># No mapping found (OPTIONAL MATCH returned null)</span>
+        <span class="n">mappings</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;target_code&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;target_terminology&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;target_display&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;relationship_type&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;rel_type&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;provenance&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;provenance&quot;</span><span class="p">],</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;found&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source_info</span><span class="p">,</span>
+        <span class="s2">&quot;mappings&quot;</span><span class="p">:</span> <span class="n">mappings</span><span class="p">,</span>
+        <span class="s2">&quot;mapping_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">mappings</span><span class="p">),</span>
+        <span class="s2">&quot;query_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-hierarchy-traversal-for-value-set-expansion">Step 5: Hierarchy Traversal for Value Set Expansion</h2>
+<p><em>The pseudocode calls this <code>expand_value_set()</code>. Quality measures and CDS rules often need &quot;all codes that represent diabetes.&quot; This requires walking the SNOMED hierarchy downward from a root concept to find all descendants, then mapping each to other terminologies.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">expand_value_set</span><span class="p">(</span>
+    <span class="n">root_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">terminology</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">include_cross_maps</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Expand a value set by traversing the terminology hierarchy downward.</span>
+
+<span class="sd">    Starting from a root concept (e.g., &quot;Diabetes mellitus&quot; in SNOMED),</span>
+<span class="sd">    find all descendant concepts via is-a/child-of relationships. This is</span>
+<span class="sd">    how quality measures work: they define a root concept and include</span>
+<span class="sd">    everything beneath it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root_code: The root concept code to expand from</span>
+<span class="sd">        terminology: Which terminology the root is in</span>
+<span class="sd">        max_depth: Maximum hierarchy depth to traverse (prevents runaway on broad concepts)</span>
+<span class="sd">        include_cross_maps: Whether to also map each descendant to other terminologies</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with the root concept, all descendants, and optionally their cross-maps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Traverse the hierarchy downward using variable-length path matching.</span>
+    <span class="c1"># The *1..N syntax means &quot;follow 1 to N hops of child_of edges.&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH (root:Concept </span><span class="se">{{</span><span class="s2">code: $root_code, terminology: $terminology</span><span class="se">}}</span><span class="s2">)</span>
+<span class="s2">        OPTIONAL MATCH path = (descendant:Concept)-[:child_of*1..</span><span class="si">{</span><span class="n">max_depth</span><span class="si">}</span><span class="s2">]-&gt;(root)</span>
+<span class="s2">        WHERE descendant.status = &#39;active&#39;</span>
+<span class="s2">        AND descendant.terminology = $terminology</span>
+<span class="s2">        RETURN root.code AS root_code,</span>
+<span class="s2">               root.display AS root_display,</span>
+<span class="s2">               descendant.code AS desc_code,</span>
+<span class="s2">               descendant.display AS desc_display,</span>
+<span class="s2">               length(path) AS depth</span>
+<span class="s2">        ORDER BY depth ASC</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;root_code&quot;</span><span class="p">:</span> <span class="n">root_code</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">}</span>
+
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">NEPTUNE_ENDPOINT</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">NEPTUNE_PORT</span><span class="si">}</span><span class="s2">/openCypher&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+        <span class="n">url</span><span class="p">,</span>
+        <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span> <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">)},</span>
+        <span class="n">auth</span><span class="o">=</span><span class="n">get_neptune_auth</span><span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span><span class="p">,</span> <span class="s2">&quot;root_code&quot;</span><span class="p">:</span> <span class="n">root_code</span><span class="p">}</span>
+
+    <span class="c1"># Build the expanded value set.</span>
+    <span class="n">concepts</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">root_code</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">,</span>
+                 <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;root_display&quot;</span><span class="p">],</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}]</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;desc_code&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;desc_code&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">,</span>
+            <span class="s2">&quot;display&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;desc_display&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;depth&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Optionally get cross-terminology mappings for each descendant.</span>
+        <span class="c1"># Warning: this is expensive for large hierarchies. In production,</span>
+        <span class="c1"># you&#39;d batch these or do them lazily.</span>
+        <span class="k">if</span> <span class="n">include_cross_maps</span><span class="p">:</span>
+            <span class="n">cross</span> <span class="o">=</span> <span class="n">normalize_concept</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;desc_code&quot;</span><span class="p">],</span> <span class="n">terminology</span><span class="p">)</span>
+            <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;cross_maps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cross</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mappings&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="n">concepts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;expanded&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;root&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">root_code</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="n">terminology</span><span class="p">},</span>
+        <span class="s2">&quot;total_concepts&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">concepts</span><span class="p">),</span>
+        <span class="s2">&quot;max_depth_used&quot;</span><span class="p">:</span> <span class="n">max_depth</span><span class="p">,</span>
+        <span class="s2">&quot;concepts&quot;</span><span class="p">:</span> <span class="n">concepts</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-batch-normalization-for-pipeline-integration">Step 6: Batch Normalization for Pipeline Integration</h2>
+<p><em>This step isn't in the pseudocode explicitly, but it's essential for real-world use. Analytics pipelines don't normalize one concept at a time. They have thousands of codes to translate in a single batch run. This function handles that efficiently.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">batch_normalize</span><span class="p">(</span>
+    <span class="n">concepts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+    <span class="n">target_terminologies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalize a batch of concepts efficiently.</span>
+
+<span class="sd">    Analytics pipelines often need to translate thousands of codes at once</span>
+<span class="sd">    (e.g., all ICD-10 codes on yesterday&#39;s claims into SNOMED for CDS).</span>
+<span class="sd">    This function handles batching with cache-first lookups to minimize</span>
+<span class="sd">    Neptune queries.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        concepts: List of dicts with &quot;code&quot; and &quot;terminology&quot; keys</span>
+<span class="sd">        target_terminologies: Which terminologies to map to</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of normalization results, one per input concept.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Separate cache hits from misses to batch the Neptune queries.</span>
+    <span class="n">cache_hits</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cache_misses</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">]</span>
+        <span class="n">terminology</span> <span class="o">=</span> <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">target_terminologies</span> <span class="ow">or</span> <span class="nb">list</span><span class="p">(</span><span class="n">TARGET_TERMINOLOGIES</span><span class="p">)</span>
+        <span class="n">targets_key</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">targets</span><span class="p">))</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;norm:</span><span class="si">{</span><span class="n">terminology</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">targets_key</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">cached</span> <span class="o">=</span> <span class="n">redis_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cache_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cached</span><span class="p">:</span>
+            <span class="n">cache_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">cached</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cache_misses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">concept</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Batch normalize: </span><span class="si">%d</span><span class="s2"> cache hits, </span><span class="si">%d</span><span class="s2"> cache misses&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">cache_hits</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">cache_misses</span><span class="p">))</span>
+
+    <span class="c1"># Process cache misses individually.</span>
+    <span class="c1"># In a production system, you&#39;d batch these into a single Neptune query</span>
+    <span class="c1"># using UNWIND or multiple MATCH clauses to reduce round trips.</span>
+    <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">cache_misses</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">normalize_concept</span><span class="p">(</span>
+            <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">],</span>
+            <span class="n">concept</span><span class="p">[</span><span class="s2">&quot;terminology&quot;</span><span class="p">],</span>
+            <span class="n">target_terminologies</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="c1"># Combine hits and miss results in original order.</span>
+    <span class="c1"># (This simplified version just appends; production would maintain order.)</span>
+    <span class="n">all_results</span> <span class="o">=</span> <span class="n">cache_hits</span> <span class="o">+</span> <span class="n">results</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Batch normalization complete: </span><span class="si">%d</span><span class="s2"> results&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">all_results</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into callable functions. The ingestion pipeline runs when new terminology releases arrive. The normalization service runs continuously, serving queries from consuming systems.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_terminology_ingestion</span><span class="p">(</span>
+    <span class="n">mrconso_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">mrrel_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Full terminology ingestion pipeline: parse UMLS files, build graph load</span>
+<span class="sd">    files, upload to S3, and trigger Neptune bulk load.</span>
+
+<span class="sd">    This runs when a new UMLS release arrives (typically twice per year for</span>
+<span class="sd">    full releases, with monthly RxNorm updates).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mrconso_path: Local path to MRCONSO.RRF</span>
+<span class="sd">        mrrel_path: Local path to MRREL.RRF</span>
+<span class="sd">        version: UMLS release version (e.g., &quot;2025AB&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Summary of what was loaded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=== Terminology Ingestion Pipeline (version: </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">) ===&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Parse concepts from MRCONSO.RRF</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Step 1: Parsing UMLS concepts...&quot;</span><span class="p">)</span>
+    <span class="n">concepts</span> <span class="o">=</span> <span class="n">parse_umls_concepts</span><span class="p">(</span><span class="n">mrconso_path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Parsed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">concepts</span><span class="p">)</span><span class="si">}</span><span class="s2"> concepts&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Collect valid CUIs for relationship filtering.</span>
+    <span class="n">valid_cuis</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;cui&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">}</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid_cuis</span><span class="p">)</span><span class="si">}</span><span class="s2"> unique CUIs&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1b: Parse relationships from MRREL.RRF</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Step 1b: Parsing UMLS relationships...&quot;</span><span class="p">)</span>
+    <span class="n">relationships</span> <span class="o">=</span> <span class="n">parse_umls_relationships</span><span class="p">(</span><span class="n">mrrel_path</span><span class="p">,</span> <span class="n">valid_cuis</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Parsed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">relationships</span><span class="p">)</span><span class="si">}</span><span class="s2"> relationships&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Build Neptune bulk load CSV files.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Step 2: Building Neptune load files...&quot;</span><span class="p">)</span>
+    <span class="n">node_csv</span> <span class="o">=</span> <span class="n">build_node_csv</span><span class="p">(</span><span class="n">concepts</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span>
+    <span class="n">edge_csv</span> <span class="o">=</span> <span class="n">build_edge_csv</span><span class="p">(</span><span class="n">concepts</span><span class="p">,</span> <span class="n">relationships</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Node CSV: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">node_csv</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Edge CSV: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">edge_csv</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2b: Upload to S3.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Step 2b: Uploading to S3...&quot;</span><span class="p">)</span>
+    <span class="n">s3_paths</span> <span class="o">=</span> <span class="n">upload_load_files_to_s3</span><span class="p">(</span><span class="n">node_csv</span><span class="p">,</span> <span class="n">edge_csv</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Nodes: </span><span class="si">{</span><span class="n">s3_paths</span><span class="p">[</span><span class="s1">&#39;node_s3_uri&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Edges: </span><span class="si">{</span><span class="n">s3_paths</span><span class="p">[</span><span class="s1">&#39;edge_s3_uri&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Trigger Neptune bulk load.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Step 3: Starting Neptune bulk load...&quot;</span><span class="p">)</span>
+    <span class="n">node_load_id</span> <span class="o">=</span> <span class="n">start_bulk_load</span><span class="p">(</span><span class="n">s3_paths</span><span class="p">[</span><span class="s2">&quot;node_s3_uri&quot;</span><span class="p">],</span> <span class="s2">&quot;nodes&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Node load ID: </span><span class="si">{</span><span class="n">node_load_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  (Edge load should wait for node load to complete)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+        <span class="s2">&quot;concepts_loaded&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">concepts</span><span class="p">),</span>
+        <span class="s2">&quot;relationships_loaded&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">relationships</span><span class="p">),</span>
+        <span class="s2">&quot;node_load_id&quot;</span><span class="p">:</span> <span class="n">node_load_id</span><span class="p">,</span>
+        <span class="s2">&quot;s3_paths&quot;</span><span class="p">:</span> <span class="n">s3_paths</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">demo_normalization</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Demonstrate the normalization service with common healthcare concepts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Concept Normalization Demo ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Example 1: Normalize an ICD-10 diagnosis code to SNOMED.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Example 1: ICD-10 E11 (Type 2 diabetes) -&gt; SNOMED&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">normalize_concept</span><span class="p">(</span><span class="s2">&quot;E11&quot;</span><span class="p">,</span> <span class="s2">&quot;ICD10CM&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;SNOMEDCT_US&quot;</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Example 2: Normalize a LOINC lab code.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Example 2: LOINC 2160-0 (Creatinine) -&gt; all terminologies&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">normalize_concept</span><span class="p">(</span><span class="s2">&quot;2160-0&quot;</span><span class="p">,</span> <span class="s2">&quot;LNC&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Example 3: Expand a SNOMED value set for quality measurement.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Example 3: Expand &#39;Diabetes mellitus&#39; (SNOMED 73211009) hierarchy&quot;</span><span class="p">)</span>
+    <span class="n">expansion</span> <span class="o">=</span> <span class="n">expand_value_set</span><span class="p">(</span><span class="s2">&quot;73211009&quot;</span><span class="p">,</span> <span class="s2">&quot;SNOMEDCT_US&quot;</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Found </span><span class="si">{</span><span class="n">expansion</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_concepts&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> concepts in hierarchy&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Example 4: Batch normalization for a claims pipeline.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Example 4: Batch normalize a set of ICD-10 codes&quot;</span><span class="p">)</span>
+    <span class="n">claims_codes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;E11&quot;</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="s2">&quot;ICD10CM&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;I10&quot;</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="s2">&quot;ICD10CM&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;J06.9&quot;</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="s2">&quot;ICD10CM&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;M54.5&quot;</span><span class="p">,</span> <span class="s2">&quot;terminology&quot;</span><span class="p">:</span> <span class="s2">&quot;ICD10CM&quot;</span><span class="p">},</span>
+    <span class="p">]</span>
+    <span class="n">batch_results</span> <span class="o">=</span> <span class="n">batch_normalize</span><span class="p">(</span><span class="n">claims_codes</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;SNOMEDCT_US&quot;</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Normalized </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_results</span><span class="p">)</span><span class="si">}</span><span class="s2"> concepts&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># To run the ingestion pipeline (requires UMLS files downloaded locally):</span>
+    <span class="c1"># run_terminology_ingestion(</span>
+    <span class="c1">#     mrconso_path=&quot;/data/umls/2025AB/META/MRCONSO.RRF&quot;,</span>
+    <span class="c1">#     mrrel_path=&quot;/data/umls/2025AB/META/MRREL.RRF&quot;,</span>
+    <span class="c1">#     version=&quot;2025AB&quot;,</span>
+    <span class="c1"># )</span>
+
+    <span class="c1"># To demo the normalization service (requires Neptune + Redis running):</span>
+    <span class="n">demo_normalization</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example demonstrates the core patterns. It parses UMLS files, builds graph load files, queries Neptune, and caches results. But there's a significant distance between this sketch and something you'd deploy to support clinical systems. Here's where that gap lives:</p>
+<p><strong>Error handling and resilience.</strong> Every external call (Neptune, Redis, S3) can fail. Production code wraps each in try/except with specific handling for connection timeouts, throttling, and transient errors. Neptune queries can time out on complex traversals. Redis can be temporarily unavailable during failover. Your normalization service needs graceful degradation: if the cache is down, fall through to Neptune directly (slower but functional).</p>
+<p><strong>Retries and backoff.</strong> The boto3 retry config handles S3 and basic AWS calls, but Neptune HTTP queries and Redis operations need their own retry logic. Exponential backoff with jitter prevents thundering herd problems when a service recovers from an outage.</p>
+<p><strong>Input validation.</strong> This code trusts its inputs. Production validates that codes match expected patterns (ICD-10 codes follow a specific regex, SNOMED codes are numeric, LOINC codes have a specific format). Invalid inputs should return clear error responses, not crash the service or produce confusing Neptune query errors.</p>
+<p><strong>Structured logging and observability.</strong> The <code>print()</code> statements are placeholders. Production uses structured JSON logging with correlation IDs so you can trace a single normalization request through cache lookup, Neptune query, and response assembly. CloudWatch metrics on cache hit rate, query latency percentiles, and error rates are essential for operations.</p>
+<p><strong>IAM least-privilege.</strong> The Neptune IAM policy should scope to specific query actions, not <code>neptune-db:*</code>. The S3 policy should scope to the specific terminology bucket. The Redis connection should use IAM-based authentication (ElastiCache supports this) rather than open access within the VPC.</p>
+<p><strong>VPC and network security.</strong> Neptune requires VPC deployment. Your Lambda functions need VPC configuration with private subnets. Use VPC endpoints for S3 and CloudWatch to keep traffic off the public internet. Security groups should restrict Neptune access to only the Lambda security group and the Glue job security group.</p>
+<p><strong>KMS encryption.</strong> This example uses default S3 encryption. Production uses customer-managed KMS keys with key rotation enabled. Neptune encryption at rest must be enabled at cluster creation (you cannot add it later). ElastiCache encryption at rest and in-transit should both be enabled.</p>
+<p><strong>Version management.</strong> This example loads a single version. Production maintains multiple versions simultaneously (the current ICD-10 release and the previous one, because claims filed before October use the old codes). You need version-aware queries and a strategy for retiring old versions without breaking historical lookups.</p>
+<p><strong>Cache invalidation.</strong> When you load a new terminology version, which cache entries are stale? The naive approach (flush everything) causes a thundering herd on Neptune. The smart approach computes the delta (which concepts changed between versions) and selectively invalidates only affected cache keys. This requires tracking which CUIs were modified in the new release.</p>
+<p><strong>Bulk query optimization.</strong> The <code>batch_normalize</code> function processes misses one at a time. Production uses Neptune's ability to handle multiple patterns in a single query (via UNWIND in openCypher) to batch cache misses into fewer round trips. For a batch of 1,000 codes, you want 1-2 Neptune queries, not 1,000.</p>
+<p><strong>UMLS licensing compliance.</strong> UMLS data has specific redistribution restrictions. You cannot expose raw UMLS content through your API without ensuring your consumers also have UMLS licenses. Your normalization API should return your own derived mappings, not raw UMLS relationship data. Consult NLM's licensing terms.</p>
+<p><strong>Testing.</strong> There are no tests here. Production needs unit tests for the parsing logic (with sample RRF snippets), integration tests against a Neptune test cluster with known test data, and end-to-end tests that verify the full normalization path. Use synthetic terminology data for testing, never production UMLS data in CI/CD pipelines (it's too large and has licensing implications).</p>
+<p><strong>Monitoring and alerting.</strong> Set CloudWatch alarms on: Neptune query latency exceeding 100ms (p99), cache hit rate dropping below 80%, bulk load failures, and API error rate exceeding 1%. A terminology load failure means your mappings are stale, which means downstream analytics are using outdated relationships.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter13.08-medical-concept-normalization-mapping.html">Recipe 13.8</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

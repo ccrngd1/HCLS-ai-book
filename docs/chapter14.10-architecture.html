@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 14.10 Architecture and Implementation: Health System Network Design</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested nav-active" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-1410-architecture-and-implementation-health-system-network-design">Recipe 14.10 Architecture and Implementation: Health System Network Design</h1>
+<p><em>Companion to <a href="chapter14.10-health-system-network-design.html">Recipe 14.10: Health System Network Design</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon SageMaker for model development and solver execution.</strong> Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development and processing jobs for compute-intensive solver runs and data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.</p>
+<p><strong>Amazon S3 for data lake and model artifacts.</strong> The input data (patient origin files, demographic projections, financial data, competitor intelligence) and output artifacts (solution files, scenario comparisons, sensitivity analyses) all live in S3. This provides durable, versioned storage with fine-grained access control.</p>
+<p><strong>AWS Glue for data integration and preparation.</strong> Network design requires pulling data from multiple source systems (EHR, financial systems, census data, competitor databases). Glue ETL jobs handle the extraction, transformation, and loading into the analytics-ready format the optimizer needs.</p>
+<p><strong>Amazon Redshift for analytical queries.</strong> Historical utilization data, patient origin analysis, and financial performance metrics live in Redshift. The demand forecasting models and gravity model parameter estimation query against this warehouse. For quarterly optimization runs, Redshift Serverless (pay-per-query) is more cost-effective than a provisioned cluster. Use provisioned only if the analytics warehouse serves other continuous workloads.</p>
+<p><strong>Amazon QuickSight for decision support visualization.</strong> The output of the optimization needs to be presented to executives as interactive maps, scenario comparisons, and sensitivity charts. QuickSight connects to the optimization results in S3/Redshift and provides the dashboard layer. Configure a QuickSight VPC Connection to access Redshift in the private subnet. For S3 access, QuickSight uses its service role (no VPC connectivity required).</p>
+<p><strong>AWS Step Functions for pipeline orchestration.</strong> The end-to-end workflow (data prep, demand forecast, model formulation, multi-scenario optimization, result aggregation, dashboard refresh) is a multi-step pipeline with dependencies. Step Functions Standard Workflows (not Express, which has a 5-minute limit) orchestrates the sequence, handles retries, and provides visibility into pipeline status. The full pipeline runs 12-24 hours, well beyond Express Workflows' maximum duration.</p>
+<p><strong>AWS Lambda for lightweight processing.</strong> Scenario configuration, result post-processing, notification triggers, and API endpoints for the dashboard use Lambda for stateless compute.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TD
+    subgraph Data Sources
+        A1[EHR / ADT System]
+        A2[Financial System]
+        A3[Census / Demographics]
+        A4[Competitor Intel]
+    end
+
+    subgraph Data Integration
+        B[AWS Glue ETL]
+        C[Amazon Redshift\nAnalytics Warehouse]
+        D[S3 Data Lake\nRaw + Processed]
+    end
+
+    subgraph Optimization Pipeline
+        E[Step Functions\nOrchestrator]
+        F[SageMaker Processing\nDemand Forecasting]
+        G[SageMaker Processing\nMIP Solver Execution]
+        H[Lambda\nScenario Configuration]
+    end
+
+    subgraph Decision Support
+        I[S3\nOptimization Results]
+        J[Amazon QuickSight\nExecutive Dashboard]
+        K[Lambda API\nScenario Comparison]
+    end
+
+    A1 --&gt; B
+    A2 --&gt; B
+    A3 --&gt; B
+    A4 --&gt; B
+    B --&gt; C
+    B --&gt; D
+    D --&gt; E
+    C --&gt; F
+    E --&gt; H
+    H --&gt; F
+    F --&gt; G
+    G --&gt; I
+    I --&gt; J
+    I --&gt; K
+
+    style G fill:#ff9,stroke:#333
+    style C fill:#9ff,stroke:#333
+    style J fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon SageMaker, Amazon S3, AWS Glue, Amazon Redshift (Serverless recommended), Amazon QuickSight, AWS Step Functions, AWS Lambda</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td><code>sagemaker:CreateProcessingJob</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>glue:StartJobRun</code>, <code>redshift:GetClusterCredentials</code>, <code>states:StartExecution</code>, <code>quicksight:CreateIngestion</code>, <code>quicksight:DescribeIngestion</code>, <code>quicksight:UpdateDataSet</code>, <code>quicksight:DescribeDashboard</code> (scoped to specific resource ARNs)</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>Required. The gravity model estimation step uses patient-level data with geographic identifiers (ZIP code of residence + facility visited), which constitutes PHI. All services in the upstream pipeline (Redshift, SageMaker, S3 buckets holding patient origin data) must be covered. Once gravity model parameters are estimated, the optimizer itself operates on zone-level demand aggregates (not patient-level records). Ensure the SageMaker processing job output contains no patient-level records.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS for all buckets; Redshift: encrypted cluster; SageMaker: KMS-encrypted volumes and network isolation; all transit over TLS</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>SageMaker jobs in private subnets. VPC endpoints required: S3 (Gateway), CloudWatch Logs (Interface), SageMaker API (Interface), SageMaker Runtime (Interface), Step Functions (Interface), Glue (Interface), KMS (Interface). Lambda functions calling AWS services from within the VPC require these endpoints or a NAT Gateway.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all API calls. CloudTrail captures infrastructure-level audit (who started which SageMaker job). For decision-level audit (what scenarios were run, what parameters were used, what the optimizer recommended), log scenario configurations and solution summaries to a dedicated S3 audit bucket with object lock (WORM) enabled.</td>
+</tr>
+<tr>
+<td><strong>Solver Licensing</strong></td>
+<td>If using Gurobi or CPLEX: for no-internet VPC configurations, use a self-hosted license server (Gurobi token server or CPLEX ILM server) deployed in the same VPC. Gurobi's Web License Service (WLS) requires outbound HTTPS to license.gurobi.com; if your VPC prohibits this, use a local license file or token server. Verify that solver telemetry/usage reporting is disabled or does not transmit model content. For open-source solvers (HiGHS, CBC), no licensing infrastructure is needed. Budget $10K-$50K/year for enterprise commercial solver licenses.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>SageMaker ml.m5.4xlarge for solver execution: ~$0.92/hour. Typical multi-scenario run: 4-8 hours. Monthly cost (weekly runs): ~$200-$600 compute. Redshift Serverless: ~$50-$200 per optimization cycle. Total infrastructure: ~$500-$1,500/month for quarterly runs.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Model development (notebooks), solver execution (processing jobs), demand forecasting (processing jobs)</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Data lake for inputs, model artifacts, optimization results</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>ETL from source systems; data quality checks; schema normalization</td>
+</tr>
+<tr>
+<td><strong>Amazon Redshift</strong></td>
+<td>Analytical warehouse for historical utilization, patient origin, financial data</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Executive dashboards: maps, scenario comparisons, sensitivity analysis</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Pipeline orchestration across data prep, forecasting, optimization, reporting</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Scenario configuration, result post-processing, API layer</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Encryption key management for all data at rest</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Monitoring solver execution time, pipeline health, cost tracking</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Data integration and demand zone construction.</strong> Before you can optimize anything, you need to define the geography. Health system network design operates on &quot;demand zones&quot;: geographic units (typically ZIP codes or census tracts) where you can estimate current and future demand for each service line. This step pulls patient origin data from the EHR (where do current patients come from?), overlays demographic projections, and constructs the demand matrix: how many patients of each type will need care in each zone over the planning horizon. Skip this step and you're optimizing against fantasy numbers. The quality of your demand estimates is the single biggest determinant of whether the optimization output is useful or misleading.</p>
+<pre class="code code-plain"><code>FUNCTION build_demand_zones(patient_origin_data, demographic_projections, service_lines):
+    // Define geographic demand zones from patient origin patterns.
+    // Each zone represents a geographic area with estimable demand.
+    // Typically ZIP codes or census tracts, depending on data granularity.
+    
+    zones = extract unique geographic units from patient_origin_data
+    
+    // For each zone, calculate current demand by service line.
+    // &quot;Demand&quot; here means total utilization (your patients + competitor patients).
+    // Your patient origin data shows YOUR volume; you need market share estimates
+    // to infer total market demand.
+    
+    FOR each zone in zones:
+        FOR each service_line in service_lines:
+            // Current volume from your system
+            your_volume = count patients from zone using service_line
+            
+            // Estimate total market demand using market share
+            // Market share comes from claims data or state discharge databases
+            estimated_market_share = lookup market share for zone, service_line
+            total_demand_current = your_volume / estimated_market_share
+            
+            // Project forward using demographic growth rates
+            // Different service lines grow at different rates
+            // (e.g., joint replacement grows faster in aging populations)
+            growth_rate = lookup growth rate for zone, service_line from demographic_projections
+            
+            FOR each year in planning_horizon:
+                projected_demand[zone][service_line][year] = 
+                    total_demand_current * (1 + growth_rate) ^ year
+    
+    RETURN projected_demand, zones
+</code></pre>
+<p><strong>Step 2: Gravity model estimation.</strong> Patients don't go to the nearest facility. They make choices. The gravity model captures those choices by estimating how &quot;attractive&quot; each facility is to patients in each zone, accounting for distance, facility size, service breadth, and reputation. The parameters are estimated from historical patient flow data: where did patients actually go, and how far did they travel? This model is what allows the optimizer to predict how patient flows will shift when you open a new facility or add a service line. Without it, you're assuming patients will behave in ways they demonstrably don't.</p>
+<pre class="code code-plain"><code>FUNCTION estimate_gravity_model(patient_flows, facility_attributes, zone_attributes):
+    // The gravity model predicts the probability that a patient in zone z
+    // chooses facility f. The classic form:
+    //
+    //   P(z -&gt; f) = attractiveness(f) * distance_decay(z, f) / 
+    //               sum over all facilities g of [attractiveness(g) * distance_decay(z, g)]
+    //
+    // attractiveness(f) = function of bed count, service breadth, quality scores
+    // distance_decay(z, f) = exp(-beta * travel_time(z, f))
+    //
+    // beta (distance sensitivity) varies by service line:
+    //   - Primary care: high beta (patients won&#x27;t travel far)
+    //   - Cardiac surgery: low beta (patients will travel for specialized care)
+    
+    // Calculate travel time matrix: every zone to every facility
+    travel_times = compute drive time from centroid of each zone to each facility
+    
+    // Estimate model parameters from historical patient flows
+    // This is a maximum likelihood estimation problem
+    // (logistic regression variant, specifically a conditional logit model)
+    
+    FOR each service_line:
+        // Observed choices: which facility did each patient actually choose?
+        observed_choices = extract patient facility choices for service_line
+        
+        // Estimate beta (distance sensitivity) and attractiveness weights
+        // using maximum likelihood on the observed choice data
+        parameters[service_line] = fit conditional logit model:
+            dependent variable = facility chosen
+            features = travel_time, bed_count, service_breadth, quality_score
+            data = observed_choices
+    
+    RETURN parameters, travel_times
+</code></pre>
+<p><strong>Step 3: Model formulation.</strong> This is the intellectual core. You're translating the business problem into mathematics. Every strategic question (&quot;Should we build a cancer center at location X?&quot;) becomes a binary variable. Every constraint (&quot;We can't spend more than $400M&quot;) becomes a linear inequality. Every objective (&quot;Maximize net revenue while maintaining access&quot;) becomes a function to optimize. The formulation quality determines whether the solver produces useful answers or garbage. A poorly formulated model might be technically optimal but strategically meaningless.</p>
+<pre class="code code-plain"><code>FUNCTION formulate_network_model(zones, facilities, service_lines, parameters, constraints):
+    // Create the optimization model
+    model = new MixedIntegerProgram()
+    
+    // === DECISION VARIABLES ===
+    
+    // Binary: should facility f offer service line s?
+    // This is the core strategic decision.
+    FOR each facility f, service_line s:
+        offer[f][s] = model.add_binary_variable(&quot;offer_{f}_{s}&quot;)
+    
+    // Binary: should we open/expand facility f? (for new or expanded facilities)
+    FOR each candidate_facility f:
+        open[f] = model.add_binary_variable(&quot;open_{f}&quot;)
+    
+    // Integer: capacity tier at facility f for service line s
+    // (e.g., 0 = none, 1 = small, 2 = medium, 3 = large)
+    FOR each facility f, service_line s:
+        capacity_tier[f][s] = model.add_integer_variable(&quot;cap_{f}_{s}&quot;, min=0, max=3)
+    
+    // Continuous: patient flow from zone z to facility f for service line s
+    FOR each zone z, facility f, service_line s:
+        flow[z][f][s] = model.add_continuous_variable(&quot;flow_{z}_{f}_{s}&quot;, min=0)
+    
+    // === OBJECTIVE FUNCTION ===
+    
+    // Maximize: weighted combination of net revenue and access coverage
+    net_revenue = SUM over f, s of:
+        (revenue_per_case[s] * total_flow_to[f][s]) - fixed_cost[f][s] * offer[f][s]
+    
+    access_coverage = SUM over z, s of:
+        (flow[z][nearest_facility(z,s)][s] / demand[z][s])  // fraction served within threshold
+    
+    model.maximize(weight_financial * net_revenue + weight_access * access_coverage)
+    
+    // === CONSTRAINTS ===
+    
+    // Budget constraint: total capital cannot exceed available funds
+    model.add_constraint(
+        SUM over f of (capital_cost[f] * open[f]) &lt;= total_budget
+    )
+    
+    // Capacity constraint: volume cannot exceed capacity at any facility
+    FOR each facility f, service_line s:
+        model.add_constraint(
+            SUM over z of flow[z][f][s] &lt;= capacity[capacity_tier[f][s]]
+        )
+    
+    // Demand satisfaction: all demand must be assigned somewhere
+    // (including &quot;leakage&quot; to competitors, modeled as a dummy facility)
+    FOR each zone z, service_line s:
+        model.add_constraint(
+            SUM over f of flow[z][f][s] == demand[z][s]
+        )
+    
+    // Flow consistency with gravity model:
+    // Patient flows must be consistent with choice probabilities.
+    // NOTE: These probabilities are pre-computed based on the current network.
+    // When the optimizer opens or closes facilities, the true probabilities change.
+    // The standard fix is iterative balancing: solve, recompute probabilities for
+    // the recommended network, re-solve, repeat until convergence (typically 3-5
+    // iterations). This is omitted here for clarity but is essential for solution
+    // quality in production.
+    FOR each zone z, facility f, service_line s:
+        model.add_constraint(
+            flow[z][f][s] &lt;= demand[z][s] * choice_probability(z, f, s, parameters)
+        )
+    
+    // Service line dependencies: can&#x27;t offer cardiac surgery without cardiac ICU
+    FOR each (service_a, requires_service_b) in dependency_rules:
+        FOR each facility f:
+            model.add_constraint(offer[f][service_a] &lt;= offer[f][requires_service_b])
+    
+    // Minimum volume thresholds: if you offer a service, you must hit minimum volume
+    // (This prevents the optimizer from spreading volume too thin)
+    FOR each facility f, service_line s:
+        model.add_constraint(
+            SUM over z of flow[z][f][s] &gt;= minimum_volume[s] * offer[f][s]
+        )
+    
+    // Certificate of Need (CON) constraints: some states require regulatory approval
+    // for new services or capacity expansions
+    FOR each (facility, service) in con_required_list:
+        model.add_constraint(offer[facility][service] &lt;= con_approved[facility][service])
+    
+    // Workforce constraints: can&#x27;t staff what you can&#x27;t recruit
+    FOR each facility f, service_line s:
+        model.add_constraint(
+            required_physicians[s] * offer[f][s] &lt;= available_physicians[f][s]
+        )
+    
+    RETURN model
+</code></pre>
+<p><strong>Step 4: Multi-scenario optimization.</strong> No single demand forecast is reliable over a 10-year horizon. This step runs the optimization under multiple plausible futures and identifies which decisions are robust (good in most scenarios) versus which are contingent (great in one scenario, bad in another). Executives need to know: &quot;Building the cancer center is a good idea regardless of growth assumptions. But the rural hospital conversion only makes sense if population decline continues.&quot; That's the kind of insight scenario analysis provides.</p>
+<pre class="code code-plain"><code>FUNCTION run_scenario_analysis(base_model, scenarios):
+    // Each scenario modifies demand projections, growth rates, 
+    // competitive assumptions, or regulatory environment.
+    
+    results = empty map
+    
+    FOR each scenario in scenarios:
+        // Clone the base model and apply scenario-specific modifications
+        scenario_model = copy(base_model)
+        
+        // Adjust demand based on scenario assumptions
+        // e.g., &quot;high growth&quot; scenario increases demand projections by 20%
+        // e.g., &quot;competitor entry&quot; scenario reduces market share in affected zones
+        apply_scenario_adjustments(scenario_model, scenario.demand_multipliers)
+        apply_scenario_adjustments(scenario_model, scenario.market_share_changes)
+        
+        // Solve the modified model
+        solution = solve(scenario_model, 
+                        solver = &quot;gurobi&quot;,  // or &quot;highs&quot; for open-source
+                        time_limit = 3600,  // 1 hour max per scenario
+                        mip_gap = 0.02)     // accept solutions within 2% of optimal
+        
+        // Handle infeasibility: if no feasible solution exists, compute the
+        // Irreducible Infeasible Subsystem (IIS) to identify conflicting constraints.
+        // Most commercial solvers provide this (Gurobi: model.computeIIS(),
+        // CPLEX: conflict refiner). Present conflicting constraints to decision-makers:
+        // &quot;The budget and minimum volume constraints cannot both be satisfied.&quot;
+        IF solution.status == INFEASIBLE:
+            iis = compute_irreducible_infeasible_subsystem(scenario_model)
+            results[scenario.name] = {
+                status: &quot;infeasible&quot;,
+                conflicting_constraints: iis,
+                recommendation: &quot;Relax budget or minimum volume thresholds&quot;
+            }
+            CONTINUE
+        
+        results[scenario.name] = {
+            objective_value: solution.objective,
+            facility_decisions: extract open/close decisions from solution,
+            service_line_decisions: extract offer decisions from solution,
+            patient_flows: extract flow variables from solution,
+            financial_projections: compute revenue/cost from solution,
+            access_metrics: compute coverage metrics from solution
+        }
+    
+    // Identify robust decisions: same in all (or most) scenarios
+    robust_decisions = find decisions that appear in ALL scenario solutions
+    contingent_decisions = find decisions that differ across scenarios
+    
+    RETURN results, robust_decisions, contingent_decisions
+</code></pre>
+<p><strong>Step 5: Sensitivity analysis and result presentation.</strong> The optimization output is a set of recommended decisions. But executives don't just want &quot;the answer.&quot; They want to understand how sensitive that answer is to key assumptions. If the cancer center recommendation flips when you change the growth rate by 5%, that's a fragile recommendation. If it holds across a wide range of assumptions, that's a robust one. This step computes sensitivity metrics and packages everything for the decision support dashboard.</p>
+<pre class="code code-plain"><code>FUNCTION compute_sensitivity_and_present(results, key_parameters):
+    // For each key assumption, vary it and see if the optimal solution changes
+    
+    sensitivity_report = empty map
+    
+    FOR each parameter in key_parameters:
+        // Vary the parameter across a range (e.g., +/- 20% from base case)
+        FOR each variation in [0.8, 0.9, 1.0, 1.1, 1.2] * parameter.base_value:
+            modified_solution = re-solve model with parameter = variation
+            
+            // Record whether key decisions changed
+            sensitivity_report[parameter.name][variation] = {
+                decisions_changed: compare to base solution,
+                objective_impact: modified_solution.objective - base_solution.objective
+            }
+    
+    // Package results for dashboard
+    dashboard_output = {
+        recommended_network: base solution facility and service decisions,
+        scenario_comparison: side-by-side financial and access metrics,
+        robust_decisions: decisions stable across all scenarios,
+        contingent_decisions: decisions that depend on assumptions,
+        sensitivity_charts: parameter sensitivity for key decisions,
+        access_maps: geographic coverage maps for each scenario,
+        financial_summary: NPV, IRR, payback period for capital investments,
+        implementation_timeline: phased rollout based on dependencies
+    }
+    
+    // Write results to S3 for QuickSight consumption
+    write dashboard_output to S3 as structured JSON/Parquet
+    
+    // Trigger QuickSight dataset refresh
+    trigger QuickSight SPICE refresh for network design dataset
+    
+    RETURN dashboard_output
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and PuLP/Gurobi, check out the <a href="chapter14.10-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample output for a mid-size health system (8 hospitals, 30 clinics, 5-year horizon):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;optimization_run_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;net-design-2026-Q2-run-004&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;solve_time_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2847</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;optimality_gap&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.018</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scenarios_evaluated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;recommended_actions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;robust_decisions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADD_SERVICE_LINE&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;facility&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Suburban Campus East&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;service_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Interventional Cardiology&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;rationale&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Captures 2,400 annual cases currently leaking to competitor. Positive NPV in all scenarios.&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;capital_required&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">45000000</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;projected_annual_volume&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2400</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;projected_annual_margin&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12000000</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EXPAND_CAPACITY&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;facility&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Main Campus&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;service_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Orthopedics&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;rationale&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Current utilization at 94%. Demand growing 6% annually. Capacity constraint binding in all scenarios.&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;capital_required&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">18000000</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;projected_additional_volume&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">800</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;projected_annual_margin&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4800000</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;contingent_decisions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CONVERT_FACILITY&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;facility&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Rural Hospital North&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;convert_to&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Urgent Care + Outpatient Surgery&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Only optimal if population decline exceeds 1.5% annually&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;scenarios_favoring&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;low_growth&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;population_decline&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;scenarios_opposing&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;base_case&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;high_growth&quot;</span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;access_impact&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;population_within_30min_primary_care&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.96</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;population_within_60min_tertiary_care&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.89</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;underserved_zones_improved&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;financial_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;total_capital_required&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">187000000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;projected_5yr_npv&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">94000000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;payback_period_years&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.2</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Model size (variables)</td>
+<td>50,000-500,000</td>
+</tr>
+<tr>
+<td>Model size (constraints)</td>
+<td>100,000-1,000,000</td>
+</tr>
+<tr>
+<td>Solve time (commercial solver)</td>
+<td>15-90 minutes per scenario</td>
+</tr>
+<tr>
+<td>Solve time (open-source solver)</td>
+<td>2-8 hours per scenario</td>
+</tr>
+<tr>
+<td>Optimality gap achieved</td>
+<td>1-3% (acceptable for strategic decisions)</td>
+</tr>
+<tr>
+<td>Scenario analysis (5 scenarios)</td>
+<td>2-8 hours total</td>
+</tr>
+<tr>
+<td>Full pipeline (data prep through dashboard)</td>
+<td>12-24 hours</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong> Highly non-linear patient choice models (the gravity model linearization introduces approximation error; see the iterative balancing note in Step 3). Markets with rapid competitive dynamics (a competitor's decision to build changes your optimal solution, creating a game-theoretic situation the MIP doesn't capture). Very long planning horizons (20+ years) where demand uncertainty dominates the signal. And politically charged decisions where the &quot;optimal&quot; answer is organizationally unacceptable.</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode demonstrates the optimization pattern. Deploying this for actual capital planning decisions requires addressing several gaps:</p>
+<p><strong>Data quality and completeness.</strong> The model is only as good as its inputs. Patient origin data from your EHR captures your patients but not the total market. State discharge databases (HCUP, state-specific) provide market-level data but lag by 1-2 years. Competitor capacity data is often estimated, not observed. Garbage in, garbage out applies with particular force here because the decisions are irreversible and capital-intensive.</p>
+<p><strong>Model validation.</strong> Before trusting the optimizer's recommendations, you need to validate that the gravity model accurately predicts current patient flows. If the model can't reproduce today's utilization patterns, it has no business predicting tomorrow's. Backtesting against historical facility openings/closings is the gold standard.</p>
+<p><strong>Stakeholder alignment.</strong> The optimization produces a mathematically optimal network configuration. The board produces a politically feasible one. The gap between these is where the real work happens. Build the model to support exploration (&quot;what if we constrain the rural hospital to stay open?&quot;) rather than to dictate answers.</p>
+<p><strong>Regulatory integration.</strong> Certificate of Need (CON) processes in 35+ states add months to years of lead time for new services. The model should incorporate CON feasibility as a constraint, not discover it after recommending an infeasible action.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Dynamic network design with staged investments.</strong> Instead of a single-period &quot;build the optimal network&quot; formulation, model the problem as a multi-period investment sequence. In year 1, build X. In year 3, expand Y. In year 5, convert Z. This captures the reality that capital is deployed over time and early decisions constrain later ones. The formulation adds time-indexed variables and linking constraints across periods.</p>
+<p><strong>Competitive response modeling.</strong> The basic model treats competitor behavior as fixed. A game-theoretic extension models competitor responses: if you build a cancer center, the competitor might respond by expanding their own. This turns the optimization into a Stackelberg game (you move first, they respond optimally). Significantly harder to solve but more realistic in competitive markets.</p>
+<p><strong>Equity-constrained optimization.</strong> Add explicit equity constraints: no census tract with a majority-minority population can have access worse than the system average. Or: the Gini coefficient of travel times across income quintiles must be below a threshold. These constraints formalize community benefit commitments and can be reported to regulators and community advisory boards.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html">Amazon SageMaker Processing Jobs</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Developer Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+</ul>
+<p><strong>Optimization Resources:</strong></p>
+<ul>
+<li><a href="https://www.gurobi.com/documentation/">Gurobi Optimization Documentation</a></li>
+<li><a href="https://highs.dev/">HiGHS Solver (Open Source)</a></li>
+<li><a href="https://coin-or.github.io/pulp/">PuLP: Python Linear Programming Library</a></li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/sagemaker/">Optimization with Amazon SageMaker</a></li>
+<li><a href="https://aws.amazon.com/health/">AWS Healthcare and Life Sciences Solutions</a></li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Basic</strong> (single service line, single scenario, open-source solver)</td>
+<td>8-12 weeks</td>
+</tr>
+<tr>
+<td><strong>Production-ready</strong> (multi-service, multi-scenario, validated gravity model, executive dashboard)</td>
+<td>6-9 months</td>
+</tr>
+<tr>
+<td><strong>With variations</strong> (multi-period staging, competitive response, equity constraints)</td>
+<td>12-18 months</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>← <a href="chapter14.10-health-system-network-design.html">Main Recipe 14.10</a> · <a href="chapter14.10-python-example.html">Python Example</a> · <a href="chapter14-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

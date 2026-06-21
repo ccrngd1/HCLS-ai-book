@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 14.8: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-148-python-implementation-example">Recipe 14.8: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the ambulance routing and dispatch optimization from Recipe 14.8. It demonstrates the core concepts (fleet state management, candidate scoring with coverage awareness, hospital destination selection, and background repositioning optimization) using a combination of boto3 and Google OR-Tools. It is not production-ready. The fleet is tiny, travel times are synthetic, and there's no real GPS stream or CAD integration. Think of it as the whiteboard sketch that helps you understand how the dispatch scoring and coverage optimization actually work under the hood. A starting point, not a destination.</p>
+<p>The main recipe uses Kinesis for GPS ingestion, ElastiCache for travel time caching, and SageMaker for demand forecasting. This example runs everything locally with in-memory state and a simple grid-based coverage model. The optimization math is identical; the infrastructure is stripped away so you can focus on the decision logic.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the optimization solver and AWS SDK installed:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>ortools
+</pre></div>
+
+<p><code>ortools</code> is Google's open-source optimization suite. We use the linear solver (SCIP backend) for the repositioning coverage problem, which is formulated as a set-covering assignment. It's free, actively maintained, and handles the scale of a typical metro EMS fleet (20-60 units, 50-200 demand zones) in seconds.</p>
+<p>Your environment needs AWS credentials configured (via environment variables, instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>dynamodb:PutItem</code></li>
+<li><code>dynamodb:GetItem</code></li>
+<li><code>dynamodb:Query</code></li>
+<li><code>geo:CalculateRouteMatrix</code> (if you swap in real Location Service calls)</li>
+</ul>
+<p>For the full pipeline (with Kinesis GPS ingestion, ElastiCache, SageMaker demand forecasting, and Step Functions orchestration), you'd need additional permissions, but this example keeps the focus on the dispatch and coverage optimization logic.</p>
+<hr />
+<h2 id="configuration-and-constants">Configuration and Constants</h2>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ortools.linear_solver</span><span class="w"> </span><span class="kn">import</span> <span class="n">pywraplp</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># Table where we store dispatch decisions for audit trail.</span>
+<span class="n">DISPATCH_TABLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;ems-dispatch-decisions&quot;</span>
+
+<span class="c1"># Response time targets (seconds). These come from NFPA 1710 and local</span>
+<span class="c1"># medical direction protocols. Priority 1 = life-threatening emergency.</span>
+<span class="n">RESPONSE_TIME_TARGETS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="mi">480</span><span class="p">,</span>   <span class="c1"># 8 minutes for Priority 1 (cardiac arrest, major trauma)</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="mi">600</span><span class="p">,</span>   <span class="c1"># 10 minutes for Priority 2 (chest pain, difficulty breathing)</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>   <span class="c1"># 15 minutes for Priority 3 (falls, minor injuries)</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="mi">1200</span><span class="p">,</span>  <span class="c1"># 20 minutes for Priority 4 (non-emergency transports)</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="mi">1800</span><span class="p">,</span>  <span class="c1"># 30 minutes for Priority 5 (scheduled transfers)</span>
+<span class="p">}</span>
+
+<span class="c1"># Unit capability levels. ALS units carry paramedics with cardiac monitors,</span>
+<span class="c1"># intubation equipment, and IV medications. BLS units have EMTs with basic</span>
+<span class="c1"># interventions. You cannot send a BLS unit to an ALS-required call.</span>
+<span class="n">CAPABILITY_LEVELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;ALS&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>  <span class="c1"># Advanced Life Support (paramedic)</span>
+    <span class="s2">&quot;BLS&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># Basic Life Support (EMT)</span>
+<span class="p">}</span>
+
+<span class="c1"># Scoring weights for the dispatch optimizer. These control the trade-off</span>
+<span class="c1"># between &quot;send the fastest unit&quot; and &quot;preserve system coverage.&quot;</span>
+<span class="c1"># Tuned per system based on historical performance analysis.</span>
+<span class="n">DISPATCH_WEIGHTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;response_time&quot;</span><span class="p">:</span> <span class="mf">0.60</span><span class="p">,</span>   <span class="c1"># dominant factor: get there fast</span>
+    <span class="s2">&quot;coverage_impact&quot;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="c1"># don&#39;t leave zones uncovered</span>
+    <span class="s2">&quot;fatigue&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">,</span>         <span class="c1"># crew welfare (hours on shift)</span>
+    <span class="s2">&quot;workload&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>        <span class="c1"># balance calls across crews</span>
+<span class="p">}</span>
+
+<span class="c1"># For Priority 1 calls, we override the weights to prioritize pure speed.</span>
+<span class="c1"># Coverage concerns take a back seat when someone is dying.</span>
+<span class="n">PRIORITY_1_WEIGHTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;response_time&quot;</span><span class="p">:</span> <span class="mf">0.90</span><span class="p">,</span>
+    <span class="s2">&quot;coverage_impact&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">,</span>
+    <span class="s2">&quot;fatigue&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;workload&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Coverage threshold: a zone is &quot;covered&quot; if at least one available unit</span>
+<span class="c1"># can reach its centroid within this many seconds.</span>
+<span class="n">COVERAGE_THRESHOLD_SECONDS</span> <span class="o">=</span> <span class="mi">480</span>  <span class="c1"># 8 minutes</span>
+
+<span class="c1"># Maximum repositioning moves per optimization cycle. Moving too many units</span>
+<span class="c1"># at once creates chaos and dispatcher confusion.</span>
+<span class="n">MAX_REPOSITION_MOVES</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="c1"># Average ambulance speed for travel time estimation (km/h).</span>
+<span class="c1"># Emergency response (lights and sirens) vs. non-emergency.</span>
+<span class="n">SPEED_EMERGENCY_KMH</span> <span class="o">=</span> <span class="mi">55</span>   <span class="c1"># urban average with L&amp;S</span>
+<span class="n">SPEED_NORMAL_KMH</span> <span class="o">=</span> <span class="mi">35</span>      <span class="c1"># urban average without L&amp;S</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-fleet-state-management">Step 1: Fleet State Management</h2>
+<p><em>The pseudocode calls this <code>process_gps_update</code>. In production, GPS events flow through Kinesis into a Lambda that updates DynamoDB. Here we model the fleet state in memory and show how you'd write it to DynamoDB for persistence.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_initial_fleet</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a synthetic fleet for demonstration. In production, this state</span>
+<span class="sd">    lives in DynamoDB and is updated by the GPS ingestion pipeline.</span>
+
+<span class="sd">    Each unit has:</span>
+<span class="sd">    - unit_id: unique identifier (matches the MDT/radio callsign)</span>
+<span class="sd">    - capability: ALS or BLS</span>
+<span class="sd">    - latitude/longitude: current GPS position</span>
+<span class="sd">    - status: AVAILABLE, DISPATCHED, EN_ROUTE, ON_SCENE, TRANSPORTING, AT_HOSPITAL</span>
+<span class="sd">    - zone: which coverage zone the unit is currently in</span>
+<span class="sd">    - shift_start: when this crew&#39;s shift began (for fatigue scoring)</span>
+<span class="sd">    - calls_today: how many calls this crew has run (for workload balancing)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fleet</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="s2">&quot;MEDIC-1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;capability&quot;</span><span class="p">:</span> <span class="s2">&quot;ALS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">38.9072</span><span class="p">,</span>
+            <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0369</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;zone&quot;</span><span class="p">:</span> <span class="s2">&quot;ZONE-A&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shift_start&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-06-01T06:00:00Z&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;calls_today&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="s2">&quot;MEDIC-3&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;capability&quot;</span><span class="p">:</span> <span class="s2">&quot;ALS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">38.9200</span><span class="p">,</span>
+            <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0200</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;zone&quot;</span><span class="p">:</span> <span class="s2">&quot;ZONE-B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shift_start&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-06-01T06:00:00Z&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;calls_today&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="s2">&quot;MEDIC-5&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;capability&quot;</span><span class="p">:</span> <span class="s2">&quot;ALS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">38.8950</span><span class="p">,</span>
+            <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0500</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;EN_ROUTE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;zone&quot;</span><span class="p">:</span> <span class="s2">&quot;ZONE-C&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shift_start&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-06-01T06:00:00Z&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;calls_today&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="s2">&quot;BLS-2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;capability&quot;</span><span class="p">:</span> <span class="s2">&quot;BLS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">38.9100</span><span class="p">,</span>
+            <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0450</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;zone&quot;</span><span class="p">:</span> <span class="s2">&quot;ZONE-A&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shift_start&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-06-01T18:00:00Z&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;calls_today&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="s2">&quot;BLS-4&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;capability&quot;</span><span class="p">:</span> <span class="s2">&quot;BLS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">38.9300</span><span class="p">,</span>
+            <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0100</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;zone&quot;</span><span class="p">:</span> <span class="s2">&quot;ZONE-D&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shift_start&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-06-01T18:00:00Z&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;calls_today&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">fleet</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_available_units</span><span class="p">(</span><span class="n">fleet</span><span class="p">,</span> <span class="n">required_capability</span><span class="o">=</span><span class="s2">&quot;BLS&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Filter fleet to units that are available and meet the capability requirement.</span>
+
+<span class="sd">    ALS units can handle both ALS and BLS calls (paramedics can do everything</span>
+<span class="sd">    EMTs can do, plus more). BLS units can only handle BLS calls.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">fleet</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="c1"># ALS units satisfy any capability requirement.</span>
+        <span class="c1"># BLS units only satisfy BLS requirements.</span>
+        <span class="n">unit_level</span> <span class="o">=</span> <span class="n">CAPABILITY_LEVELS</span><span class="p">[</span><span class="n">unit</span><span class="p">[</span><span class="s2">&quot;capability&quot;</span><span class="p">]]</span>
+        <span class="n">required_level</span> <span class="o">=</span> <span class="n">CAPABILITY_LEVELS</span><span class="p">[</span><span class="n">required_capability</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">unit_level</span> <span class="o">&gt;=</span> <span class="n">required_level</span><span class="p">:</span>
+            <span class="n">available</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">available</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-travel-time-estimation">Step 2: Travel Time Estimation</h2>
+<p><em>The main recipe uses Amazon Location Service for real road-network travel times with traffic. Here we use the Haversine formula with a speed estimate as a stand-in. In production, you'd call Location Service's CalculateRouteMatrix API and cache results in ElastiCache.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">haversine_distance_km</span><span class="p">(</span><span class="n">lat1</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate straight-line distance between two GPS coordinates in kilometers.</span>
+<span class="sd">    This is the &quot;as the crow flies&quot; distance. Real road distance is typically</span>
+<span class="sd">    1.3x to 1.6x longer in urban areas (the &quot;circuity factor&quot;).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="mi">6371</span>  <span class="c1"># Earth&#39;s radius in km</span>
+    <span class="n">dlat</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat2</span> <span class="o">-</span> <span class="n">lat1</span><span class="p">)</span>
+    <span class="n">dlon</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lon2</span> <span class="o">-</span> <span class="n">lon1</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dlat</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat1</span><span class="p">))</span>
+        <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat2</span><span class="p">))</span>
+        <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dlon</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">a</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">R</span> <span class="o">*</span> <span class="n">c</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_travel_time_seconds</span><span class="p">(</span><span class="n">origin_lat</span><span class="p">,</span> <span class="n">origin_lon</span><span class="p">,</span> <span class="n">dest_lat</span><span class="p">,</span> <span class="n">dest_lon</span><span class="p">,</span>
+                                  <span class="n">emergency</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate travel time in seconds between two points.</span>
+
+<span class="sd">    In production, replace this with a call to Amazon Location Service:</span>
+<span class="sd">        client.calculate_route(</span>
+<span class="sd">            CalculatorName=&quot;ems-router&quot;,</span>
+<span class="sd">            DeparturePosition=[origin_lon, origin_lat],</span>
+<span class="sd">            DestinationPosition=[dest_lon, dest_lat],</span>
+<span class="sd">            TravelMode=&quot;Car&quot;,</span>
+<span class="sd">            DepartNow=True</span>
+<span class="sd">        )</span>
+
+<span class="sd">    The Location Service response includes DurationSeconds accounting for</span>
+<span class="sd">    real-time traffic. You&#39;d then apply an emergency vehicle multiplier</span>
+<span class="sd">    (typically 0.7x to 0.8x of civilian travel time for L&amp;S response).</span>
+
+<span class="sd">    For this example, we use Haversine distance with a circuity factor</span>
+<span class="sd">    and speed estimate. It&#39;s wrong, but it&#39;s wrong in a predictable way</span>
+<span class="sd">    that lets you see the optimization logic clearly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">straight_line_km</span> <span class="o">=</span> <span class="n">haversine_distance_km</span><span class="p">(</span>
+        <span class="n">origin_lat</span><span class="p">,</span> <span class="n">origin_lon</span><span class="p">,</span> <span class="n">dest_lat</span><span class="p">,</span> <span class="n">dest_lon</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Urban circuity factor: roads aren&#39;t straight lines.</span>
+    <span class="c1"># 1.4 is typical for grid-pattern cities. Winding suburbs might be 1.6+.</span>
+    <span class="n">road_distance_km</span> <span class="o">=</span> <span class="n">straight_line_km</span> <span class="o">*</span> <span class="mf">1.4</span>
+
+    <span class="n">speed_kmh</span> <span class="o">=</span> <span class="n">SPEED_EMERGENCY_KMH</span> <span class="k">if</span> <span class="n">emergency</span> <span class="k">else</span> <span class="n">SPEED_NORMAL_KMH</span>
+    <span class="n">travel_time_hours</span> <span class="o">=</span> <span class="n">road_distance_km</span> <span class="o">/</span> <span class="n">speed_kmh</span>
+    <span class="n">travel_time_seconds</span> <span class="o">=</span> <span class="n">travel_time_hours</span> <span class="o">*</span> <span class="mi">3600</span>
+
+    <span class="k">return</span> <span class="n">travel_time_seconds</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-dispatch-scoring">Step 3: Dispatch Scoring</h2>
+<p><em>The pseudocode calls this <code>score_candidates</code>. This is the heart of the system: evaluating each available unit against a call and producing a ranked list. The scoring function balances response time against system-level concerns like coverage preservation and crew welfare.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_coverage_impact</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate how much system coverage degrades if we dispatch this unit.</span>
+
+<span class="sd">    The idea: if this unit is the only one covering its zone, removing it</span>
+<span class="sd">    creates a critical gap. If three other units can also cover that zone,</span>
+<span class="sd">    removing this one barely matters.</span>
+
+<span class="sd">    Returns a score from 0.0 (no impact) to 1.0 (critical gap created).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zone</span> <span class="o">=</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;zone&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Count how many other available units can cover this zone</span>
+    <span class="n">other_units_in_zone</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">fleet</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;zone&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">zone</span><span class="p">:</span>
+            <span class="n">other_units_in_zone</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Also check adjacent units that could reach this zone within threshold</span>
+    <span class="c1"># (simplified: in production, use actual travel times to zone centroid)</span>
+    <span class="n">zone_centroid</span> <span class="o">=</span> <span class="n">demand_zones</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">zone</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;centroid&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">zone_centroid</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">fleet</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">]:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;zone&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">zone</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># already counted</span>
+            <span class="n">travel</span> <span class="o">=</span> <span class="n">estimate_travel_time_seconds</span><span class="p">(</span>
+                <span class="n">other</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">],</span>
+                <span class="n">zone_centroid</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">zone_centroid</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">emergency</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">travel</span> <span class="o">&lt;=</span> <span class="n">COVERAGE_THRESHOLD_SECONDS</span><span class="p">:</span>
+                <span class="n">other_units_in_zone</span> <span class="o">+=</span> <span class="mf">0.5</span>  <span class="c1"># partial credit for adjacent coverage</span>
+
+    <span class="c1"># Convert to impact score: fewer backup units = higher impact</span>
+    <span class="k">if</span> <span class="n">other_units_in_zone</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.1</span>  <span class="c1"># well-covered zone, minimal impact</span>
+    <span class="k">elif</span> <span class="n">other_units_in_zone</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.4</span>  <span class="c1"># one backup, moderate concern</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.9</span>  <span class="c1"># no backup, critical gap if we send this unit</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">max_value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a value to 0.0-1.0 range. Clamps at 1.0.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">value</span> <span class="o">/</span> <span class="n">max_value</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">score_candidates</span><span class="p">(</span><span class="n">call</span><span class="p">,</span> <span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Score all available, capable units for a given call.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        call: dict with location, priority, required_capability, nature_code</span>
+<span class="sd">        fleet: list of all unit dicts (current fleet state)</span>
+<span class="sd">        demand_zones: dict of zone_id -&gt; {centroid, demand_weight}</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of candidate dicts sorted by score (ascending = best first).</span>
+<span class="sd">        Each candidate includes unit_id, travel_time, score, and coverage_impact.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">required_cap</span> <span class="o">=</span> <span class="n">call</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;required_capability&quot;</span><span class="p">,</span> <span class="s2">&quot;BLS&quot;</span><span class="p">)</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="n">get_available_units</span><span class="p">(</span><span class="n">fleet</span><span class="p">,</span> <span class="n">required_cap</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">available</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No available units meet capability requirement: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">required_cap</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># Select weight profile based on call priority</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">PRIORITY_1_WEIGHTS</span> <span class="k">if</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">DISPATCH_WEIGHTS</span>
+
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">available</span><span class="p">:</span>
+        <span class="c1"># Travel time from unit&#39;s current position to call location</span>
+        <span class="n">travel_time</span> <span class="o">=</span> <span class="n">estimate_travel_time_seconds</span><span class="p">(</span>
+            <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">],</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">],</span>
+            <span class="n">call</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">][</span><span class="s2">&quot;lat&quot;</span><span class="p">],</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">][</span><span class="s2">&quot;lng&quot;</span><span class="p">],</span>
+            <span class="n">emergency</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Coverage impact: what happens to system coverage if we send this unit?</span>
+        <span class="n">coverage_impact</span> <span class="o">=</span> <span class="n">compute_coverage_impact</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">)</span>
+
+        <span class="c1"># Fatigue: hours on shift. Slight penalty after 10 hours.</span>
+        <span class="n">shift_start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span>
+            <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;shift_start&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;+00:00&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">hours_on_shift</span> <span class="o">=</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="n">shift_start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">/</span> <span class="mi">3600</span>
+        <span class="n">fatigue_penalty</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="p">(</span><span class="n">hours_on_shift</span> <span class="o">-</span> <span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="c1"># Workload: calls run today, normalized against a reasonable max</span>
+        <span class="n">workload_score</span> <span class="o">=</span> <span class="n">normalize_value</span><span class="p">(</span><span class="n">unit</span><span class="p">[</span><span class="s2">&quot;calls_today&quot;</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span>
+
+        <span class="c1"># Composite score (lower is better)</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">weights</span><span class="p">[</span><span class="s2">&quot;response_time&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">normalize_value</span><span class="p">(</span><span class="n">travel_time</span><span class="p">,</span> <span class="mi">1200</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">weights</span><span class="p">[</span><span class="s2">&quot;coverage_impact&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">coverage_impact</span>
+            <span class="o">+</span> <span class="n">weights</span><span class="p">[</span><span class="s2">&quot;fatigue&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">normalize_value</span><span class="p">(</span><span class="n">fatigue_penalty</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">weights</span><span class="p">[</span><span class="s2">&quot;workload&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">workload_score</span>
+        <span class="p">)</span>
+
+        <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;capability&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;capability&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;travel_time_seconds&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">travel_time</span><span class="p">),</span>
+            <span class="s2">&quot;coverage_impact&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">coverage_impact</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="p">})</span>
+
+    <span class="c1"># Sort by score ascending (best candidate first)</span>
+    <span class="n">candidates</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">candidates</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-hospital-destination-selection">Step 4: Hospital Destination Selection</h2>
+<p><em>The pseudocode calls this <code>select_hospital</code>. After the unit arrives on scene and assesses the patient, the system recommends the best destination hospital based on clinical needs, transport time, and current capacity.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_hospital_status</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Synthetic hospital status data. In production, this comes from hospital</span>
+<span class="sd">    systems via EventBridge (diversion status, ED census, bed availability)</span>
+<span class="sd">    and is stored in DynamoDB for fast lookup.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hospitals</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;hospital_id&quot;</span><span class="p">:</span> <span class="s2">&quot;HOSP-GWU&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;GW University Hospital&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;location&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">38.9007</span><span class="p">,</span> <span class="s2">&quot;lng&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0508</span><span class="p">},</span>
+            <span class="s2">&quot;capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cath_lab&quot;</span><span class="p">,</span> <span class="s2">&quot;interventional_cardiology&quot;</span><span class="p">,</span>
+                             <span class="s2">&quot;level_1_trauma&quot;</span><span class="p">,</span> <span class="s2">&quot;stroke_center&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;ed_capacity&quot;</span><span class="p">:</span> <span class="mi">45</span><span class="p">,</span>
+            <span class="s2">&quot;current_ed_census&quot;</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span>
+            <span class="s2">&quot;diversion_status&quot;</span><span class="p">:</span> <span class="s2">&quot;OPEN&quot;</span><span class="p">,</span>  <span class="c1"># OPEN, CONDITIONAL, FULL_DIVERSION</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;hospital_id&quot;</span><span class="p">:</span> <span class="s2">&quot;HOSP-MEDSTAR&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;MedStar Washington Hospital Center&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;location&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">38.9296</span><span class="p">,</span> <span class="s2">&quot;lng&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0164</span><span class="p">},</span>
+            <span class="s2">&quot;capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cath_lab&quot;</span><span class="p">,</span> <span class="s2">&quot;interventional_cardiology&quot;</span><span class="p">,</span>
+                             <span class="s2">&quot;level_1_trauma&quot;</span><span class="p">,</span> <span class="s2">&quot;stroke_center&quot;</span><span class="p">,</span> <span class="s2">&quot;burn_center&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;ed_capacity&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+            <span class="s2">&quot;current_ed_census&quot;</span><span class="p">:</span> <span class="mi">52</span><span class="p">,</span>
+            <span class="s2">&quot;diversion_status&quot;</span><span class="p">:</span> <span class="s2">&quot;CONDITIONAL&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;hospital_id&quot;</span><span class="p">:</span> <span class="s2">&quot;HOSP-SIBLEY&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Sibley Memorial Hospital&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;location&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">38.9378</span><span class="p">,</span> <span class="s2">&quot;lng&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.1052</span><span class="p">},</span>
+            <span class="s2">&quot;capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;stroke_center&quot;</span><span class="p">,</span> <span class="s2">&quot;general_surgery&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;ed_capacity&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+            <span class="s2">&quot;current_ed_census&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+            <span class="s2">&quot;diversion_status&quot;</span><span class="p">:</span> <span class="s2">&quot;OPEN&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">hospitals</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">select_hospital</span><span class="p">(</span><span class="n">patient_needs</span><span class="p">,</span> <span class="n">unit_location</span><span class="p">,</span> <span class="n">hospitals</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recommend the best destination hospital for a patient.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_needs: dict with required_capabilities (list), acuity_level (1-5)</span>
+<span class="sd">        unit_location: dict with lat, lng (ambulance&#39;s current position)</span>
+<span class="sd">        hospitals: list of hospital status dicts</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Best hospital dict with transport_time and score, or None if no</span>
+<span class="sd">        eligible hospital found (which would be a serious system failure</span>
+<span class="sd">        in a real deployment).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">eligible</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">hospital</span> <span class="ow">in</span> <span class="n">hospitals</span><span class="p">:</span>
+        <span class="c1"># Hard filter: must have all required capabilities</span>
+        <span class="n">has_all_caps</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">cap</span> <span class="ow">in</span> <span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;capabilities&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">cap</span> <span class="ow">in</span> <span class="n">patient_needs</span><span class="p">[</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_all_caps</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Hard filter: diversion status</span>
+        <span class="k">if</span> <span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;diversion_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;FULL_DIVERSION&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;diversion_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CONDITIONAL&quot;</span>
+                <span class="ow">and</span> <span class="n">patient_needs</span><span class="p">[</span><span class="s2">&quot;acuity_level&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="c1"># Conditional diversion: only accepting critical patients (acuity 1-2)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Transport time from unit&#39;s current location to hospital</span>
+        <span class="n">transport_seconds</span> <span class="o">=</span> <span class="n">estimate_travel_time_seconds</span><span class="p">(</span>
+            <span class="n">unit_location</span><span class="p">[</span><span class="s2">&quot;lat&quot;</span><span class="p">],</span> <span class="n">unit_location</span><span class="p">[</span><span class="s2">&quot;lng&quot;</span><span class="p">],</span>
+            <span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">][</span><span class="s2">&quot;lat&quot;</span><span class="p">],</span> <span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">][</span><span class="s2">&quot;lng&quot;</span><span class="p">],</span>
+            <span class="n">emergency</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Capacity score: how full is the ED? (0.0 = empty, 1.0 = at capacity)</span>
+        <span class="n">capacity_ratio</span> <span class="o">=</span> <span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;current_ed_census&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;ed_capacity&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Composite destination score (lower is better)</span>
+        <span class="n">dest_score</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mf">0.50</span> <span class="o">*</span> <span class="n">normalize_value</span><span class="p">(</span><span class="n">transport_seconds</span><span class="p">,</span> <span class="mi">1800</span><span class="p">)</span>  <span class="c1"># transport time</span>
+            <span class="o">+</span> <span class="mf">0.35</span> <span class="o">*</span> <span class="n">capacity_ratio</span>                           <span class="c1"># ED crowding</span>
+            <span class="o">+</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.0</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hospital</span><span class="p">[</span><span class="s2">&quot;capabilities&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="k">else</span> <span class="mf">0.3</span><span class="p">)</span>
+            <span class="c1"># slight preference for higher-capability hospitals</span>
+        <span class="p">)</span>
+
+        <span class="n">eligible</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="o">**</span><span class="n">hospital</span><span class="p">,</span>
+            <span class="s2">&quot;transport_time_seconds&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">transport_seconds</span><span class="p">),</span>
+            <span class="s2">&quot;transport_time_minutes&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">transport_seconds</span> <span class="o">/</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;capacity_ratio&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">capacity_ratio</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">dest_score</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="p">})</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">eligible</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No eligible hospitals found for patient needs: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                     <span class="n">patient_needs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Sort by score ascending (best destination first)</span>
+    <span class="n">eligible</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="n">h</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">eligible</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-coverage-optimization-repositioning">Step 5: Coverage Optimization (Repositioning)</h2>
+<p><em>The pseudocode calls this <code>optimize_repositioning</code>. This is the background solver that runs every few minutes. It identifies coverage gaps (zones where no available unit can respond within the target time) and computes optimal unit repositioning moves to close those gaps. This is where OR-Tools earns its keep.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_demand_zones</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define coverage zones with centroids and demand weights.</span>
+<span class="sd">    In production, these come from the demand forecast model (SageMaker endpoint)</span>
+<span class="sd">    which predicts call probability per zone for the next 30 minutes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zones</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;ZONE-A&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">38.9072</span><span class="p">,</span> <span class="o">-</span><span class="mf">77.0369</span><span class="p">),</span> <span class="s2">&quot;demand_weight&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">},</span>
+        <span class="s2">&quot;ZONE-B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">38.9200</span><span class="p">,</span> <span class="o">-</span><span class="mf">77.0200</span><span class="p">),</span> <span class="s2">&quot;demand_weight&quot;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">},</span>
+        <span class="s2">&quot;ZONE-C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">38.8950</span><span class="p">,</span> <span class="o">-</span><span class="mf">77.0500</span><span class="p">),</span> <span class="s2">&quot;demand_weight&quot;</span><span class="p">:</span> <span class="mf">0.20</span><span class="p">},</span>
+        <span class="s2">&quot;ZONE-D&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">38.9300</span><span class="p">,</span> <span class="o">-</span><span class="mf">77.0100</span><span class="p">),</span> <span class="s2">&quot;demand_weight&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">},</span>
+        <span class="s2">&quot;ZONE-E&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">38.8800</span><span class="p">,</span> <span class="o">-</span><span class="mf">77.0300</span><span class="p">),</span> <span class="s2">&quot;demand_weight&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">zones</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">identify_coverage_gaps</span><span class="p">(</span><span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find zones where no available unit can respond within the coverage threshold.</span>
+
+<span class="sd">    Returns a list of gap dicts: zone_id, centroid, best_current_time, demand_weight.</span>
+<span class="sd">    These are the zones the repositioning optimizer needs to fix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">available_units</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">fleet</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">]</span>
+    <span class="n">gaps</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">zone_id</span><span class="p">,</span> <span class="n">zone_info</span> <span class="ow">in</span> <span class="n">demand_zones</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Skip very low demand zones (not worth repositioning for)</span>
+        <span class="k">if</span> <span class="n">zone_info</span><span class="p">[</span><span class="s2">&quot;demand_weight&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">centroid</span> <span class="o">=</span> <span class="n">zone_info</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Find the fastest available unit that could reach this zone</span>
+        <span class="n">best_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">available_units</span><span class="p">:</span>
+            <span class="n">travel</span> <span class="o">=</span> <span class="n">estimate_travel_time_seconds</span><span class="p">(</span>
+                <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">],</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">],</span>
+                <span class="n">centroid</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">centroid</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">emergency</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">best_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">best_time</span><span class="p">,</span> <span class="n">travel</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">best_time</span> <span class="o">&gt;</span> <span class="n">COVERAGE_THRESHOLD_SECONDS</span><span class="p">:</span>
+            <span class="n">gaps</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;zone_id&quot;</span><span class="p">:</span> <span class="n">zone_id</span><span class="p">,</span>
+                <span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="n">centroid</span><span class="p">,</span>
+                <span class="s2">&quot;best_current_time&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">best_time</span><span class="p">),</span>
+                <span class="s2">&quot;demand_weight&quot;</span><span class="p">:</span> <span class="n">zone_info</span><span class="p">[</span><span class="s2">&quot;demand_weight&quot;</span><span class="p">],</span>
+            <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">gaps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">optimize_repositioning</span><span class="p">(</span><span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solve the repositioning problem: which idle units should move where</span>
+<span class="sd">    to close coverage gaps?</span>
+
+<span class="sd">    This is formulated as a weighted set-covering assignment problem:</span>
+<span class="sd">    - Decision variables: binary (assign unit i to gap j, yes/no)</span>
+<span class="sd">    - Objective: minimize total repositioning cost weighted by coverage priority</span>
+<span class="sd">    - Constraints: each gap covered by at most one unit, total moves &lt;= MAX</span>
+
+<span class="sd">    Uses OR-Tools&#39; linear solver (SCIP backend) which handles this scale</span>
+<span class="sd">    (5-50 units, 5-200 zones) in milliseconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gaps</span> <span class="o">=</span> <span class="n">identify_coverage_gaps</span><span class="p">(</span><span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gaps</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Coverage is adequate. No repositioning needed.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">available_units</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">fleet</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;AVAILABLE&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">available_units</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No available units for repositioning.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found </span><span class="si">%d</span><span class="s2"> coverage gaps. </span><span class="si">%d</span><span class="s2"> units available for repositioning.&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">gaps</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_units</span><span class="p">))</span>
+
+    <span class="c1"># Create the solver</span>
+    <span class="n">solver</span> <span class="o">=</span> <span class="n">pywraplp</span><span class="o">.</span><span class="n">Solver</span><span class="o">.</span><span class="n">CreateSolver</span><span class="p">(</span><span class="s2">&quot;SCIP&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">solver</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Could not create SCIP solver. Is OR-Tools installed correctly?&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># Decision variables: x[i][j] = 1 if unit i is assigned to cover gap j</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">unit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">available_units</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">gap</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaps</span><span class="p">):</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">IntVar</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Constraint: each unit can be assigned to at most one gap</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">available_units</span><span class="p">)):</span>
+        <span class="n">solver</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gaps</span><span class="p">)))</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Constraint: each gap gets at most one unit assigned</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gaps</span><span class="p">)):</span>
+        <span class="n">solver</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">available_units</span><span class="p">)))</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Constraint: total moves limited</span>
+    <span class="n">solver</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span>
+        <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">available_units</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gaps</span><span class="p">)))</span>
+        <span class="o">&lt;=</span> <span class="n">MAX_REPOSITION_MOVES</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Objective: minimize repositioning cost, weighted by gap priority.</span>
+    <span class="c1"># Cost = travel time to reach the gap&#39;s centroid.</span>
+    <span class="c1"># Priority = demand weight of the uncovered zone (higher demand = more important to cover).</span>
+    <span class="n">objective</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">Objective</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">unit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">available_units</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">gap</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaps</span><span class="p">):</span>
+            <span class="n">travel</span> <span class="o">=</span> <span class="n">estimate_travel_time_seconds</span><span class="p">(</span>
+                <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">],</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">],</span>
+                <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">emergency</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># repositioning is non-emergency driving</span>
+            <span class="p">)</span>
+            <span class="c1"># Cost coefficient: travel time penalized, but reduced for high-demand gaps</span>
+            <span class="c1"># (we&#39;re willing to drive farther to cover a high-demand zone)</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">travel</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;demand_weight&quot;</span><span class="p">])</span>
+            <span class="n">objective</span><span class="o">.</span><span class="n">SetCoefficient</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">cost</span><span class="p">)</span>
+
+    <span class="n">objective</span><span class="o">.</span><span class="n">SetMinimization</span><span class="p">()</span>
+
+    <span class="c1"># Solve</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">Solve</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pywraplp</span><span class="o">.</span><span class="n">Solver</span><span class="o">.</span><span class="n">OPTIMAL</span><span class="p">,</span> <span class="n">pywraplp</span><span class="o">.</span><span class="n">Solver</span><span class="o">.</span><span class="n">FEASIBLE</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Repositioning solver did not find a feasible solution.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># Extract solution: which units move where?</span>
+    <span class="n">moves</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">unit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">available_units</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">gap</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaps</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">solution_value</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                <span class="n">travel</span> <span class="o">=</span> <span class="n">estimate_travel_time_seconds</span><span class="p">(</span>
+                    <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">],</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">],</span>
+                    <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">emergency</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">moves</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;from_zone&quot;</span><span class="p">:</span> <span class="n">unit</span><span class="p">[</span><span class="s2">&quot;zone&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;to_zone&quot;</span><span class="p">:</span> <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;zone_id&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;target_position&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="s2">&quot;lng&quot;</span><span class="p">:</span> <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;repositioning_time_seconds&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">travel</span><span class="p">),</span>
+                    <span class="s2">&quot;gap_demand_weight&quot;</span><span class="p">:</span> <span class="n">gap</span><span class="p">[</span><span class="s2">&quot;demand_weight&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Coverage gap in </span><span class="si">{</span><span class="n">gap</span><span class="p">[</span><span class="s1">&#39;zone_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
+                              <span class="sa">f</span><span class="s2">&quot;(best current response: </span><span class="si">{</span><span class="n">gap</span><span class="p">[</span><span class="s1">&#39;best_current_time&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">s, &quot;</span>
+                              <span class="sa">f</span><span class="s2">&quot;threshold: </span><span class="si">{</span><span class="n">COVERAGE_THRESHOLD_SECONDS</span><span class="si">}</span><span class="s2">s)&quot;</span><span class="p">,</span>
+                <span class="p">})</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Repositioning solution: </span><span class="si">%d</span><span class="s2"> moves.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">moves</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">moves</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-store-dispatch-decision">Step 6: Store Dispatch Decision</h2>
+<p><em>Every dispatch decision is written to DynamoDB for the audit trail. In EMS, every decision is reviewable. Medical directors, quality assurance teams, and legal proceedings all need to understand why a particular unit was sent to a particular call.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_dispatch_decision</span><span class="p">(</span><span class="n">decision</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write a dispatch decision record to DynamoDB.</span>
+
+<span class="sd">    This is the audit trail. Every field matters for post-incident review:</span>
+<span class="sd">    - Which unit was assigned and why?</span>
+<span class="sd">    - What were the alternatives?</span>
+<span class="sd">    - What was the estimated response time?</span>
+<span class="sd">    - What hospital was recommended?</span>
+
+<span class="sd">    In production, this table has a TTL for old records (retain 7 years</span>
+<span class="sd">    per state EMS record retention requirements) and is encrypted with</span>
+<span class="sd">    a KMS CMK.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">DISPATCH_TABLE_NAME</span><span class="p">)</span>
+
+    <span class="c1"># DynamoDB requires Decimal for numeric values, not float.</span>
+    <span class="c1"># This is a known boto3 gotcha that will raise TypeError if you forget.</span>
+    <span class="n">record</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">decision</span><span class="p">),</span> <span class="n">parse_float</span><span class="o">=</span><span class="n">Decimal</span><span class="p">)</span>
+
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stored dispatch decision: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">decision</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;call_id&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">record</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full dispatch pipeline assembled into a single callable function. This is what your Lambda handler would invoke when a 911 call arrives from the CAD system.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">dispatch_ambulance</span><span class="p">(</span><span class="n">call</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full dispatch optimization for a single incoming call.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        call: dict with:</span>
+<span class="sd">            - call_id: unique identifier from CAD system</span>
+<span class="sd">            - location: {lat, lng}</span>
+<span class="sd">            - priority: 1-5 (1 = life-threatening)</span>
+<span class="sd">            - required_capability: &quot;ALS&quot; or &quot;BLS&quot;</span>
+<span class="sd">            - nature_code: e.g., &quot;CHEST_PAIN&quot;, &quot;FALL&quot;, &quot;MVA&quot;</span>
+<span class="sd">            - patient_age: (optional) for clinical context</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Complete dispatch decision dict with assigned unit, recommended hospital,</span>
+<span class="sd">        coverage impact assessment, and all candidates considered.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DISPATCH REQUEST: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;call_id&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Priority: </span><span class="si">%d</span><span class="s2"> | Nature: </span><span class="si">%s</span><span class="s2"> | Capability: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">],</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;nature_code&quot;</span><span class="p">],</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;required_capability&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Location: (</span><span class="si">%.4f</span><span class="s2">, </span><span class="si">%.4f</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">call</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">][</span><span class="s2">&quot;lat&quot;</span><span class="p">],</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">][</span><span class="s2">&quot;lng&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Load current fleet state (in production: read from DynamoDB)</span>
+    <span class="n">fleet</span> <span class="o">=</span> <span class="n">build_initial_fleet</span><span class="p">()</span>
+    <span class="n">demand_zones</span> <span class="o">=</span> <span class="n">build_demand_zones</span><span class="p">()</span>
+
+    <span class="c1"># Score all available, capable units</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="n">score_candidates</span><span class="p">(</span><span class="n">call</span><span class="p">,</span> <span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;NO AVAILABLE UNITS. Call </span><span class="si">%s</span><span class="s2"> cannot be assigned.&quot;</span><span class="p">,</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;call_id&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;call_id&quot;</span><span class="p">:</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;call_id&quot;</span><span class="p">],</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;UNASSIGNED&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no_units&quot;</span><span class="p">}</span>
+
+    <span class="c1"># Best candidate is first in the sorted list</span>
+    <span class="n">assigned</span> <span class="o">=</span> <span class="n">candidates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Assigned: </span><span class="si">%s</span><span class="s2"> (travel: </span><span class="si">%d</span><span class="s2">s, score: </span><span class="si">%.4f</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">],</span> <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;travel_time_seconds&quot;</span><span class="p">],</span> <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Select destination hospital based on call nature</span>
+    <span class="c1"># (In reality, hospital selection happens after on-scene assessment,</span>
+    <span class="c1"># but we compute a preliminary recommendation at dispatch time)</span>
+    <span class="n">patient_needs</span> <span class="o">=</span> <span class="n">_infer_patient_needs</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+    <span class="n">hospitals</span> <span class="o">=</span> <span class="n">build_hospital_status</span><span class="p">()</span>
+
+    <span class="c1"># Use call location as proxy for unit location (unit hasn&#39;t arrived yet)</span>
+    <span class="n">recommended_hospital</span> <span class="o">=</span> <span class="n">select_hospital</span><span class="p">(</span>
+        <span class="n">patient_needs</span><span class="p">,</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">],</span> <span class="n">hospitals</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">recommended_hospital</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Hospital: </span><span class="si">%s</span><span class="s2"> (transport: </span><span class="si">%.1f</span><span class="s2"> min, capacity: </span><span class="si">%d%%</span><span class="s2">)&quot;</span><span class="p">,</span>
+                    <span class="n">recommended_hospital</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                    <span class="n">recommended_hospital</span><span class="p">[</span><span class="s2">&quot;transport_time_minutes&quot;</span><span class="p">],</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">recommended_hospital</span><span class="p">[</span><span class="s2">&quot;capacity_ratio&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+
+    <span class="c1"># Build the complete dispatch decision record</span>
+    <span class="n">decision</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;call_id&quot;</span><span class="p">:</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;call_id&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;call_priority&quot;</span><span class="p">:</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;call_location&quot;</span><span class="p">:</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;nature_code&quot;</span><span class="p">:</span> <span class="n">call</span><span class="p">[</span><span class="s2">&quot;nature_code&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;assigned_unit&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;unit_id&quot;</span><span class="p">:</span> <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;unit_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;capability&quot;</span><span class="p">:</span> <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;capability&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;estimated_response_time_seconds&quot;</span><span class="p">:</span> <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;travel_time_seconds&quot;</span><span class="p">],</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;recommended_hospital&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;hospital_id&quot;</span><span class="p">:</span> <span class="n">recommended_hospital</span><span class="p">[</span><span class="s2">&quot;hospital_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">recommended_hospital</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;transport_time_minutes&quot;</span><span class="p">:</span> <span class="n">recommended_hospital</span><span class="p">[</span><span class="s2">&quot;transport_time_minutes&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;capacity_ratio&quot;</span><span class="p">:</span> <span class="n">recommended_hospital</span><span class="p">[</span><span class="s2">&quot;capacity_ratio&quot;</span><span class="p">],</span>
+        <span class="p">}</span> <span class="k">if</span> <span class="n">recommended_hospital</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;coverage_impact&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;assigned_unit_impact&quot;</span><span class="p">:</span> <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;coverage_impact&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;backup_available&quot;</span><span class="p">:</span> <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;coverage_impact&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;candidates_evaluated&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">),</span>
+        <span class="s2">&quot;all_candidates&quot;</span><span class="p">:</span> <span class="n">candidates</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span>  <span class="c1"># top 5 for audit trail</span>
+        <span class="s2">&quot;decision_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;target_response_time_seconds&quot;</span><span class="p">:</span> <span class="n">RESPONSE_TIME_TARGETS</span><span class="p">[</span><span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">]],</span>
+        <span class="s2">&quot;meets_target&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;travel_time_seconds&quot;</span><span class="p">]</span>
+            <span class="o">&lt;=</span> <span class="n">RESPONSE_TIME_TARGETS</span><span class="p">[</span><span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">]]</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Meets target: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%d</span><span class="s2">s vs </span><span class="si">%d</span><span class="s2">s threshold)&quot;</span><span class="p">,</span>
+                <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;meets_target&quot;</span><span class="p">],</span>
+                <span class="n">assigned</span><span class="p">[</span><span class="s2">&quot;travel_time_seconds&quot;</span><span class="p">],</span>
+                <span class="n">RESPONSE_TIME_TARGETS</span><span class="p">[</span><span class="n">call</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">]])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="c1"># In production, persist the decision for the audit trail:</span>
+    <span class="c1"># store_dispatch_decision(decision)</span>
+
+    <span class="k">return</span> <span class="n">decision</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_infer_patient_needs</span><span class="p">(</span><span class="n">call</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map call nature codes to hospital capability requirements.</span>
+<span class="sd">    In production, this mapping comes from medical direction protocols</span>
+<span class="sd">    and is maintained by the EMS medical director.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nature_to_capabilities</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;CHEST_PAIN&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cath_lab&quot;</span><span class="p">],</span> <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;STEMI&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cath_lab&quot;</span><span class="p">,</span> <span class="s2">&quot;interventional_cardiology&quot;</span><span class="p">],</span>
+                  <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;STROKE&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;stroke_center&quot;</span><span class="p">],</span> <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;TRAUMA_MAJOR&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;level_1_trauma&quot;</span><span class="p">],</span> <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;FALL&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;MVA&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;general_surgery&quot;</span><span class="p">],</span> <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+        <span class="s2">&quot;DIFFICULTY_BREATHING&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">nature_to_capabilities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="n">call</span><span class="p">[</span><span class="s2">&quot;nature_code&quot;</span><span class="p">],</span>
+        <span class="p">{</span><span class="s2">&quot;required_capabilities&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;acuity_level&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+    <span class="p">)</span>
+
+<span class="c1"># --- Run the full example ---</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Simulate an incoming Priority 1 cardiac call</span>
+    <span class="n">incoming_call</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;call_id&quot;</span><span class="p">:</span> <span class="s2">&quot;CAD-2026-0601-1847&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;location&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="mf">38.9100</span><span class="p">,</span> <span class="s2">&quot;lng&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">77.0350</span><span class="p">},</span>
+        <span class="s2">&quot;priority&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;required_capability&quot;</span><span class="p">:</span> <span class="s2">&quot;ALS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nature_code&quot;</span><span class="p">:</span> <span class="s2">&quot;CHEST_PAIN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;patient_age&quot;</span><span class="p">:</span> <span class="mi">67</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Run dispatch optimization</span>
+    <span class="n">decision</span> <span class="o">=</span> <span class="n">dispatch_ambulance</span><span class="p">(</span><span class="n">incoming_call</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- DISPATCH DECISION ---&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">decision</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+
+    <span class="c1"># Run background repositioning optimization</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- REPOSITIONING OPTIMIZATION ---&quot;</span><span class="p">)</span>
+    <span class="n">fleet</span> <span class="o">=</span> <span class="n">build_initial_fleet</span><span class="p">()</span>
+    <span class="n">demand_zones</span> <span class="o">=</span> <span class="n">build_demand_zones</span><span class="p">()</span>
+    <span class="n">moves</span> <span class="o">=</span> <span class="n">optimize_repositioning</span><span class="p">(</span><span class="n">fleet</span><span class="p">,</span> <span class="n">demand_zones</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">move</span> <span class="ow">in</span> <span class="n">moves</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  MOVE: </span><span class="si">{</span><span class="n">move</span><span class="p">[</span><span class="s1">&#39;unit_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">move</span><span class="p">[</span><span class="s1">&#39;to_zone&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">move</span><span class="p">[</span><span class="s1">&#39;repositioning_time_seconds&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">s) | </span><span class="si">{</span><span class="n">move</span><span class="p">[</span><span class="s1">&#39;reason&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">moves</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  No repositioning needed. Coverage is adequate.&quot;</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example works. Run it and you'll get a scored dispatch decision and repositioning recommendations. But there's a meaningful distance between &quot;works in a script&quot; and &quot;handles real 911 calls.&quot; Here's where that gap lives:</p>
+<p><strong>Real travel times.</strong> The Haversine approximation is wildly inaccurate for urban routing. A point 1 km away across a river with no bridge might be 15 minutes by road. Production requires Amazon Location Service (or equivalent) with real-time traffic data. You'd call <code>calculate_route_matrix</code> to get many-to-many travel times for all candidate units simultaneously, then cache results in ElastiCache with a 2-3 minute TTL.</p>
+<p><strong>GPS streaming pipeline.</strong> This example uses static fleet positions. Production ingests GPS updates every 5-15 seconds from every unit via Kinesis Data Streams. A Lambda consumer updates DynamoDB on each fix. You need conditional writes (only accept newer timestamps) to handle out-of-order delivery, and you need to detect GPS staleness (unit hasn't reported in 60 seconds = position is unreliable).</p>
+<p><strong>Demand forecasting.</strong> The static demand weights here are a placeholder. Production trains a time-series model on historical call data (time of day, day of week, weather, events) and hosts it on a SageMaker endpoint. The repositioning optimizer queries this model every cycle to get current demand predictions. Even a simple model (gradient-boosted trees on temporal features) dramatically outperforms static weights.</p>
+<p><strong>Hospital status integration.</strong> Hospital diversion status, ED census, and bed availability change constantly. Production subscribes to hospital system feeds (HL7 ADT messages, proprietary APIs, or even manual updates from hospital liaisons) via EventBridge. The hospital status table in DynamoDB must have a &quot;last updated&quot; timestamp so you can detect stale data and fall back to conservative assumptions.</p>
+<p><strong>CAD system integration.</strong> The dispatch decision needs to flow back to the Computer-Aided Dispatch system that dispatchers use. This is typically a proprietary system (Tyler New World, Hexagon, Motorola PremierOne) with its own API or HL7 interface. Integration testing with the CAD vendor is a multi-month effort.</p>
+<p><strong>Latency budget.</strong> A Priority 1 dispatch must complete in under 2 seconds end-to-end. That means: API Gateway receives the request (50ms), Lambda cold start (eliminated with provisioned concurrency), DynamoDB reads (single-digit ms), travel time lookups (cache hit: 1ms, cache miss with Location Service: 200-500ms), scoring computation (10-50ms), DynamoDB write (single-digit ms). Every millisecond matters. Profile relentlessly.</p>
+<p><strong>Error handling and fallback.</strong> If the Location Service is down, fall back to cached travel times (even if stale). If DynamoDB is unreachable, fall back to an in-memory snapshot. If the scoring function throws an exception, fall back to pure proximity dispatch. The system must always produce an answer. &quot;Sorry, the optimizer crashed&quot; is not acceptable when someone is having a heart attack.</p>
+<p><strong>Simulation and backtesting.</strong> Before deploying any change to the scoring weights or coverage model, replay 6 months of historical calls through the new logic and compare response time distributions against the old logic. Build a discrete-event simulator that models unit state transitions, travel times, on-scene times, and hospital turnaround times. This is your safety net.</p>
+<p><strong>Dispatcher override tracking.</strong> Dispatchers will (and should) override the system's recommendations. Track every override: which unit was recommended, which was actually sent, and why. This data is gold for improving the model. If dispatchers consistently override in a specific scenario, the model is missing something.</p>
+<p><strong>Multi-casualty incident (MCI) mode.</strong> The optimization model assumes independent, sequential calls. An MCI (bus crash, building collapse) generates 5-20 simultaneous patients and requires a completely different allocation strategy. Production needs an MCI detection trigger that switches the system from normal optimization to MCI protocols (triage-based allocation, staging areas, transport coordination).</p>
+<p><strong>Audit and compliance.</strong> Every dispatch decision is a medical record. Retain for 7+ years per state EMS regulations. Encrypt at rest with KMS CMK. Enable CloudTrail for all API calls. The DynamoDB table needs point-in-time recovery enabled. Consider DynamoDB export to S3 for long-term archival.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter14.08-ambulance-routing-dispatch.html">Recipe 14.8</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

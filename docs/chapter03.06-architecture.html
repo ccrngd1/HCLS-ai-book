@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.6 Architecture and Implementation: Healthcare Fraud, Waste, and Abuse Detection</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested nav-active" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-36-architecture-and-implementation-healthcare-fraud-waste-and-abuse-detection">Recipe 3.6 Architecture and Implementation: Healthcare Fraud, Waste, and Abuse Detection</h1>
+<p><em>Companion to <a href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon S3 as the data lake foundation.</strong> Claims, remittance, eligibility, provider data, external reference data, and case outcomes all land in S3. Partitioned Parquet for analytical access, JSON for raw records, Iceberg or Hudi table formats for the mutable claim data (claims get adjusted, and the lake has to reflect state changes without losing history). Customer-managed KMS encryption on every bucket. HIPAA-eligible under the BAA.</p>
+<p><strong>AWS Glue for the data catalog and ETL.</strong> Schema registry for the diverse inputs, crawler-driven discovery for semi-structured sources, PySpark jobs for the transformations. Entity resolution runs as Glue jobs using fuzzy-matching libraries and external identifier APIs. Glue gives observability, job lineage, and cost governance that ad-hoc Spark would not.</p>
+<p><strong>Amazon EMR or AWS Glue for heavy batch processing.</strong> Feature computation across the entire claim history (billions of rows over multi-year windows) is too heavy for serverless Lambda. EMR Spark clusters (transient, spun up for the batch jobs and torn down) are cost-efficient for the monthly cohort baseline rebuilds and the graph construction jobs.</p>
+<p><strong>Amazon Neptune for the relationship graph.</strong> Neptune is a managed graph database supporting property graph (Gremlin) and RDF (SPARQL) queries. The FWA graph (providers, patients, organizations, claims, payments, ownerships) fits the property graph model well. Queries like &quot;find all entities within three hops of provider X, weighted by payment flow&quot; are native Gremlin. Neptune scales to billions of nodes and edges, encrypts at rest with KMS, and is HIPAA-eligible under the BAA.</p>
+<p><strong>Amazon Neptune ML for GNN embeddings.</strong> Neptune's built-in integration with SageMaker allows GNN training on the graph (using GraphSAGE or similar architectures) and produces node embeddings that capture structural patterns. Embeddings go into a vector store for similarity search (find providers most similar to this indicted provider).</p>
+<p><strong>Amazon OpenSearch Service (with k-NN vector search) for the case management backend.</strong> Every flag, every case, every piece of evidence gets indexed. Investigators query OpenSearch for cases, the provider management team queries for prior-flags, the audit team queries for compliance evidence. OpenSearch's k-NN vector search supports embedding-based similarity on provider vectors. Fine-grained access control is critical because SIU data has tighter access restrictions than general payment integrity data.</p>
+<p><strong>Amazon DynamoDB for case state and workflow.</strong> Case management state (case status, assigned investigator, current action due dates, next review date) lives in DynamoDB for low-latency reads and high-volume writes. Single-digit millisecond latency matters when investigators are navigating large caseloads in a UI.</p>
+<p><strong>Amazon SageMaker for model training and hosting.</strong> Supervised classifiers (XGBoost), unsupervised detectors (Isolation Forest via SageMaker Processing), and custom GNN training via Neptune ML all run on SageMaker. Feature Store holds the feature vectors with point-in-time correctness for reproducibility. SageMaker Clarify produces bias reports on the supervised models and explanation artifacts for individual predictions.</p>
+<p><strong>Amazon Comprehend Medical plus Amazon Bedrock for documentation review.</strong> When medical records are attached to a case, Comprehend Medical extracts structured entities (diagnoses, medications, procedures) for rule-based medical-necessity checks. Bedrock (Claude, Llama, or other HIPAA-eligible LLMs) handles the harder tasks: summarizing records, assessing whether documentation supports a billed code, detecting documentation cloning patterns, and generating plain-language narrative summaries for investigators. Always as a productivity tool, never as a decision-maker, and always with human review attached.</p>
+<p><strong>Amazon Step Functions for orchestration.</strong> Batch feature computation, graph refresh, cohort baseline regeneration, model retraining, and scheduled rule evaluation are multi-step workflows. State machines give retry, error handling, and visibility.</p>
+<p><strong>Amazon EventBridge for event routing.</strong> Flags, case state transitions, and external events (new LEIE exclusion, new Sunshine Act publication, new claim batch landing) all route through EventBridge. Subscribers are the case management service, the audit logger, notification services, and downstream analytics.</p>
+<p><strong>Amazon MSK or Amazon Kinesis for streaming inputs.</strong> Real-time claim and eligibility feeds (from clearinghouses or EDI gateways) flow through streaming. For near-real-time eligibility integrity checks (is the patient deceased, is the provider excluded), the streaming path gates claims before payment.</p>
+<p><strong>Amazon QuickSight for leadership dashboards.</strong> Case volume, detection rate by detector, false-positive rate, dollar impact by scheme type, case time-to-resolution, subgroup fairness metrics. QuickSight sits on Athena over S3 plus OpenSearch queries. Separate dashboards for SIU leadership, payment integrity leadership, and executive compliance reporting.</p>
+<p><strong>AWS Lambda for lightweight event processing.</strong> Rule evaluations on individual claims, event handlers for case state transitions, notifications, and integration with external law enforcement portals (when cases are referred out).</p>
+<p><strong>Amazon API Gateway and AWS AppSync for the case management front end.</strong> Investigators interact with cases through a web application; AppSync (GraphQL) is often a good fit because investigator views are graph-shaped (follow the relationships). API Gateway for REST endpoints where needed.</p>
+<p><strong>AWS Secrets Manager for external credentials.</strong> State business filing APIs, OIG/LEIE feeds, and third-party data vendors all require credentials. Rotated and audited.</p>
+<p><strong>AWS CloudTrail and Amazon CloudWatch.</strong> CloudTrail data events on every PHI-bearing store and on case data stores. Every investigator action, every case state change, every data access is logged. CloudWatch dashboards for pipeline health and detector operating metrics. This audit trail is not optional; it's part of the regulatory posture of the program.</p>
+<p><strong>AWS Clean Rooms (optional, for multi-payer collaboration).</strong> Some schemes span payers (a provider billing Medicaid, Medicare Advantage, and commercial payers for the same patterns). Multi-payer intelligence sharing is regulated but permitted in specified scenarios. AWS Clean Rooms enables privacy-preserving joins across multiple payer datasets. Not a day-one feature, but worth knowing about.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[Claims feed&lt;br/&gt;837/835/270/271] --&gt; B[Amazon Kinesis&lt;br/&gt;claims-stream]
+    C[Pharmacy / Lab&lt;br/&gt;/ DME feeds] --&gt; B
+    D[Provider data&lt;br/&gt;NPPES / PECOS / LEIE / SAM] --&gt; E[AWS Transfer Family&lt;br/&gt;+ AWS Glue]
+    F[External: Sunshine Act&lt;br/&gt;state filings / death master] --&gt; E
+    G[SIU tips / complaints] --&gt; H[API Gateway]
+
+    B --&gt; I[AWS Lambda&lt;br/&gt;stream-normalizer]
+    E --&gt; J[AWS Glue Jobs&lt;br/&gt;batch-normalizer]
+    H --&gt; J
+    I --&gt; K[(Amazon S3&lt;br/&gt;data-lake)]
+    J --&gt; K
+
+    K --&gt; L[AWS Glue&lt;br/&gt;entity-resolution]
+    L --&gt; M[(Amazon S3&lt;br/&gt;resolved-entities)]
+
+    M --&gt; N[AWS Glue /&lt;br/&gt;Amazon EMR&lt;br/&gt;feature-computation]
+    N --&gt; O[(SageMaker&lt;br/&gt;Feature Store)]
+
+    M --&gt; P[AWS Glue /&lt;br/&gt;Amazon EMR&lt;br/&gt;graph-loader]
+    P --&gt; Q[(Amazon Neptune&lt;br/&gt;fwa-graph)]
+
+    Q --&gt; R[Amazon Neptune ML&lt;br/&gt;GNN embeddings]
+    R --&gt; S[(OpenSearch&lt;br/&gt;vector index)]
+
+    O --&gt; T[AWS Lambda&lt;br/&gt;rules-engine]
+    O --&gt; U[SageMaker Processing&lt;br/&gt;statistical-detectors]
+    Q --&gt; V[SageMaker Processing&lt;br/&gt;graph-analytics]
+    O --&gt; W[SageMaker Hosting&lt;br/&gt;supervised-reranker]
+
+    T --&gt; X[Amazon EventBridge&lt;br/&gt;fwa-flags]
+    U --&gt; X
+    V --&gt; X
+    W --&gt; X
+
+    X --&gt; Y[AWS Lambda&lt;br/&gt;evidence-aggregator]
+    Y --&gt; Z[(Amazon DynamoDB&lt;br/&gt;case-state)]
+    Y --&gt; AA[(Amazon OpenSearch&lt;br/&gt;case-index)]
+
+    Z --&gt; AB[AWS AppSync&lt;br/&gt;case-api]
+    AA --&gt; AB
+    Q --&gt; AB
+    S --&gt; AB
+    AB --&gt; AC[Investigator Workbench&lt;br/&gt;web UI]
+
+    AC --&gt; AD[AWS Lambda&lt;br/&gt;documentation-assist]
+    AD --&gt; AE[Amazon Comprehend&lt;br/&gt;Medical]
+    AD --&gt; AF[Amazon Bedrock&lt;br/&gt;doc-review-LLM]
+
+    AC --&gt; AG[AWS Lambda&lt;br/&gt;outcome-capture]
+    AG --&gt; AH[(S3&lt;br/&gt;case-outcomes)]
+    AH --&gt; AI[Amazon EventBridge&lt;br/&gt;Scheduler] --&gt; AJ[Step Functions&lt;br/&gt;retraining-pipeline]
+    AJ --&gt; W
+    AJ --&gt; U
+
+    AA --&gt; AK[Amazon Athena]
+    AK --&gt; AL[Amazon QuickSight&lt;br/&gt;siu-dashboards]
+
+    AM[CloudWatch] -.-&gt; T
+    AM -.-&gt; U
+    AM -.-&gt; V
+    AM -.-&gt; W
+    AN[CloudTrail&lt;br/&gt;data events] -.-&gt; K
+    AN -.-&gt; Z
+    AN -.-&gt; AA
+    AN -.-&gt; Q
+
+    style K fill:#9ff,stroke:#333
+    style M fill:#9ff,stroke:#333
+    style O fill:#9ff,stroke:#333
+    style Q fill:#ffc,stroke:#333
+    style S fill:#ffc,stroke:#333
+    style Z fill:#f9f,stroke:#333
+    style AA fill:#f9f,stroke:#333
+    style AH fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon S3, AWS Glue, Amazon EMR, Amazon Neptune (with Neptune ML), Amazon SageMaker (Processing, Training, Hosting, Feature Store, Clarify), Amazon OpenSearch Service (with k-NN vector search), Amazon DynamoDB, Amazon Kinesis, Amazon MSK (optional), Amazon Comprehend Medical, Amazon Bedrock, AWS Step Functions, Amazon EventBridge, AWS Lambda, Amazon API Gateway, AWS AppSync, Amazon Athena, Amazon QuickSight, AWS Secrets Manager, AWS KMS, AWS CloudTrail, Amazon CloudWatch, AWS Transfer Family, AWS Clean Rooms (optional).</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Strict least-privilege per role. The rules-engine Lambda reads from the feature store and the S3 rules bucket, writes to EventBridge only. Investigator roles read case data (segmented by case ownership) and write case updates only. Graph queries have read scopes tied to investigator assignments. No <code>*</code> permissions anywhere; every action is scoped to specific resources. Separate roles for analytics engineers (write pipeline artifacts) and investigators (read case data).</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>Signed AWS BAA. All services configured per the BAA requirements. See the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a>.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Customer-managed KMS keys on every PHI-bearing store: S3, DynamoDB, Neptune, OpenSearch, SageMaker (volumes, model artifacts, Feature Store), MSK. Kinesis SSE with CMK. TLS 1.2 or higher in transit everywhere.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production deployment in a VPC with VPC endpoints for S3, DynamoDB, KMS, SageMaker runtime, Bedrock, Comprehend Medical, and Neptune. Neptune is always in a VPC (no public endpoint). OpenSearch in VPC with fine-grained access control. Lambdas that access PHI stores run in the VPC.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail and Data Events</strong></td>
+<td>Enabled with data events on every PHI-bearing store and on the case management DynamoDB and OpenSearch resources. Every investigator read and write is logged. Logs are stored in a separate account under Organizations SCPs that prevent deletion, because these logs may be subpoenaed.</td>
+</tr>
+<tr>
+<td><strong>Legal Privilege Architecture</strong></td>
+<td>If the SIU operates under legal privilege, the case management data may need to be in an account or VPC isolated from general analytics, with access controlled by legal counsel. Coordinate with the general counsel's office before designing the architecture.</td>
+</tr>
+<tr>
+<td><strong>Regulatory Referral Workflows</strong></td>
+<td>Documented workflows for CMS fraud reporting (42 CFR 422.504(h) for Medicare Advantage, 42 CFR 438.608 for Medicaid MCOs). OIG hotline referrals. State Medicaid Fraud Control Unit referrals. SIU-to-DOJ workflows for False Claims Act cases. Infrastructure must support documented, auditable handoffs including data packages that meet the receiving agency's specifications.</td>
+</tr>
+<tr>
+<td><strong>Clinical Governance</strong></td>
+<td>Clinical reviewers (typically RNs, MDs with coding credentials) are part of the case team for medical-necessity cases. Their work (medical records review, documentation assessment) must be integrated into the case management workflow.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td><a href="https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files">CMS Synthetic Public Use Files (SynPUF)</a> provide synthetic Medicare claims for development and testing. <a href="https://github.com/synthetichealth/synthea">Synthea</a> generates synthetic patient and provider data. <a href="https://openpaymentsdata.cms.gov/">CMS Open Payments</a> is public Sunshine Act data. <a href="https://oig.hhs.gov/exclusions/">OIG LEIE</a> is public exclusion data. <a href="https://sam.gov/">SAM.gov</a> is public federal exclusion data. Never use real PHI in development.</td>
+</tr>
+<tr>
+<td><strong>External Data Subscriptions</strong></td>
+<td>Some state business filing APIs and property record sources have commercial data providers (LexisNexis, Thomson Reuters CLEAR, others). Medical fraud analytics vendors (SAS Fraud Framework, Optum Impact Intelligence, others) sometimes provide enriched feeds. Factor these into operational cost.</td>
+</tr>
+<tr>
+<td><strong>Retention</strong></td>
+<td>Investigation records retained per the most conservative applicable schedule. FCA statute-of-limitations considerations can extend this to ten years or longer. Criminal case records may be retained indefinitely under specific programs. Consult legal before setting lifecycle policies on these buckets.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>For a mid-size regional payer (say, 1 million members, 30 million claims per year): S3 data lake: ~$500-1,500/month at multi-year retention. Glue and EMR for ETL and feature computation: ~$800-3,000/month. Neptune for the graph (tens of millions of nodes, hundreds of millions of edges): ~$2,000-6,000/month. OpenSearch case index: ~$500-1,500/month. SageMaker training and hosting: ~$500-2,000/month. Bedrock and Comprehend Medical for documentation review: usage-dependent, typically $300-1,500/month. DynamoDB for case state: ~$100-400/month. Total infrastructure: typically $5,000-16,000/month. Compare to typical FWA recoveries: mature SIU programs recover multiples of program cost annually, often 5x to 15x. The infrastructure cost is a small fraction of investigator staffing cost and a smaller fraction of recoveries.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Data lake foundation for claims, eligibility, remittance, provider data, external reference data, case outcomes</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Data catalog, ETL jobs, entity resolution, schema evolution</td>
+</tr>
+<tr>
+<td><strong>Amazon EMR</strong></td>
+<td>Heavy-weight Spark jobs for feature computation and graph construction</td>
+</tr>
+<tr>
+<td><strong>Amazon Neptune</strong></td>
+<td>Property graph of providers, patients, entities, payments, ownerships</td>
+</tr>
+<tr>
+<td><strong>Amazon Neptune ML</strong></td>
+<td>GNN training for provider and entity embeddings</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Per-entity feature vectors with point-in-time correctness</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Processing</strong></td>
+<td>Unsupervised detectors (Isolation Forest, statistical baselines, graph analytics)</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Training and Hosting</strong></td>
+<td>Supervised re-ranker training and real-time scoring</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Clarify</strong></td>
+<td>Bias and fairness analysis on the supervised re-ranker</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Service</strong></td>
+<td>Case index, flag audit, vector similarity search for embedding-based queries</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Case state and workflow for low-latency investigator UI</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis</strong></td>
+<td>Real-time claim feed for near-real-time eligibility integrity checks</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (rules-engine)</strong></td>
+<td>CCI edits, medical necessity rules, eligibility integrity, exclusion checks</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (evidence-aggregator)</strong></td>
+<td>Bundles multi-source flags into case packets</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (documentation-assist)</strong></td>
+<td>Orchestrates medical records NLP via Comprehend Medical and Bedrock</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (outcome-capture)</strong></td>
+<td>Records case outcomes and writes labels for retraining</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Entity extraction from clinical documentation</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>LLM-assisted documentation review, summarization, clone detection</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates batch pipelines (feature refresh, graph rebuild, retraining)</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Fans flags out to evidence aggregator, audit, notification, dashboard</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway / AWS AppSync</strong></td>
+<td>Case management API for the investigator workbench</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena</strong></td>
+<td>SQL-over-S3 for ad-hoc analyst queries against the lake</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>SIU leadership, payment integrity, and compliance dashboards</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>External API credentials (state filings, vendor data, regulatory portals)</td>
+</tr>
+<tr>
+<td><strong>AWS Clean Rooms (optional)</strong></td>
+<td>Multi-payer privacy-preserving intelligence sharing</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed keys for every PHI-bearing store</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging on every PHI store and every investigator action</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, detector health, false-positive rates, case throughput</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> These aws-samples repositories demonstrate patterns that apply here:</p>
+<ul>
+<li><a href="https://github.com/aws/graph-notebook"><code>graph-notebook</code></a>: Neptune notebooks, Gremlin traversal patterns, and examples for graph analytics including community detection.</li>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Isolation Forest and XGBoost examples applicable to the statistical and supervised layers; Feature Store examples for the per-entity feature architecture.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest and normalize claims plus reference data.</strong> Claims arrive from a clearinghouse in 837 format or from internal adjudication in a proprietary format. Provider data arrives from NPPES (monthly FTP), LEIE (monthly), state filings (variable). The normalization step parses each source, canonicalizes identifiers, and lands everything in the data lake with explicit source-of-truth tracking.</p>
+<pre class="code code-plain"><code>FUNCTION normalize_claim(raw_claim):
+    // Parse the 837 or proprietary payload into a canonical claim structure.
+    claim = parse_claim(raw_claim)
+
+    // Canonical service line list with harmonized coding.
+    normalized_lines = []
+    FOR each line in claim.service_lines:
+        normalized_line = {
+            cpt_hcpcs:        line.procedure_code,
+            modifiers:        normalize_modifiers(line.modifiers),    // list
+            diagnoses:        line.diagnosis_pointers_to_icd10(claim.diagnoses),
+            units:            line.units,
+            billed_amount:    line.billed_amount,
+            allowed_amount:   line.allowed_amount,
+            paid_amount:      line.paid_amount,
+            service_date:     line.service_date,
+            place_of_service: line.pos_code
+        }
+        normalized_lines.append(normalized_line)
+
+    canonical = {
+        claim_id:             claim.payer_claim_id,
+        external_claim_id:    claim.submitter_claim_id,
+        billing_npi:          claim.billing_provider_npi,
+        rendering_npi:        claim.rendering_provider_npi,
+        facility_npi:         claim.facility_npi,
+        patient_id:           resolve_patient(claim.subscriber_id, claim.member_id),
+        admission_date:       claim.admission_date,
+        discharge_date:       claim.discharge_date,
+        primary_diagnosis:    claim.diagnoses[0] if claim.diagnoses else null,
+        all_diagnoses:        claim.diagnoses,
+        service_lines:        normalized_lines,
+        claim_total_billed:   sum(l.billed_amount for l in normalized_lines),
+        claim_total_paid:     sum(l.paid_amount for l in normalized_lines),
+        submission_date:      claim.submission_date,
+        adjudication_date:    claim.adjudication_date,
+        authorization_id:     claim.authorization_reference,
+        source:               raw_claim.source      // &quot;clearinghouse&quot; | &quot;internal_adjudication&quot;
+    }
+
+    // Write to the lake as Parquet, partitioned by service month and payer line of business.
+    S3.PutObject(
+        bucket = &quot;fwa-data-lake&quot;,
+        key    = f&quot;claims/lob={canonical.lob}/year={year_of(canonical.service_lines[0].service_date)}/month={month_of(canonical.service_lines[0].service_date)}/{canonical.claim_id}.parquet&quot;,
+        body   = parquet_encode([canonical]),
+        sse    = &quot;aws:kms&quot;
+    )
+
+    return canonical
+</code></pre>
+<p><strong>Step 2: Resolve entities across sources.</strong> Provider, organization, patient, and ownership entities may appear in multiple sources with different identifiers. Entity resolution produces canonical IDs that the rest of the pipeline uses.</p>
+<pre class="code code-plain"><code>FUNCTION resolve_providers(claims_batch, external_provider_data):
+    // Standard identifiers are the starting point.
+    // NPI is authoritative for individual providers when present and valid.
+    // For organizations, EIN is usually but not always available.
+
+    // Build candidate matches from the claims data.
+    provider_candidates = extract_provider_tuples(claims_batch)
+    // Each tuple: { npi, name, address, specialty, appearance_count, date_range }
+
+    // Augment with external sources.
+    nppes_records = load_latest_nppes()                     // canonical NPI metadata
+    pecos_records = load_latest_pecos_enrollment()          // Medicare enrollment status
+    leie_records  = load_latest_leie()                      // OIG exclusions
+    sam_records   = load_latest_sam_exclusions()            // federal exclusions
+    state_license = load_latest_state_licensure()          // state-by-state
+    sunshine_act  = load_latest_open_payments()             // industry payments to providers
+
+    resolved_providers = []
+    FOR each candidate in provider_candidates:
+        // Primary resolution: match on NPI when present and valid.
+        match = nppes_records.get_by_npi(candidate.npi)
+
+        IF match is null:
+            // Fallback matching: fuzzy name, address, license.
+            match = fuzzy_match(candidate, nppes_records, threshold = FUZZY_MATCH_THRESHOLD)
+
+        IF match is null:
+            emit_metric(&quot;unresolved_provider&quot;, 1)
+            route_to_resolution_queue(candidate)
+            continue
+
+        // Augment with exclusion status.
+        is_excluded = leie_records.contains(match.npi) OR sam_records.contains(match.npi)
+        is_enrolled = pecos_records.is_active(match.npi)
+        license_status = state_license.lookup(match.npi, match.practice_state)
+
+        // Industry payment exposure from Sunshine Act.
+        industry_payments = sunshine_act.payments_for(match.npi)
+
+        resolved = {
+            canonical_provider_id:   hash_to_canonical_id(match.npi, match.name, match.primary_address),
+            npi:                     match.npi,
+            name:                    match.name,
+            specialty:               match.primary_specialty,
+            practice_address:        match.practice_address,
+            practice_state:          match.practice_state,
+            is_excluded:             is_excluded,
+            exclusion_sources:       [s for s in [&quot;LEIE&quot;,&quot;SAM&quot;] if excluded_in(s)],
+            is_medicare_enrolled:    is_enrolled,
+            license_status:          license_status,
+            industry_payment_total:  industry_payments.total_12_months,
+            industry_payment_sources: industry_payments.top_sources,
+            death_date:              provider_death_master.get(match.npi),   // NTIS/SSA data where licensed
+            resolved_at:             NOW(),
+            source_keys:              candidate.source_keys    // for lineage
+        }
+        resolved_providers.append(resolved)
+
+    // Write back as resolved-entity Parquet.
+    S3.PutObject(
+        bucket = &quot;fwa-resolved-entities&quot;,
+        key    = f&quot;providers/year={year(NOW())}/month={month(NOW())}/batch-{uuid()}.parquet&quot;,
+        body   = parquet_encode(resolved_providers)
+    )
+
+    return resolved_providers
+</code></pre>
+<p><strong>Step 3: Build and refresh the relationship graph.</strong> The graph loader takes the resolved entities and the claim activity and produces the nodes and edges in Neptune. Refreshes are incremental (upsert changed relationships) to avoid full rebuilds.</p>
+<pre class="code code-plain"><code>FUNCTION refresh_graph(since_timestamp):
+    // Incremental refresh: only process claims, enrollments, and external data
+    // changed since the last refresh.
+    new_claims = load_claims_since(since_timestamp)
+    new_providers = load_resolved_providers_since(since_timestamp)
+    new_ownerships = load_state_filings_since(since_timestamp)
+
+    // Upsert provider nodes.
+    FOR each provider in new_providers:
+        Neptune.UpsertVertex(
+            label = &quot;Provider&quot;,
+            id    = provider.canonical_provider_id,
+            properties = {
+                npi:              provider.npi,
+                name:             provider.name,
+                specialty:        provider.specialty,
+                practice_state:   provider.practice_state,
+                is_excluded:      provider.is_excluded,
+                death_date:       provider.death_date
+            }
+        )
+
+    // Upsert patient nodes (hashed patient ID, no PHI in graph node properties).
+    patient_ids = distinct(c.patient_id for c in new_claims)
+    FOR each patient_id in patient_ids:
+        Neptune.UpsertVertex(
+            label = &quot;Patient&quot;,
+            id    = hash_patient_id(patient_id),
+            properties = {
+                age_band:    age_band_for(patient_id),
+                region:      region_for(patient_id),
+                acuity_band: acuity_for(patient_id)
+            }
+        )
+
+    // Upsert organization nodes (billing organization = tax ID).
+    orgs = distinct(c.billing_organization for c in new_claims)
+    FOR each org in orgs:
+        Neptune.UpsertVertex(
+            label = &quot;Organization&quot;,
+            id    = org.canonical_org_id,
+            properties = {
+                ein:             org.ein,
+                org_type:        org.org_type,
+                primary_address: org.primary_address
+            }
+        )
+
+    // Upsert service edges.
+    FOR each claim in new_claims:
+        // Rendered-by edge: rendering provider -&gt; patient
+        Neptune.UpsertEdge(
+            label = &quot;rendered&quot;,
+            from  = claim.rendering_provider_canonical_id,
+            to    = hash_patient_id(claim.patient_id),
+            properties = {
+                claim_id:        claim.claim_id,
+                service_date:    claim.primary_service_date,
+                paid_amount:     claim.claim_total_paid
+            }
+        )
+        // Billed-by edge: organization -&gt; claim
+        Neptune.UpsertEdge(
+            label = &quot;billed&quot;,
+            from  = claim.billing_organization_canonical_id,
+            to    = hash_patient_id(claim.patient_id),
+            properties = {
+                claim_id:        claim.claim_id,
+                billed_amount:   claim.claim_total_billed,
+                paid_amount:     claim.claim_total_paid
+            }
+        )
+        // Referred-by edge: referring -&gt; rendering (when present)
+        IF claim.referring_npi is not null:
+            Neptune.UpsertEdge(
+                label = &quot;referred&quot;,
+                from  = claim.referring_provider_canonical_id,
+                to    = claim.rendering_provider_canonical_id,
+                properties = {
+                    claim_id:     claim.claim_id,
+                    service_date: claim.primary_service_date,
+                    cpt_category: category_of(claim.primary_cpt)
+                }
+            )
+
+    // Upsert ownership edges.
+    FOR each ownership in new_ownerships:
+        Neptune.UpsertEdge(
+            label = &quot;owns&quot;,
+            from  = ownership.owner_canonical_id,
+            to    = ownership.owned_canonical_id,
+            properties = {
+                ownership_percentage: ownership.percentage,
+                filing_date:          ownership.filing_date,
+                source:                ownership.source        // &quot;state_filing&quot; | &quot;SEC&quot; | &quot;sunshine_act_inference&quot;
+            }
+        )
+
+    // Co-location edges (entities at the same address).
+    address_clusters = cluster_by_address(all_entity_addresses())
+    FOR each cluster in address_clusters:
+        IF length(cluster.entities) &gt; 1:
+            FOR each pair in pairs(cluster.entities):
+                Neptune.UpsertEdge(
+                    label = &quot;co_located&quot;,
+                    from  = pair.a,
+                    to    = pair.b,
+                    properties = {
+                        shared_address: cluster.address,
+                        observed_since: cluster.earliest_observation
+                    }
+                )
+</code></pre>
+<p><strong>Step 4: Run the rules layer.</strong> Every claim (and every provider-day aggregate) goes through rule evaluation. Rules are versioned and explainable; each flag carries the rule ID and the input values that triggered it.</p>
+<pre class="code code-plain"><code>FUNCTION run_rules_on_claim(canonical_claim, resolved_entities):
+    flags = []
+    rules = lab_rules.get_active_rules()
+
+    FOR each rule in rules:
+        CASE rule.type:
+            &quot;cci_edit&quot;:
+                // Code pairs that cannot be billed together without modifier 59,
+                // or cannot be billed together at all.
+                pairs = find_cci_pairs(canonical_claim.service_lines, rule.cci_table_version)
+                FOR each pair in pairs:
+                    flags.append({
+                        rule_id:       rule.id,
+                        rule_type:     &quot;cci_edit_violation&quot;,
+                        severity:      rule.severity,
+                        pair:          pair,
+                        cci_rule:      rule.cci_rule_id,
+                        dollar_impact: estimate_dollar_impact(pair, canonical_claim)
+                    })
+
+            &quot;mue&quot;:
+                // Medically Unlikely Edits: per-code per-day unit caps.
+                FOR each line in canonical_claim.service_lines:
+                    mue_limit = mue_table.get(line.cpt_hcpcs)
+                    IF mue_limit is not null AND line.units &gt; mue_limit:
+                        flags.append({
+                            rule_id:         rule.id,
+                            rule_type:       &quot;mue_exceeded&quot;,
+                            severity:        rule.severity,
+                            cpt:             line.cpt_hcpcs,
+                            units_billed:    line.units,
+                            mue_limit:       mue_limit,
+                            dollar_impact:   estimate_dollar_impact_excess(line, mue_limit)
+                        })
+
+            &quot;exclusion_check&quot;:
+                // Provider or organization on LEIE/SAM excludes billing eligibility.
+                billing_org = resolved_entities.get(canonical_claim.billing_organization_canonical_id)
+                rendering_provider = resolved_entities.get(canonical_claim.rendering_provider_canonical_id)
+                IF billing_org.is_excluded OR rendering_provider.is_excluded:
+                    flags.append({
+                        rule_id:         rule.id,
+                        rule_type:       &quot;billing_by_excluded_entity&quot;,
+                        severity:        &quot;critical&quot;,
+                        excluded_entity_id: id_of_excluded,
+                        exclusion_source: exclusion_source_of_excluded,
+                        dollar_impact:   canonical_claim.claim_total_paid
+                    })
+
+            &quot;post_mortem_billing&quot;:
+                // Service date after patient or provider death.
+                IF patient_death_date_is_before(canonical_claim.patient_id, canonical_claim.primary_service_date):
+                    flags.append({
+                        rule_id:      rule.id,
+                        rule_type:    &quot;service_after_patient_death&quot;,
+                        severity:     &quot;critical&quot;,
+                        death_date:   patient_death_date(canonical_claim.patient_id),
+                        service_date: canonical_claim.primary_service_date,
+                        dollar_impact: canonical_claim.claim_total_paid
+                    })
+                IF provider_death_date_is_before(canonical_claim.rendering_provider_canonical_id, canonical_claim.primary_service_date):
+                    flags.append({
+                        rule_id:      rule.id,
+                        rule_type:    &quot;service_after_provider_death&quot;,
+                        severity:     &quot;critical&quot;,
+                        dollar_impact: canonical_claim.claim_total_paid
+                    })
+
+            &quot;medical_necessity&quot;:
+                // Diagnosis-to-procedure necessity check.
+                IF rule.applies_to(canonical_claim):
+                    result = rule.evaluate(canonical_claim)
+                    IF result.violation:
+                        flags.append({
+                            rule_id:          rule.id,
+                            rule_type:        &quot;medical_necessity_not_met&quot;,
+                            severity:         rule.severity,
+                            policy_reference: rule.policy_reference,
+                            violation_detail: result.violation_detail,
+                            dollar_impact:    estimate_dollar_impact(result, canonical_claim)
+                        })
+
+            &quot;impossible_volume&quot;:
+                // Provider-day total work time exceeds plausibility threshold.
+                // Evaluated on rolling provider-day aggregates, not per-claim.
+                pass   // see provider-level aggregate job
+
+    return flags
+</code></pre>
+<p><strong>Step 5: Run the statistical layer at provider scope.</strong> Per-provider feature computation (daily or weekly cadence) and detection of distributional drift versus peer groups and versus self-history.</p>
+<pre class="code code-plain"><code>FUNCTION score_provider_statistics(provider_id, evaluation_window):
+    features = FeatureStore.GetRecord(
+        feature_group = &quot;provider-features&quot;,
+        record_id     = provider_id,
+        as_of         = evaluation_window.end
+    )
+    // features includes: code_mix_entropy, em_level_distribution,
+    // modifier_59_rate, units_per_claim_distribution, billed_per_encounter,
+    // patients_per_day, claims_per_day, ...
+
+    peer_group = define_peer_group(
+        specialty = features.specialty,
+        region    = features.region,
+        setting   = features.practice_setting,
+        volume_band = features.volume_band
+    )
+    peer_baseline = FeatureStore.GetRecord(
+        feature_group = &quot;peer-group-baselines&quot;,
+        record_id     = peer_group.id,
+        as_of         = evaluation_window.end
+    )
+
+    flags = []
+
+    // E&amp;M level distribution z-score vs. peer.
+    FOR each em_level in [&quot;99211&quot;,&quot;99212&quot;,&quot;99213&quot;,&quot;99214&quot;,&quot;99215&quot;]:
+        provider_share = features.em_level_distribution.share_of(em_level)
+        peer_mean      = peer_baseline.em_level_distribution.mean_share_of(em_level)
+        peer_sd        = peer_baseline.em_level_distribution.sd_share_of(em_level)
+        IF peer_sd &gt; 0:
+            z = (provider_share - peer_mean) / peer_sd
+            IF abs(z) &gt;= EM_LEVEL_PEER_ZSCORE_THRESHOLD:           // e.g., 2.5
+                flags.append({
+                    rule_type:       &quot;peer_em_level_outlier&quot;,
+                    em_level:        em_level,
+                    provider_share:  provider_share,
+                    peer_mean:       peer_mean,
+                    peer_sd:         peer_sd,
+                    zscore:          z,
+                    dollar_impact:   estimate_em_distribution_impact(features, peer_baseline)
+                })
+
+    // Modifier 59 rate.
+    provider_mod59 = features.modifier_59_rate
+    peer_mean_mod59 = peer_baseline.modifier_59_rate_mean
+    peer_sd_mod59   = peer_baseline.modifier_59_rate_sd
+    IF peer_sd_mod59 &gt; 0 AND (provider_mod59 - peer_mean_mod59) / peer_sd_mod59 &gt;= MOD59_ZSCORE_THRESHOLD:
+        flags.append({
+            rule_type:     &quot;high_mod59_rate&quot;,
+            provider_rate: provider_mod59,
+            peer_mean:     peer_mean_mod59,
+            zscore:        (provider_mod59 - peer_mean_mod59) / peer_sd_mod59,
+            dollar_impact: estimate_mod59_impact(features, peer_baseline)
+        })
+
+    // Self-history CUSUM for drift detection across the time series of
+    // the provider&#x27;s monthly feature vector.
+    history_series = FeatureStore.GetHistoricalSeries(
+        feature_group = &quot;provider-features&quot;,
+        record_id     = provider_id,
+        window_months = 24
+    )
+    FOR each feature_name in CUSUM_MONITORED_FEATURES:
+        series_values = [m[feature_name] for m in history_series]
+        cusum_result = cusum_detect(series_values, analyte_params = {})
+        IF cusum_result.signal_fired:
+            flags.append({
+                rule_type:         &quot;self_history_drift&quot;,
+                feature:           feature_name,
+                change_point:      cusum_result.change_point_month,
+                pre_change_value:  cusum_result.pre_mean,
+                post_change_value: cusum_result.post_mean,
+                shift_magnitude:   cusum_result.post_mean - cusum_result.pre_mean,
+                dollar_impact:     estimate_drift_impact(features, cusum_result)
+            })
+
+    // Multivariate Isolation Forest on full provider feature vector.
+    if_score = isolation_forest_provider_model.score(features.vector)
+    IF if_score &lt;= PROVIDER_IF_THRESHOLD:
+        flags.append({
+            rule_type:        &quot;provider_multivariate_outlier&quot;,
+            anomaly_score:    if_score,
+            top_contributors: shap_explain(isolation_forest_provider_model, features.vector, top_k = 7),
+            dollar_impact:    estimate_outlier_impact(features, peer_baseline)
+        })
+
+    return flags
+</code></pre>
+<p><strong>Step 6: Run the graph layer.</strong> Graph features and community detection. Output is graph-based flags with subgraph descriptors that investigators can open.</p>
+<pre class="code code-plain"><code>FUNCTION run_graph_analytics():
+    // Community detection on the full graph. Louvain is the standard.
+    communities = Neptune.RunAlgorithm(
+        algorithm = &quot;louvain&quot;,
+        graph_projection = &quot;fwa-core-projection&quot;
+    )
+
+    FOR each community in communities:
+        // Community-level metrics.
+        community_stats = compute_community_stats(community)
+        //   - internal_referral_fraction: fraction of referrals that stay inside the community
+        //   - shared_ownership_count: entities in the community with shared owners
+        //   - mean_payments_per_patient: average paid per patient inside the community
+        //   - patient_overlap_density: how much of the patient population is shared
+
+        IF community_stats.internal_referral_fraction &gt;= HIGH_INTERNAL_REFERRAL_THRESHOLD:
+            // Tight referral concentration inside the community.
+            flag = {
+                rule_type:    &quot;tight_referral_community&quot;,
+                community_id: community.id,
+                entities:     community.entity_ids,
+                entity_count: length(community.entity_ids),
+                internal_referral_fraction: community_stats.internal_referral_fraction,
+                mean_paid_per_patient:      community_stats.mean_payments_per_patient,
+                dollar_impact:              community_stats.total_paid_12mo
+            }
+            EventBridge.PutEvent(
+                bus         = &quot;fwa-flags&quot;,
+                source      = &quot;graph-analytics&quot;,
+                detail_type = &quot;FWAFlag.graph_community&quot;,
+                detail      = flag
+            )
+
+    // Per-provider referral-concentration queries.
+    FOR each provider in active_providers():
+        referrals = Neptune.Query(f&quot;&quot;&quot;
+            g.V(&#x27;{provider.id}&#x27;).outE(&#x27;referred&#x27;)
+             .group().by(inV().label())
+             .by(count())
+        &quot;&quot;&quot;)
+        top_target_fraction = fraction_to_top_1(referrals)
+        IF top_target_fraction &gt;= SINGLE_TARGET_REFERRAL_THRESHOLD:       // e.g., 0.75
+            target = top_target_of(referrals)
+            // Check whether the target is co-located with or owned by the provider.
+            co_located = Neptune.Query(f&quot;&quot;&quot;
+                g.V(&#x27;{provider.id}&#x27;).bothE(&#x27;co_located&#x27;).bothV().has(id, &#x27;{target.id}&#x27;).count()
+            &quot;&quot;&quot;).value &gt; 0
+            ownership_overlap = Neptune.Query(f&quot;&quot;&quot;
+                g.V(&#x27;{provider.id}&#x27;).outE(&#x27;owns&#x27;).inV().as(&#x27;a&#x27;)
+                 .V(&#x27;{target.id}&#x27;).outE(&#x27;owns&#x27;).inV().where(eq(&#x27;a&#x27;))
+                 .count()
+            &quot;&quot;&quot;).value &gt; 0
+
+            flag = {
+                rule_type:               &quot;single_target_referral_concentration&quot;,
+                provider_id:              provider.id,
+                target_id:                target.id,
+                referral_fraction_to_target: top_target_fraction,
+                co_located:              co_located,
+                ownership_overlap:        ownership_overlap,
+                dollar_impact:            target.paid_from_provider_12mo
+            }
+            // Higher severity when co-located or owned.
+            severity = &quot;elevated&quot;
+            IF co_located OR ownership_overlap:
+                severity = &quot;high&quot;
+            flag.severity = severity
+            EventBridge.PutEvent(
+                bus         = &quot;fwa-flags&quot;,
+                source      = &quot;graph-analytics&quot;,
+                detail_type = &quot;FWAFlag.graph_referral_concentration&quot;,
+                detail      = flag
+            )
+
+    // Similarity search: find providers whose embeddings are close to known-fraud embeddings.
+    FOR each known_case in recent_confirmed_fraud_cases(window_months = 24):
+        seed_embedding = get_provider_embedding(known_case.provider_id)
+        similar = OpenSearch.KnnSearch(
+            index       = &quot;provider-embeddings&quot;,
+            vector      = seed_embedding,
+            k           = 20,
+            filter      = { is_excluded: false, already_in_case: false }
+        )
+        FOR each match in similar[1:]:        // skip self
+            flag = {
+                rule_type:       &quot;similar_to_known_fraud&quot;,
+                provider_id:      match.provider_id,
+                seed_case_id:     known_case.case_id,
+                seed_provider_id: known_case.provider_id,
+                similarity_score: match.score
+            }
+            EventBridge.PutEvent(
+                bus         = &quot;fwa-flags&quot;,
+                source      = &quot;graph-analytics&quot;,
+                detail_type = &quot;FWAFlag.embedding_similarity&quot;,
+                detail      = flag
+            )
+</code></pre>
+<p><strong>Step 7: Aggregate evidence and build the case bundle.</strong> Flags from all layers combine into per-entity case bundles with ranked evidence, estimated dollar impact, and graph context.</p>
+<pre class="code code-plain"><code>FUNCTION on_flag_event(flag):
+    // Determine the target entity (provider, organization, community, or patient).
+    target = resolve_target(flag)
+
+    // Look up or create the case bundle for this target.
+    case = CaseStore.GetOrCreate(
+        target_entity_id = target.id,
+        target_entity_type = target.type
+    )
+
+    // Append the flag with full context.
+    case.flags.append({
+        flag:             flag,
+        detected_at:      NOW(),
+        detector:         flag.detector_source
+    })
+
+    // Refresh the evidence bundle.
+    case.evidence_bundle = {
+        representative_claims:       select_representative_claims(target, flag),
+        peer_comparison:             build_peer_comparison(target, flag),
+        subgraph:                    fetch_subgraph(target, hops = 3, weighted_by = &quot;paid_amount&quot;),
+        prior_flags_on_entity:       case.flag_history,
+        prior_case_outcomes_on_entity: lookup_prior_case_outcomes(target.id),
+        estimated_dollar_impact:     compute_combined_dollar_impact(case.flags),
+        legal_basis_flags:           [f for f in case.flags if f.has_legal_citation],
+        documentation_attached:      case.documentation_reference
+    }
+
+    // Priority score combines dollar impact, confidence, and program priority.
+    case.priority_score = compute_priority_score(case.evidence_bundle, program_priorities())
+
+    CaseStore.Upsert(case)
+    OpenSearch.Index(&quot;fwa-cases&quot;, case)
+
+    // Notify the review queue if priority crosses the review threshold.
+    IF case.priority_score &gt;= CASE_REVIEW_THRESHOLD:
+        EventBridge.PutEvent(
+            bus         = &quot;fwa-workflow&quot;,
+            source      = &quot;evidence-aggregator&quot;,
+            detail_type = &quot;CaseReady.triage&quot;,
+            detail      = { case_id: case.id, priority_score: case.priority_score }
+        )
+</code></pre>
+<p><strong>Step 8: Documentation review assistance.</strong> When an investigator escalates a case that requires medical records, the documentation-assist service coordinates Comprehend Medical entity extraction and LLM-based review.</p>
+<pre class="code code-plain"><code>FUNCTION assist_documentation_review(case_id, medical_records_uri):
+    // Load the medical records (already in S3, behind appropriate access controls).
+    documents = load_documents(medical_records_uri)
+
+    // Extract structured entities with Comprehend Medical.
+    entities_per_document = []
+    FOR each document in documents:
+        text = extract_text(document)
+        entities = ComprehendMedical.DetectEntitiesV2(text = text)
+        icd10_codes = ComprehendMedical.InferICD10CM(text = text)
+        rx_entities = ComprehendMedical.InferRxNorm(text = text)
+        entities_per_document.append({
+            document_id: document.id,
+            entities:    entities,
+            icd10:       icd10_codes,
+            rx:          rx_entities
+        })
+
+    // Retrieve the flagged claims for this case.
+    flagged_claims = CaseStore.get_flagged_claims(case_id)
+
+    // LLM-assisted documentation review. The LLM reads the documentation
+    // context and the billed codes and produces a clinician-style assessment.
+    review_findings = []
+    FOR each claim in flagged_claims:
+        relevant_docs = match_documents_to_claim(entities_per_document, claim)
+        prompt = build_documentation_review_prompt(
+            billed_cpt        = claim.primary_cpt,
+            billed_diagnoses  = claim.diagnoses,
+            documentation     = relevant_docs,
+            coverage_policy   = load_coverage_policy(claim.primary_cpt),
+            expected_documentation_elements = expected_elements_for(claim.primary_cpt)
+        )
+        response = Bedrock.InvokeModel(
+            model_id = &quot;anthropic.claude-XX&quot;,    // HIPAA-eligible; select per current eligibility
+            body     = { &quot;prompt&quot;: prompt, &quot;max_tokens&quot;: 2500 }
+        )
+        finding = parse_bedrock_response(response)
+        // finding includes: documentation_supports_code (yes/partial/no),
+        //                    missing_elements, reasoning, citations_in_documentation
+
+        // Clone detection: compare documentation against other documentation
+        // for the same provider to detect templated or copy-pasted content.
+        clone_analysis = clone_detection_across_provider(
+            provider_id = case.target_entity_id,
+            document    = relevant_docs,
+            similarity_threshold = CLONE_SIMILARITY_THRESHOLD
+        )
+        finding.clone_matches = clone_analysis.matches
+
+        review_findings.append({
+            claim_id:  claim.claim_id,
+            cpt:       claim.primary_cpt,
+            finding:   finding
+        })
+
+    CaseStore.AppendAssessment(
+        case_id   = case_id,
+        assessment = {
+            type:            &quot;documentation_review_assisted&quot;,
+            review_findings: review_findings,
+            generated_at:    NOW(),
+            generated_by:    &quot;llm-assist&quot;,
+            requires_human_review: True        // always; the LLM output is a draft
+        }
+    )
+</code></pre>
+<p><strong>Step 9: Capture outcomes and feed the retraining loop.</strong> Case outcomes structurally feed back into label stores. Retraining runs quarterly (or more often for rule tuning).</p>
+<pre class="code code-plain"><code>FUNCTION on_case_outcome(case_id, outcome_event):
+    // outcome_event: { case_id, investigator_id, outcome_type, confirmed_loss,
+    //                  decision_rationale, supporting_flags, decision_date }
+    case = CaseStore.Get(case_id)
+    case.outcome = {
+        outcome_type:      outcome_event.outcome_type,     // see the taxonomy below
+        investigator:      outcome_event.investigator_id,
+        confirmed_loss:    outcome_event.confirmed_loss,
+        decision_rationale: outcome_event.decision_rationale,
+        supporting_flags:  outcome_event.supporting_flags,
+        decision_date:     outcome_event.decision_date
+    }
+    CaseStore.Upsert(case)
+    OpenSearch.Index(&quot;fwa-cases&quot;, case)
+
+    // Structured outcome taxonomy:
+    //   closed_no_action
+    //   closed_with_education
+    //   closed_with_adjustment             (overpayment recovered)
+    //   referred_to_payment_integrity       (internal recoupment workflow)
+    //   referred_to_state_mfcu
+    //   referred_to_oig
+    //   referred_to_doj
+    //   criminal_referral
+    //   civil_settlement
+    //   administrative_sanction
+
+    // Write label rows for retraining.
+    label_row = {
+        case_id:          case.id,
+        target_entity_id:  case.target_entity_id,
+        target_entity_type: case.target_entity_type,
+        outcome_type:      outcome_event.outcome_type,
+        outcome_is_significant: outcome_event.outcome_type in SIGNIFICANT_OUTCOMES,
+        confirmed_loss:     outcome_event.confirmed_loss,
+        flags_at_decision:  case.flags,
+        features_at_flag_time: case.features_snapshot,
+        decision_date:      outcome_event.decision_date
+    }
+    S3.PutObject(
+        bucket = &quot;fwa-case-outcomes&quot;,
+        key    = date_partitioned_key(outcome_event.decision_date) + &quot;/&quot; + uuid() + &quot;.parquet&quot;,
+        body   = parquet_encode([label_row])
+    )
+
+    // Update the metrics feed. Suppression rules evaluated and expiration set
+    // when investigator closes-no-action with a supportable rationale.
+    IF outcome_event.outcome_type == &quot;closed_no_action&quot; AND outcome_event.suppression_requested:
+        SuppressionStore.Upsert(
+            entity_id       = case.target_entity_id,
+            rule_ids        = outcome_event.suppressed_rules,
+            expires_at      = NOW() + outcome_event.suppression_window,
+            documented_by   = outcome_event.investigator_id,
+            rationale       = outcome_event.decision_rationale
+        )
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter03.06-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample rule-based flag (exclusion violation):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;flag_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FWA-RULE-2026-05-12-0044221&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detector&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rules-engine&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EXCLUSION_CHECK_V3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;billing_by_excluded_entity&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;target_entity&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PROV-CAN-00998712&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Provider&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;npi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;synthetic-NPI&gt;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Synthetic Family Practice LLC (sample)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Family Practice&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;detection_details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;excluded_entity_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PROV-CAN-00998712&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;exclusion_source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LEIE&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;exclusion_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mandatory&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;exclusion_effective_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-09-01&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;first_claim_after_exclusion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-09-18&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;last_claim_detected&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-10&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;representative_claims&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;CLM-2025-127731&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;CLM-2025-139002&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;CLM-2026-002771&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;claims_count_since_exclusion&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">842</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;dollar_impact&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;paid_since_exclusion&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">287450.00</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;recovery_category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;overpayment_recoverable&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;legal_basis&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;statute&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;42 USC 1320a-7 (mandatory exclusion)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enforcement_mechanism&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OIG_civil_monetary_penalty_potential&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Payment to excluded provider is recoverable; provider continued billing after exclusion notice&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T14:22:18Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample statistical flag (E&amp;M distribution outlier):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;flag_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FWA-STAT-2026-05-12-0077221&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detector&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;statistical-engine&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;peer_em_level_outlier&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;elevated&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;target_entity&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PROV-CAN-00445533&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Provider&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;npi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;synthetic-NPI&gt;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dr. X, Internal Medicine (sample)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Internal Medicine&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;peer_group&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IM-MSA-031-SOLO-HV&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Internal Medicine, MSA 031, solo practice, high-volume&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">287</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;detection_details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-01 to 2026-05-01&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;em_level_99214_share&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.68</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;peer_mean_share_99214&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.34</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;peer_sd_share_99214&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.09</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;zscore_99214&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.78</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;em_level_99215_share&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.21</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;peer_mean_share_99215&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.06</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;peer_sd_share_99215&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.03</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;zscore_99215&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cusum_change_point&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-11-17&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cusum_pre_change_99214_share&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.31</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cusum_post_change_99214_share&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.68</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;estimated_dollar_impact&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;excess_payment_estimate_annual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">412000.00</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;calculation_basis&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;provider_actual_vs_peer_mean_reimbursement_rate&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;representative_claims&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;CLM-2026-022781&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;CLM-2026-045012&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;CLM-2026-068293&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;suggested_next_steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Request provider office notes for a random sample of 20 claims dated after 2025-11-17&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Compare documentation intensity pre- and post-change-point&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Check for training or compliance events around 2025-11-17 that might explain the shift&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T03:15:00Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample graph-based flag (collusive referral community):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;flag_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FWA-GRAPH-2026-05-12-0091871&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detector&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;graph-analytics&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tight_referral_community&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;community_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;COMMUNITY-2026-05-12-00044&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;community_entities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;providers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PROV-CAN-00112233&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Synthetic Pain Management Clinic 1 (sample)&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Pain Management&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PROV-CAN-00112234&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Synthetic Pain Management Clinic 2 (sample)&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Pain Management&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PROV-CAN-00112235&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Synthetic Pain Management Clinic 3 (sample)&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Pain Management&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PROV-CAN-00112240&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dr. Y, Primary Care (sample)&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;specialty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Family Practice&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;labs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ORG-CAN-00077012&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Synthetic Toxicology Lab Inc. (sample)&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Independent Lab&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;dme_suppliers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ORG-CAN-00088771&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Synthetic DME Supply LLC (sample)&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DME Supplier&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;detection_details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;community_entity_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;internal_referral_fraction&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;peer_norm_internal_fraction&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.22</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ownership_overlap_detected&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ownership_overlap_detail&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;All three clinics and the lab share a common corporate owner (Corp Shell A LLC via state filings)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;co_location_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;co_location_detail&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Three clinics and the lab operate from the same physical address&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;average_toxicology_panel_per_patient_per_year&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">26</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;peer_norm_toxicology_panel_per_patient_per_year&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;community_total_paid_12mo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">11200000.00</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;scheme_hypotheses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Kickback / self-referral: clinics referring to commonly-owned lab (Stark Law 42 USC 1395nn exposure; Anti-Kickback Statute 42 USC 1320a-7b exposure)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Medically unnecessary toxicology testing: 26 panels per patient per year substantially exceeds clinical norms for pain management patients&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Billing-mill pattern: high uniformity of billing across the clinics suggests shared template&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;suggested_next_steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Retrieve state business filings for corporate ownership tree of Corp Shell A LLC&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Pull representative patient charts for documentation review (focus on toxicology order rationale)&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Cross-reference provider Sunshine Act payments for kickback-style relationships&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Coordinate with SIU to open formal case; estimated recoverable exposure warrants full investigation&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;dollar_impact&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;estimated_paid_to_community_12mo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">11200000.00</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;estimated_recoverable_if_confirmed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8800000.00</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;requires_investigation_to_confirm&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;subgraph_reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://fwa-case-artifacts/subgraphs/COMMUNITY-2026-05-12-00044.json&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T02:40:12Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative; measure against your own data):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Rules only</th>
+<th>Rules + statistical</th>
+<th>Rules + statistical + graph</th>
+<th>Full stack (with ML re-ranker)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flags per million claims</td>
+<td>400-1200</td>
+<td>700-2000</td>
+<td>800-2500</td>
+<td>500-1500</td>
+</tr>
+<tr>
+<td>Cases above investigation threshold (monthly)</td>
+<td>30-80</td>
+<td>60-150</td>
+<td>80-200</td>
+<td>50-120</td>
+</tr>
+<tr>
+<td>Precision at investigation threshold</td>
+<td>20-40%</td>
+<td>25-45%</td>
+<td>35-60%</td>
+<td>45-70%</td>
+</tr>
+<tr>
+<td>Estimated recoverable dollars per case</td>
+<td>$15k-75k</td>
+<td>$25k-150k</td>
+<td>$75k-500k</td>
+<td>$100k-750k</td>
+</tr>
+<tr>
+<td>Catch rate on confirmed fraud (recall, retrospective)</td>
+<td>15-35%</td>
+<td>30-55%</td>
+<td>45-75%</td>
+<td>60-85%</td>
+</tr>
+<tr>
+<td>Graph-unique catches (schemes not visible to flat analytics)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>+20-40% over flat-only</td>
+<td>+20-40% over flat-only</td>
+</tr>
+<tr>
+<td>Average case age at decision (days)</td>
+<td>60-120</td>
+<td>75-150</td>
+<td>90-180</td>
+<td>90-180</td>
+</tr>
+<tr>
+<td>Investigator throughput (cases / investigator / month)</td>
+<td>3-8</td>
+<td>3-8</td>
+<td>3-8</td>
+<td>3-8</td>
+</tr>
+<tr>
+<td>Real-time claim-level latency p95 (rules layer only)</td>
+<td>100-400ms</td>
+<td>100-400ms</td>
+<td>100-400ms</td>
+<td>100-400ms</td>
+</tr>
+<tr>
+<td>Provider-level batch cadence</td>
+<td>weekly</td>
+<td>weekly</td>
+<td>weekly</td>
+<td>weekly</td>
+</tr>
+<tr>
+<td>Graph refresh cadence</td>
+<td>daily</td>
+<td>daily</td>
+<td>daily</td>
+<td>daily</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>New schemes with no precedent.</strong> Supervised models learn from past cases. New scheme archetypes that haven't been seen before are invisible to the supervised layer until they produce labeled examples. Unsupervised and graph layers help here, but new schemes are precisely where the adversaries are working.</li>
+<li><strong>Sparse-data providers.</strong> A new provider with three months of data has insufficient history for self-history CUSUM and thin peer-group comparison. The first few months are a cold-start problem; the system falls back to rules and basic eligibility checks.</li>
+<li><strong>Small peer groups.</strong> Specialties with few providers (pediatric subspecialties, uncommon surgical specialties) produce unstable peer-group statistics. Falling back to broader peer definitions helps but reduces specificity.</li>
+<li><strong>Legitimate practice variation that looks like anomalies.</strong> A provider who legitimately serves a complex patient population will show elevated intensity features that look like upcoding. Case-mix adjustment helps but can hide real signal if overfit. Clinical reviewers are usually the deciders in these cases.</li>
+<li><strong>Coordinated adaptation.</strong> When a scheme is identified and publicized, other schemes evolve around the detection logic. A detector that catches &quot;modifier 59 rate above peer mean&quot; gets gamed by actors who use modifier 59 at peer-mean rates and unbundle via other modifiers. Continuous rule and threshold review is an operational necessity, not a nice-to-have.</li>
+<li><strong>Ownership data staleness.</strong> Corporate ownership changes happen quickly, but state filings update on a quarterly or annual cadence and some states lag more. Graphs built on stale ownership data miss current relationships. Commercial data providers close this gap partially.</li>
+<li><strong>Cross-payer schemes.</strong> A scheme that operates across multiple payers (commercial, Medicare, Medicaid, different plans) looks smaller from any one payer's view. AWS Clean Rooms helps here but requires partnership with other payers and governance agreements that take months to establish.</li>
+<li><strong>Unlicensed or out-of-network billing.</strong> Schemes that operate outside the usual payment structures (cash-pay practices that use payer data in non-obvious ways, provider supervision arrangements that mask who actually performed the service) are especially hard to detect because the payer's view doesn't capture the full activity.</li>
+<li><strong>Documentation quality across sources.</strong> Chart notes from different EMRs vary wildly in structure and quality. LLM-based documentation review works well on well-structured notes and struggles on scanned faxed records, handwritten records, and badly-templated records. Comprehend Medical has similar limits.</li>
+<li><strong>Unexpected operational consequences of flagging.</strong> Flagging a major health system or a large provider network has downstream consequences (contract renegotiation exposure, member access issues, press attention). The system will produce high-dollar flags on legitimate variation, and the decision to pursue is often above the investigation team's pay grade.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode shows the shape. A production FWA detection pipeline closes several gaps the recipe leaves intentionally light.</p>
+<p><strong>Investigator workflow is the product, not an afterthought.</strong> The detection pipeline is maybe 40% of the value. The case management workflow (how investigators navigate cases, enrich them, request records, coordinate with legal, document decisions, hand off to recoveries or law enforcement) is the other 60%. A detection pipeline without a usable workbench produces flags that nobody acts on. Budget substantial engineering time for the case management UI, the integrations with records systems (EMRs, document storage), and the outcome-capture flows.</p>
+<p><strong>Entity resolution is a full project, not a step.</strong> The pseudocode shows entity resolution as a function. In practice, it's a multi-quarter project to build the entity resolution pipeline with the thresholds, disambiguation workflows, and manual override capabilities needed to produce reliable resolution. Mistakes in entity resolution cascade: misassigned claims go to the wrong provider's case, and investigations get built on wrong data. This is the single most impactful data-quality work in the program.</p>
+<p><strong>Legal and privileged architecture.</strong> Depending on the organizational structure of the SIU (under legal counsel, under compliance, under operations), the detection infrastructure may need to be partitioned from general analytics environments. Legal privilege considerations affect what's stored where, who has access, how data requests are handled. Coordinate with the general counsel before architectural decisions.</p>
+<p><strong>Regulatory referral infrastructure is not trivial.</strong> When cases go to CMS, OIG, state MFCUs, or DOJ, they go as structured data packages with specific fields, formats, and security requirements. Each receiving agency has different requirements. Building the referral packaging and transmission infrastructure (often SFTP with PGP encryption, sometimes secure web portals, sometimes physical media) is a compliance requirement, not an optimization.</p>
+<p><strong>CCI edit library maintenance is ongoing.</strong> CMS publishes CCI edit updates quarterly. Keeping the rule library current is operational work that requires a dedicated resource (usually a certified coder on the payment integrity team). The automation can help, but the content updates require human review.</p>
+<p><strong>Coverage policy encoding is specialized work.</strong> Medical necessity rules come from coverage policies (Medicare NCDs, LCDs, payer-specific medical policies). Encoding these as rules takes people with coding credentials and clinical literacy. A poorly-encoded medical necessity rule fires on legitimate claims and erodes provider trust in the program.</p>
+<p><strong>Model monitoring and drift detection.</strong> The supervised re-ranker, the Isolation Forests, and the GNN embeddings all drift. Detectors that worked last quarter degrade because the underlying distribution shifts (new providers, new coverage policies, changed patient mix). Drift monitoring must be part of the production infrastructure: distribution shift on features, prediction drift on model outputs, and labeled-outcome drift on confirmed cases.</p>
+<p><strong>Adversarial robustness testing.</strong> Fraud detection has to assume an adversary who learns the detection logic. Periodic red-teaming (internal or external) to test whether schemes could operate within the detection thresholds is part of mature operations. Red-teaming finds the blind spots that nobody else will find, and the findings directly inform rule and threshold updates.</p>
+<p><strong>Data sharing with other payers and government.</strong> The Healthcare Fraud Prevention Partnership (HFPP), public-private data sharing arrangements, and state-level all-payer claim databases provide context that a single payer's data can't provide. Participating in these arrangements takes governance effort but provides 20-40% additional signal. AWS Clean Rooms is an enabling infrastructure; the governance work around it is the harder part.</p>
+<p><strong>Provider appeals and due-process workflows.</strong> Providers have due-process rights when adverse actions are taken (audits, recoupments, network termination). The case management system has to support the appeals workflow: what evidence was used in the initial decision, how the provider can request records, how appeals are tracked, how reversals feed back to the detection system. Without this, adverse actions can be overturned and the organization faces liability.</p>
+<p><strong>Fairness, bias, and equity monitoring.</strong> Detection rates by specialty, by geography, by patient demographics, by provider race/ethnicity when identifiable, by practice setting (safety net, rural, FQHC). If the system disproportionately flags providers serving specific patient populations, the implications are significant. Fairness monitoring must be continuous, not a one-time audit. Mitigations include case-mix adjustment, subgroup performance review, and threshold-tuning review specifically for equity.</p>
+<p><strong>Change management for rule releases.</strong> New rules can silently shift the flag distribution, generate a flood of false positives, or miss a scheme that shifted the week before. Rule changes go through testing (against historical data), staged rollout (shadow mode before production), and explicit sign-off from program leadership. Treating rule updates like code deploys (pull requests, review, staged rollout) is appropriate.</p>
+<p><strong>Disaster recovery and continuity.</strong> The FWA pipeline is not in the payment-gating hot path for most architectures (payment integrity usually runs alongside or after adjudication, not inline). But the detection workload itself is essential; a quarter without FWA detection is a quarter of undetected schemes. Plan for multi-region failover or at least cross-region backup of the case management state.</p>
+<p><strong>Cross-border and international dimensions.</strong> Some schemes involve offshore entities, international money flows, or providers practicing across jurisdictions. These add complexity (data-sharing restrictions, currency normalization, international sanctions lists) that domestic-focused architectures may not anticipate. Consult with legal and international compliance before handling these cases.</p>
+<p><strong>FDA and other regulatory adjacencies.</strong> Investigation of devices and drugs may overlap with FDA recall work, state pharmacy board investigations, and DEA-regulated substance tracking. Cross-agency workflow integration is often important. This is less of an AWS architecture issue and more of a program-design issue.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Pharmacy-focused FWA path.</strong> Pharmacy schemes (prescription fraud, controlled substance diversion, compound drug billing, specialty pharmacy abuse) have their own patterns. A pharmacy-specific extension uses PBM claim data, prescription monitoring program (PMP) cross-references, dispenser-prescriber graph analytics, and controlled substance utilization patterns. Heavy use of DEA data and state PMP APIs. Often operates as a parallel pipeline with its own rule library and shared graph infrastructure.</p>
+<p><strong>Home health and hospice specialization.</strong> These provider types have high fraud risk and distinctive patterns (certification and recertification cycles, face-to-face encounter requirements, therapy threshold gaming, hospice eligibility misrepresentation). A home health / hospice specialization encodes the service-specific rules (F2F documentation, OASIS data inconsistencies, homebound status verification), pulls in additional data (CMS PEPPER reports, OIG work plan items), and adds certification-cycle graph patterns.</p>
+<p><strong>DME and prosthetics specialization.</strong> DME schemes are prolific (CGM, back braces, TENS units, power wheelchairs). DME-specific extensions integrate DMEPOS Supplier Standards enforcement, Competitive Bidding Program rules, supplier-referring-provider graph patterns, and the distinctive volume-spike patterns of product-specific schemes (there's a reason CMS publishes specific DME fraud alerts). Often pairs with physician outreach detection (brokers targeting providers to generate referrals).</p>
+<p><strong>Behavioral health specialization.</strong> Behavioral health (intensive outpatient programs, partial hospitalization, psychotherapy billing, substance use treatment) has fraud patterns tied to treatment level intensity, session length misrepresentation, group vs. individual billing, and facility-based kickback arrangements. Specialization includes behavioral-health-specific rule libraries (session-length integrity, intensity-level justification, 90834/90837 distinction) and integration with state-licensed facility data.</p>
+<p><strong>Real-time pre-payment integrity.</strong> Most FWA detection runs post-payment. Pre-payment integration (rule engine runs on claims before adjudication and payment) produces higher ROI because fraudulent payments are never made, rather than recovered after the fact. Extension involves integrating with the claim adjudication system's denial workflow, managing the latency budget (pre-payment decisions happen in hundreds of milliseconds), and handling the appeals that arise from denied-for-fraud-suspicion claims. Substantially higher operational complexity but substantially higher financial impact.</p>
+<p><strong>Member-facing fraud and identity protection.</strong> Member identity theft, dark-web trafficking of insurance cards, and member-side collusion schemes. A member-facing extension monitors member-side patterns: out-of-region utilization spikes, implausible service-date patterns for a single member, multiple dependents billed simultaneously, and identity integrity checks at service time (patient photo verification, ID scanning). Integrates with member communication channels for alerts and verification.</p>
+<p><strong>LLM-native investigation assistance.</strong> Beyond documentation review, LLMs can assist across the investigation lifecycle: drafting subpoena language based on case facts, suggesting relevant prior OIG enforcement actions, producing investigator-ready narrative summaries of cases, querying the graph in natural language (&quot;show me all entities within three hops of this provider that received payments over $50,000 in the last year&quot;). The investigator becomes a supervisor of AI-generated drafts rather than a from-scratch author. Requires careful prompt engineering, grounding, and human review.</p>
+<p><strong>Cross-payer intelligence sharing (via Clean Rooms).</strong> Multi-payer schemes are nearly impossible to detect from a single payer's data. Clean Rooms architectures allow privacy-preserving joins across multiple payers' data to identify providers and entities that are anomalous across payers. Governance-heavy, legally complex, but extremely high-signal. Participation in the Healthcare Fraud Prevention Partnership is a common entry point.</p>
+<p><strong>Explainable case generation with narrative templates.</strong> Investigators working through a high-volume queue benefit from pre-generated case narratives: &quot;Provider X at Clinic Y in Region Z shows the following patterns: (1) ... (2) ... (3) ...; peer group mean for comparable dimensions is ...; dollar exposure is ...; suggested next steps are ...; historical cases on this entity are ...&quot;. A narrative-generation layer that produces these summaries automatically (using template-based NLG or LLM generation) compresses investigator triage time from hours to minutes.</p>
+<p><strong>Federated learning across payers (advanced).</strong> Instead of Clean Rooms joins, federated learning where multiple payers train a shared fraud-detection model without sharing raw data. Technically challenging and governance-heavy. Emerging technology in 2025-2026 with limited production footprint. Worth watching for organizations with multi-payer data-sharing relationships.</p>
+<p><strong>Provider-facing transparency and education.</strong> Rather than pure enforcement, some mature programs feed back anomaly detection results to providers through transparent provider-facing dashboards: &quot;your modifier 59 rate is in the 98th percentile of your peer group; here's what that means; here are resources for compliant billing practices.&quot; Provider education resolves many cases before they become investigations and reduces the operational burden on the SIU. Requires careful communications design (providers react poorly to being told they look suspicious).</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/neptune/latest/userguide/intro.html">Amazon Neptune Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html">Amazon Neptune ML Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-configure-processing-jobs.html">Amazon SageMaker Clarify for Fairness and Bias</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html">Amazon OpenSearch Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/knn.html">Amazon OpenSearch k-NN Plugin</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-what-is-emr.html">Amazon EMR Management Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/clean-rooms/latest/userguide/what-is.html">AWS Clean Rooms User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/graph-notebook"><code>graph-notebook</code></a>: Jupyter-based graph exploration notebooks for Neptune including Gremlin and SPARQL patterns applicable to the relationship graph.</li>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: XGBoost examples, Isolation Forest patterns, Feature Store examples, and SageMaker Clarify examples applicable to the statistical and supervised layers.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: search for &quot;graph,&quot; &quot;fraud,&quot; &quot;anomaly,&quot; and &quot;healthcare&quot; for adjacent patterns.</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter by AI/ML + Financial Services and Healthcare): fraud detection reference architectures from adjacent domains often translate to healthcare FWA.</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search for &quot;fraud detection,&quot; &quot;graph neural networks,&quot; and &quot;healthcare&quot; for architectural deep-dives.</li>
+<li><a href="https://aws.amazon.com/fraud-detector/">AWS Fraud Detector</a>: managed fraud detection service; general-purpose but can be used for claim-level scoring as one component. Worth evaluating for teams without ML engineering capacity.</li>
+</ul>
+<p><strong>Industry, Clinical, and Regulatory References:</strong></p>
+<ul>
+<li><a href="https://www.nhcaa.org/">National Health Care Anti-Fraud Association (NHCAA)</a>: industry association for healthcare anti-fraud professionals; publishes guidance, training, and industry loss estimates.</li>
+<li><a href="https://www.cms.gov/Medicare-Medicaid-Coordination/Fraud-Prevention/Healthcare-Fraud-Prevention-Partnership">Healthcare Fraud Prevention Partnership (HFPP)</a>: public-private partnership for healthcare fraud data sharing and analysis.</li>
+<li><a href="https://oig.hhs.gov/">HHS Office of Inspector General (OIG)</a>: enforcement agency; publishes Work Plans, enforcement actions, and semiannual reports with scheme pattern descriptions.</li>
+<li><a href="https://oig.hhs.gov/exclusions/">OIG List of Excluded Individuals and Entities (LEIE)</a>: public exclusion list, essential data source for the pipeline.</li>
+<li><a href="https://www.cms.gov/About-CMS/Components/CPI">CMS Center for Program Integrity</a>: CMS organization responsible for Medicare and Medicaid program integrity.</li>
+<li><a href="https://pepper.cbrpepper.org/">CMS PEPPER Reports</a>: Program for Evaluating Payment Patterns Electronic Report; provider-level payment pattern comparisons used by many payers as baseline data.</li>
+<li><a href="https://openpaymentsdata.cms.gov/">CMS Open Payments (Sunshine Act)</a>: public data on industry payments to healthcare providers; essential for kickback and relationship analysis.</li>
+<li><a href="https://www.ssa.gov/OP_Home/ssact/title18/1877.htm">Stark Law (42 USC 1395nn)</a>: physician self-referral statute.</li>
+<li><a href="https://www.ssa.gov/OP_Home/ssact/title11/1128B.htm">Anti-Kickback Statute (42 USC 1320a-7b)</a>: federal statute prohibiting remuneration for referrals.</li>
+<li><a href="https://www.justice.gov/civil/false-claims-act">False Claims Act (31 USC 3729-3733)</a>: federal statute covering false claims against the government; basis for whistleblower (qui tam) actions.</li>
+<li><a href="https://www.cms.gov/Medicare/Coding/NationalCorrectCodInitEd">Correct Coding Initiative (NCCI)</a>: CMS-published coding edits foundational to the rules layer.</li>
+<li><a href="https://www.cms.gov/medicare-coverage-database/search.aspx">CMS Medicare National Coverage Determinations (NCDs)</a>: coverage policies foundational to medical necessity rules.</li>
+<li><a href="https://www.acfe.com/">Association of Certified Fraud Examiners (ACFE)</a>: professional organization and certification body for fraud examiners; publishes extensive research.</li>
+<li><a href="https://www.ahima.org/">AHIMA (American Health Information Management Association)</a>: coding and health information management resources; coding guidance relevant to upcoding and unbundling detection.</li>
+</ul>
+<p><strong>External References (Conceptual):</strong></p>
+<ul>
+<li><a href="https://cs.nju.edu.cn/zhouzh/zhouzh.files/publication/icdm08b.pdf">Isolation Forest (Liu, Ting, Zhou, 2008)</a>: original Isolation Forest paper for unsupervised anomaly detection.</li>
+<li><a href="https://arxiv.org/abs/0803.0476">Louvain Community Detection (Blondel et al., 2008)</a>: community detection algorithm widely used in graph analytics pipelines.</li>
+<li><a href="https://arxiv.org/abs/1706.02216">GraphSAGE (Hamilton, Ying, Leskovec, 2017)</a>: inductive graph neural network architecture applicable to Neptune ML embeddings.</li>
+<li><a href="https://en.wikipedia.org/wiki/Statistical_process_control">Statistical Process Control (Wikipedia)</a>: CUSUM and control chart background.</li>
+<li><a href="https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files">CMS Synthetic Public Use Files (SynPUF)</a>: synthetic Medicare claims data for development.</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient and encounter data generator.</li>
+<li><a href="https://github.com/shap/shap">SHAP (SHapley Additive exPlanations)</a>: per-prediction explanation library, essential for explaining supervised re-ranker and Isolation Forest flags to investigators.</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Core rule engine (CCI, MUE, exclusion checks, post-mortem billing), provider-level peer statistical baselines, case management foundation, manual entity resolution workflow, basic QuickSight dashboards</td>
+<td>6-10 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full rule library across lines of business, automated entity resolution with exception queue, Neptune-based relationship graph with community detection and referral-concentration analytics, supervised ML re-ranker on accumulated labels, LLM-assisted documentation review, structured outcome capture and retraining loop, subgroup fairness monitoring, audit and legal privilege infrastructure, CMS and state referral workflow integration</td>
+<td>15-24 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Pharmacy specialization, home health / hospice specialization, DME specialization, behavioral health specialization, real-time pre-payment integration, Clean Rooms cross-payer intelligence, federated learning, member-facing fraud detection, provider-facing transparency dashboards</td>
+<td>18-36 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">Main Recipe 3.6</a> · <a href="chapter03.06-python-example.html">Python Example</a> · <a href="chapter03-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

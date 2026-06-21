@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 2.5 Architecture and Implementation: After-Visit Summary Generation</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested nav-active" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-25-architecture-and-implementation-after-visit-summary-generation">Recipe 2.5 Architecture and Implementation: After-Visit Summary Generation</h1>
+<p><em>Companion to <a href="chapter02.05-after-visit-summary-generation.html">Recipe 2.5: After-Visit Summary Generation</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Bedrock for LLM inference.</strong> The core generation task. Two model tiers come into play here. For the extraction step (pulling structured facts from the note), a smaller, cheaper model like Claude Haiku or Nova Lite is often sufficient because the task is well-bounded. For the generation step (writing the patient-facing prose), a stronger model like Claude Sonnet produces noticeably better output: better tone, better reading-level control, better multilingual quality. Bedrock lets you mix model tiers in the same pipeline without code gymnastics.</p>
+<p><strong>Amazon Bedrock Guardrails for safety constraints.</strong> Guardrails give you a policy layer that runs on top of model invocations. For patient-facing output, you configure several complementary features. Contextual grounding checks compare the model's output against a reference context you supply at invocation time, rejecting responses that fall below configurable grounding and relevance thresholds. This is the tool that catches the model drifting from the structured summary object. Denied topics use natural-language topic descriptions and blocklist phrases to block off-policy content (for example, preventing the model from offering diagnostic opinions or treatment recommendations beyond what the clinician documented). PII detection catches accidental cross-patient disclosure. Content filters screen for inappropriate tone or content. Guardrails aren't a substitute for the field-level validation step, but they're a useful complementary safety net that runs with minimal latency overhead.</p>
+<p><strong>Amazon HealthLake (optional) for FHIR-based encounter retrieval.</strong> If your clinical data lives in HealthLake or is replicated there, pulling encounter data is a straight FHIR query. For encounters that just ended, HealthLake gives you the Encounter resource, the related MedicationRequest, ServiceRequest, and Appointment resources, and the DocumentReference for the signed note. If you're pulling directly from an EHR via SMART on FHIR, the pattern is similar but the source is different.</p>
+<p><strong>Amazon Comprehend Medical for entity extraction (optional).</strong> For the structured extraction step, Comprehend Medical can pull out medications, dosages, conditions, and procedures from free-text notes with high accuracy. You can use it as a pre-processing step before the LLM, or use the LLM alone. The hybrid approach (Comprehend Medical for drug/dose extraction, LLM for the remaining unstructured content) often produces the most reliable results for medication-related content, which is the highest-risk category. Note that Comprehend Medical's size limit is enforced in bytes (20,000 bytes), not characters. For multilingual notes, use a byte-safe truncation pattern (encode to UTF-8, slice bytes, decode with errors=&quot;ignore&quot;) rather than a character-based slice, which can exceed the byte limit on multi-byte scripts.</p>
+<p><strong>Amazon Translate for non-English delivery (optional).</strong> If your patient population's preferred languages aren't well-served by the LLM directly, Amazon Translate can post-process generated English content. But direct generation in the target language is usually higher quality than translation for the languages the LLM handles well. Spanish, French, Mandarin, and Japanese typically don't need the translation step. Less common languages may.</p>
+<p><strong>Amazon S3 for summary storage and audit archive.</strong> Every generated summary, every version, every input context snapshot gets stored. One bucket for drafts, one for final versions, with SSE-KMS encryption and versioning enabled. HIPAA retention of 6+ years applies. The S3 audit archive is your answer when a patient calls in three months asking what the physician told them to do.</p>
+<p><strong>AWS Lambda for pipeline steps.</strong> Each logical step (extract, generate, validate, render, deliver) is a Lambda function. This keeps each piece independently testable and independently scalable. For a busy practice or health system, summaries should be generated within seconds of note signature so the patient has the document before they leave the parking lot.</p>
+<p><strong>AWS Step Functions for orchestration.</strong> The pipeline has branching logic (clinician review or not, regeneration loop for readability failures, different delivery channels per patient preference). Step Functions makes the state machine explicit and observable. For the clinician-review branch, use the <code>waitForTaskToken</code> callback pattern: the Lambda that completes generation hands off a task token when it routes to review; the review UI calls <code>SendTaskSuccess</code> with the signed summary (or <code>SendTaskFailure</code> if the clinician rejects it). This avoids polling and supports extended review SLAs without burning execution time. For operational teams, being able to see which step a given summary is stuck in is invaluable.</p>
+<p><strong>Amazon EventBridge for note-signed events.</strong> Triggering generation from the EHR's note-signed event (via an integration layer) is more reliable than polling. EventBridge routes the event to the pipeline's Step Functions workflow. Because EventBridge delivers at-least-once, your pipeline needs an idempotency gate at the entry point. Derive a deterministic fingerprint from <code>(encounter_id, note_version_or_signed_at)</code>, attempt a DynamoDB conditional write with <code>attribute_not_exists(fingerprint)</code>, and skip if the fingerprint already exists. Without this, duplicate note-signed events produce duplicate summaries, duplicate LLM charges, and duplicate patient deliveries.</p>
+<p><strong>Amazon DynamoDB for summary state tracking.</strong> One item per generated summary, tracking status through the pipeline: generating, awaiting review, ready for delivery, delivered, delivery confirmed. Also useful for patient preferences (language, literacy target, delivery channel) if you're not pulling those from the EHR at generation time.</p>
+<p><strong>Amazon Pinpoint or Amazon SES for delivery.</strong> For SMS notification, Pinpoint (or End User Messaging SMS) sends a short, non-clinical message directing the patient to the portal. SMS content should never include clinical details (medication names, doses, warning signs) because SMS lacks end-to-end encryption and qualifies as PHI transmission over an unencrypted channel. The default pattern is notification-plus-portal-link: &quot;Your after-visit summary is ready. View it in the patient portal: [link].&quot; For secure email with PDF attachments, SES. Both require HIPAA-appropriate configuration (BAA, encryption, access controls). Delivery through the patient portal is typically an EHR integration rather than a direct AWS service.</p>
+<p><strong>AWS CloudTrail and Amazon CloudWatch for audit and monitoring.</strong> Every Bedrock invocation, every S3 write, every delivery event is logged. Standard HIPAA audit posture. CloudWatch tracks operational metrics: summaries generated per hour, average time to delivery, regeneration rate, clinician override rate.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[EHR / Clinical System&lt;br/&gt;Note Signed Event] --&gt; B[Amazon EventBridge]
+    B --&gt; C[Step Functions&lt;br/&gt;AVS Generation Workflow]
+
+    C --&gt;|Pull Encounter| D[HealthLake / FHIR API]
+    C --&gt;|Fetch Patient Prefs| E[DynamoDB&lt;br/&gt;Patient Profile]
+
+    D --&gt; F[Lambda&lt;br/&gt;Extract Summary Object]
+    F --&gt; G[Amazon Comprehend Medical&lt;br/&gt;Optional: med/dose extraction]
+    G --&gt; F
+
+    F --&gt; H[Amazon Bedrock&lt;br/&gt;Section Generation]
+    E --&gt; H
+
+    H --&gt; I[Lambda&lt;br/&gt;Validate Claims vs Source]
+    I --&gt; J{Validation&lt;br/&gt;Pass?}
+    J --&gt;|No| H
+    J --&gt;|Yes| K[Lambda&lt;br/&gt;Readability Check]
+    K --&gt; L{Reading Level&lt;br/&gt;OK?}
+    L --&gt;|No| H
+    L --&gt;|Yes| M{Review&lt;br/&gt;Required?}
+
+    M --&gt;|Yes| N[Clinician Review UI]
+    M --&gt;|No| O[Lambda&lt;br/&gt;Render for Channel]
+    N --&gt; O
+
+    O --&gt; P[S3&lt;br/&gt;Signed AVS Archive]
+    O --&gt; Q[Patient Portal&lt;br/&gt;via EHR Integration]
+    O --&gt; R[Amazon SES&lt;br/&gt;Secure Email + PDF]
+    O --&gt; S[Amazon Pinpoint&lt;br/&gt;SMS Notification]
+
+    P --&gt; T[DynamoDB&lt;br/&gt;Delivery Tracking]
+    Q --&gt; T
+    R --&gt; T
+    S --&gt; T
+
+    style H fill:#ff9,stroke:#333
+    style I fill:#f99,stroke:#333
+    style K fill:#f99,stroke:#333
+    style P fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Bedrock, Amazon Bedrock Guardrails, Amazon S3, AWS Lambda, AWS Step Functions, Amazon EventBridge, Amazon DynamoDB, Amazon HealthLake (optional), Amazon Comprehend Medical (optional), Amazon Translate (optional), Amazon SES, Amazon Pinpoint, Amazon CloudWatch</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>All actions scoped to specific resource ARNs. <code>bedrock:InvokeModel</code> on the specific foundation-model ARNs used for extraction and generation. <code>bedrock:ApplyGuardrail</code> on the specific Guardrail ARN. <code>s3:GetObject</code>, <code>s3:PutObject</code> on the AVS bucket ARNs. <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>, <code>dynamodb:UpdateItem</code> on the specific table ARNs. <code>kms:Decrypt</code>, <code>kms:GenerateDataKey</code> scoped to the PHI CMK ARNs. <code>states:StartExecution</code> on the AVS state machine ARN. <code>healthlake:SearchWithGet</code> on the datastore ARN. <code>comprehendmedical:DetectEntitiesV2</code> (no resource-level scoping available). <code>ses:SendRawEmail</code> on verified-identity ARNs. <code>mobiletargeting:SendMessages</code> on the Pinpoint application ARN. <code>events:PutEvents</code> on the specific event bus ARN. <code>logs:CreateLogGroup</code>, <code>logs:CreateLogStream</code>, <code>logs:PutLogEvents</code> on the log group ARNs. Never use <code>Resource: &quot;*&quot;</code> for PHI-processing pipelines.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Summaries contain PHI; every service in the pipeline must be HIPAA-eligible and covered.</td>
+</tr>
+<tr>
+<td><strong>Bedrock Model Access</strong></td>
+<td>Request access to at least one capable generation model (Claude Sonnet or equivalent) and one smaller extraction model (Claude Haiku or Nova Lite). For non-English output, verify the model's quality in the target languages against a sample set before deploying.</td>
+</tr>
+<tr>
+<td><strong>EHR Integration</strong></td>
+<td>Note-signed event publication (webhook, HL7 v2 message, or FHIR subscription). FHIR R4 read access to Encounter, MedicationRequest, ServiceRequest, DocumentReference, Appointment, Condition. Portal integration for delivery.</td>
+</tr>
+<tr>
+<td><strong>Patient Preferences</strong></td>
+<td>Language, literacy-level target, delivery channel preference. Usually sourced from the EHR's patient registration fields; may need additions if your EHR doesn't capture reading-level or preferred-language with enough granularity.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Bedrock: TLS in transit, encryption at rest. CloudWatch Logs: KMS encryption.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambda functions in VPC with interface endpoints for Bedrock Runtime, HealthLake, Comprehend Medical, KMS, CloudWatch Logs, Step Functions, EventBridge, CloudWatch Monitoring, Translate (if used), SES SMTP (if used), and SMS Voice (if SMS used). Use gateway endpoints for S3 and DynamoDB. Without KMS and Logs interface endpoints, Lambda in a private subnet cannot decrypt PHI or write logs. Without the States endpoint, <code>waitForTaskToken</code> callbacks fail from within the VPC. Interface endpoints cost approximately $7-10/month per AZ; factor this into cost estimates.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events: log all Bedrock invocations, S3 object access, DynamoDB reads and writes. If Bedrock model-invocation-logging is enabled for quality monitoring or drift detection, the logged prompts and responses contain PHI (structured clinical facts, patient identifiers, medication details). The log-destination S3 bucket or CloudWatch log group must be KMS-encrypted with the same CMK posture as other PHI stores, access-controlled equivalently, and retention-matched. Consider sampling (for example, 10% of invocations) rather than logging every invocation to limit PHI surface area.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthea synthetic FHIR data for testing. Synthetic patient scenarios with varied complexity (routine visit, new diagnosis, discharge summary) to cover the major generation patterns.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Bedrock extraction (Haiku/Nova Lite): ~$0.005-0.02 per visit. Bedrock generation (Sonnet): ~$0.02-0.06 per visit. Comprehend Medical: ~$0.001-0.01 per visit if used. Storage, Lambda, Step Functions, DynamoDB: negligible at typical volumes. End-to-end: ~$0.03-0.10 per summary. At 1,000 visits per day, roughly $900-$3,000 per month.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>LLM inference for extraction and patient-facing generation</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock Guardrails</strong></td>
+<td>Policy-layer safety filters on model output</td>
+</tr>
+<tr>
+<td><strong>Amazon HealthLake</strong></td>
+<td>FHIR-native access to encounter data (optional but common)</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Structured entity extraction for medications and dosages (optional)</td>
+</tr>
+<tr>
+<td><strong>Amazon Translate</strong></td>
+<td>Fallback translation for languages not directly supported by the LLM</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Generated summary drafts and finalized audit archive</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Per-stage pipeline logic</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Multi-stage workflow orchestration with review branching</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Note-signed event ingestion from the EHR</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Patient preferences, summary state, delivery tracking</td>
+</tr>
+<tr>
+<td><strong>Amazon SES</strong></td>
+<td>Secure email delivery with PDF attachment. Note: requires TLS enforcement on both ends; production deployments typically use a HIPAA-grade secure email gateway or a notification-plus-portal-link pattern rather than direct-to-personal-mailbox PDF delivery.</td>
+</tr>
+<tr>
+<td><strong>Amazon Pinpoint</strong></td>
+<td>SMS notification (non-clinical content only; portal link, not clinical details)</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Encryption key management for all stored PHI</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch + CloudTrail</strong></td>
+<td>Monitoring, operational metrics, and HIPAA audit logs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Receive the note-signed event and initialize the case.</strong> When a clinician signs a visit note, the EHR publishes an event. Your pipeline listens for this event and kicks off the workflow. The event payload typically includes the encounter ID, the patient ID, the provider ID, and a timestamp. Everything else gets pulled from the EHR in subsequent steps.</p>
+<pre class="code code-plain"><code>FUNCTION receive_note_signed_event(event):
+    // The event payload from EventBridge. Fields vary by EHR integration.
+    // event.encounter_id:     FHIR Encounter ID
+    // event.patient_id:       FHIR Patient ID
+    // event.provider_id:      signing provider
+    // event.signed_at:        timestamp of note signature
+    // event.visit_type:       outpatient, discharge, telehealth, etc.
+    
+    // Idempotency gate: EventBridge delivers at-least-once. Derive a
+    // deterministic fingerprint from the encounter_id and note version
+    // (or signed_at timestamp). Attempt a conditional write; if the
+    // fingerprint already exists, a prior execution handled this event.
+    fingerprint = hash(event.encounter_id + &quot;|&quot; + event.signed_at)
+    
+    try:
+        write to DynamoDB table &quot;avs-idempotency&quot;:
+            fingerprint = fingerprint
+            condition   = attribute_not_exists(fingerprint)
+            ttl         = current_time + 7 days
+    catch ConditionalCheckFailedException:
+        // Duplicate event; return the existing summary_id without re-processing.
+        existing = read from DynamoDB table &quot;avs-idempotency&quot;: fingerprint
+        RETURN existing.summary_id
+    
+    // Generate a summary_id that will track this specific summary through the pipeline.
+    summary_id = generate UUID
+    
+    // Store summary_id back on the idempotency record for future duplicate lookups
+    update DynamoDB table &quot;avs-idempotency&quot;: set summary_id = summary_id where fingerprint = fingerprint
+    
+    write to DynamoDB table &quot;avs-summaries&quot;:
+        summary_id       = summary_id
+        status           = &quot;INITIATED&quot;
+        encounter_id     = event.encounter_id
+        patient_id       = event.patient_id
+        provider_id      = event.provider_id
+        visit_type       = event.visit_type
+        created_at       = current UTC timestamp
+    
+    // Kick off the Step Functions workflow
+    start Step Functions execution:
+        state_machine = &quot;AVSGenerationWorkflow&quot;
+        input         = { summary_id: summary_id }
+    
+    RETURN summary_id
+</code></pre>
+<p><strong>Step 2: Pull encounter data from the EHR.</strong> Retrieve everything from the visit that a patient would need to know about. The scope is intentionally narrow: today's encounter, not the patient's full chart. Narrow scope keeps cost down, keeps latency low, and keeps the &quot;minimum necessary&quot; HIPAA principle satisfied.</p>
+<pre class="code code-plain"><code>FUNCTION pull_encounter_data(patient_id, encounter_id):
+    // Fetch the FHIR resources related to this specific encounter.
+    // HealthLake supports the _revinclude parameter to pull everything that references an encounter.
+    
+    encounter_bundle = call HealthLake.SearchResources with:
+        resource_type = &quot;Encounter&quot;
+        filters       = { _id: encounter_id, _revinclude: &quot;*&quot; }
+    
+    // Pull the signed clinical note text. In FHIR, signed notes are 
+    // DocumentReference resources with the encounter context.
+    notes = call HealthLake.SearchResources with:
+        resource_type = &quot;DocumentReference&quot;
+        filters       = { encounter: encounter_id, status: &quot;current&quot; }
+    
+    // Fetch the patient&#x27;s preferences. Language, reading level target, 
+    // delivery channel. Usually sourced from a patient-preferences table 
+    // populated from the EHR at registration.
+    patient_prefs = read from DynamoDB table &quot;patient-preferences&quot;: patient_id
+    
+    // Default preferences if none are on file
+    IF patient_prefs is None:
+        patient_prefs = {
+            language:          &quot;en&quot;,
+            reading_level:     8,         // target grade level
+            delivery_channel:  &quot;portal&quot;,
+            accommodations:    []
+        }
+    
+    RETURN {
+        encounter:     encounter_bundle.Encounter,
+        medications:   encounter_bundle.MedicationRequest + encounter_bundle.MedicationStatement,
+        orders:        encounter_bundle.ServiceRequest,
+        referrals:     encounter_bundle.ServiceRequest where category == &quot;referral&quot;,
+        appointments:  encounter_bundle.Appointment,
+        conditions:    encounter_bundle.Condition,
+        notes:         notes,
+        patient_prefs: patient_prefs
+    }
+</code></pre>
+<p><strong>Step 3: Extract the structured summary object.</strong> Turn the encounter data into a fielded object that drives generation. This is the step that converts unstructured clinical content into discrete facts that can be validated later. For medications specifically, Comprehend Medical adds value because it produces normalized drug and dose entities.</p>
+<pre class="code code-plain"><code>FUNCTION extract_summary_object(encounter_data):
+    // Start with what&#x27;s already structured in the EHR.
+    // Medication changes from MedicationRequest resources:
+    medications = empty list
+    FOR each med_req in encounter_data.medications where intent == &quot;order&quot; and authoredOn == today:
+        append {
+            name:       med_req.medication.display,
+            dose:       med_req.dosageInstruction[0].text,
+            change:     &quot;new&quot;,   // or &quot;dose_changed&quot;, &quot;discontinued&quot;, based on comparison with prior meds
+            reason:     med_req.reasonCode[0].display if present
+        } to medications
+    
+    // For notes text, use LLM extraction with a structured schema.
+    // This is where Comprehend Medical can also be run in parallel 
+    // as a cross-check on medication and dosage extraction.
+    note_text = concatenate all encounter_data.notes[*].content
+    
+    extraction_prompt = &quot;&quot;&quot;
+    Extract the following structured fields from this clinical note. Use ONLY what is 
+    explicitly documented; do NOT infer. If a field is not documented, return null or empty.
+    
+    Return JSON with these fields:
+    - diagnoses_discussed:    list of {name, icd10, is_new_today}
+    - warning_signs_given:    list of specific warning signs patient should watch for 
+                              (from any &quot;return precautions,&quot; &quot;red flag symptoms,&quot; or &quot;call if...&quot; language)
+    - education_topics:       list of topics covered during counseling
+    - follow_up_plan:         {when, with_whom, reason} or null if none
+    - tests_explained:        list of tests that were discussed (may or may not have been ordered)
+    - lifestyle_instructions: list of specific lifestyle recommendations given
+    - return_instructions:    text explaining when to come back or call
+    
+    CLINICAL NOTE:
+    {note_text}
+    &quot;&quot;&quot;
+    
+    // Note on model IDs: Bedrock model IDs are versioned and, in most regions,
+    // now require a regional inference-profile prefix (for example,
+    // &quot;us.anthropic.claude-3-5-haiku-20241022-v1:0&quot;). The family-style IDs used
+    // in this pseudocode are illustrative; the Python companion shows a current
+    // working example.
+    response = call Bedrock.InvokeModel with:
+        model_id    = &quot;anthropic.claude-haiku-4&quot;    // smaller model suffices for extraction
+        prompt      = extraction_prompt
+        max_tokens  = 2048
+        temperature = 0.0
+    
+    extracted = parse JSON from response
+    
+    // Cross-check medications against Comprehend Medical (optional but recommended)
+    cm_entities = call ComprehendMedical.DetectEntitiesV2 with:
+        text = note_text
+    
+    med_entities_from_cm = filter cm_entities for Category == &quot;MEDICATION&quot;
+    // Use these to validate or supplement the structured med list
+    
+    // Assemble the summary object
+    summary_object = {
+        encounter_date:        encounter_data.encounter.period.start,
+        visit_type:            encounter_data.encounter.type[0].display,
+        diagnoses:             extracted.diagnoses_discussed,
+        medications:           medications,
+        orders:                [ {name, instructions, when_expected} for each order in encounter_data.orders ],
+        referrals:             [ {specialty, reason, how_to_schedule} for each ref in encounter_data.referrals ],
+        follow_up_appointment: first appointment in encounter_data.appointments scheduled after today,
+        follow_up_plan:        extracted.follow_up_plan,
+        warning_signs:         extracted.warning_signs_given,
+        education_topics:      extracted.education_topics,
+        lifestyle_instructions: extracted.lifestyle_instructions,
+        return_instructions:   extracted.return_instructions,
+        source_note_reference: encounter_data.notes[0].id    // for traceability
+    }
+    
+    // Persist for auditability
+    write to S3: &quot;summary-extractions/{summary_id}/extracted.json&quot; = summary_object
+    
+    RETURN summary_object
+</code></pre>
+<p><strong>Step 4: Generate the patient-facing summary.</strong> Now the writing step. Given the structured summary object and the patient's preferences, produce prose at the target reading level in the target language. Per-section generation is often cleaner than single-prompt; it lets you enforce the required structure and handle section-level failures independently.</p>
+<pre class="code code-plain"><code>FUNCTION generate_summary(summary_object, patient_prefs):
+    // Minimum-necessary principle: strip non-clinical PHI before sending to
+    // the model. The generation step needs diagnoses, medications, orders,
+    // and follow-up details. It does NOT need the patient&#x27;s MRN, DOB, address,
+    // phone number, or insurance identifiers. Redact those fields from the
+    // summary object before constructing the prompt. Keep preferred_name for
+    // the salutation.
+    generation_input = redact_non_clinical_phi(summary_object)
+    // Alternatively, use a field allow-list that passes only the clinical
+    // sections (diagnoses, medications, orders, referrals, appointments,
+    // warning_signs, education_topics, lifestyle_instructions,
+    // return_instructions) and drops everything else.
+    
+    // Build a prompt that enforces:
+    // - Reading level target
+    // - Language
+    // - Structure (required sections in order)
+    // - Grounding (use only provided facts; no inference)
+    // - Tone (calm, direct, respectful; never condescending or alarmist)
+    
+    generation_prompt = &quot;&quot;&quot;
+    You are drafting a patient-facing after-visit summary. Your reader is a patient 
+    who just finished an appointment. They may be tired, anxious, or distracted.
+    
+    REQUIREMENTS:
+    - Write in {patient_prefs.language}.
+    - Target {patient_prefs.reading_level}th-grade reading level.
+    - Use short sentences (average under 15 words).
+    - Use common words. When a medical term is unavoidable, follow it with a plain-language 
+      explanation in parentheses on first use.
+    - Use active voice and direct instructions (&quot;Take one pill each morning&quot;) rather than 
+      passive (&quot;One pill should be taken each morning&quot;).
+    - Be calm and respectful. Never alarmist. Never condescending.
+    - Use ONLY the information in the structured summary below. Do NOT add diagnoses, 
+      medications, instructions, warning signs, or follow-up dates that are not in the input.
+    - If the input lacks a piece of information the reader needs, say &quot;Talk to your 
+      doctor&#x27;s office if you have questions&quot; rather than inventing content.
+    - Every specific claim (medication dose, follow-up date, test name, warning sign) 
+      must trace to a field in the input.
+    
+    STRUCTURE (use these section headers, in this order, omitting sections that have no content):
+    1. &quot;What we talked about today&quot;      → diagnoses and key discussion points
+    2. &quot;Changes to your medications&quot;     → new meds, stopped meds, dose changes
+    3. &quot;Tests you need&quot;                  → orders placed with instructions
+    4. &quot;People to see&quot;                   → referrals
+    5. &quot;Your next visit&quot;                 → follow-up appointment details
+    6. &quot;Watch for these&quot;                 → warning signs; when to call or go to ER
+    7. &quot;Things to do at home&quot;            → lifestyle instructions
+    8. &quot;Questions?&quot;                      → how to contact the practice
+    
+    STRUCTURED SUMMARY OBJECT:
+    {summary_object as JSON}
+    
+    PATIENT CONTEXT:
+    - Preferred name: {patient_prefs.preferred_name}
+    - Any accommodations: {patient_prefs.accommodations}
+    
+    Produce the summary as plain markdown with the section headers above. After the summary, 
+    output a JSON block listing every factual claim (specific dose, date, name, or number) 
+    with its source field path, so claims can be verified.
+    &quot;&quot;&quot;
+    
+    response = call Bedrock.InvokeModel with:
+        model_id     = &quot;anthropic.claude-sonnet-4&quot;    // stronger model for the user-facing prose
+        prompt       = generation_prompt
+        max_tokens   = 4000
+        temperature  = 0.3    // some natural variation; not deterministic
+        guardrail_id = PATIENT_FACING_GUARDRAIL_ID    // Bedrock Guardrails configured for patient content
+    
+    summary_text = parse summary content from response
+    provenance   = parse provenance JSON from response
+    
+    RETURN { summary_text: summary_text, provenance: provenance }
+</code></pre>
+<p><strong>Step 5: Validate claims against the source.</strong> Every specific claim in the summary must map to a field in the summary object. Medication doses, follow-up dates, warning signs, referral reasons: each of these has to trace back. Claims that don't map either trigger regeneration or route to clinician review depending on severity.</p>
+<pre class="code code-plain"><code>FUNCTION validate_summary(summary_text, provenance, summary_object):
+    unverified = empty list
+    
+    FOR each claim in provenance.factual_claims:
+        // claim has: text (what was said in the summary), source_field (where in the object it came from)
+        
+        source_value = look up summary_object at path claim.source_field
+        
+        IF source_value is None:
+            // Claim references a field that doesn&#x27;t exist in the input
+            append {claim: claim, reason: &quot;field_not_in_input&quot;, severity: &quot;HIGH&quot;} to unverified
+            CONTINUE
+        
+        // Is the claim consistent with the source value?
+        // For numbers (doses, counts), exact match required after normalization.
+        // For text (warning signs, diagnoses), use semantic similarity check.
+        
+        IF claim is a numeric assertion (dose, quantity, date):
+            IF normalize(claim.asserted_value) != normalize(source_value):
+                append {claim: claim, reason: &quot;value_mismatch&quot;, severity: &quot;HIGH&quot;} to unverified
+        ELSE:
+            similarity = semantic_similarity(claim.text, str(source_value))
+            IF similarity &lt; 0.7:
+                append {claim: claim, reason: &quot;semantic_mismatch&quot;, severity: &quot;MEDIUM&quot;} to unverified
+    
+    // Categorize
+    high_severity_count = count of claims where severity == &quot;HIGH&quot;
+    
+    IF high_severity_count &gt; 0:
+        status = &quot;VALIDATION_FAILED&quot;
+    ELSE IF length of unverified &gt; 0:
+        status = &quot;NEEDS_CLINICIAN_REVIEW&quot;
+    ELSE:
+        status = &quot;VALIDATED&quot;
+    
+    write to DynamoDB table &quot;avs-summaries&quot;: update summary_id with
+        validation_status   = status
+        unverified_claims   = unverified
+    
+    RETURN { status: status, unverified: unverified }
+</code></pre>
+<p><strong>Step 6: Apply a readability check.</strong> Even with a reading-level instruction in the prompt, outputs drift. A readability check closes the loop: compute a Flesch-Kincaid Grade Level on the generated text, and if it exceeds the patient's target, regenerate with a stronger simplification instruction. This is cheap (the formula is just arithmetic) and it catches reading-level failures that the model itself wouldn't notice.</p>
+<pre class="code code-plain"><code>FUNCTION check_readability(summary_text, target_grade_level):
+    // Flesch-Kincaid Grade Level formula:
+    // 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
+    
+    words     = count words in summary_text
+    sentences = count sentences in summary_text (end-of-sentence punctuation)
+    syllables = count syllables in summary_text (approximation based on vowel groupings)
+    
+    IF sentences == 0 or words == 0:
+        RETURN { pass: false, reason: &quot;empty_or_unparseable&quot; }
+    
+    fk_grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
+    
+    // Allow a small buffer; don&#x27;t reject a 7.2 if target is 7
+    IF fk_grade &lt;= target_grade_level + 0.5:
+        RETURN { pass: true, fk_grade: fk_grade }
+    ELSE:
+        RETURN { pass: false, fk_grade: fk_grade, reason: &quot;reading_level_too_high&quot; }
+</code></pre>
+<p>If the readability check fails, the pipeline loops back to Step 4 with an extra instruction like &quot;The previous draft read at grade 10. Rewrite at grade 6 with shorter sentences and simpler words.&quot; Typically one additional regeneration brings the text within target. Cap both the validation loop and the readability loop at 2-3 attempts total. On the first retry, add a stronger grounding instruction naming the previously unverified claims. On the second retry, set temperature to 0 for determinism. If the third attempt still fails, route to clinician review rather than looping indefinitely. Track the retry count in DynamoDB and emit a CloudWatch metric on loop exhaustion. Never auto-deliver an exhausted-retry summary without clinician sign-off.</p>
+<p><strong>Step 7: Render and deliver.</strong> Same content, different rendering. The generation step produces plain markdown. A rendering step converts it to HTML for the portal, PDF for print, or structured SMS messages for text delivery.</p>
+<pre class="code code-plain"><code>FUNCTION render_and_deliver(summary_id, summary_text, patient_prefs):
+    // Render all applicable formats based on patient preferences
+    rendered = empty dict
+    
+    IF &quot;portal&quot; in patient_prefs.delivery_channels:
+        rendered[&quot;portal_html&quot;] = markdown_to_html(summary_text, accessible=true)
+    
+    IF &quot;pdf&quot; in patient_prefs.delivery_channels or patient_prefs.wants_printed_copy:
+        rendered[&quot;pdf&quot;] = markdown_to_pdf(summary_text,
+            font_size = 14 if &quot;large_print&quot; in patient_prefs.accommodations else 11,
+            layout    = &quot;accessible&quot;
+        )
+    
+    IF &quot;sms&quot; in patient_prefs.delivery_channels:
+        // SMS must NOT contain clinical content (medication names, doses,
+        // warning signs). SMS lacks end-to-end encryption and constitutes
+        // PHI transmission over an unencrypted channel without patient consent.
+        // Default pattern: notification-plus-portal-link.
+        rendered[&quot;sms_messages&quot;] = [localize(
+            &quot;Your after-visit summary is ready. View it in the patient portal: {portal_link}&quot;,
+            patient_prefs.language
+        )]
+        
+        // If the practice has documented patient consent for SMS PHI delivery
+        // (after disclosing security risks per 45 CFR 164.522(b)), a richer
+        // SMS with action items could be sent. Check consent before dispatch:
+        IF patient_prefs.sms_phi_consent == &quot;granted&quot;:
+            rendered[&quot;sms_messages&quot;] = chunk_for_sms(
+                extract_action_items_only(summary_text),
+                max_chars=320
+            )
+        // Without explicit consent, always fall back to notification-plus-link.
+    
+    // Archive every rendered version in S3
+    FOR each format, content in rendered:
+        write to S3: &quot;final-summaries/{summary_id}/{format}.{ext}&quot; = content
+    
+    // Dispatch deliveries
+    IF &quot;portal_html&quot; in rendered:
+        call EHR_Portal_API.publish_document(patient_id, summary_id, rendered[&quot;portal_html&quot;])
+    
+    IF &quot;pdf&quot; in rendered and patient_prefs.wants_email:
+        call SES.SendRawEmail with:
+            to          = patient_prefs.email
+            subject     = localize(&quot;Your After-Visit Summary&quot;, patient_prefs.language)
+            attachment  = rendered[&quot;pdf&quot;]
+            encryption  = TLS enforced; content encrypted at rest
+    
+    IF &quot;sms_messages&quot; in rendered:
+        FOR each msg in rendered[&quot;sms_messages&quot;]:
+            call Pinpoint.SendMessages with:
+                phone    = patient_prefs.phone
+                message  = msg
+                channel  = &quot;SMS&quot;
+    
+    // Update delivery tracking
+    write to DynamoDB table &quot;avs-summaries&quot;: update summary_id with
+        status       = &quot;DELIVERED&quot;
+        delivered_at = current UTC timestamp
+        channels     = list of keys in rendered
+    
+    RETURN { status: &quot;DELIVERED&quot;, channels: list of keys in rendered }
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter02.05-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample output for a routine cardiology follow-up with a new anticoagulation start:</strong></p>
+<p>All identifiers, dates, and provider names below are synthetic. Never use real patient data in development or test fixtures.</p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;summary_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AVS-2026-05-07-01284&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DELIVERED&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;fk_grade_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">6.8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;validation_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;VALIDATED&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;generated_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;# Your Visit Summary, May 7, 2026\n\n## What we talked about today\n\nYou have atrial fibrillation (an uneven heartbeat). We talked about how this raises your risk of stroke, and how medicine can lower that risk.\n\n## Changes to your medications\n\n**New: warfarin (Coumadin) 5 mg**\n- Take one pill every evening.\n- Start tonight.\n- Do not stop this medicine without calling us first.\n\n## Tests you need\n\n**Blood test (INR) in 3 days**\n- This test checks how fast your blood clots so we can set the right dose.\n- Go to any lab that takes your insurance.\n- You will need these blood tests regularly while you take this medicine.\n- Results come back to our office. We will call you if anything needs attention.\n\n## Your next visit\n\nCome back to see Dr. Nguyen in 2 weeks. The front desk scheduled you for May 21 at 10:00 AM.\n\n## Watch for these\n\nCall 911 right away if you have:\n- Sudden bad headache\n- Weakness on one side of your body\n- Trouble talking or seeing\n- Chest pain\n- Bleeding that will not stop\n\nCall our office during the day if you notice:\n- Easy bruising\n- Nose bleeds or bleeding gums\n- Blood in your urine or stool\n- Dizziness or fast heartbeat\n\n## Things to do at home\n\n- Take your medicine at the same time each evening.\n- Keep the amount of leafy green vegetables (like spinach, kale, and salad) about the same each week. Big changes can change how your medicine works.\n- Tell any doctor or dentist that you take warfarin before any procedure.\n- Avoid contact sports that could cause a fall or hit.\n\n## Questions?\n\nCall our office at (555) 123-4567, Monday through Friday, 8 AM to 5 PM. After hours, press 1 for the on-call doctor.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;factual_claims&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;atrial fibrillation&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diagnoses[0].name&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warfarin (Coumadin) 5 mg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;medications[0].name + medications[0].dose&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;one pill every evening&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;medications[0].frequency&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Start tonight&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;medications[0].start_date&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Blood test (INR) in 3 days&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;orders[0].name + orders[0].instructions&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;regular blood tests while on this medicine&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;orders[0].instructions&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Go to any lab that takes your insurance&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;orders[0].instructions&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dr. Nguyen&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;follow_up_appointment.practitioner&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;May 21 at 10:00 AM&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;follow_up_appointment.start&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2 weeks&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;follow_up_appointment.start (derived from encounter_date)&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sudden bad headache&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warning_signs[0]&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Weakness on one side of your body&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warning_signs[1]&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Easy bruising&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warning_signs[4]&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Keep leafy green vegetable intake about the same each week&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lifestyle_instructions[0]&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Tell any doctor or dentist that you take warfarin&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lifestyle_instructions[1]&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;(555) 123-4567&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;practice_contact.phone&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;claim&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Monday through Friday, 8 AM to 5 PM&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;practice_contact.hours&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;delivery_channels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;portal&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pdf_email&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;processing_time_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12000</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>End-to-end latency (note signed → delivered)</td>
+<td>10-30 seconds for routine visits; 30-90 seconds for discharge summaries</td>
+</tr>
+<tr>
+<td>Validation pass rate (first generation)</td>
+<td>88-96% for routine; 80-90% for discharges</td>
+</tr>
+<tr>
+<td>Readability target achievement (first generation)</td>
+<td>80-90%; remaining 10-20% pass after one regeneration</td>
+</tr>
+<tr>
+<td>Clinician override rate (when review enabled)</td>
+<td>5-15% minor edits; &lt;2% substantive edits</td>
+</tr>
+<tr>
+<td>Reading level (Flesch-Kincaid Grade)</td>
+<td>6-8 when targeted; model naturally drifts to 10-12 without constraints</td>
+</tr>
+<tr>
+<td>Cost per summary</td>
+<td>$0.03-0.10</td>
+</tr>
+<tr>
+<td>Patient portal open rate</td>
+<td>Practice-dependent; a well-written AVS materially increases portal engagement</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Very long encounters.</strong> Multi-hour ED visits or extended discharge encounters produce long notes. Extraction quality drops; the generated summary becomes either overwhelming or under-inclusive.</li>
+<li><strong>Poorly structured notes.</strong> Notes written as a single unstructured paragraph are harder to extract from than notes with clear section headers. This is a documentation hygiene issue that predates the AI pipeline.</li>
+<li><strong>Ambiguous follow-up language.</strong> &quot;Follow up in a few weeks&quot; is impossible to render as an actionable date. The system has to either leave it vague or prompt for clarification. Leaving it vague loses value; prompting adds friction.</li>
+<li><strong>Languages with small LLM footprints.</strong> Direct generation quality varies across languages. For languages the model is weak in, the translation fallback is noticeably worse than direct generation. Validate quality per language before deploying broadly.</li>
+<li><strong>Pediatrics.</strong> Instructions for minors need caregiver-appropriate voice (&quot;Give your child...&quot; not &quot;Take...&quot;) and age-appropriate detail. Requires prompt and validation adjustments.</li>
+<li><strong>Discharge summaries specifically.</strong> Discharge content is longer, higher-stakes, and often involves multiple providers. Single-prompt generation tends to drop important items. Sectional generation with explicit required-inclusion checks works better.</li>
+<li><strong>Cognitive or language limitations.</strong> Patients with dementia or significant cognitive impairment may not be the primary reader of the summary. Caregivers are. The tone, structure, and reading level decisions shift when the primary audience is a caregiver, not the patient. This needs to be a patient-profile attribute, not an assumption.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The architecture above gives you a working pipeline. Deploying it at a health system requires addressing several hard problems that the pseudocode doesn't solve.</p>
+<p><strong>Note quality varies enormously.</strong> The pipeline is only as good as the note it's reading. A well-structured SOAP note with headers and explicit follow-up orders produces a clean summary. A note that's a single paragraph of free-text dictation produces a messy extraction and a brittle summary. You will find yourself either writing very defensive extraction logic or working with clinical leadership to improve note-writing practices. Both efforts are slow. Plan accordingly.</p>
+<p><strong>The &quot;what's new today&quot; question is harder than it sounds.</strong> Identifying which medications are new versus continued requires comparing today's medication list against yesterday's medication list. That comparison logic is brittle across EHRs because each EHR represents medication lists differently. Some show only &quot;active medications.&quot; Some show medication changes as deltas. Some show both. Your extraction code has to handle the EHR you're integrated with, which means it's not fully portable to the next EHR.</p>
+<p><strong>Reading level for non-English languages is poorly defined.</strong> Flesch-Kincaid is an English-language formula. Spanish has its own formulas (INFLESZ, Fernández Huerta). Mandarin doesn't use grade levels the same way. If you're generating in multiple languages, you need multiple readability validators, each calibrated to that language. Many teams skip this and just trust the model, which mostly works but can hide occasional failures.</p>
+<p><strong>Clinician review workflows need thought.</strong> For routine visits, direct-to-patient delivery is the goal because clinician review adds friction that eats the time savings. For high-risk visits (new cancer diagnosis, hospital discharges, complex med regimens), review is essential. Defining the risk tier at trigger time (based on visit type, specific medication changes, or diagnosis codes) is a policy decision that takes coordinating across clinical, legal, and operational stakeholders. It's not a code problem; it's a governance problem.</p>
+<p><strong>Portal integration is make-or-break for delivery.</strong> Publishing the AVS to the patient portal requires integration with the EHR's portal APIs. Epic's MyChart, Cerner's HealtheLife, athenahealth's patient portal: each has its own integration pattern and document publishing API. You'll spend real engineering time here. Expect two to four weeks per portal integration, and more if the EHR requires certification for third-party content.</p>
+<p><strong>EHR-to-pipeline connectivity matters for security posture.</strong> For cloud EHRs, the note-signed event and FHIR pull typically cross TLS-encrypted connections to vendor public endpoints with egress controls and Secrets Manager-sourced credentials. For on-premises EHRs, plan for Direct Connect or site-to-site VPN with the FHIR gateway reachable over private IPs only. PHI in transit must never traverse the public internet unencrypted; inbound traffic to your VPC should be scoped by source IP or PrivateLink. Test the latency of this path under load: if the EHR round-trip adds 2-3 seconds, it dominates the time budget for the &quot;summary delivered before the patient leaves&quot; SLO.</p>
+<p><strong>SMS and PHI.</strong> SMS is not encrypted end-to-end at the carrier level. Sending clinical content (medication names, doses, warning signs, follow-up dates) via SMS constitutes PHI transmission over an unencrypted channel. Under HIPAA, this requires the patient's informed consent after disclosure of the security risks (45 CFR 164.522(b)). Most health systems enforce a content-minimization policy: SMS carries only non-PHI notifications (&quot;Your summary is ready, view it in the portal&quot;) rather than clinical details. If your practice supports direct-to-SMS clinical content, you need documented patient consent, a content-minimization step (send only essential action items, not the full summary), and awareness of jurisdiction-specific overlays: California CMIA, Texas HB 300, and Washington's My Health My Data Act each add requirements beyond HIPAA baseline for health data transmitted via messaging. Default your pipeline to notification-plus-portal-link and require an explicit consent flag before dispatching clinical content over SMS.</p>
+<p><strong>Multi-language requires ongoing translation QA.</strong> It's easy to ship Spanish generation and assume it works. Three months in, you notice the system is using formal Latin American Spanish conventions for a Cuban-American population that finds the register off-putting. Or regional dialect choices that miss. You need a sustainable translation QA process: bilingual community health workers or certified medical translators reviewing samples quarterly, feedback loops from patient-facing staff, and willingness to iterate on prompts per language population.</p>
+<p><strong>Legal review of auto-generated patient content.</strong> Every health system's legal and compliance teams will have opinions on auto-generated content going to patients. Topics include: whether the document needs explicit clinician attribution, what disclaimers are required, what the audit requirements look like if a patient follows incorrect information, whether the summary can be considered part of the legal medical record. These conversations take months. Start them early.</p>
+<p><strong>Handling patient corrections and feedback.</strong> Patients will call saying &quot;my summary says X but I remember the doctor saying Y.&quot; Sometimes the summary is wrong (the extraction missed something). Sometimes the patient's memory is wrong. You need a feedback channel, a review process, and a correction/reissuance workflow. Most teams under-invest here because it's operations, not code. That's a mistake.</p>
+<p><strong>Delivery confirmation varies by channel.</strong> For portal delivery, you can detect &quot;opened&quot; events. For email, you can detect open but not read. For SMS, you get &quot;delivered&quot; but not &quot;opened.&quot; For paper handed at checkout, you get nothing. If you care about &quot;did the patient actually see this?&quot; metrics (and you should), you need to wire up delivery tracking per channel, which is more plumbing than you'd guess.</p>
+<p><strong>Minor patients and caregiver access.</strong> If the patient is a minor, the AVS goes to a caregiver. If the patient is an adult but has a designated healthcare proxy with portal access, the AVS may need to be shared with them. If two parents have joint custody, both may need access. These consent and delivery-routing decisions are non-trivial and need to be respected by the pipeline.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Discharge summaries with structured handoff to home care.</strong> Hospital discharge is a sharper version of the same problem. The content is richer (multiple new diagnoses, long medication lists, home equipment instructions, multiple follow-up appointments with different specialists). The risk of miscommunication is higher. And the downstream recipients are varied: the patient, the caregiver, the home health agency, the primary care provider. Extend the pipeline to produce multiple outputs from the same extracted structure: a patient-facing AVS, a caregiver-oriented version with more caregiver-specific content, a structured handoff document for the receiving clinician. Each output uses the same source but different prompts and rendering.</p>
+<p><strong>Video or audio summary for low-literacy patients.</strong> For patients who struggle with written content, generate an audio version of the AVS. Amazon Polly converts the generated text to speech with natural-sounding voices in dozens of languages. The patient gets a portal link that opens either the written summary or a play-in-place audio version. For populations with very low literacy, audio may be the primary channel and the written version the reference. Polly is HIPAA-eligible, but the generated audio is PHI and must be stored with the same KMS encryption, access controls, and retention policy as the text AVS archive.</p>
+<p><strong>Proactive medication reconciliation reminders.</strong> The AVS tells the patient about medication changes at visit time. Extend the pipeline to send reminders after the visit: three days later, &quot;Are you taking your new medication?&quot; One week later, &quot;Any side effects or questions about [medication]?&quot; Two weeks later, &quot;Reminder: blood test needed before your next visit.&quot; These follow-ups piggyback on the structured extraction you already did. They're cheap and high-value.</p>
+<p><strong>Teach-back verification.</strong> Teach-back is a health literacy technique: after explaining something to a patient, ask them to repeat it back in their own words to verify understanding. Extend the AVS to include a teach-back prompt via SMS or portal the day after the visit: &quot;Yesterday you saw Dr. Nguyen. In your own words, what are you supposed to do now?&quot; The response is reviewed (by AI or staff) for understanding gaps. Gaps trigger a follow-up call. This is a straightforward extension that directly addresses the &quot;patients forget&quot; problem and has meaningful adherence impact.</p>
+<p><strong>Integration with chronic disease management protocols.</strong> For patients with chronic conditions (diabetes, heart failure, COPD), the AVS can include condition-specific self-monitoring reminders: &quot;Check your blood sugar before meals. Write down the numbers. Bring your log to your next visit.&quot; These additions come from a protocol-matching step that looks at the patient's diagnoses and layers in the appropriate monitoring content. The trick is keeping these additions grounded; don't let the model invent clinical protocols, pull from a vetted library.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">Amazon HealthLake Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/translate/latest/dg/what-is.html">Amazon Translate Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/pinpoint/latest/userguide/welcome.html">Amazon Pinpoint User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-samples"><code>amazon-bedrock-samples</code></a>: Bedrock patterns including prompting, guardrails, and RAG</li>
+<li><a href="https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks"><code>aws-healthcare-lifescience-ai-ml-sample-notebooks</code></a>: Healthcare-specific ML patterns including clinical text processing and FHIR integration</li>
+<li><a href="https://github.com/aws-samples/amazon-comprehend-medical-examples"><code>amazon-comprehend-medical-examples</code></a>: Comprehend Medical usage patterns for clinical text extraction</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/health/generative-ai/">Generative AI on AWS for Healthcare</a>: Overview of healthcare LLM applications on AWS</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/build-a-contextual-chatbot-application-using-knowledge-bases-for-amazon-bedrock/">Build a Contextual Chatbot Using Amazon Bedrock Knowledge Bases</a>: RAG patterns applicable to encounter-scoped retrieval</li>
+<li><a href="https://aws.amazon.com/architecture/reference-architecture-diagrams/?solutions-all.sort-by=item.additionalFields.sortDate&amp;solutions-all.sort-order=desc&amp;awsf.content-type=*all&amp;awsf.methodology=*all&amp;awsf.tech-category=tech-category%23ai-ml&amp;awsf.industries=industries%23healthcare">AWS for Healthcare Reference Architectures</a>: Filter by AI/ML and Healthcare</li>
+</ul>
+<p><strong>Industry Resources:</strong></p>
+<ul>
+<li><a href="https://www.ahrq.gov/health-literacy/improve/precautions/index.html">AHRQ Health Literacy Universal Precautions Toolkit</a>: The standard reference for writing patient-facing health content</li>
+<li><a href="https://www.hhs.gov/open/plain-writing/index.html">Plain Writing Act of 2010 (HHS Implementation)</a>: Federal guidance on plain-language health communications</li>
+<li><a href="https://www.cdc.gov/healthcommunication/ResearchEvaluate.html">CDC Clear Communication Index</a>: A validated scoring tool for health communication materials</li>
+<li><a href="https://www.jointcommission.org/resources/for-consumers/speak-up-campaigns/">Joint Commission Health Literacy and Patient Safety</a>: Hospital accreditation perspective on patient communication</li>
+<li><a href="https://www.hl7.org/fhir/encounter.html">HL7 FHIR Encounter Resource</a>: The data model that drives encounter-scoped retrieval</li>
+<li><a href="https://docs.smarthealthit.org/">SMART on FHIR</a>: Framework for EHR-integrated applications, relevant for portal delivery integration</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Timeline</th>
+<th>What You Get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Basic (POC)</strong></td>
+<td>4-6 weeks</td>
+<td>Single language (English), single visit type (outpatient), standalone portal delivery. Validation and readability checks working. Demonstrated on synthetic Synthea data.</td>
+</tr>
+<tr>
+<td><strong>Production-ready</strong></td>
+<td>16-24 weeks</td>
+<td>Multi-visit-type (outpatient, discharge, telehealth). Two to three languages. EHR-integrated portal delivery plus email and print. Clinician review workflow for high-risk tiers. Full audit trail. Delivery tracking. Operational dashboards.</td>
+</tr>
+<tr>
+<td><strong>With variations</strong></td>
+<td>28-40 weeks</td>
+<td>Five or more languages with per-language QA process. Caregiver routing. Teach-back follow-up workflow. Audio summary delivery. Chronic disease protocol integration. Health system-wide rollout with change management.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter02.05-after-visit-summary-generation.html">Main Recipe 2.5</a> · <a href="chapter02.05-python-example.html">Python Example</a> · <a href="chapter02-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

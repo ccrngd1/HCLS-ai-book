@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 12.9 Architecture and Implementation: Epidemic Forecasting</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested nav-active" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-129-architecture-and-implementation-epidemic-forecasting">Recipe 12.9 Architecture and Implementation: Epidemic Forecasting</h1>
+<p><em>Companion to <a href="chapter12.09-epidemic-forecasting.html">Recipe 12.9: Epidemic Forecasting</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<p>The AWS implementation centers on a streaming-and-batch surveillance ingestion pipeline, a SageMaker-hosted forecasting layer that supports multiple model families, and a Step Functions orchestration that runs the daily forecast cycle with explicit calibration checkpoints. The other services support specific stages.</p>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Kinesis Data Streams and Amazon Managed Streaming for Apache Kafka (MSK) for surveillance ingestion.</strong> Surveillance feeds arrive on heterogeneous cadences. ED syndromic data lands in near-real-time from hospital systems. Lab confirmations arrive in batched daily uploads from public health labs. Wastewater data arrives weekly or twice-weekly from sentinel sites. Hospitalization data arrives on whatever cadence the state's hospital association reports it. <a href="https://aws.amazon.com/kinesis/data-streams/">Kinesis Data Streams</a> handles the streaming feeds; for environments that already standardize on Kafka, <a href="https://aws.amazon.com/msk/">MSK</a> is the equivalent. Either way, the streaming layer decouples ingestion from processing and provides replay capability when downstream models need to be re-run.</p>
+<p><strong>Amazon S3 for the harmonized surveillance data lake.</strong> Every surveillance feed lands in S3 partitioned by source, geography, and time. Historical data, harmonized data, model inputs, and forecast outputs all live in S3. The <a href="https://parquet.apache.org/">Apache Parquet</a> format is the standard for the harmonized analytic layer. Versioning is non-negotiable: surveillance data revises retrospectively as more reports come in, and every model run has to be reproducible against the data state at the time of the run.</p>
+<p><strong>AWS Glue for harmonization and nowcasting ETL.</strong> Glue jobs run the harmonization pipeline: geography normalization (HHS regions, state, county, ZIP, sentinel-site joins), time-grid alignment (epi-week is the standard for respiratory virus surveillance), unit conversion (lab counts per population, wastewater concentration normalization), and the nowcast-input dataset construction. The nowcasting itself can run in Glue (for simpler regression-based nowcasts) or in SageMaker (for the more sophisticated state-space models).</p>
+<p><strong>Amazon SageMaker for forecasting model training and inference.</strong> Compartmental models, statistical models, and scenario models all run as SageMaker workloads, often using different containers because the dependencies vary widely. Bayesian compartmental models use <a href="https://www.pymc.io/">PyMC</a> or <a href="https://mc-stan.org/">Stan</a> containers. Statistical and ML models use scikit-learn, <a href="https://xgboost.readthedocs.io/">XGBoost</a>, or PyTorch containers. The flexibility on bring-your-own-container is what makes the multi-family ensemble tractable.</p>
+<p><strong>AWS Step Functions for the daily forecast pipeline.</strong> The pipeline has many steps with explicit retry semantics: refresh feeds, harmonize, nowcast, run each forecast model in parallel, ensemble combine, validate, write outputs, refresh dashboards. Step Functions makes this orchestrable and auditable, with <a href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-asl-use-map-state-distributed.html">Distributed Map</a> for the per-model parallel fan-out. Individual model failures in the Distributed Map are caught and logged; the pipeline continues with remaining models as long as the minimum ensemble size is met (see Step 4). Failed model runs trigger CloudWatch alarms and are retried on the next cycle. A Dead Letter Queue on the state machine captures pipeline-level failures for investigation.</p>
+<p><strong>Amazon DynamoDB for the operational forecast serving table.</strong> Forecast summaries (probabilistic distributions over future case counts, hospitalizations, ICU admissions, by geography and horizon) get written to DynamoDB keyed by jurisdiction, target, and horizon. Public health dashboards, hospital operations integrations, and machine-readable consumer APIs all read from DynamoDB at low latency.</p>
+<p><strong>Amazon Aurora PostgreSQL for the analytic forecast registry.</strong> The full forecast artifacts (per-model trajectories, ensemble distributions, scenario comparisons, calibration metrics) live in <a href="https://aws.amazon.com/rds/aurora/postgresql-features/">Aurora PostgreSQL</a> for analytic querying. Public health analysts run ad-hoc queries against the registry. The forecast hub publication workflow (formatting outputs for federal aggregators like the COVID-19 Forecast Hub) reads from Aurora. Partition the registry by run_date and pathogen. Implement a retention policy that moves forecast artifacts older than 12-24 months to S3 Parquet (queryable via Athena) to keep Aurora performant for recent-history analyst queries and calibration evaluation.</p>
+<p><strong>Amazon QuickSight for epidemiologist-facing dashboards.</strong> The internal epidemiologist dashboard, the policy-briefing visualizations, and the hospital operations integration views are built on <a href="https://aws.amazon.com/quicksight/">QuickSight</a>. For public-facing dashboards, a separate static-site renderer (often <a href="https://aws.amazon.com/cloudfront/">Amazon S3 + CloudFront</a> with pre-rendered visualizations) is the standard pattern because public-facing surfaces have stricter availability and caching requirements.</p>
+<p><strong>Amazon EventBridge for scheduling.</strong> Daily forecast refresh, weekly model retrain, weekly calibration evaluation, ad-hoc scenario runs: EventBridge triggers each cadence. For high-priority outbreak responses, EventBridge can trigger an immediate priors-and-forecast pipeline.</p>
+<p><strong>AWS Lambda for the scenario-evaluation API.</strong> Public health staff request &quot;what does the trajectory look like under scenario X&quot; through a Lambda-fronted API that composes the request, invokes the scenario model on a SageMaker endpoint, post-processes the result, and returns the comparison. The API is internal-only, fronted by API Gateway with IAM or Cognito authentication, restricted to authorized public health analysts, and rate-limited to prevent abuse. Scenario outputs are marked as internal-draft until reviewed and approved for publication.</p>
+<p><strong>Amazon CloudWatch and AWS X-Ray for monitoring.</strong> Pipeline health, model convergence diagnostics, ingestion latency and completeness, calibration metrics on backtested forecasts, and drift in surveillance signals all get logged. Calibration drift is the operational metric that matters most: a forecasting system whose 90% intervals stop containing 90% of out-of-sample observations has a calibration problem that must trigger remediation.</p>
+<p><strong>AWS KMS for encryption.</strong> Surveillance data ranges from aggregate counts (low sensitivity) to individual case-line-list data (PHI). Customer-managed CMKs per data class are the standard. The case-line-list flows must run on HIPAA-eligible services with full BAA coverage.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    A[Surveillance Sources&lt;br/&gt;Labs / EDs / WW / Hosp / Vacc] --&gt;|Stream + Batch| B[Kinesis / MSK&lt;br/&gt;Ingestion Layer]
+    B --&gt;|Raw events| C[S3 Bucket&lt;br/&gt;raw-surveillance/]
+    C --&gt;|Harmonize| D[Glue ETL&lt;br/&gt;Geo + Time + Units]
+    D --&gt;|Harmonized data| E[S3 Bucket&lt;br/&gt;harmonized/]
+    E --&gt;|Nowcast inputs| F[SageMaker&lt;br/&gt;Nowcasting Models]
+    F --&gt;|Current state estimate| G[S3 Bucket&lt;br/&gt;nowcasts/]
+    H[EventBridge Schedule&lt;br/&gt;daily / weekly] --&gt;|Trigger| I[Step Functions&lt;br/&gt;forecast-pipeline]
+    I --&gt;|Distributed Map| J[SageMaker&lt;br/&gt;Compartmental + Stat + Scenario Models]
+    G --&gt;|Inputs| J
+    J --&gt;|Per-model forecasts| K[S3 Bucket&lt;br/&gt;per-model-forecasts/]
+    K --&gt;|Ensemble| L[SageMaker&lt;br/&gt;Ensemble Combination]
+    L --&gt;|Ensemble forecasts| M[S3 Bucket&lt;br/&gt;ensemble-forecasts/]
+    M --&gt;|Validation| N[Calibration&lt;br/&gt;Tracker]
+    N --&gt;|Metrics| O[CloudWatch&lt;br/&gt;Alarms + SNS]
+    M --&gt;|Operational| P[DynamoDB&lt;br/&gt;forecast-serving]
+    M --&gt;|Analytic| Q[Aurora PostgreSQL&lt;br/&gt;forecast-registry]
+    P --&gt;|Query| R[Hospital Ops API /&lt;br/&gt;Forecast Hub Publishing]
+    Q --&gt;|Query| S[QuickSight&lt;br/&gt;Epidemiologist Dashboard]
+    Q --&gt;|Render| T[S3 + CloudFront&lt;br/&gt;Public Dashboard]
+    U[Scenario Request] --&gt;|Lambda| V[Scenario Composer]
+    V --&gt;|Invoke| J
+
+    style F fill:#9f9,stroke:#333
+    style J fill:#9f9,stroke:#333
+    style L fill:#9f9,stroke:#333
+    style P fill:#9ff,stroke:#333
+    style Q fill:#9ff,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Kinesis or MSK, Amazon S3, AWS Glue, Amazon SageMaker, AWS Step Functions, Amazon DynamoDB, Amazon Aurora PostgreSQL, Amazon QuickSight, AWS Lambda, Amazon EventBridge, Amazon CloudFront, AWS KMS, Amazon CloudWatch, AWS X-Ray</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Each pipeline component runs under a dedicated least-privilege role scoped to its data class: (1) <em>Ingestion role:</em> <code>kinesis:PutRecord</code>, <code>s3:PutObject</code> on raw bucket only; (2) <em>Harmonization role:</em> <code>s3:GetObject</code> on raw, <code>s3:PutObject</code> on harmonized, <code>glue:StartJobRun</code>; (3) <em>Forecasting role:</em> <code>s3:GetObject</code> on harmonized/nowcast, <code>sagemaker:CreateTrainingJob</code>, <code>sagemaker:InvokeEndpoint</code>, <code>sagemaker:CreateTransformJob</code>, <code>s3:PutObject</code> on forecast buckets; (4) <em>Publishing role:</em> <code>s3:GetObject</code> on forecasts, <code>dynamodb:BatchWriteItem</code>, <code>rds-data:ExecuteStatement</code>, <code>states:StartExecution</code>; (5) <em>Dashboard role:</em> <code>dynamodb:Query</code>, <code>quicksight:CreateAnalysis</code>, <code>s3:GetObject</code> on public-export bucket. Cross-cutting: <code>kms:Decrypt</code>/<code>kms:Encrypt</code> scoped per role to only the CMKs for that role's data class. <code>cloudwatch:PutMetricData</code>, <code>events:PutRule</code>, and <code>lambda:InvokeFunction</code> are scoped to the orchestration and monitoring roles.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed if any individual-level case-line-list data flows through the pipeline. Aggregate count data without identifiers is generally not PHI, but most production systems handle some line-list data for nowcasting accuracy and case investigation linkage, which makes BAA coverage standard. Every service touching individual-level data must be on the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">HIPAA eligible services</a> list.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed CMKs separated by data class (raw surveillance, harmonized, forecasts, calibration, public-facing exports). DynamoDB and Aurora: encryption at rest with customer-managed CMKs. Kinesis or MSK: encryption at rest. SageMaker: KMS-encrypted EBS volumes and KMS-encrypted output. CloudWatch log groups: explicit KMS encryption. TLS 1.2 minimum in transit.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: SageMaker training, inference, and processing in private subnets with VPC endpoints for S3, DynamoDB, KMS, Step Functions, CloudWatch Logs, Glue, SageMaker API/Runtime, ECR (for custom container image pulls), SNS (for calibration drift alarms), and EventBridge. Lambda functions that access VPC resources require VPC configuration with appropriate security groups. Aurora in private subnets. Kinesis access via VPC endpoints. Public-facing static site is the only externally addressable surface.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all data-plane services, with CloudTrail data events on PHI-bearing S3 buckets and on the case-line-list DynamoDB tables. The audit trail of who accessed individual-level data is non-negotiable, especially during outbreak investigations where access patterns are scrutinized. CloudTrail logs land in a dedicated S3 bucket with Object Lock in compliance mode.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Public surveillance datasets are abundant. CDC's <a href="https://www.cdc.gov/flu/weekly/index.htm">FluView</a>, <a href="https://www.who.int/tools/flunet">WHO FluNet</a>, and the <a href="https://github.com/cdcepi/Flusight-forecast-data">COVID-19 Forecast Hub historical data</a> (the project moved between organizations during the pandemic; verify current URL during implementation) provide multi-year time series suitable for development and back-testing. State-level reporting often makes aggregate data publicly available with a brief lag. Synthetic data generators based on SEIR simulations are useful for testing the ingestion pipeline against known ground truth. Never use real individual-level case-line-list data in dev.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Surveillance ingestion (Kinesis or MSK, plus S3): ~$200-$600/month depending on volume. Glue ETL (daily harmonization): ~$150-$400/month. SageMaker training (weekly retrains across model families): ~$300-$800/month. SageMaker inference (daily forecast runs): ~$200-$600/month. Aurora PostgreSQL: ~$200-$500/month. DynamoDB: ~$50-$200/month. QuickSight, CloudFront, S3 hosting: ~$100-$300/month. Lambda, Step Functions, EventBridge, KMS, CloudWatch, audit: ~$200-$500/month. Total: ~$1,200-$5,000/month per regional surveillance workload depending on geography count, signal count, and ensemble size.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Kinesis Data Streams / MSK</strong></td>
+<td>Streaming ingestion layer for surveillance feeds; decouples ingestion from processing and supports replay</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Data lake for raw surveillance, harmonized analytic data, nowcasts, per-model and ensemble forecasts, calibration history, and public-facing rendered visualizations</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Harmonization ETL (geography normalization, epi-week alignment, unit conversion); construction of nowcasting and forecasting input datasets</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Hosts compartmental models (PyMC/Stan), statistical and ML models (XGBoost/PyTorch/Prophet), nowcasting state-space models, ensemble combination, and scenario evaluation; supports training, batch transform, and real-time endpoints</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the daily forecast pipeline (harmonize -&gt; nowcast -&gt; per-model fan-out -&gt; ensemble -&gt; validate -&gt; publish) with Distributed Map for parallel model execution</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Operational forecast serving table for low-latency consumption by hospital operations APIs, machine-readable feeds, and public-facing surfaces</td>
+</tr>
+<tr>
+<td><strong>Amazon Aurora PostgreSQL</strong></td>
+<td>Analytic forecast registry storing full per-model trajectories, ensemble distributions, scenario comparisons, and calibration metrics; supports ad-hoc analyst queries and federal forecast hub publishing</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Internal epidemiologist dashboards and policy-briefing visualizations</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Scenario-evaluation API; calibration monitor jobs; ingestion glue between streaming layer and downstream processing</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Schedules daily forecast refresh, weekly model retrain, weekly calibration evaluation, and outbreak-response triggers</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudFront and S3 static hosting</strong></td>
+<td>Public-facing forecast dashboard with strict availability and caching requirements</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Manages customer-managed CMKs per data class (raw surveillance, harmonized, forecasts, calibration, public exports)</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch and AWS X-Ray</strong></td>
+<td>Logs, metrics, alarms for pipeline health, ingestion completeness, model convergence diagnostics, and calibration drift</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> The following AWS sample resources demonstrate the patterns used in this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Official SageMaker examples including custom inference container patterns and probabilistic model deployment</li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/workflow-studio.html">AWS Step Functions Workflow Studio</a>: For visually composing the forecast pipeline including Distributed Map fan-out</li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/edit-jobs-chapter.html">AWS Glue Studio</a>: For authoring the harmonization ETL jobs</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Ingest and harmonize multi-source surveillance feeds.</strong> The pipeline starts by bringing every surveillance signal into a common analytic frame: common geographies (HHS regions, state, county, sentinel sites), common time grids (epi-week is the standard for respiratory virus work), and common units (counts per population, normalized concentrations for wastewater, share-of-visits for syndromic). The harmonization is far from trivial. ED syndromic data uses one geography schema, lab data uses another, wastewater uses a third tied to sewer-shed boundaries. Time alignment is non-obvious because epi-week starts on Sunday, calendar week on Monday, fiscal week on something else, and lab reports use receipt date while syndromic uses encounter date. Unit conversion has to handle population denominators that themselves are estimates with uncertainty. The harmonization layer is the single most underestimated component of every epidemic forecasting system.</p>
+<pre class="code code-plain"><code>FUNCTION harmonize_surveillance_feed(feed_specification, raw_data_partition, geography_registry, population_registry):
+    // The feed_specification is a versioned config that describes a single source:
+    //   feed_id:                    &quot;state-lab-respiratory-pcr&quot;
+    //   source_geography:           &quot;lab_zip&quot;
+    //   source_time:                &quot;specimen_collected_date&quot;
+    //   target_geography:           &quot;county_fips&quot;
+    //   target_time_unit:           &quot;epi_week&quot;
+    //   value_field:                &quot;positive_count&quot;
+    //   denominator_field:          &quot;tests_total&quot;
+    //   metric_kind:                &quot;positivity_rate&quot;
+    //   reporting_lag_distribution: { p50: 4, p90: 11 }   // days
+
+    geography_map = geography_registry.lookup(
+        from_schema = feed_specification.source_geography,
+        to_schema   = feed_specification.target_geography
+    )
+
+    harmonized_rows = []
+    FOR raw_row IN raw_data_partition:
+        // Geography mapping. A lab ZIP may map to multiple counties (proportional);
+        // the geography registry handles the proportional allocation.
+        target_geo_allocations = geography_map.allocate(raw_row.source_geography_value)
+
+        // Time alignment.
+        target_time = compute_epi_week(raw_row[feed_specification.source_time])
+
+        // Compute the metric value for this feed.
+        IF feed_specification.metric_kind == &quot;positivity_rate&quot;:
+            value = raw_row[feed_specification.value_field] / max(raw_row[feed_specification.denominator_field], 1)
+        ELIF feed_specification.metric_kind == &quot;rate_per_100k&quot;:
+            population = population_registry.lookup(raw_row.source_geography_value, target_time.year)
+            value = (raw_row[feed_specification.value_field] / population) * 100000
+        ELIF feed_specification.metric_kind == &quot;concentration_normalized&quot;:
+            value = normalize_concentration(raw_row, feed_specification.normalization_config)
+        ELSE:
+            value = raw_row[feed_specification.value_field]
+
+        FOR (target_geography_value, allocation_share) IN target_geo_allocations:
+            harmonized_rows.append({
+                feed_id:               feed_specification.feed_id,
+                target_geography:      target_geography_value,
+                target_time:           target_time,
+                value:                 value * allocation_share,
+                denominator_value:     raw_row.get(feed_specification.denominator_field) * allocation_share,
+                source_record_count:   1 * allocation_share,
+                ingested_at_ts:        now(),
+                expected_revision:     should_expect_revision(target_time, feed_specification.reporting_lag_distribution),
+                feed_specification_version: feed_specification.version
+            })
+
+    write harmonized_rows to S3 harmonized/{feed_id}/{epi_year}/{epi_week}/
+    // NOTE: Output is aggregated counts per geography per time unit. Individual-level
+    // case records are consumed during harmonization but not persisted in the harmonized
+    // layer. If individual-level data is needed downstream (e.g., for delay-distribution
+    // estimation), it flows through a separate restricted-access path with additional
+    // access controls and audit logging.
+
+    RETURN harmonized_rows
+</code></pre>
+<p><strong>Step 2: Nowcast the current epidemiological state.</strong> Every surveillance signal lags reality. Lab confirmations lag exposure by approximately a week through case incubation, presentation, testing, and reporting; the lag varies by signal and changes over time. A naive forecasting approach treats the most recent reported values as ground truth, which biases forecasts by anchoring them to a state-of-the-world that already happened. Nowcasting estimates the unobserved current epidemiological state given the lagged observations and the known reporting-delay distribution. The nowcast output is the input to the forecasting layer; its uncertainty propagates forward.</p>
+<pre class="code code-plain"><code>FUNCTION nowcast_current_state(harmonized_signals, nowcast_config, reporting_delay_priors):
+    // nowcast_config specifies which signals to fuse and at what resolution:
+    //   target_geographies:     [&quot;county_fips&quot;] or [&quot;state_fips&quot;]
+    //   target_metrics:         [&quot;incidence_per_100k&quot;, &quot;hospitalization_per_100k&quot;]
+    //   nowcast_horizon:        4   // weeks back to estimate (because all data is lagged)
+    //   model_family:           &quot;bayesian_state_space&quot;
+    //   signal_weights:         { wastewater: 0.4, ed_syndromic: 0.3, lab_confirmed: 0.3 }
+    //   reporting_delay_pmf:    per-signal probability mass functions of report lag
+
+    // Pull harmonized signals at the target resolution.
+    signal_panel = build_signal_panel(
+        signals     = harmonized_signals,
+        geographies = nowcast_config.target_geographies,
+        time_window_weeks = nowcast_config.nowcast_horizon + 12
+    )
+
+    // Reverse the reporting-delay convolution. Each observed weekly count is the
+    // sum of contributions from cases occurring in earlier weeks, with the lag
+    // distribution determining how much of each earlier week contributes. The
+    // nowcast is the inverse: estimate the underlying weekly cases given the
+    // observed reports and the known lag distribution.
+    nowcast_state = fit_state_space_nowcast(
+        signal_panel    = signal_panel,
+        delay_priors    = reporting_delay_priors,
+        config          = nowcast_config
+    )
+    // nowcast_state contains posterior median + credible intervals for each
+    // (geography, time) cell over the nowcast_horizon.
+
+    // Joint nowcast across signals (wastewater confirms the lab signal, both
+    // confirm or contradict the syndromic). The joint posterior is tighter
+    // than any individual signal but only when signals agree. Disagreement
+    // shows up as wider posterior uncertainty rather than as a wrong central
+    // estimate.
+    fused_nowcast = fuse_signals(
+        nowcast_state    = nowcast_state,
+        signal_weights   = nowcast_config.signal_weights
+    )
+
+    write fused_nowcast to S3 nowcasts/{run_id}/
+
+    RETURN fused_nowcast
+</code></pre>
+<p><strong>Step 3: Run the per-model forecast layer.</strong> Each model family runs in parallel on the nowcast-conditioned input. Compartmental models (SEIR variants with the relevant stratifications) use the nowcast as the initial condition and project forward under specified parameter posteriors. Statistical models (ARIMA, gradient-boosted trees on lagged features, Prophet, neural network families) use the harmonized panel directly. Scenario models layer mitigation effects on top of the compartmental projections. The fan-out here is the workhorse of the pipeline; SageMaker Distributed Map runs each model on its own container with its own dependencies.</p>
+<pre class="code code-plain"><code>FUNCTION run_model_forecast(model_specification, fused_nowcast, harmonized_panel, forecast_horizon_weeks):
+    // model_specification example for a SEIR variant:
+    //   model_id:               &quot;seir-age-stratified-v3&quot;
+    //   model_family:           &quot;compartmental&quot;
+    //   container_image:        &quot;epi-models/seir-pymc:v3.2&quot;
+    //   stratifications:        [&quot;age_band_5&quot;]
+    //   parameters_prior:       { R0_mean: 1.5, R0_sd: 0.4, generation_time_days: 5.0, ... }
+    //   forecast_horizon_weeks: 8
+    //   scenario:               null   // or { mitigation_id, contact_reduction_share }
+
+    // Compose model inputs.
+    model_inputs = {
+        initial_state:         fused_nowcast.most_recent_state,
+        initial_uncertainty:   fused_nowcast.most_recent_uncertainty,
+        historical_signals:    harmonized_panel,
+        forecast_horizon:      forecast_horizon_weeks,
+        scenario_assumptions:  model_specification.scenario
+    }
+
+    // Invoke the model. For a Bayesian compartmental model, this is a sampling
+    // step that produces posterior samples of forecast trajectories. For a
+    // statistical model, this is a quantile-regression or Monte-Carlo prediction
+    // call. Either way the output is a set of probabilistic forecasts.
+    model_forecast = invoke_sagemaker_endpoint(
+        endpoint_name = model_specification.endpoint,
+        payload       = model_inputs
+    )
+    // model_forecast contains:
+    //   - per-week probabilistic forecasts (quantiles or full posterior samples)
+    //   - per-week credible intervals
+    //   - assumed parameter posterior (for compartmental and Bayesian families)
+
+    artifact = {
+        model_id:                 model_specification.model_id,
+        run_id:                   current_pipeline_run_id(),
+        nowcast_id:               fused_nowcast.id,
+        forecast_trajectories:    model_forecast.trajectories,
+        forecast_quantiles:       model_forecast.quantiles,
+        parameter_posterior:      model_forecast.parameter_posterior,
+        scenario_assumptions:     model_specification.scenario,
+        generated_at_ts:          now()
+    }
+
+    write artifact to S3 per-model-forecasts/{run_id}/{model_id}/
+
+    RETURN artifact
+</code></pre>
+<p><strong>Step 4: Combine into an ensemble.</strong> The empirical lesson from the FluSight and COVID-19 Forecast Hub work is that ensembles outperform individual models. The combination weighting can be inverse-variance, calibration-aware (weighted by past Weighted Interval Score), or simple equal-weighted as a robust default. The ensemble also reconciles disagreement between models: a tight ensemble means the models agree, a wide ensemble means there is real uncertainty across modeling approaches that the headline forecast must reflect.</p>
+<pre class="code code-plain"><code>FUNCTION combine_ensemble(per_model_forecasts, ensemble_config, calibration_history):
+    // ensemble_config example:
+    //   combination_method:      &quot;wis_weighted&quot;   // or &quot;equal_weighted&quot;, &quot;inverse_variance&quot;
+    //   weight_lookback_weeks:   12               // for WIS-weighted
+    //   minimum_models_required: 3
+    //   discard_models_with_calibration_failure_within_weeks: 4
+
+    // Compute per-model weights based on recent calibration performance.
+    IF ensemble_config.combination_method == &quot;wis_weighted&quot;:
+        weights = compute_wis_weights(
+            forecasts          = per_model_forecasts,
+            calibration_history = calibration_history,
+            lookback_weeks     = ensemble_config.weight_lookback_weeks
+        )
+    ELIF ensemble_config.combination_method == &quot;equal_weighted&quot;:
+        weights = equal_weights(per_model_forecasts)
+    ELIF ensemble_config.combination_method == &quot;inverse_variance&quot;:
+        weights = inverse_variance_weights(per_model_forecasts)
+
+    // Discard models with recent calibration failures.
+    eligible_models = filter_eligible(
+        per_model_forecasts,
+        calibration_history,
+        ensemble_config.discard_models_with_calibration_failure_within_weeks
+    )
+
+    IF count(eligible_models) &lt; ensemble_config.minimum_models_required:
+        RAISE alert &quot;insufficient_models_for_ensemble&quot;
+
+    // Combine quantile-by-quantile. The Vincentized quantile combination is
+    // the standard for probabilistic forecast hubs; it averages the quantile
+    // values rather than averaging across distributions, which preserves
+    // the ensemble&#x27;s calibration properties.
+    ensemble_forecast = vincentized_combination(
+        per_model_forecasts = eligible_models,
+        weights             = weights,
+        quantile_grid       = standard_quantile_grid()  // 0.025, 0.05, 0.1, ..., 0.95, 0.975
+    )
+
+    artifact = {
+        run_id:                   current_pipeline_run_id(),
+        ensemble_method:          ensemble_config.combination_method,
+        per_model_weights:        weights,
+        eligible_models:          [m.model_id for m in eligible_models],
+        ensemble_quantiles:       ensemble_forecast.quantiles,
+        ensemble_trajectories:    ensemble_forecast.trajectories,
+        generated_at_ts:          now()
+    }
+
+    write artifact to S3 ensemble-forecasts/{run_id}/
+
+    RETURN artifact
+</code></pre>
+<p><strong>Step 5: Validate calibration and surface the forecast.</strong> Every forecast cycle, the pipeline evaluates the calibration of forecasts made N weeks ago against newly observed outcomes for those weeks. The metrics flow into a calibration tracker that alarms on drift. The calibrated forecasts are surfaced to operational systems (DynamoDB for low-latency consumption, Aurora for analytic and federal-publishing flows) and to dashboards (QuickSight for internal, CloudFront-fronted static for public).</p>
+<pre class="code code-plain"><code>FUNCTION validate_and_surface(ensemble_forecast, observed_outcomes_for_past_horizons, run_metadata):
+    // Compute calibration metrics for forecasts made at past time points whose
+    // forecast windows have now elapsed and have observed outcomes.
+    calibration_results = []
+    FOR (past_run_id, past_forecast) IN past_forecasts_with_observable_outcomes():
+        observed = lookup_observed_outcomes(
+            geographies = past_forecast.geographies,
+            time_range  = past_forecast.forecast_time_range
+        )
+        result = compute_calibration_metrics(
+            forecast = past_forecast,
+            observed = observed,
+            metrics  = [&quot;coverage_50&quot;, &quot;coverage_80&quot;, &quot;coverage_95&quot;, &quot;wis&quot;, &quot;crps&quot;]
+        )
+        calibration_results.append(result)
+
+    // Aggregate calibration. Persist for the calibration tracker.
+    aggregate_calibration = aggregate_metrics(
+        calibration_results,
+        by = [&quot;geography&quot;, &quot;horizon_weeks&quot;, &quot;target&quot;]
+    )
+    write aggregate_calibration to Aurora calibration_history table
+
+    // Alarm on drift.
+    drift_alarms = detect_calibration_drift(
+        current   = aggregate_calibration,
+        baseline  = lookback_baseline_calibration(),
+        thresholds = drift_alarm_config()
+    )
+    IF len(drift_alarms) &gt; 0:
+        publish_to_sns(drift_alarms)
+
+    // Surface the new forecast to the operational store.
+    operational_summaries = build_operational_summaries(ensemble_forecast)
+    FOR summary IN operational_summaries:
+        write summary to DynamoDB forecast-serving with:
+            partition_key = summary.geography
+            sort_key      = summary.target + &quot;#&quot; + summary.horizon
+    // NOTE: For high-traffic geographies (state-level, major metro counties),
+    // consider DynamoDB DAX as a read cache for the dashboard layer, or use a
+    // composite partition key with a shard suffix to distribute read load.
+
+    // Surface to the analytic registry.
+    write ensemble_forecast.full_artifacts to Aurora forecast_registry
+
+    // Refresh dashboards.
+    trigger_quicksight_refresh()
+    render_public_dashboard_assets()
+
+    RETURN {
+        run_id:               run_metadata.run_id,
+        operational_count:    len(operational_summaries),
+        calibration_alarms:   drift_alarms,
+        published_at_ts:      now()
+    }
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, PyMC for the Bayesian compartmental layer, statsmodels for the statistical ensemble member, and Prophet for an additional baseline, check out the <a href="chapter12.09-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample ensemble forecast payload for a state-level respiratory virus run:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;run_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;epi-forecast-2026-w43&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;jurisdiction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;state-fips-37&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;incidence_per_100k_per_week&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ensemble_method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wis_weighted&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;eligible_models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;seir-age-stratified-v3&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;seir-multi-strain-v2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;xgboost-lagged-features-v4&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prophet-baseline-v2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;ar-garch-statistical-v1&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;nowcast_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nowcast-2026-w43&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;generated_at_ts&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-10-22T14:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;forecast_horizon_weeks&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;forecast&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;epi_week&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-w44&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon_weeks&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quantiles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;0.025&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">38.1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.25&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">52.4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.5&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">64.0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.75&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">78.6</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.975&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">102.2</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;epi_week&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-w45&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon_weeks&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quantiles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;0.025&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">41.8</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.25&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">60.7</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.5&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">78.4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.75&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">102.1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.975&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">152.6</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;epi_week&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-w48&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;horizon_weeks&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;quantiles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;0.025&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">38.4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.25&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">80.2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.5&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">124.0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.75&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">196.3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;0.975&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">388.7</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;scenario_outputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;scenario_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;baseline_no_intervention&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Continued current behavior, no new policy or NPI&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peak_incidence_p50&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">168.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peak_epi_week_p50&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-w50&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peak_incidence_p10_p90&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">98.0</span><span class="p">,</span><span class="w"> </span><span class="mf">312.0</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;scenario_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate_npi_at_w44&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Mandatory masking in indoor public spaces beginning w44; modeled 22% reduction in effective contacts&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peak_incidence_p50&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">102.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peak_epi_week_p50&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-w52&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peak_incidence_p10_p90&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">62.0</span><span class="p">,</span><span class="w"> </span><span class="mf">178.0</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;assumption_disclosure&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Effective contact reduction prior derived from POLYMOD masking studies and 2020-2023 retrospective NPI evaluations. Scenario assumes 70% adherence within two weeks of policy implementation.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;calibration_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;horizon_1_coverage_95&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;horizon_4_coverage_95&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;horizon_8_coverage_95&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.86</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wis_horizon_4_recent_8w&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">18.2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wis_horizon_4_baseline&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">21.6</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;calibration_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;in_range&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;uncertainty_disclosure&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Forecast uncertainty includes nowcast uncertainty, model parameter uncertainty, and ensemble uncertainty across model families. Forecasts assume continued current behavior unless a scenario specifies otherwise. Long-horizon forecasts (5+ weeks) have substantially wider intervals reflecting the compounding uncertainty of behavioral and biological factors.&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Surveillance ingestion (per source per day)</td>
+<td>30s-5min</td>
+</tr>
+<tr>
+<td>Harmonization (full state-level rebuild, weekly)</td>
+<td>20-60 min</td>
+</tr>
+<tr>
+<td>Nowcasting (state-level, all signals)</td>
+<td>15-45 min</td>
+</tr>
+<tr>
+<td>Per-model forecast generation (compartmental, with sampling)</td>
+<td>30-120 min</td>
+</tr>
+<tr>
+<td>Per-model forecast generation (statistical)</td>
+<td>5-20 min</td>
+</tr>
+<tr>
+<td>Ensemble combination</td>
+<td>5-15 min</td>
+</tr>
+<tr>
+<td>Validation and publishing</td>
+<td>10-25 min</td>
+</tr>
+<tr>
+<td>End-to-end weekly forecast cycle</td>
+<td>2-4 hours</td>
+</tr>
+<tr>
+<td>Calibration on backtest (95% interval coverage at horizon 4)</td>
+<td>88-94%</td>
+</tr>
+<tr>
+<td>Cost per regional surveillance workload per month</td>
+<td>$1,200-$5,000</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong> Novel pathogens with insufficient historical data for prior elicitation (the compartmental model parameters are too uncertain, and statistical models have nothing to learn from). Surveillance signals with high reporting irregularity (state-level data quality varies widely by jurisdiction; some states have multi-week reporting gaps that break the time series). Sub-state geographies with low case counts (county-level forecasts are unstable when weekly counts are in single digits). Periods immediately following major behavior change (a school closure, a holiday, a public guidance shift) where the model assumes continuity and gets blindsided. Outbreaks driven by network structure rather than population-level dynamics (an outbreak in a long-term care facility, an outbreak in a religious community). Periods of varying test availability where the lab signal becomes a measure of testing rather than transmission. Regimes where the ensemble's models all agree confidently but for the wrong reason (a structural mis-specification shared across the ensemble, which is the failure mode that makes COVID-19 era forecasters humble).</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. Deploying this for a real public health jurisdiction requires addressing several gaps that are intentionally outside the scope of a cookbook recipe.</p>
+<p><strong>Surveillance data governance.</strong> Each surveillance feed has its own data-use agreement, its own reporting cadence, its own quality characteristics, and its own institutional ownership. The state lab data flows under one agreement, the hospital association's hospitalization data flows under another, the wastewater data flows under a third (often through a university or contractor partnership). A production system has explicit governance: signed agreements, contact persons, escalation paths when feeds fail, quality SLAs, and a documented chain of custody. The engineering team that builds the pipeline does not typically own these agreements; the public health analytics leadership does. Skip this and the pipeline silently fails when one of these relationships breaks, often in the middle of an outbreak response when it matters most.</p>
+<p><strong>Reporting delay and revision modeling.</strong> Surveillance data revises retrospectively. A case that was reported in week 43 may have actually occurred in week 40 but only made it through the reporting chain three weeks later. The harmonization layer must distinguish &quot;reported by week&quot; from &quot;occurred by week&quot; and the nowcasting layer must model the reporting-delay distribution explicitly. Production systems maintain per-feed delay models that are themselves continuously updated. Without this, the nowcast is biased low for recent weeks (the most recent data is the most under-reported), and the forecast inherits that bias as a confident under-projection.</p>
+<p><strong>Multi-strain and multi-pathogen modeling.</strong> The architecture above implicitly assumes a single pathogen with a single set of compartments. Production respiratory-virus systems frequently must handle multiple strains simultaneously (multiple flu A subtypes, flu A and flu B, RSV alongside flu and SARS-CoV-2). Multi-strain models multiply the compartment count and require strain-specific surveillance. The engineering work is significant; the public health value is substantial because multi-strain dynamics can drive critical operational decisions (which strains are circulating informs hospital therapeutic stocking, antiviral prescribing, and seasonal vaccine effectiveness messaging).</p>
+<p><strong>Hospital operations integration.</strong> Epidemic forecasts feed hospital operational decisions that interact with hospital census forecasting (Recipe 12.5) and ICU capacity planning. Production integration requires API contracts with hospital systems, mapping of regional epidemic forecasts to hospital service-area expected admissions, and uncertainty propagation across the boundary. Without this integration, the public health forecast and the hospital operations forecast are two separate things that occasionally line up and frequently disagree, and the disagreement is invisible to both teams.</p>
+<p><strong>Public communication infrastructure.</strong> Surfacing probabilistic forecasts to the public is a different problem than surfacing them to epidemiologists. The audience does not typically interpret quantile forecasts natively. Standard practice is to render forecasts as &quot;we expect cases to increase, with the most likely range between X and Y over the next four weeks, and a small chance of higher&quot; with appropriate visualizations. The translation from technical output to public-facing language is itself a clinical-communication discipline. Production systems either have a dedicated public communication layer with clinical-communication review or they explicitly restrict the public-facing surface to expert audiences.</p>
+<p><strong>Federation with national forecasting infrastructure.</strong> State-level forecasting systems contribute to national ensembles (CDC FluSight, the broader Outbreak Analytics Network). Federation requires conforming to the national forecast hub's submission format, cadence, target definitions, and quality standards. The engineering work is moderate; the institutional work (joining the consortium, signing the data-use agreements, accepting the publication review process) is non-trivial. Federated forecasting is the right answer for almost every jurisdiction; the do-it-alone approach produces forecasts that nobody outside the jurisdiction can validate or trust.</p>
+<p><strong>Equity and bias auditing.</strong> Forecasts trained on surveillance data that systematically under-represents certain populations produce projections that miscalibrate for those populations. Test access disparities, language barriers in syndromic reporting, sewer-shed coverage gaps in wastewater, and unequal hospital-reporting completeness all bias the input data. Production systems evaluate forecast calibration separately for major demographic subgroups and for geographic units known to have data-quality challenges. Where calibration differs, the system needs subgroup-specific recalibration or explicit limitation of scope. Without this, the system silently underserves some populations more than others, which during an outbreak is a public health failure with measurable consequences.</p>
+<p><strong>Real-time outbreak response mode.</strong> During an active outbreak, the forecasting cadence may need to shift from weekly to daily, the scenario set may change frequently as policy options come and go, and the public-facing communication tempo may exceed what the standard pipeline supports. Production systems have an explicit outbreak-response mode with elevated cadence, explicit decision-support framing, and tighter coupling to the outbreak investigation team. Switching modes mid-outbreak is operationally fragile; production systems test the switch periodically.</p>
+<p><strong>Reproducibility and forecast hub publishing.</strong> Forecasts published to federal hubs must be reproducible. This means the code, the input data state at the time of the run, the model parameter posteriors, and the ensemble combination logic all have to be versioned and stored with sufficient metadata to reconstruct a past forecast on demand. Production systems treat reproducibility as a primary operational requirement, not an after-the-fact reconstruction effort.</p>
+<p><strong>Regulatory framing.</strong> Public health forecasting that informs policy decisions sits in a different regulatory context than clinical decision support, but it has its own expectations: open-data conformance to public records laws, transparency requirements around models that inform government decisions, and the implicit social contract that forecasts published under government authority are consistent with documented methodology. The &quot;explanation_text&quot; and &quot;assumption_disclosure&quot; fields in the example payload exist because this regulatory and political context demands them. Build the system that way from the start and the political conversation is a discussion. Build it the other way and the political conversation is a redesign.</p>
+<p><strong>Idempotency and rerun safety.</strong> The forecast pipeline must be safe to repeat. Harmonization is deterministic given the same input data state. Nowcasting is reproducible given a fixed random seed and the same input panel. Forecast generation is reproducible (or, for stochastic models, has reproducibility through fixed seeding). Ensemble combination is deterministic. DynamoDB writes are idempotent on (run_id, geography, target, horizon). Without these properties, a pipeline rerun produces drift that is impossible to debug, and reproducibility fails.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Multi-pathogen integrated forecasting.</strong> Rather than running separate pipelines per pathogen, integrate flu, RSV, SARS-CoV-2, and other respiratory pathogens into a shared multi-strain compartmental framework. The advantage is that competition for the susceptible pool, cross-reactive immunity, and shared behavioral effects are modeled jointly rather than separately. The engineering complexity is significant but the public health value during multi-pathogen seasons is substantial.</p>
+<p><strong>Spatially explicit fine-resolution forecasting.</strong> The basic pipeline above operates at state or HHS region resolution. Extending to county or sub-county resolution requires hierarchical models that share strength across geographies, careful handling of low-count cells (where stochastic noise dominates), and explicit modeling of spatial spread (commuting flows, school district boundaries, household contact networks). For diseases with sharp local heterogeneity (vector-borne diseases, outbreaks in specific community settings), spatially explicit forecasting is the right answer; for population-wide respiratory virus seasons, the marginal value over state-level resolution is modest.</p>
+<p><strong>Genomic-surveillance-aware forecasting.</strong> Pathogen genomic data (variant frequencies from sequencing, growth rate estimates per variant) increasingly drive forecasting accuracy. Integrating genomic surveillance requires additional ingestion paths (often from <a href="https://www.gisaid.org/">GISAID</a> or national sequencing networks), variant-aware compartmental models with strain-specific parameters, and a forecast layer that produces variant-decomposed projections. For SARS-CoV-2 and increasingly for influenza, variant-aware forecasting is the production standard rather than a research extension.</p>
+<p><strong>Dynamic ensemble member selection.</strong> Rather than running a fixed set of model families on every cycle, dynamically select the ensemble composition based on recent calibration performance, regime detection (stable seasonal versus emerging outbreak), and computational budget. Production systems use this approach during active outbreak responses where the modeling priorities shift quickly.</p>
+<p><strong>Outbreak-response coupling.</strong> During an active outbreak, the forecasting pipeline integrates with the outbreak investigation pipeline (Recipe 3.10): line-list updates inform model priors, contact-tracing data informs effective reproduction number estimation, and intervention timing informs the scenario set. Production coupling requires shared data infrastructure and explicit state-machine logic for switching between routine surveillance and outbreak-response modes.</p>
+<p><strong>Climate-driven and zoonotic-pathogen forecasting.</strong> For West Nile, Lyme, dengue, and other vector-borne or zoonotic diseases, the forecasting incorporates climate models, vector population dynamics, and animal-reservoir surveillance. The pipeline structure is similar but the input feeds and the model families differ; many production systems for vector-borne diseases run as separate pipelines that share infrastructure with the respiratory-virus stack.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/msk/latest/developerguide/what-is-msk.html">Amazon MSK Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html">AWS Glue Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms.html">Amazon SageMaker Bring Your Own Container</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-asl-use-map-state-distributed.html">AWS Step Functions Distributed Map</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html">Amazon Aurora PostgreSQL Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight Documentation</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA Security and Compliance on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: SageMaker examples including custom container patterns useful for hosting compartmental and Bayesian models</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code> GitHub Organization</a>: Search for time-series forecasting and surveillance-related samples</li>
+</ul>
+<p><strong>External Resources:</strong></p>
+<ul>
+<li><a href="https://www.cdc.gov/flu-forecasting/about/index.html">CDC FluSight Forecasting</a>: Federal coordination layer for collaborative flu forecasting in the US, including the public forecast hub</li>
+<li><a href="https://www.cdc.gov/forecast-outbreak-analytics/index.html">CDC Center for Forecasting and Outbreak Analytics</a>: The CFA program coordinates infectious-disease forecasting across pathogens and partners</li>
+<li><a href="https://reichlab.io/">Reich Lab forecast tools and ensemble methods</a>: Influential academic group whose ensemble methods underpin many production hubs</li>
+<li><a href="https://delphi.cmu.edu/">CMU Delphi Group</a>: Producers of multiple data sources and forecasting models, including the COVIDcast indicator API</li>
+<li><a href="https://www.pymc.io/">PyMC</a> and <a href="https://mc-stan.org/">Stan</a>: Bayesian modeling frameworks suitable for compartmental and hierarchical forecasting models</li>
+<li><a href="https://facebook.github.io/prophet/">Prophet</a>: Statistical forecasting framework widely used as a baseline ensemble member</li>
+<li><a href="https://github.com/lo-hfk/epyestim"><code>epyestim</code></a> and <a href="https://github.com/epiforecasts/EpiNow2">EpiNow2</a>: R packages for effective reproduction number estimation and short-term epidemic forecasting</li>
+<li><a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618">Weighted Interval Score (Bracher et al. 2021)</a>: The standard probabilistic scoring rule used by the COVID-19 Forecast Hub and FluSight</li>
+<li><a href="https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0050074">POLYMOD contact study</a>: The widely-used age-stratified contact matrix that underpins many compartmental models</li>
+<li><a href="https://www.cdc.gov/nwss/wastewater-surveillance.html">CDC National Wastewater Surveillance System</a>: The federal program that standardized wastewater surveillance for SARS-CoV-2 and other pathogens</li>
+<li><a href="https://www.who.int/tools/flunet">WHO FluNet</a>: Global influenza surveillance database, useful for international forecasting context</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library (Healthcare and Life Sciences)</a>: Filter by Healthcare and AI/ML for reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/publicsector/">AWS Public Sector Blog</a>: Search for public health analytics and surveillance-related posts</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/category/industries/healthcare/">AWS Machine Learning Blog (Healthcare tag)</a>: Search for forecasting and surveillance posts</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<ul>
+<li><strong>Basic pipeline (single pathogen, single jurisdiction, statistical models only, weekly cadence, no public-facing surface):</strong> 10-14 weeks</li>
+<li><strong>Production-ready (multi-source fusion, compartmental + statistical ensemble, scenario forecasting, calibration monitoring, internal and operational surfaces):</strong> 28-40 weeks</li>
+<li><strong>With variations (multi-pathogen integration, fine-resolution spatial, genomic-aware, federated forecast hub publishing, public-facing dashboard, outbreak-response mode):</strong> 48-72 weeks</li>
+</ul>
+<hr />
+<p><em>← <a href="chapter12.09-epidemic-forecasting.html">Main Recipe 12.9</a> · <a href="chapter12.09-python-example.html">Python Example</a> · <a href="chapter12-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

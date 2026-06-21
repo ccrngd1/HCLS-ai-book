@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 1.10 Architecture and Implementation: Historical Chart Migration 🔷</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested nav-active" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-110-architecture-and-implementation-historical-chart-migration-">Recipe 1.10 Architecture and Implementation: Historical Chart Migration 🔷</h1>
+<p><em>Companion to <a href="chapter01.10-historical-chart-migration.html">Recipe 1.10: Historical Chart Migration 🔷</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Textract (DetectDocumentText + AnalyzeDocument, async)</strong> handles the base OCR pass. Two modes apply at this scale. <code>DetectDocumentText</code> ($0.0015/page) extracts raw text and word-level confidence scores on every page. This is the quality signal: Textract confidence tells you which pages need the vision path, which are high-confidence typed text, and which are blank. For pages classified by Nova Lite as structured forms or lab results, a second <code>AnalyzeDocument</code> call with FORMS and TABLES features ($0.065/page) extracts the structured fields and table data. Structured extraction runs on a fraction of pages, not all of them, which substantially reduces cost. The async API (<code>StartDocumentAnalysis</code> / <code>StartDocumentTextDetection</code>) is mandatory at this scale: you submit jobs and poll for completion rather than waiting synchronously.</p>
+<p><strong>Amazon Bedrock with batch inference</strong> is the intelligence layer across all four model tiers. The Bedrock batch inference API (<code>CreateModelInvocationJob</code>) accepts JSONL input from S3, processes asynchronously, and writes result JSONL back to S3. Each job submission covers thousands to hundreds of thousands of inference requests in a single API call. Pricing is 50% of on-demand rates. The Bedrock Converse API handles all model communication, including prompt caching for repeated classification prompts.</p>
+<p><strong>Amazon Nova Lite (<code>us.amazon.nova-lite-v1:0</code>)</strong> handles Tier 1 classification across all pages. At $0.06/MTok input (on-demand, half that for batch), it is the cheapest multimodal model in Bedrock. For binary and multi-class classification tasks, it performs at a level that easily exceeds keyword heuristics. With prompt caching on the classification system prompt, effective cost per page approaches rounding error.</p>
+<p><strong>Amazon Nova Pro (<code>us.amazon.nova-pro-v1:0</code>)</strong> handles Tier 2 standard extraction. Mid-tier cost ($0.80/MTok input), mid-tier capability. Appropriate for typed clinical notes, printed lab results, structured forms where Textract provided clean text input. This is the workhorse tier: 65 to 75% of pages land here.</p>
+<p><strong>Claude Haiku 4.5 (<code>us.anthropic.claude-haiku-4-5-20251022-v1:0</code>)</strong> is an alternative Tier 2 model: slightly more expensive than Nova Pro but faster response times for latency-sensitive sub-pipelines. For chart migration batch processing, Nova Pro and Haiku are roughly interchangeable. The recipe shows both; your choice depends on latency requirements within the batch job.</p>
+<p><strong>Claude Sonnet 4.6 (<code>us.anthropic.claude-sonnet-4-6-20260217-v1:0</code>)</strong> handles Tier 3 complex extraction and the FHIR mapping stage. This is where clinical reasoning happens: interpreting ambiguous clinical text, handling complex multi-section documents, generating structured FHIR resources from messy clinical narratives. Sonnet also handles vision extraction for most handwritten and degraded pages: it is capable enough for the middle tier of image quality. At $3.00/MTok input (on-demand), its cost is justified only where lower tiers fail. Budget that 20 to 30% of clinical pages reach this tier.</p>
+<p><strong>Claude Opus 4.6 (<code>us.anthropic.claude-opus-4-6-20260204-v1:0</code>)</strong> is the Tier 4 last resort. Severely degraded documents, illegible third-generation fax images of dense clinical handwriting, highly ambiguous content where Sonnet's confidence scores fall below threshold. Opus is the most capable model in the pipeline and the most expensive ($5.00/MTok input). In a well-tuned pipeline, 3 to 7% of pages reach Tier 4. Anything above 10% is a signal that your Tier 3 thresholds are too low.</p>
+<p><strong>Amazon Comprehend Medical (<code>InferICD10CM</code>, <code>InferRxNorm</code>)</strong> validates medical codes from LLM-extracted clinical concepts. LLMs understand clinical language but should not be trusted for exact code lookup: ICD-10, RxNorm, and CVX codes need deterministic validation against authoritative reference data. Comprehend Medical's inference APIs map extracted clinical text to standardized codes. They run after LLM extraction, as a validation step, not as the primary extraction path. Note: Comprehend Medical is not available in all AWS regions. Verify availability at the Comprehend Medical regional endpoints documentation before selecting your deployment region.</p>
+<p><strong>AWS Batch</strong> manages the outer processing loop. Millions of charts distributed across a fleet of workers, each pulling chart IDs from a manifest. Batch handles instance scaling, job retries, and progress tracking. For charts where total processing time (Textract async wait + batch inference results wait) exceeds Lambda's 15-minute maximum, Batch containers are the right execution environment.</p>
+<p><strong>AWS Step Functions (Standard Workflows)</strong> handles per-chart pipeline orchestration within each Batch worker. The execution history is how you debug a 300-page chart that produced garbage output six days into the migration run. Standard Workflows cost more than Express, but the debugging value over a multi-month migration program easily justifies it.</p>
+<p><strong>Amazon HealthLake</strong> is the FHIR R4 data store receiving the migrated records. It provides bulk FHIR import from S3 NDJSON files, a FHIR-compliant API, and native integration with Lake Formation for analytics queries. For organizations already running FHIR servers (Azure API for FHIR, GCP Healthcare API, on-premises FHIR servers), HealthLake's import format is standard FHIR NDJSON and the loading step adapts directly.</p>
+<p><strong>Amazon S3 with Glacier tiering</strong> handles multi-stage chart storage. Source PDFs land in S3 Standard for active processing, transition to S3 Glacier Instant Retrieval (millisecond retrieval, archival pricing) after migration completes, and expire after 10 years per CMS retention requirements. Batch inference JSONL files are ephemeral: they stage in S3, batch jobs consume them, results land in S3, and both expire after 30 days.</p>
+<p><strong>Amazon DynamoDB</strong> tracks migration state for every chart: status, page count, quality scores, FHIR resource counts, Textract job IDs, batch inference job IDs. The DynamoDB table is both the migration dashboard source and the idempotency guard: before starting a chart, you check for an existing <code>completed</code> record and skip it if found.</p>
+<p><strong>Amazon CloudWatch</strong> provides the operations dashboard: throughput (charts per day), error rates by failure type, batch inference job queues, model tier distribution (what fraction of pages landed in each tier, which tells you whether your routing thresholds are calibrated correctly), and FHIR load success rates.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[🏭 Bulk Scanning&lt;br/&gt;Facility] --&gt;|PDF Upload| B[S3 Standard&lt;br/&gt;charts-raw/]
+
+    B --&gt;|Manifest Job| C[Lambda: manifest-gen&lt;br/&gt;CSV per chart batch]
+    C --&gt;|Submit Array Jobs| D[AWS Batch&lt;br/&gt;Outer Loop Fleet]
+
+    D --&gt;|Per-Chart Container| E[Step Functions&lt;br/&gt;Per-Chart Pipeline]
+
+    E --&gt; F[Lambda: preprocess&lt;br/&gt;Blank detection + rotation]
+    F --&gt;|Processed pages| G[Amazon Textract&lt;br/&gt;DetectDocumentText async]
+    G --&gt;|SNS Completion| H[Lambda: ocr-complete&lt;br/&gt;Retrieve blocks + confidence]
+
+    H --&gt;|Generate JSONL| I1[S3: batch-input/&lt;br/&gt;nova-lite-classify.jsonl]
+    I1 --&gt;|CreateModelInvocationJob| J1[Bedrock Batch&lt;br/&gt;TIER 1: Nova Lite&lt;br/&gt;Classification + Triage&lt;br/&gt;📦 Prompt Caching]
+    J1 --&gt;|Results JSONL| K[Lambda: route-pages&lt;br/&gt;Quality threshold routing]
+
+    K --&gt;|Low confidence pages| L[Lambda: gen-vision-requests&lt;br/&gt;Page image + prompt]
+    K --&gt;|High confidence typed| M[Lambda: gen-extract-requests&lt;br/&gt;Text + extraction prompt]
+
+    L --&gt;|Generate JSONL| I2[S3: batch-input/&lt;br/&gt;sonnet-vision.jsonl]
+    I2 --&gt;|CreateModelInvocationJob| J2[Bedrock Batch&lt;br/&gt;TIER 3-4: Sonnet / Opus Vision&lt;br/&gt;Degraded + Handwritten Pages]
+
+    M --&gt;|Generate JSONL| I3[S3: batch-input/&lt;br/&gt;nova-pro-extract.jsonl]
+    I3 --&gt;|CreateModelInvocationJob| J3[Bedrock Batch&lt;br/&gt;TIER 2: Nova Pro / Haiku&lt;br/&gt;Standard Clinical Extraction]
+
+    J2 --&gt; N[Lambda: merge-extractions&lt;br/&gt;Combine tier results]
+    J3 --&gt; N
+
+    N --&gt;|Generate JSONL| I4[S3: batch-input/&lt;br/&gt;sonnet-fhir.jsonl]
+    I4 --&gt;|CreateModelInvocationJob| J4[Bedrock Batch&lt;br/&gt;TIER 3: Sonnet&lt;br/&gt;FHIR Resource Mapping]
+
+    J4 --&gt; O[Lambda: code-validate&lt;br/&gt;Comprehend Medical&lt;br/&gt;ICD-10 + RxNorm validation]
+    O --&gt; P[Lambda: bundle-assemble&lt;br/&gt;FHIR NDJSON bundle]
+
+    P --&gt;|FHIR NDJSON| Q[S3: fhir-bundles/]
+    Q --&gt;|StartFHIRImportJob| R[Amazon HealthLake&lt;br/&gt;FHIR R4 Data Store]
+
+    E --&gt;|Progress Updates| S[DynamoDB&lt;br/&gt;migration-tracking]
+    R --&gt;|Import Complete| S
+    B --&gt;|Lifecycle: post-migration| T[S3 Glacier IR&lt;br/&gt;charts-archive/]
+    S --&gt;|Metrics| U[CloudWatch&lt;br/&gt;Migration Dashboard]
+
+    style J1 fill:#dfd,stroke:#333
+    style J2 fill:#ffd,stroke:#333
+    style J3 fill:#dfd,stroke:#333
+    style J4 fill:#fbd,stroke:#333
+    style R fill:#9ff,stroke:#333
+    style D fill:#adf,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Textract, Bedrock (Nova Lite, Nova Pro, Claude Haiku, Sonnet, Opus), Comprehend Medical, S3, S3 Lifecycle Policies, AWS Batch, Step Functions (Standard), Lambda, DynamoDB, Amazon HealthLake, CloudWatch, SNS, SQS, KMS</td>
+</tr>
+<tr>
+<td><strong>Bedrock Model Access</strong></td>
+<td>Enable access to <code>amazon.nova-lite-v1:0</code>, <code>amazon.nova-pro-v1:0</code>, <code>anthropic.claude-haiku-4-5-20251022-v1</code>, <code>anthropic.claude-sonnet-4-6-20260217-v1</code>, <code>anthropic.claude-opus-4-6-20260204-v1</code> in the Bedrock console before starting. Cross-region inference profiles (with <code>us.</code> prefix) provide capacity routing across us-east-1, us-east-2, and us-west-2. PHI remains within the AWS private network regardless of which backend region processes the request; VPC endpoint routing applies at the API tier, not the backend inference tier. If your organization has state-level data residency requirements beyond HIPAA, evaluate using direct single-region model ARNs (without the <code>us.</code> prefix) rather than cross-region profiles.</td>
+</tr>
+<tr>
+<td><strong>Bedrock Batch Inference</strong></td>
+<td>Batch inference uses <code>CreateModelInvocationJob</code> with S3 JSONL input and output. Jobs run asynchronously; results are available within 24 hours. There is no additional setup beyond model access; batch mode is available for all models you have on-demand access to.</td>
+</tr>
+<tr>
+<td><strong>Prompt Caching</strong></td>
+<td>Enable by adding a <code>cachePoint</code> to the <code>system</code> parameter in Converse API calls. Mark the static portion of the system prompt (the classification schema, extraction instructions) as cacheable. Use the one-hour TTL (<code>type: &quot;ephemeral&quot;</code>) for batch jobs running against the same prompt for extended periods. Cache write pricing depends on TTL: 5-minute TTL writes cost 125% of the base input rate; 1-hour TTL writes cost 200%. Cache reads (hits) cost 10% regardless of TTL. For batch jobs running over many hours, the 1-hour TTL is the right choice: the higher write cost is recovered quickly at a 90%+ hit rate. At scale, the combined write-plus-read cost is roughly 85% below the uncached input cost for the system prompt.</td>
+</tr>
+<tr>
+<td><strong>Bedrock Guardrails</strong></td>
+<td>For production deployments, configure a Bedrock Guardrail with PII detection and content filtering. Claims and chart documents are untrusted external input. Prompt injection (adversarial content in a scanned document designed to manipulate LLM behavior) is a real risk for bulk external document processing. Guardrails pricing: $0.75 per 1,000 text units for content filtering. Add <code>guardrailConfig</code> to Converse API calls; the pattern is shown in the pseudocode.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>All permissions from Recipes 1.2, 1.5, and 1.6, plus: <code>bedrock:InvokeModel</code>, <code>bedrock:CreateModelInvocationJob</code>, <code>bedrock:GetModelInvocationJob</code>, <code>bedrock:ListModelInvocationJobs</code>, <code>batch:SubmitJob</code>, <code>batch:DescribeJobs</code>, <code>healthlake:StartFHIRImportJob</code>, <code>healthlake:DescribeFHIRImportJob</code>, <code>healthlake:CreateResource</code>, <code>s3:PutLifecycleConfiguration</code>, <code>comprehendmedical:InferICD10CM</code>, <code>comprehendmedical:InferRxNorm</code>. Scope <code>bedrock:InvokeModel</code> to the specific model ARNs used in this recipe rather than <code>*</code>.</td>
+</tr>
+<tr>
+<td><strong>Textract Quota Increases</strong></td>
+<td>The default <code>StartDocumentTextDetection</code> concurrent jobs quota is 25 in most regions. For bulk migration, you need 100 to 500 or more concurrent jobs. File an AWS Support quota increase request at least two to four weeks before your migration start date. Include expected peak concurrency and total job volume. Missing this quota blocks the program on launch day. This is not an edge case; it is the most common launch failure for chart migration programs.</td>
+</tr>
+<tr>
+<td><strong>HealthLake Data Store</strong></td>
+<td>Create a HealthLake FHIR R4 data store before migration starts. HealthLake data stores are regional resources. The <code>DatastoreId</code> is required for all FHIR import jobs. Verify the store is in the same region as your Textract and S3 deployments.</td>
+</tr>
+<tr>
+<td><strong>AWS Batch Compute Environment</strong></td>
+<td>Configure a managed compute environment with Spot instances (restart-safe jobs at significantly reduced cost) or Fargate for simpler configuration. Set minimum vCPU to 0 (scales to zero when queue is empty, no idle cost) and maximum vCPU based on throughput targets. For a migration processing 1,000 charts per day averaging 150 pages each, a compute environment with 500 to 2,000 maximum vCPUs is a reasonable starting range.</td>
+</tr>
+<tr>
+<td><strong>Lambda Configuration</strong></td>
+<td>Lambda's default timeout is 3 seconds. Functions calling Bedrock (or waiting for Textract completion) need significantly higher timeouts. Recommended values: <code>ocr-complete</code> and <code>route-pages</code>: 15 minutes; <code>bundle-assemble</code>: 10 minutes; <code>code-validate</code>: 5 minutes. Configure memory to at least 512MB for functions loading Textract block output; large charts with many TABLE and CELL blocks can generate significant in-memory data. Default 128MB will cause silent memory errors on complex charts.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS Business Associate Addendum signed. Chart migration involves complete longitudinal clinical records: some of the most sensitive PHI your organization will ever process. Every service in this pipeline is HIPAA-eligible. Verify your BAA explicitly covers HealthLake (added to the eligible services list in 2021) and Amazon Bedrock. Bedrock models do not retain or train on customer data sent via API under the BAA.</td>
+</tr>
+<tr>
+<td><strong>VPC Configuration</strong></td>
+<td>All Lambda functions and Batch containers in a VPC with no public internet egress. Required VPC endpoints: S3 (gateway), DynamoDB (gateway), Textract (interface), Comprehend Medical (interface), <strong><code>bedrock-runtime</code></strong> (interface, this is the endpoint your Converse API calls use), Bedrock model management <code>bedrock</code> (interface, separate from <code>bedrock-runtime</code>), HealthLake (interface), Step Functions (interface), KMS (interface), CloudWatch Logs (interface), SNS (interface), SQS (interface). Note: <code>bedrock-runtime</code> and <code>bedrock</code> are two separate VPC interface endpoints. Deploying only <code>bedrock</code> will cause Lambda Converse API calls to fail in a no-egress VPC. <strong>Bedrock batch inference and S3 bucket policies:</strong> Bedrock batch inference reads input JSONL and writes output JSONL using the <code>BEDROCK_BATCH_ROLE_ARN</code> service role via AWS's internal network, not through your VPC S3 gateway endpoint. If your <code>batch-inference</code> bucket policy includes an <code>aws:SourceVpc</code> or <code>aws:SourceVpcEndpoint</code> condition restricting all access to VPC traffic, batch inference S3 access will be silently denied and batch jobs will fail with S3 access errors. Fix: add an explicit bucket policy statement allowing the <code>BEDROCK_BATCH_ROLE_ARN</code> principal without a VPC condition, or use IAM role conditions rather than bucket policy VPC conditions for access control on the <code>batch-inference</code> bucket. Your Lambda's JSONL uploads continue through the VPC S3 gateway endpoint as normal; only the Bedrock service's reads and writes need the exemption.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed key on all buckets (source charts, Textract output, batch inference JSONL, FHIR bundles). DynamoDB: at-rest encryption with KMS. Step Functions: execution history encrypted with KMS. HealthLake: KMS-managed encryption (included). Lambda CloudWatch log groups: configure KMS encryption explicitly on each log group. Lambda does not do this automatically, and Lambda function logs may contain fragments of clinical reasoning strings. All API calls over TLS. Bedrock input and output are not retained beyond the transaction under the BAA. <strong>PHI lifecycle for batch-inference bucket:</strong> The <code>batch-inference</code> S3 bucket stores PHI-containing JSONL files (classification requests contain OCR text; vision extraction requests contain page images). Configure an S3 lifecycle policy on this bucket to expire <code>batch-input/</code> and <code>batch-output/</code> objects after 30 days. These files are ephemeral by design: batch jobs consume them and results are preserved in DynamoDB and the FHIR output bucket. Without a lifecycle policy, PHI accumulates indefinitely in S3 Standard. The Python companion shows the lifecycle configuration.</td>
+</tr>
+<tr>
+<td><strong>Scanning Standards</strong></td>
+<td>300 DPI minimum for all pages (200 DPI absolute minimum for printed text, 300 DPI required for handwriting). Color scanning recommended over grayscale. PDF/A format for long-term archival. Agree on QC sampling with the scanning vendor before full-scale scanning starts. Budget $0.08 to $0.25 per page for scanning; this often exceeds total LLM processing cost at scale.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Use de-identified or synthetic charts during development. The Synthea open-source tool generates realistic synthetic patient records and can export clinical notes. CMS provides sample clinical document templates. Never use real PHI in development or testing environments.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>See the Technology section model tier table for per-page estimates. Per chart (blended across tiers, 150-page average): Textract text detection ~$0.23, Nova Lite classification ~$0.01, Nova Pro/Haiku extraction ~$0.17, Sonnet extraction + FHIR mapping ~$0.45, Opus hard cases ~$0.11, Comprehend Medical ICD-10 validation ~$0.08, AWS Batch compute ~$0.02 = roughly $1.07 per chart at batch inference pricing. The sample pilot output later in this recipe shows $1.11 per chart; the difference reflects a slightly higher Tier 3 page fraction in the pilot data (22% versus the 20% assumed here). Both numbers are in the same range. At high handwriting density (over 40% handwritten pages) with significant Opus escalation, per-chart cost may reach $3.00 to $5.00. With prompt caching on classification prompts (which this recipe uses), real-world costs are typically 15 to 20% below these estimates. Compare to the prior-generation approach: $15 to $50 per chart once A2I human review was factored in.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Textract (async)</strong></td>
+<td>Base OCR on every page: <code>StartDocumentTextDetection</code> for word-level confidence + text, <code>StartDocumentAnalysis</code> FORMS+TABLES for structured pages flagged by Nova Lite classification</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock / Nova Lite</strong></td>
+<td>Tier 1 classification of every page into document type and quality signal. Batch inference + prompt caching.</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock / Nova Pro</strong></td>
+<td>Tier 2 standard clinical extraction on high-confidence typed pages. Batch inference.</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock / Claude Haiku 4.5</strong></td>
+<td>Alternative Tier 2 model. Higher quality than Nova Pro for complex typed documents, faster than Sonnet.</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock / Claude Sonnet 4.6</strong></td>
+<td>Tier 3 complex extraction, vision path for moderate degradation and handwriting, FHIR resource mapping. Batch inference.</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock / Claude Opus 4.6</strong></td>
+<td>Tier 4 hardest cases: severely degraded images, illegible handwriting, complex multi-document segments. Batch inference.</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical (InferICD10CM, InferRxNorm)</strong></td>
+<td>Code validation for LLM-extracted clinical concepts. ICD-10 and RxNorm codes require deterministic validation against authoritative reference data, not LLM generation.</td>
+</tr>
+<tr>
+<td><strong>AWS Batch</strong></td>
+<td>Outer-loop fleet management: distributes millions of chart jobs across a compute environment, manages Spot instance scaling, retries failed jobs, tracks completion.</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions (Standard Workflows)</strong></td>
+<td>Per-chart pipeline orchestration: execution history for debugging, visual state machine, clean error handling across the async Textract and batch inference wait stages.</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Multi-stage storage: raw charts, preprocessed images, Textract output blocks, batch inference JSONL input/output, FHIR bundles.</td>
+</tr>
+<tr>
+<td><strong>S3 Glacier Instant Retrieval</strong></td>
+<td>Long-term archival of source charts after migration. Millisecond retrieval, archival pricing.</td>
+</tr>
+<tr>
+<td><strong>Amazon HealthLake</strong></td>
+<td>FHIR R4 data store receiving migrated records via bulk FHIR NDJSON import.</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Migration state tracking, idempotency guard, quality scores, batch inference job IDs per chart.</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Textract async job completion notification.</td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Dead-letter queues for all Lambda functions. Buffers for A2I review results if applicable.</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operations dashboard: throughput, tier distribution, batch job status, error rates, FHIR import success.</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all services storing PHI, including Lambda CloudWatch log groups.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<hr />
+<p><strong>Step 1: Manifest generation and batch job submission.</strong></p>
+<p>Before processing starts, you need a manifest: one row per chart with the S3 location, chart ID, and member ID. The manifest is what AWS Batch uses to distribute work across its fleet. This step also initializes the DynamoDB tracking record for each chart, which serves as the idempotency guard for the entire pipeline.</p>
+<pre class="code code-plain"><code>// Manifest structure: one CSV row per chart
+// Format: bucket, key, chart_id, member_id, scan_date, estimated_page_count
+
+FUNCTION generate_migration_manifest(s3_prefix: string, output_key: string):
+    chart_objects = list_all_s3_objects(bucket=&quot;charts-raw&quot;, prefix=s3_prefix)
+
+    manifest_rows    = empty list
+    dynamodb_records = empty list
+
+    FOR each object in chart_objects:
+        chart_id = extract_chart_id_from_key(object.key)
+        // Your scanning vendor encodes the chart ID in the filename.
+        // Agree on the naming convention before scanning starts.
+
+        // Idempotency check: skip charts already completed
+        existing = get_dynamodb_item(table=&quot;migration-tracking&quot;, key=chart_id)
+        IF existing is not null AND existing.status IN [&quot;completed&quot;, &quot;import_submitted&quot;]:
+            log: &quot;Skipping already-processed chart: &quot; + chart_id
+            CONTINUE
+
+        manifest_rows.append({
+            bucket:   &quot;charts-raw&quot;,
+            key:      object.key,
+            chart_id: chart_id
+        })
+
+        dynamodb_records.append({
+            chart_id:   chart_id,
+            s3_key:     object.key,
+            status:     &quot;pending&quot;,
+            created_at: current UTC timestamp,
+            page_count: null,    // populated after Textract completes
+            // Initialize tier counters for the operations dashboard
+            tier1_pages: 0,
+            tier2_pages: 0,
+            tier3_pages: 0,
+            tier4_pages: 0
+        })
+
+    write_manifest_csv_to_s3(manifest_rows, bucket=&quot;manifests&quot;, key=output_key)
+    write_dynamodb_records_in_batches(dynamodb_records, batch_size=25)
+
+    RETURN count(manifest_rows), &quot;manifests/&quot; + output_key
+
+FUNCTION submit_batch_migration_job(manifest_key: string, job_count: int) -&gt; string:
+    // AWS Batch array jobs: N copies of the same job definition, each with a
+    // unique array index used to select a row from the manifest.
+    // Array jobs are capped at 10,000 child jobs. For programs processing millions
+    // of charts, submit manifests in chunks of 10,000 and queue multiple array jobs,
+    // or use an SQS-based work queue where workers pull chart IDs independently.
+    response = batch_client.submit_job(
+        jobName:       &quot;chart-migration-&quot; + today_date() + &quot;-&quot; + batch_index,
+        jobQueue:      &quot;chart-migration-queue&quot;,
+        jobDefinition: &quot;chart-migration-job-def&quot;,
+        arrayProperties: { size: min(job_count, 10000) },
+        parameters: { manifest_key: manifest_key }
+    )
+
+    log: &quot;Submitted array job &quot; + response.jobId + &quot; with &quot; + job_count + &quot; charts&quot;
+    RETURN response.jobId
+</code></pre>
+<hr />
+<p><strong>Step 2: Image quality pre-processing.</strong></p>
+<p>Fixing quality issues before OCR is dramatically cheaper than paying for Textract on garbage input, discovering the output is garbage, and re-processing. This step runs per chart, inside each Batch worker, before any API calls.</p>
+<pre class="code code-plain"><code>FUNCTION preprocess_chart(chart_pdf_key: string) -&gt; tuple[string, dict]:
+    pdf_bytes = download_s3_object(bucket=&quot;charts-raw&quot;, key=chart_pdf_key)
+    pages     = split_pdf_into_pages(pdf_bytes)
+
+    quality_report = {
+        total_pages:         length(pages),
+        blank_pages_skipped: 0,
+        rotations_corrected: 0,
+        deskews_applied:     0,
+        low_dpi_warnings:    0
+    }
+
+    processed_pages = empty list
+
+    FOR page_num, image_bytes in pages:
+        img = load_image(image_bytes)
+
+        // Skip blank pages (saves both Textract and LLM costs)
+        IF is_blank_page(img, white_threshold=0.98):
+            quality_report.blank_pages_skipped += 1
+            CONTINUE
+
+        // Correct orientation (fax scans often have incorrect EXIF metadata)
+        orientation = detect_page_orientation(img)
+        IF orientation != 0:
+            img = rotate_image(img, degrees=orientation)
+            quality_report.rotations_corrected += 1
+
+        // Deskew pages (scanner skew up to 5 degrees is common)
+        skew_angle = detect_skew_angle(img)
+        IF absolute_value(skew_angle) &gt; 0.5:
+            img = deskew_image(img, angle=skew_angle)
+            quality_report.deskews_applied += 1
+
+        // Check DPI and flag (cannot upsample effectively, but flag for reporting)
+        dpi = get_image_dpi(img)
+        IF dpi &lt; 200:
+            quality_report.low_dpi_warnings += 1
+            // Do NOT log the page text or content here.
+            // Log only structural metadata to CloudWatch.
+            log_metric(&quot;low_dpi_page&quot;, { chart_id: chart_id, page: page_num, dpi: dpi })
+
+        processed_pages.append({ page_num: page_num, image: img, orig_dpi: dpi })
+
+    processed_pdf_bytes = assemble_pdf_from_images(processed_pages)
+    processed_key = &quot;charts-processed/&quot; + chart_id + &quot;/&quot; + chart_pdf_key
+    upload_s3_object(bucket=&quot;charts-processed&quot;, key=processed_key, data=processed_pdf_bytes)
+
+    // Also store individual page images (needed for vision path in Step 5)
+    FOR page_num, img in processed_pages:
+        page_image_key = &quot;page-images/&quot; + chart_id + &quot;/page-&quot; + page_num + &quot;.png&quot;
+        upload_s3_object(bucket=&quot;charts-processed&quot;, key=page_image_key, data=encode_png(img))
+
+    RETURN processed_key, quality_report
+
+FUNCTION is_blank_page(img, white_threshold: float) -&gt; bool:
+    grayscale = convert_to_grayscale(img)
+    white_pixels = count of pixels with brightness &gt; 240
+    total_pixels = img.width * img.height
+    RETURN (white_pixels / total_pixels) &gt; white_threshold
+</code></pre>
+<hr />
+<p><strong>Step 3: Textract base OCR.</strong></p>
+<p>Textract runs on every page as the quality signal generator. Word-level confidence scores determine which pages route to the vision path (low confidence = image quality issues) versus the text extraction path (high confidence = reliable OCR output). We use <code>DetectDocumentText</code> (not <code>AnalyzeDocument</code>) for this first pass: it is 44 times cheaper per page ($0.0015 vs $0.065) and gives us everything we need for quality triage.</p>
+<pre class="code code-plain"><code>FUNCTION start_textract_ocr(processed_chart_key: string, chart_id: string) -&gt; string:
+    response = textract_client.start_document_text_detection(
+        DocumentLocation={
+            &quot;S3Object&quot;: { &quot;Bucket&quot;: &quot;charts-processed&quot;, &quot;Name&quot;: processed_chart_key }
+        },
+        NotificationChannel={
+            &quot;SNSTopicArn&quot;: &quot;arn:aws:sns:us-east-1:ACCOUNT:textract-chart-jobs&quot;,
+            &quot;RoleArn&quot;:     &quot;arn:aws:iam::ACCOUNT:role/textract-sns-role&quot;
+        },
+        JobTag=chart_id
+    )
+
+    job_id = response.JobId
+
+    update_dynamodb_item(
+        table=&quot;migration-tracking&quot;,
+        key=chart_id,
+        updates={
+            textract_job_id: job_id,
+            status:          &quot;ocr_in_progress&quot;
+        }
+    )
+
+    RETURN job_id
+
+FUNCTION retrieve_ocr_results(job_id: string, chart_id: string) -&gt; string:
+    all_blocks = retrieve_all_textract_blocks_paginated(job_id)
+
+    // Compute per-page quality signals from word blocks
+    page_quality = empty map
+    pages = group_blocks_by_page(all_blocks)
+
+    FOR page_num, page_blocks in pages:
+        words = filter page_blocks where BlockType == &quot;WORD&quot;
+        IF length(words) == 0:
+            page_quality[page_num] = {
+                avg_confidence:   null,
+                handwriting_pct:  0.0,
+                word_count:       0,
+                is_blank:         true
+            }
+            CONTINUE
+
+        avg_conf = average(word.Confidence / 100.0 for word in words)
+        handwritten = count(words where word.TextType == &quot;HANDWRITING&quot;)
+        hw_pct = handwritten / length(words)
+
+        page_quality[page_num] = {
+            avg_confidence:   round(avg_conf, 3),
+            handwriting_pct:  round(hw_pct, 3),
+            word_count:       length(words),
+            page_text:        join(word.Text for word in sorted_reading_order(words),
+                                   separator=&quot; &quot;)
+        }
+
+    // Write blocks and quality signals to S3
+    ocr_output_key = &quot;textract-output/&quot; + chart_id + &quot;/blocks.json&quot;
+    quality_key    = &quot;textract-output/&quot; + chart_id + &quot;/page-quality.json&quot;
+    write_json_to_s3(bucket=&quot;textract-output&quot;, key=ocr_output_key, data=all_blocks)
+    write_json_to_s3(bucket=&quot;textract-output&quot;, key=quality_key, data=page_quality)
+
+    page_count = max(page_quality.keys())
+    update_dynamodb_item(
+        table=&quot;migration-tracking&quot;,
+        key=chart_id,
+        updates={ page_count: page_count, status: &quot;classifying&quot; }
+    )
+
+    RETURN quality_key
+</code></pre>
+<hr />
+<p><strong>Step 4: Nova Lite page classification with prompt caching.</strong></p>
+<p>Every page gets classified. Nova Lite handles this at Tier 1 cost: roughly $0.00005 per page at batch inference pricing. The system prompt is the same for every page in the program. Prompt caching ensures that after the first call in each five-minute window, you are paying 10% of the base input cost for the system prompt.</p>
+<p>At chart migration scale, this step runs as a batch inference job: you assemble a JSONL file with one request per page, submit it to Bedrock, and process results the next morning. The function below shows both the JSONL generation (for batch) and the synchronous format (for testing).</p>
+<pre class="code code-plain"><code>// Classification prompt. The system portion gets cached.
+// This same prompt runs for every page in the migration program.
+CLASSIFICATION_SYSTEM_PROMPT = &quot;&quot;&quot;
+You are a healthcare document classifier. You are reading text extracted from
+scanned historical medical charts spanning 1970-2010. Your task is to classify
+each page as one of the following document types and assess its quality.
+
+Document types:
+- progress_note: Clinical progress note or office visit note (SOAP format or similar)
+- history_and_physical: History and physical examination
+- discharge_summary: Hospital discharge summary
+- operative_report: Surgical or operative report
+- consultation_report: Specialist consultation letter or report
+- lab_result: Laboratory results or pathology report
+- radiology_report: Imaging report (X-ray, MRI, CT, ultrasound)
+- medication_list: Medication list or prescription record
+- immunization_record: Immunization or vaccination record
+- problem_list: Problem list or diagnosis summary
+- other_clinical: Other clinical document type
+- administrative: Administrative forms, authorizations, demographic pages
+- blank_or_artifact: Blank page, fax cover sheet, scanner separator
+
+Return a JSON object with:
+{
+  &quot;doc_type&quot;: &quot;&lt;one of the types above&gt;&quot;,
+  &quot;confidence&quot;: &lt;0.0-1.0&gt;,
+  &quot;handwriting_heavy&quot;: &lt;true if &gt;50% of content appears handwritten&gt;,
+  &quot;structured_content&quot;: &lt;true if the page contains tables or form fields worth extracting&gt;,
+  &quot;extraction_tier&quot;: &lt;1, 2, 3, or 4&gt; // 1=skip, 2=nova-pro, 3=sonnet, 4=opus
+}
+
+Extraction tier guidance:
+- Tier 1 (skip): blank_or_artifact, administrative with no clinical content
+- Tier 2 (nova-pro): clean typed clinical text, printed lab results, typed forms
+- Tier 3 (sonnet): handwritten pages (avg OCR confidence &gt;0.65), complex narrative
+- Tier 4 (opus): severely degraded images (avg OCR confidence &lt;0.45), illegible handwriting
+
+Return ONLY valid JSON. No explanation. No markdown.
+&quot;&quot;&quot;
+
+FUNCTION generate_classification_batch_jsonl(chart_id: string,
+                                              page_quality: dict) -&gt; string:
+    requests = empty list
+
+    FOR page_num, quality in page_quality:
+        IF quality.is_blank:
+            CONTINUE  // Already filtered in preprocess step
+
+        request = {
+            // recordId ties results back to this chart + page
+            &quot;recordId&quot;: chart_id + &quot;-page-&quot; + page_num,
+            &quot;modelInput&quot;: {
+                &quot;system&quot;: [
+                    {
+                        &quot;text&quot;: CLASSIFICATION_SYSTEM_PROMPT,
+                        &quot;cachePoint&quot;: { &quot;type&quot;: &quot;default&quot; }
+                        // This caches the system prompt for 1 hour.
+                        // After the first call, Bedrock charges 10% of the
+                        // base input token rate for the cached portion.
+                        // On a 10,000-page batch job, this saves ~85% on
+                        // the system prompt input cost.
+                    }
+                ],
+                &quot;messages&quot;: [
+                    {
+                        &quot;role&quot;: &quot;user&quot;,
+                        &quot;content&quot;: [
+                            {
+                                &quot;text&quot;: &quot;Chart: &quot; + chart_id + &quot;\n&quot;
+                                        + &quot;Page: &quot; + page_num + &quot;\n&quot;
+                                        + &quot;OCR confidence: &quot; + quality.avg_confidence + &quot;\n&quot;
+                                        + &quot;Handwriting detected: &quot; + quality.handwriting_pct + &quot;\n\n&quot;
+                                        + &quot;Page text:\n&quot;
+                                        + sanitize_page_text(quality.page_text)
+                                        // sanitize_page_text strips control characters,
+                                        // Unicode PUA code points, and injection patterns.
+                                        // See the Python companion for implementation.
+                            }
+                        ]
+                    }
+                ],
+                &quot;inferenceConfig&quot;: { &quot;maxTokens&quot;: 256, &quot;temperature&quot;: 0 }
+            }
+        }
+        requests.append(json_serialize(request))
+
+    jsonl_key = &quot;batch-input/&quot; + chart_id + &quot;/classify.jsonl&quot;
+    write_lines_to_s3(bucket=&quot;batch-inference&quot;, key=jsonl_key, lines=requests)
+    RETURN jsonl_key
+
+FUNCTION submit_classification_batch_job(jsonl_keys: list) -&gt; string:
+    // Submit one batch inference job covering all charts in the current wave.
+    // Aggregating many charts into one job is more efficient than one job per chart.
+    // Typical wave size: 1,000 to 10,000 charts.
+
+    response = bedrock_client.create_model_invocation_job(
+        jobName:           &quot;classify-&quot; + current_timestamp(),
+        modelId:           &quot;us.amazon.nova-lite-v1:0&quot;,
+        // Note: the us. prefix routes through cross-region inference profiles.
+        // For strict version pinning in production, use the full model ARN.
+        // Example: arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0
+        inputDataConfig:   { &quot;s3InputDataConfig&quot;: { &quot;s3Uri&quot;: &quot;s3://batch-inference/batch-input/&quot; } },
+        outputDataConfig:  {
+            &quot;s3OutputDataConfig&quot;: {
+                &quot;s3Uri&quot;:    &quot;s3://batch-inference/batch-output/&quot;,
+                &quot;kmsKeyId&quot;: KMS_KEY_ARN
+            }
+        },
+        roleArn: BEDROCK_BATCH_ROLE_ARN
+    )
+
+    update_dynamodb_item(
+        table=&quot;migration-tracking&quot;,
+        key=&quot;batch-job-&quot; + response.jobArn,
+        updates={ status: &quot;classification_submitted&quot;, job_arn: response.jobArn }
+    )
+
+    RETURN response.jobArn
+</code></pre>
+<hr />
+<p><strong>Step 5: Route by tier and trigger extraction batch jobs.</strong></p>
+<p>After classification results arrive, the routing Lambda reads the results JSONL and assigns each page to its extraction tier. Pages routed to Tier 4 (Opus) need their images pre-staged in S3 for the vision call. Pages routed to Tier 1 (skip) are noted and excluded from extraction.</p>
+<pre class="code code-plain"><code>CONFIDENCE_TO_VISION_PATH = 0.65   // below this, route to vision regardless of classification tier
+CONFIDENCE_TO_OPUS       = 0.45    // below this, escalate to Tier 4 Opus
+
+FUNCTION process_classification_results(results_s3_prefix: string) -&gt; dict:
+    // Load and parse results JSONL
+    result_lines = read_jsonl_from_s3(bucket=&quot;batch-inference&quot;,
+                                       prefix=results_s3_prefix)
+
+    tier_routing = {
+        &quot;tier1_skip&quot;:    empty list,
+        &quot;tier2_nova&quot;:    empty list,
+        &quot;tier3_sonnet&quot;:  empty list,
+        &quot;tier4_opus&quot;:    empty list
+    }
+
+    FOR each result_line in result_lines:
+        record_id = result_line.recordId
+        chart_id, page_num = parse_record_id(record_id)
+        // record_id format: &quot;{chart_id}-page-{page_num}&quot;
+
+        // Parse LLM output
+        output_text = result_line.modelOutput.output.message.content[0].text
+        classification = parse_json_safely(output_text)
+
+        IF classification is null:
+            // Malformed JSON from LLM. Route to Tier 3 for retry with stronger model.
+            log_metric(&quot;classification_parse_error&quot;, { chart: chart_id, page: page_num })
+            tier_routing[&quot;tier3_sonnet&quot;].append({ chart_id, page_num, reason: &quot;parse_error&quot; })
+            CONTINUE
+
+        // Override tier based on Textract quality signal if needed.
+        // The LLM suggests a tier; Textract confidence can escalate it.
+        page_quality = load_page_quality(chart_id, page_num)
+        assigned_tier = classification.extraction_tier
+
+        IF page_quality.avg_confidence &lt; CONFIDENCE_TO_OPUS:
+            assigned_tier = 4
+        ELSE IF page_quality.avg_confidence &lt; CONFIDENCE_TO_VISION_PATH:
+            assigned_tier = max(assigned_tier, 3)
+
+        // Record the routing decision for the CloudWatch tier distribution metric
+        entry = {
+            chart_id:          chart_id,
+            page_num:          page_num,
+            doc_type:          classification.doc_type,
+            classification_conf: classification.confidence,
+            ocr_confidence:    page_quality.avg_confidence,
+            structured:        classification.structured_content,
+            assigned_tier:     assigned_tier
+        }
+        tier_routing[&quot;tier&quot; + assigned_tier + &quot;_...&quot;].append(entry)
+
+    // Emit tier distribution metrics to CloudWatch
+    // (Do NOT include doc_type or clinical content in these metrics)
+    emit_cloudwatch_metric(&quot;tier1_skip_pages&quot;,   count(tier_routing.tier1_skip))
+    emit_cloudwatch_metric(&quot;tier2_nova_pages&quot;,   count(tier_routing.tier2_nova))
+    emit_cloudwatch_metric(&quot;tier3_sonnet_pages&quot;, count(tier_routing.tier3_sonnet))
+    emit_cloudwatch_metric(&quot;tier4_opus_pages&quot;,   count(tier_routing.tier4_opus))
+
+    RETURN tier_routing
+</code></pre>
+<hr />
+<p><strong>Step 6: Bedrock batch inference for multi-tier extraction.</strong></p>
+<p>The extraction batch jobs run in parallel: one job for Tier 2 (Nova Pro), one for Tier 3 (Sonnet text and vision), one for Tier 4 (Opus vision). The JSONL structure is the same across all tiers. The vision tiers include the page image bytes in the request.</p>
+<p>This is the longest-running phase: depending on job size, Bedrock batch inference jobs complete in two to eight hours. The Step Functions per-chart execution waits on a polling loop that checks job status every 30 minutes.</p>
+<pre class="code code-plain"><code>// Tier 2: Nova Pro extraction prompt
+EXTRACTION_TIER2_SYSTEM = &quot;&quot;&quot;
+You are extracting structured clinical information from a scanned medical record page.
+The text was extracted by OCR from a historical paper chart. OCR quality is high for this page.
+
+Extract:
+1. All clinical entities: diagnoses (with any associated dates), medications (with dose and frequency if present), procedures, lab values, allergies, vital signs
+2. The primary date of this document (visit date, report date, or admission date)
+3. Document type confirmation
+
+Return a JSON object:
+{
+  &quot;document_date&quot;: &quot;&lt;YYYY-MM-DD or null&gt;&quot;,
+  &quot;doc_type_confirmed&quot;: &quot;&lt;document type&gt;&quot;,
+  &quot;diagnoses&quot;: [{&quot;description&quot;: &quot;...&quot;, &quot;icd_concept&quot;: &quot;...&quot;, &quot;date&quot;: &quot;...&quot;}],
+  &quot;medications&quot;: [{&quot;name&quot;: &quot;...&quot;, &quot;dose&quot;: &quot;...&quot;, &quot;frequency&quot;: &quot;...&quot;}],
+  &quot;procedures&quot;: [{&quot;description&quot;: &quot;...&quot;, &quot;date&quot;: &quot;...&quot;}],
+  &quot;lab_values&quot;: [{&quot;test&quot;: &quot;...&quot;, &quot;value&quot;: &quot;...&quot;, &quot;unit&quot;: &quot;...&quot;, &quot;ref_range&quot;: &quot;...&quot;}],
+  &quot;allergies&quot;: [&quot;...&quot;],
+  &quot;vital_signs&quot;: [{&quot;type&quot;: &quot;...&quot;, &quot;value&quot;: &quot;...&quot;, &quot;unit&quot;: &quot;...&quot;, &quot;date&quot;: &quot;...&quot;}],
+  &quot;extraction_notes&quot;: &quot;&lt;any notable issues, ambiguities, or limitations&gt;&quot;
+}
+
+Return ONLY valid JSON.
+&quot;&quot;&quot;
+
+FUNCTION generate_extraction_tier2_jsonl(tier2_pages: list) -&gt; string:
+    requests = empty list
+
+    FOR page_info in tier2_pages:
+        chart_id = page_info.chart_id
+        page_num = page_info.page_num
+
+        page_text = load_page_text_from_ocr(chart_id, page_num)
+
+        request = {
+            &quot;recordId&quot;: chart_id + &quot;-ext2-page-&quot; + page_num,
+            &quot;modelInput&quot;: {
+                &quot;system&quot;: [
+                    {
+                        &quot;text&quot;: EXTRACTION_TIER2_SYSTEM,
+                        &quot;cachePoint&quot;: { &quot;type&quot;: &quot;default&quot; }
+                        // Cache the extraction system prompt too.
+                        // Same prompt for every page in this tier.
+                    }
+                ],
+                &quot;messages&quot;: [{
+                    &quot;role&quot;: &quot;user&quot;,
+                    &quot;content&quot;: [{
+                        &quot;text&quot;: &quot;Chart: &quot; + chart_id + &quot; | Page: &quot; + page_num
+                                + &quot; | Type: &quot; + page_info.doc_type + &quot;\n\n&quot;
+                                + sanitize_page_text(page_text)
+                    }]
+                }],
+                &quot;inferenceConfig&quot;: { &quot;maxTokens&quot;: 1024, &quot;temperature&quot;: 0 }
+            }
+        }
+        requests.append(json_serialize(request))
+
+    jsonl_key = &quot;batch-input/extract-tier2-&quot; + batch_id + &quot;.jsonl&quot;
+    write_lines_to_s3(bucket=&quot;batch-inference&quot;, key=jsonl_key, lines=requests)
+    RETURN jsonl_key
+
+FUNCTION generate_extraction_vision_jsonl(vision_pages: list, model_tier: int) -&gt; string:
+    // For Tier 3 (Sonnet) and Tier 4 (Opus) pages requiring vision.
+    // The page image is sent directly to the model instead of OCR text.
+    // Vision is used when OCR confidence is low (fax artifacts, handwriting).
+
+    requests = empty list
+
+    VISION_EXTRACTION_PROMPT = &quot;&quot;&quot;
+Read this handwritten or degraded medical record page. Extract all clinical information visible.
+
+The page is from a historical paper medical chart. Focus on:
+- Diagnoses, conditions, or problems mentioned
+- Medications and doses
+- Dates (visit date, document date, any dates mentioned in context)
+- Lab values, vital signs, or test results
+- Procedures mentioned
+
+Return JSON in this format:
+{
+  &quot;document_date&quot;: &quot;&lt;YYYY-MM-DD or null&gt;&quot;,
+  &quot;doc_type_confirmed&quot;: &quot;&lt;document type&gt;&quot;,
+  &quot;diagnoses&quot;: [{&quot;description&quot;: &quot;...&quot;, &quot;icd_concept&quot;: &quot;...&quot;, &quot;date&quot;: &quot;...&quot;}],
+  &quot;medications&quot;: [{&quot;name&quot;: &quot;...&quot;, &quot;dose&quot;: &quot;...&quot;, &quot;frequency&quot;: &quot;...&quot;}],
+  &quot;procedures&quot;: [{&quot;description&quot;: &quot;...&quot;, &quot;date&quot;: &quot;...&quot;}],
+  &quot;lab_values&quot;: [{&quot;test&quot;: &quot;...&quot;, &quot;value&quot;: &quot;...&quot;, &quot;unit&quot;: &quot;...&quot;, &quot;ref_range&quot;: &quot;...&quot;}],
+  &quot;allergies&quot;: [&quot;...&quot;],
+  &quot;vital_signs&quot;: [{&quot;type&quot;: &quot;...&quot;, &quot;value&quot;: &quot;...&quot;, &quot;unit&quot;: &quot;...&quot;, &quot;date&quot;: &quot;...&quot;}],
+  &quot;legibility&quot;: &lt;0.0-1.0, your confidence in the accuracy of this extraction&gt;,
+  &quot;extraction_notes&quot;: &quot;&lt;anything that was unclear, partially legible, or uncertain&gt;&quot;
+}
+
+Return ONLY valid JSON.
+&quot;&quot;&quot;
+
+    model_id = &quot;us.anthropic.claude-sonnet-4-6-20260217-v1:0&quot;
+    IF model_tier == 4:
+        model_id = &quot;us.anthropic.claude-opus-4-6-20260204-v1:0&quot;
+
+    FOR page_info in vision_pages:
+        chart_id    = page_info.chart_id
+        page_num    = page_info.page_num
+        image_key   = &quot;page-images/&quot; + chart_id + &quot;/page-&quot; + page_num + &quot;.png&quot;
+        image_bytes = load_s3_object(bucket=&quot;charts-processed&quot;, key=image_key)
+
+        // IMPORTANT: batch JSONL requires base64-encoded strings for image bytes.
+        // The synchronous Converse API lets boto3 handle encoding transparently.
+        // In batch JSONL you build the raw JSON yourself, so you must encode manually.
+        // Using list(image_bytes) produces a JSON integer array the Bedrock service
+        // cannot deserialize -- every vision batch request silently fails.
+        // [EDITOR: review fix - P0 image encoding. Fixed base64 encoding for batch JSONL.
+        //  base64.b64encode(image_bytes).decode(&quot;utf-8&quot;) produces the string Bedrock
+        //  requires. list(image_bytes) (the prior pattern) caused silent batch failures.]
+        image_bytes_b64 = base64.b64encode(image_bytes).decode(&quot;utf-8&quot;)
+
+        request = {
+            &quot;recordId&quot;: chart_id + &quot;-ext&quot; + model_tier + &quot;-page-&quot; + page_num,
+            &quot;modelInput&quot;: {
+                &quot;system&quot;: [{
+                    &quot;text&quot;: VISION_EXTRACTION_PROMPT,
+                    &quot;cachePoint&quot;: { &quot;type&quot;: &quot;default&quot; }
+                }],
+                &quot;messages&quot;: [{
+                    &quot;role&quot;: &quot;user&quot;,
+                    &quot;content&quot;: [
+                        {
+                            &quot;image&quot;: {
+                                &quot;format&quot;: &quot;png&quot;,
+                                &quot;source&quot;: { &quot;bytes&quot;: image_bytes_b64 }
+                                // base64-encoded string as required for batch JSONL.
+                            }
+                        },
+                        {
+                            &quot;text&quot;: &quot;Chart: &quot; + chart_id + &quot; | Page: &quot; + page_num
+                        }
+                    ]
+                }],
+                &quot;inferenceConfig&quot;: { &quot;maxTokens&quot;: 1024, &quot;temperature&quot;: 0 }
+            }
+        }
+        requests.append(json_serialize(request))
+
+    // Vision JSONL file size note: embedded base64 images create very large files.
+    // A 300 DPI PNG page runs 1-3MB raw; base64-encoded, that is 1.3-4MB per request line.
+    // For a wave of 10,000 vision-path pages, the input JSONL can reach 13-40GB.
+    // Required actions before submitting:
+    //   (1) Split vision batches into smaller JSONL files (2,000-3,000 pages per file).
+    //   (2) Use S3 multipart upload for files larger than 5GB (boto3 TransferConfig).
+    //   (3) Verify each individual request line stays within Bedrock&#x27;s per-request
+    //       payload limit for your region (check current batch inference docs).
+    //   (4) Consider downsampling 600 DPI source images to 300 DPI before embedding;
+    //       300 DPI is sufficient for vision model performance per Recipe 1.6.
+    // [EDITOR: review fix - P1 vision JSONL file sizes. Added size and splitting guidance.]
+    jsonl_key = &quot;batch-input/extract-tier&quot; + model_tier + &quot;-vision-&quot; + batch_id + &quot;.jsonl&quot;
+    write_lines_to_s3(bucket=&quot;batch-inference&quot;, key=jsonl_key, lines=requests)
+    RETURN jsonl_key
+</code></pre>
+<hr />
+<p><strong>Step 7: Code validation with Comprehend Medical.</strong></p>
+<p>After extraction results arrive from all tiers, the clinical concepts (diagnoses, medications) need code validation. LLMs understand clinical language; they do not reliably produce correct ICD-10-CM codes or RxNorm CUIs on their own. Comprehend Medical's inference APIs map extracted text descriptions to validated codes.</p>
+<pre class="code code-plain"><code>FUNCTION validate_codes_with_comprehend_medical(extractions: dict) -&gt; dict:
+    // extractions: map of page_num -&gt; extraction_result from all tiers
+
+    FOR page_num, extraction in extractions:
+        IF extraction.diagnoses is empty AND extraction.medications is empty:
+            CONTINUE  // Nothing to validate
+
+        validated = {
+            diagnoses_coded:   empty list,
+            medications_coded: empty list
+        }
+
+        // ICD-10 inference for diagnoses
+        // Comprehend Medical accepts up to 20,000 characters per call.
+        // Chunk diagnosis descriptions if needed.
+        diagnosis_text = join(d.description for d in extraction.diagnoses, separator=&quot;\n&quot;)
+        IF length(diagnosis_text) &gt; 0:
+            // Retry configuration: use adaptive mode (exponential backoff + jitter)
+            // Comprehend Medical throttles at high call rates. This is expected.
+            icd10_response = comprehend_medical_client_with_retry.infer_icd10_cm(
+                Text=diagnosis_text[:20000]  // truncate to API limit
+            )
+            FOR each icd10_entity in icd10_response.Entities:
+                IF icd10_entity.ICD10CMConcepts AND
+                   icd10_entity.ICD10CMConcepts[0].Score &gt;= 0.80:
+                    validated.diagnoses_coded.append({
+                        description: icd10_entity.Text,
+                        icd10_code:  icd10_entity.ICD10CMConcepts[0].Code,
+                        icd10_display: icd10_entity.ICD10CMConcepts[0].Description,
+                        score:       icd10_entity.ICD10CMConcepts[0].Score
+                    })
+
+        // RxNorm inference for medications
+        medication_text = join(m.name + &quot; &quot; + (m.dose or &quot;&quot;) for m in extraction.medications,
+                                separator=&quot;\n&quot;)
+        IF length(medication_text) &gt; 0:
+            rxnorm_response = comprehend_medical_client_with_retry.infer_rxnorm(
+                Text=medication_text[:20000]
+            )
+            FOR each rx_entity in rxnorm_response.Entities:
+                IF rx_entity.RxNormConcepts AND
+                   rx_entity.RxNormConcepts[0].Score &gt;= 0.80:
+                    validated.medications_coded.append({
+                        name:         rx_entity.Text,
+                        rxnorm_cui:   rx_entity.RxNormConcepts[0].Code,
+                        rxnorm_name:  rx_entity.RxNormConcepts[0].Description,
+                        score:        rx_entity.RxNormConcepts[0].Score
+                    })
+
+        extractions[page_num][&quot;validated_codes&quot;] = validated
+
+    RETURN extractions
+</code></pre>
+<hr />
+<p><strong>Step 8: FHIR resource mapping with Sonnet.</strong></p>
+<p>The FHIR mapping step takes validated extraction results and generates structured FHIR R4 resources. This is where LLMs genuinely shine compared to rule-based mappers: the model understands clinical context well enough to make appropriate choices about resource type, status, and completeness. The FHIR generation runs as another batch inference job (Tier 3: Sonnet).</p>
+<blockquote>
+<p><strong>Mandatory Code Validation.</strong> Any ICD-10, RxNorm, or CPT code emitted by the LLM FHIR mapping stage must be validated against an authoritative code reference before HealthLake ingestion. Use Comprehend Medical <code>InferICD10CM</code> for ICD-10 codes. For CPT codes, validate against the AMA CPT code file or an equivalent reference. For RxNorm, use Comprehend Medical <code>DetectEntitiesV2</code>. A hallucinated medical code (e.g., <code>M17.1</code> vs. <code>M17.11</code>, or a plausible-sounding but nonexistent code) that lands in HealthLake will corrupt the longitudinal record silently. This validation step is not optional.</p>
+</blockquote>
+<pre class="code code-plain"><code>FHIR_MAPPING_SYSTEM = &quot;&quot;&quot;
+You are generating FHIR R4 resources from extracted historical medical record data.
+The data was extracted from paper charts via OCR and LLM analysis.
+
+IMPORTANT RULES:
+1. All migrated records use verificationStatus = &quot;unconfirmed&quot; for Condition resources.
+   Do NOT use &quot;confirmed&quot;. These are OCR-derived records, not clinician-verified.
+2. Do NOT include clinicalStatus on Condition resources.
+   The condition-clinical ValueSet has no &quot;unknown&quot; code and HealthLake will reject it.
+3. For dates inferred from document context (not explicitly stated), include them
+   but note the inference in the resource&#x27;s note field.
+4. Every resource MUST include a note field with: source chart ID, page range,
+   OCR confidence level, and extraction tier. This is the provenance trail.
+5. Status for MedicationStatement is always &quot;unknown&quot; for historical records.
+6. Only generate resources for data with reasonable confidence. If the extraction
+   notes indicate the content was unclear or illegible, omit those specific fields.
+
+Generate a JSON array of FHIR R4 resources. Include:
+- One DocumentReference per page range (always generated, even if no other resources)
+- Condition resources for validated diagnoses (ICD-10 code required)
+- MedicationStatement resources for validated medications (RxNorm CUI preferred)
+- Observation resources for lab values
+- Immunization resources if immunization records are present
+
+Return ONLY a valid JSON array of FHIR resources.
+&quot;&quot;&quot;
+
+FUNCTION generate_fhir_mapping_jsonl(chart_id: string,
+                                      member_id: string,
+                                      validated_extractions: dict) -&gt; string:
+    // Group pages into logical document segments (boundaries from Step 3 OCR output)
+    segments = group_pages_into_segments(validated_extractions, chart_id)
+
+    requests = empty list
+
+    FOR segment in segments:
+        // Assemble segment data: pages, extractions, validated codes
+        segment_data = {
+            chart_id:    chart_id,
+            member_id:   member_id,
+            start_page:  segment.start_page,
+            end_page:    segment.end_page,
+            doc_type:    segment.doc_type,
+            pages:       [validated_extractions[p] for p in segment.page_range]
+        }
+
+        request = {
+            &quot;recordId&quot;: chart_id + &quot;-fhir-seg-&quot; + segment.start_page,
+            &quot;modelInput&quot;: {
+                &quot;system&quot;: [{
+                    &quot;text&quot;: FHIR_MAPPING_SYSTEM,
+                    &quot;cachePoint&quot;: { &quot;type&quot;: &quot;default&quot; }
+                }],
+                &quot;messages&quot;: [{
+                    &quot;role&quot;: &quot;user&quot;,
+                    &quot;content&quot;: [{
+                        &quot;text&quot;: json_serialize(segment_data)
+                    }]
+                }],
+                &quot;inferenceConfig&quot;: { &quot;maxTokens&quot;: 4096, &quot;temperature&quot;: 0 }
+            }
+        }
+        requests.append(json_serialize(request))
+
+    jsonl_key = &quot;batch-input/&quot; + chart_id + &quot;/fhir-map.jsonl&quot;
+    write_lines_to_s3(bucket=&quot;batch-inference&quot;, key=jsonl_key, lines=requests)
+    RETURN jsonl_key
+
+// generate_fallback_document_reference: called in assemble_fhir_bundle when FHIR
+// output is malformed or unparseable. Produces a minimal valid DocumentReference so
+// the chart always contributes at least one FHIR resource rather than being dropped.
+// Without this definition, the fallback call raises a NameError and the intended
+// graceful degradation becomes an unhandled exception.
+// [EDITOR: review fix - P1 undefined function. Added definition for
+//  generate_fallback_document_reference, which was called but never defined in v2.
+//  A NameError here turns graceful fallback into an unhandled exception.]
+FUNCTION generate_fallback_document_reference(chart_id: string,
+                                               member_id: string,
+                                               result: dict) -&gt; dict:
+    // result is the raw batch inference result record (including recordId).
+    segment_id = result.get(&quot;recordId&quot;, &quot;unknown-segment&quot;)
+    RETURN {
+        &quot;resourceType&quot;: &quot;DocumentReference&quot;,
+        &quot;status&quot;:       &quot;current&quot;,
+        &quot;subject&quot;:      { &quot;reference&quot;: &quot;Patient/&quot; + member_id },
+        &quot;type&quot;: {
+            &quot;coding&quot;: [{
+                &quot;system&quot;:  &quot;http://loinc.org&quot;,
+                &quot;code&quot;:    &quot;34133-9&quot;,
+                &quot;display&quot;: &quot;Summary of episode note&quot;
+            }]
+        },
+        &quot;note&quot;: [{
+            &quot;text&quot;: (
+                &quot;FHIR mapping failed for chart &quot; + chart_id + &quot;, segment &quot; + segment_id + &quot;. &quot;
+                + &quot;DocumentReference generated as fallback. Manual review recommended. &quot;
+                + &quot;Original chart content preserved in S3 source bucket.&quot;
+            )
+        }]
+    }
+    // After generating this fallback, emit a CloudWatch metric so the fallback rate
+    // is visible in the operations dashboard:
+    //   emit_cloudwatch_metric(&quot;fhir_mapping_fallback&quot;, 1)
+    // A fallback rate above 1-2% on a wave warrants investigation.
+
+FUNCTION assemble_fhir_bundle(chart_id: string,
+                               member_id: string,
+                               fhir_mapping_results: list) -&gt; dict:
+    all_resources = empty list
+
+    FOR result in fhir_mapping_results:
+        output_text = result.modelOutput.output.message.content[0].text
+        resources   = parse_json_safely(output_text)
+
+        IF resources is null OR not is_list(resources):
+            // Malformed FHIR output. Generate a bare DocumentReference as fallback.
+            log_metric(&quot;fhir_mapping_parse_error&quot;, { chart: chart_id, segment: result.recordId })
+            resources = [generate_fallback_document_reference(chart_id, member_id, result)]
+
+        all_resources.extend(resources)
+
+    // MANDATORY: Validate all medical codes in LLM-generated FHIR resources
+    // before HealthLake ingestion. LLMs hallucinate plausible medical codes.
+    FOR EACH fhir_resource IN all_resources:
+        validated_codes = validate_medical_codes(fhir_resource)
+        IF any code fails validation:
+            flag_resource_for_review(fhir_resource, invalid_codes)
+
+    // De-duplicate: same ICD-10 code from multiple pages produces one Condition
+    all_resources = deduplicate_conditions(all_resources,
+                                           key=[&quot;subject.reference&quot;, &quot;code.coding[0].code&quot;])
+    all_resources = deduplicate_medication_statements(all_resources,
+                                                       key=[&quot;subject.reference&quot;,
+                                                            &quot;medicationCodeableConcept.coding[0].code&quot;])
+
+    resource_counts = {
+        &quot;DocumentReference&quot;:  count(r where r.resourceType == &quot;DocumentReference&quot;),
+        &quot;Condition&quot;:          count(r where r.resourceType == &quot;Condition&quot;),
+        &quot;MedicationStatement&quot;: count(r where r.resourceType == &quot;MedicationStatement&quot;),
+        &quot;Observation&quot;:        count(r where r.resourceType == &quot;Observation&quot;),
+        &quot;Immunization&quot;:       count(r where r.resourceType == &quot;Immunization&quot;)
+    }
+
+    RETURN {
+        resources:       all_resources,
+        resource_counts: resource_counts,
+        total:           length(all_resources)
+    }
+</code></pre>
+<hr />
+<p><strong>Step 9: Write FHIR NDJSON and load to HealthLake.</strong></p>
+<p>HealthLake's bulk import reads NDJSON from S3: one FHIR resource per line. To avoid one import job per chart (expensive setup overhead at scale), accumulate completed charts and batch-submit import jobs covering 1,000 to 5,000 charts at a time.</p>
+<pre class="code code-plain"><code>FUNCTION write_fhir_bundle_to_s3(chart_id: string,
+                                   bundle: dict) -&gt; string:
+    ndjson_lines = join(json_serialize(r) for r in bundle.resources, separator=&quot;\n&quot;)
+    bundle_key   = &quot;fhir-bundles/&quot; + chart_id + &quot;/bundle.ndjson&quot;
+    write_string_to_s3(bucket=&quot;fhir-output&quot;, key=bundle_key, data=ndjson_lines)
+
+    // DynamoDB update uses Decimal for all numeric values (boto3 requires this)
+    update_dynamodb_item(
+        table=&quot;migration-tracking&quot;,
+        key=chart_id,
+        updates={
+            status:             &quot;fhir_ready&quot;,
+            fhir_bundle_key:    bundle_key,
+            fhir_resource_total: Decimal(str(bundle.total)),
+            conditions_count:   Decimal(str(bundle.resource_counts.Condition)),
+            obs_count:          Decimal(str(bundle.resource_counts.Observation)),
+            med_count:          Decimal(str(bundle.resource_counts.MedicationStatement)),
+            docref_count:       Decimal(str(bundle.resource_counts.DocumentReference))
+        }
+    )
+
+    RETURN bundle_key
+
+FUNCTION submit_healthlake_import_batch(datastore_id: string, batch_size: int = 2000):
+    ready_charts = query_dynamodb(
+        table=&quot;migration-tracking&quot;,
+        filter=&quot;status = &#x27;fhir_ready&#x27;&quot;,
+        limit=batch_size
+    )
+
+    IF length(ready_charts) == 0:
+        RETURN
+
+    // All FHIR NDJSON files for this batch live under fhir-bundles/.
+    // HealthLake StartFHIRImportJob takes an S3 URI prefix, not a manifest of manifests.
+    // Write all bundles for this batch to a timestamped import prefix.
+    import_prefix = &quot;fhir-imports/&quot; + current_timestamp() + &quot;/&quot;
+    FOR chart in ready_charts:
+        copy_s3_object(
+            src_bucket=&quot;fhir-output&quot;,
+            src_key=chart.fhir_bundle_key,
+            dst_bucket=&quot;fhir-import-staging&quot;,
+            dst_key=import_prefix + chart.chart_id + &quot;.ndjson&quot;
+        )
+
+    response = healthlake_client.start_fhir_import_job(
+        InputDataConfig={
+            &quot;S3Uri&quot;: &quot;s3://fhir-import-staging/&quot; + import_prefix
+        },
+        JobOutputDataConfig={
+            &quot;S3Configuration&quot;: {
+                &quot;S3Uri&quot;:    &quot;s3://fhir-output/import-results/&quot; + current_timestamp() + &quot;/&quot;,
+                &quot;KmsKeyId&quot;: KMS_KEY_ARN
+            }
+        },
+        DatastoreId:       datastore_id,
+        DataAccessRoleArn: HEALTHLAKE_IMPORT_ROLE_ARN
+    )
+
+    import_job_id = response.JobId
+
+    FOR chart in ready_charts:
+        update_dynamodb_item(
+            table=&quot;migration-tracking&quot;,
+            key=chart.chart_id,
+            updates={
+                status:             &quot;import_submitted&quot;,
+                healthlake_job_id:  import_job_id
+            }
+        )
+
+    RETURN import_job_id
+</code></pre>
+<hr />
+<p><strong>Step 10: Source chart archival.</strong></p>
+<p>After HealthLake confirms import success, the source PDF moves to Glacier. This is handled by an S3 Lifecycle rule (set once at bucket creation) rather than per-chart API calls.</p>
+<pre class="code code-plain"><code>// S3 Lifecycle policy for the charts-raw bucket.
+// Applied once; no per-chart API calls needed.
+LIFECYCLE_POLICY = {
+    Rules: [{
+        ID:     &quot;archive-completed-charts&quot;,
+        Status: &quot;Enabled&quot;,
+        Filter: {
+            // Tag filter: charts tagged &quot;migration-status=completed&quot;
+            // become eligible for transition.
+            // We set this tag on the S3 object after HealthLake import succeeds.
+            Tag: { Key: &quot;migration-status&quot;, Value: &quot;completed&quot; }
+        },
+        Transitions: [{
+            Days:         30,
+            StorageClass: &quot;GLACIER_IR&quot;
+            // Glacier Instant Retrieval: millisecond access for legal discovery
+            // or member record requests. More expensive than Deep Archive but
+            // appropriate when retrieval latency matters.
+        }],
+        // CMS requires 10-year retention for Medicare records.
+        // Set per your member population.
+        Expiration: { Days: 3653 }   // 10 years
+    }]
+}
+
+FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
+    // Tag the S3 object to trigger the lifecycle rule
+    set_s3_object_tag(
+        bucket=&quot;charts-raw&quot;,
+        key=s3_key,
+        tag_key=&quot;migration-status&quot;,
+        tag_value=&quot;completed&quot;
+    )
+
+    update_dynamodb_item(
+        table=&quot;migration-tracking&quot;,
+        key=chart_id,
+        updates={
+            status:       &quot;completed&quot;,
+            completed_at: current UTC timestamp
+        }
+    )
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code demonstrating these patterns using boto3, check out the <a href="chapter01.10-python-example.html">Python Example</a>. It walks through the Bedrock batch inference API, prompt caching configuration, vision calls, FHIR bundle assembly, and all the production gotchas (DynamoDB Decimals, Lambda timeouts, PHI-safe logging) with inline comments.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Migration dashboard output for a 10,000-chart pilot (150-page average):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;migration_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;charts_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;charts_completed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9891</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;charts_in_progress&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;charts_failed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">67</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;charts_skipped_duplicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;charts_flagged_for_manual_review&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">218</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total_pages_processed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1503000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;avg_pages_per_chart&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;elapsed_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;throughput_charts_per_day&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1238</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;model_tier_distribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;tier1_skip&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">94000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;pct&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.063</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;tier2_nova_pro&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1028000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;pct&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.684</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;tier3_sonnet&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">331000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;pct&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.220</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;tier4_opus&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;pct&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.033</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;batch_inference_jobs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;classification_jobs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;extraction_jobs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">38</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;fhir_mapping_jobs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;avg_job_completion_hours&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.2</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;fhir_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;document_references&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">82400</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;conditions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">318200</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;observations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">489000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;medication_statements&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">212100</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;immunizations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">28400</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total_fhir_resources&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1131100</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;cost_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;textract_text_detection&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$2,254.50&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bedrock_tier1_nova_lite&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$187.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bedrock_tier2_nova_pro&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1,131.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bedrock_tier3_sonnet&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$2,978.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bedrock_tier4_opus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1,125.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bedrock_fhir_mapping_sonnet&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1,442.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;comprehend_medical_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$901.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;healthlake_import&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$181.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;aws_batch_compute&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$540.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;s3_storage_transfer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$320.00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$11,059.50&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cost_per_chart&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1.11&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<blockquote>
+<p>42 charts were identified as duplicates during manifest generation (same patient MRN and chart date appearing multiple times in the source system) and excluded from processing.</p>
+</blockquote>
+<blockquote>
+<p>HealthLake import cost is based on data volume ingested (GB), not per-resource pricing. The 1,131,100 FHIR resources at an average of ~1.2 KB per resource total approximately 1.3 GB ingested at the HealthLake data ingestion rate.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note on cost table vs. pilot figures:</strong> The per-page cost estimates in the table above are simplified blended averages based on input tokens only. The pilot figures reflect actual token counts including output tokens, cache miss overhead during the initial prompt caching warm-up period, and per-request baseline charges. For budgeting purposes, use the pilot figures as the more accurate reference. The per-page table is useful for back-of-envelope comparisons between tiers, not for precise cost projection.</p>
+</blockquote>
+<p><strong>Per-chart sample output:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;chart_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CHT-2026-009143&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;member_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MED4182091&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;completed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;pages&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">184</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_tier_distribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;tier1_skip&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tier2_nova_pro&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">128</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tier3_sonnet&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tier4_opus&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;fhir_resources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;document_references&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">19</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;conditions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">34</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;observations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">87</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;medication_statements&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;immunizations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">168</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-05T09:44:18Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Processing time per chart (end-to-end, batch mode)</td>
+<td>4 to 12 hours (Textract async + batch inference job queue)</td>
+</tr>
+<tr>
+<td>Sustained throughput</td>
+<td>1,000 to 3,000 charts per day (scales with Batch fleet size)</td>
+</tr>
+<tr>
+<td>Nova Lite classification accuracy</td>
+<td>88 to 94%</td>
+</tr>
+<tr>
+<td>Nova Pro extraction completeness (typed clinical)</td>
+<td>82 to 91%</td>
+</tr>
+<tr>
+<td>Sonnet vision extraction accuracy (handwritten)</td>
+<td>74 to 88% (varies with handwriting quality)</td>
+</tr>
+<tr>
+<td>FHIR resource completeness rate</td>
+<td>87 to 93% of pages with clinical content produce at least one FHIR resource beyond DocumentReference</td>
+</tr>
+<tr>
+<td>ICD-10 code mapping accuracy (Comprehend Medical validation)</td>
+<td>85 to 92% on clearly stated diagnoses</td>
+</tr>
+<tr>
+<td>Cost per chart (batch pricing, 150-page average)</td>
+<td>$0.80 to $2.50 depending on tier distribution</td>
+</tr>
+<tr>
+<td>Cost per chart (high handwriting density, 40%+ Tier 3/4)</td>
+<td>$2.50 to $5.00</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong> Dot-matrix printouts from the 1980s with severely degraded ribbon strike. Opus handles these better than Sonnet, but even Opus occasionally hallucinates content on pages where the actual printed characters are physically indistinguishable from background noise. The correct response for these pages is to generate only a DocumentReference (the &quot;we have this document&quot; record) with a provenance note indicating extraction failed due to image quality, rather than prompting the model harder and getting increasingly speculative output.</p>
+<p>Charts from providers who documented exclusively in rapid cursive with no line breaks, section labels, or structural markers: document boundary detection fails on these. The entire chart gets treated as one large document segment, which makes FHIR mapping coarser but at least produces a DocumentReference bundle that can serve as a starting point for a human reviewer.</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode captures the core logic. A production chart migration program requires these additions that this example omits.</p>
+<p><strong>Boto3 client retry configuration.</strong> Every client that calls Bedrock or Comprehend Medical needs <code>botocore.config.Config(retries={&quot;max_attempts&quot;: 3, &quot;mode&quot;: &quot;adaptive&quot;})</code>. Adaptive mode implements exponential backoff with jitter, which is the right behavior for Bedrock throttling under load. The Python companion shows this pattern. The pseudocode above skips it for readability. In production, missing retry configuration is the most common cause of pipeline failures on launch day.</p>
+<p><strong>Lambda timeouts.</strong> Lambda's default timeout is 3 seconds. A single Sonnet vision call at normal load takes 5 to 15 seconds. The functions in this recipe need timeouts in the 5 to 15 minute range depending on what they do. The Prerequisites table has the specifics.</p>
+<p><strong>PHI-safe logging.</strong> Never log raw extracted text, LLM response content, or reasoning strings to CloudWatch. Reason: Lambda CloudWatch log groups are not encrypted by default, and any clinical content in those logs is uncontrolled PHI. Log only structural metadata: chart IDs, page counts, tier routing decisions, error types. If you need the model's reasoning for debugging, write it to S3 alongside the Textract output, where it is covered by the existing SSE-KMS controls. The Python companion shows safe logging patterns throughout.</p>
+<p><strong>Prompt injection sanitization.</strong> Scanned documents are untrusted external input. A document in the chart could contain text specifically crafted to manipulate the LLM. Before including any OCR-extracted text in a Bedrock API call, strip null bytes, C0/C1 control characters (except newline, tab, carriage return), Unicode Private Use Area code points, and patterns that look like instruction overrides. Add Bedrock Guardrails with PII detection and content filtering (<code>guardrailConfig</code> in the Converse call) as a second line of defense. The Python companion shows the sanitization function.</p>
+<p><strong>FHIR <code>clinicalStatus</code> and HealthLake validation.</strong> The FHIR mapping system prompt instructs the model to omit <code>clinicalStatus</code>. Document this in your FHIR data model documentation. If you include it, HealthLake will reject the import with a validation error. The FHIR <code>condition-clinical</code> ValueSet genuinely has no <code>unknown</code> code. Use <code>verificationStatus = unconfirmed</code> for all OCR-derived records and omit <code>clinicalStatus</code> entirely.</p>
+<p><strong>Bedrock batch inference input format.</strong> The <code>CreateModelInvocationJob</code> API requires the JSONL input to use the model-specific inference request format, not the Converse API format. Nova and Claude models have different JSONL schemas. The Python companion includes both formats and notes which input schema each model expects.</p>
+<p><strong>AWS Batch array job limit.</strong> Array jobs cap at 10,000 child jobs. For millions of charts, submit wave manifests in chunks of 10,000 or switch to an SQS-based model where Batch workers pull chart IDs from a queue independently.</p>
+<p><strong>Comprehend Medical regional availability.</strong> Comprehend Medical is available in approximately eight AWS regions. Before finalizing your deployment region, verify availability at the Comprehend Medical regional endpoints documentation. If your target region is unsupported, cross-region calls or a Bedrock-based code validation fallback are the options. LLMs are less reliable than Comprehend Medical for exact code lookup, so the fallback has accuracy implications.</p>
+<p><strong>Model version pinning.</strong> The cross-region inference profile IDs used in this recipe (<code>us.amazon.nova-lite-v1:0</code>, <code>us.anthropic.claude-sonnet-4-6-20260217-v1:0</code>) are AWS-managed mappings that can be updated to new underlying model versions. For a migration program where consistent extraction behavior matters across six to twelve months of processing, pin to explicit model version ARNs (e.g., <code>arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-20240229-v1:0</code>). Test your extraction quality after any model update before continuing bulk processing.</p>
+<p><strong>Vision JSONL file sizes.</strong> Embedding base64-encoded page images in batch JSONL creates very large files: a 300 DPI PNG page runs 1 to 3 MB raw, which becomes 1.3 to 4 MB per request line after base64 encoding. A wave of 10,000 vision-path pages produces an input JSONL of 13 to 40 GB. Split vision batches into smaller JSONL files before submission (2,000 to 3,000 pages per file is a manageable chunk). Use S3 multipart upload for files larger than 5 GB (boto3's <code>TransferConfig</code> handles this automatically when configured). Validate that each individual request line stays within Bedrock's current per-request payload limit for your region. Consider downsampling very high-resolution source images from 600 DPI to 300 DPI before embedding -- 300 DPI is sufficient for vision model performance per Recipe 1.6's benchmarks and cuts file sizes by approximately 75%.</p>
+<p><strong>Service Unavailability During Long-Running Migration.</strong> A 6-12 month migration program will encounter AWS service incidents. Bedrock batch inference jobs that fail mid-execution need automatic retry with checkpoint resumption (do not reprocess successfully extracted charts). Production deployments need: (1) per-batch checkpoint tracking in DynamoDB so failed batches resume from the last successful chart, (2) CloudWatch alarms on batch job failure rates with automatic pause if the failure rate exceeds a threshold (preventing wasted spend on a degraded service), and (3) a model version governance process: lock model IDs at program start, document them in a migration configuration file, and require re-processing validation on a sample of previously processed charts before any mid-program model version change.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Intelligent tier escalation with confidence feedback loops.</strong> The routing thresholds in Step 5 are static across the entire migration. A smarter approach routes some mid-confidence pages to both Nova Pro and Sonnet, compares the extraction results (checking for agreement on key fields like diagnoses and medications), and uses disagreement as a signal to escalate to Opus or flag for human review. This adds cost (some pages get processed twice) but improves accuracy for the pages that matter most: the ones where the models disagree are exactly the ones most likely to have extraction errors. Implement this as a post-extraction comparison step and trigger escalation when the extracted diagnoses or medication lists differ between tiers.</p>
+<p><strong>ML-based document boundary detection.</strong> The document segmentation in this recipe uses Nova Lite's classification output to infer boundaries between logical document types. This works reasonably well but misses boundaries between pages of the same document type (e.g., two separate progress notes by different physicians in the same session, with no clear visual break). After six months of migration, you have labeled segmentation examples from quality review and correction feedback. Train an Amazon Comprehend Custom Classification model on these examples. The model learns the specific boundary signals that appear in your chart population (specific header formats from your scanning vendor, specific provider templates, specific date patterns) in a way that a general-purpose classification prompt cannot.</p>
+<p><strong>Priority-based migration sequencing.</strong> For large programs, migrating all charts before any charts are useful is a bad strategy. Score charts by member status before migration: active members with recent care events get processed first (highest clinical relevance), followed by members in high-risk cohorts (highest risk adjustment value), followed by recently acquired charts (most likely to have gaps in the current system), followed by inactive members. Encode this priority score in the DynamoDB tracking record and use it to order the manifest generation waves. You can have high-priority charts loaded in HealthLake within weeks of program start, even if the full migration takes twelve months. For care management and risk adjustment programs, earlier availability of high-value charts often justifies the implementation complexity.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference.html">Amazon Bedrock Batch Inference</a>: Complete guide to <code>CreateModelInvocationJob</code>, JSONL input format, S3 output configuration, and job monitoring</li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html">Amazon Bedrock Prompt Caching</a>: How to configure <code>cachePoint</code> in system prompts, TTL options, pricing model for cache reads vs. writes</li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html">Amazon Bedrock Converse API</a>: Unified inference API for text and vision inputs, system prompts, and structured output</li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a>: Content filtering and PII detection configuration, <code>guardrailConfig</code> parameter for Converse API calls</li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">Amazon Bedrock: HIPAA-Eligible Services</a>: Confirm Bedrock is covered under your BAA before sending PHI to any model</li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html">Amazon Nova Lite Model Documentation</a>: Capabilities, context window, vision support, and model ID reference</li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html">Amazon HealthLake Developer Guide</a>: FHIR data store creation, bulk import, FHIR API reference</li>
+<li><a href="https://docs.aws.amazon.com/healthlake/latest/devguide/start-fhir-import-job.html">Amazon HealthLake: StartFHIRImportJob</a>: Input data format, S3 URI configuration, IAM role requirements</li>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/async.html">Amazon Textract: Async Text Detection</a>: <code>StartDocumentTextDetection</code> API, SNS notification pattern, paginated result retrieval</li>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/limits.html">Amazon Textract: Service Quotas</a>: Default concurrent job limits and quota increase process</li>
+<li><a href="https://docs.aws.amazon.com/general/latest/gr/comprehend-medical.html">Amazon Comprehend Medical: Regional Availability</a>: Region support matrix for InferICD10CM and InferRxNorm</li>
+<li><a href="https://docs.aws.amazon.com/batch/latest/userguide/array_jobs.html">AWS Batch: Array Jobs</a>: Array job structure, 10,000 job limit, array index usage</li>
+<li><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html">Amazon S3 Lifecycle Policies</a>: Tag-based lifecycle rules, storage class transitions</li>
+<li><a href="https://aws.amazon.com/s3/storage-classes/glacier/">Amazon S3 Glacier Instant Retrieval</a>: Pricing, retrieval latency characteristics, compliance retention use cases</li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/concepts-standard-vs-express.html">AWS Step Functions: Standard vs. Express Workflows</a>: Execution history availability and cost differences relevant to the debugging trade-off</li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a>: Complete list of services covered under the AWS BAA</li>
+</ul>
+<p><strong>FHIR and Standards References:</strong></p>
+<ul>
+<li><a href="https://www.hl7.org/fhir/R4/">HL7 FHIR R4 Specification</a>: Resource definitions for DocumentReference, Condition, DiagnosticReport, Observation, MedicationStatement, Immunization, Procedure</li>
+<li><a href="https://www.hl7.org/fhir/R4/condition.html">FHIR Condition: verificationStatus</a>: Why <code>unconfirmed</code> is the correct status for OCR-derived historical records; why <code>clinicalStatus</code> is optional and should be omitted when unknown</li>
+<li><a href="https://www.cms.gov/regulations-and-guidance/guidance/interoperability/index">CMS Interoperability and Patient Access Final Rule</a>: FHIR API requirements for historical member data, the regulatory driver for chart migration programs</li>
+<li><a href="https://www.cms.gov/files/document/fy-2026-icd-10-cm-coding-guidelines-updated-01/10/2025.pdf">ICD-10-CM Official Guidelines</a>: Official coding guidance relevant to validating LLM-extracted diagnoses</li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/aws-healthlake-samples"><code>aws-samples/aws-healthlake-samples</code></a>: HealthLake FHIR operations, bulk import patterns, and FHIR bundle construction; demonstrates the NDJSON format and import job patterns used in Step 9</li>
+<li><a href="https://github.com/aws-samples/aws-ai-intelligent-document-processing"><code>aws-samples/aws-ai-intelligent-document-processing</code></a>: Multi-stage IDP pipeline with document classification, extraction, and A2I integration; demonstrates the fan-out extraction patterns used in Steps 5 and 6</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-code-samples"><code>aws-samples/amazon-textract-code-samples</code></a>: Textract async job submission, paginated result retrieval, and block processing; reference for Step 3</li>
+<li><a href="https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws"><code>aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws</code></a>: End-to-end IDP reference architecture with CDK deployment templates</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/guidance/intelligent-document-processing-on-aws">Guidance for Intelligent Document Processing on AWS</a>: Reference architecture for classification, extraction, and enrichment at scale; the general-purpose architecture that this recipe adapts for healthcare chart migration</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/building-a-medical-chart-review-solution-using-amazon-textract-and-amazon-comprehend-medical/">Building a Medical Chart Review Solution with Amazon Textract and Amazon Comprehend Medical</a>: End-to-end chart extraction example showing the Textract plus clinical NLP combination; the predecessor to the LLM-augmented approach in this recipe</li>
+<li><a href="https://aws.amazon.com/blogs/industries/accelerating-healthcare-data-interoperability-with-amazon-healthlake/">Accelerating Healthcare Data Interoperability with Amazon HealthLake</a>: HealthLake architecture, FHIR import mechanics, and downstream analytics patterns relevant to the output stage of this recipe</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">Amazon Bedrock Batch Inference for Large-Scale Document Processing</a>: Search the ML blog for recent batch inference deep dives covering JSONL format, cost optimization, and throughput benchmarks</li>
+</ul>
+<hr />
+<hr />
+<p><em>← <a href="chapter01.10-historical-chart-migration.html">Main Recipe 1.10</a> · <a href="chapter01.10-python-example.html">Python Example</a> · <a href="chapter01-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

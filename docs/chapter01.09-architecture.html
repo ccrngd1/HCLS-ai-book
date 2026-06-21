@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 1.9 Architecture and Implementation: Medical Records Request Extraction 🔶</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested nav-active" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-19-architecture-and-implementation-medical-records-request-extraction-">Recipe 1.9 Architecture and Implementation: Medical Records Request Extraction 🔶</h1>
+<p><em>Companion to <a href="chapter01.09-medical-records-request-extraction.html">Recipe 1.9: Medical Records Request Extraction 🔶</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Textract with FORMS and SIGNATURES feature types.</strong> Textract handles the structured portion of the recipe: extracting key-value pairs from form fields and detecting signature regions. It remains the right tool for these tasks. The SIGNATURES feature type runs an additional detection pass specifically for handwritten signature regions, returning SIGNATURE blocks with confidence scores and bounding boxes. This is exactly the capability you need for authorization signature validation: not OCR of the signature, but a binary &quot;there's a signature here&quot; with confidence. Textract is purpose-built for this. An LLM with vision capability would work, but Textract is faster, cheaper, and returns structured confidence scores without requiring you to engineer them from model output.</p>
+<p>Medical records request forms are one to two pages, so the synchronous <code>AnalyzeDocument</code> API works without the job-tracking complexity of the async pattern. One API call, one response.</p>
+<p><strong>Amazon Bedrock with Claude Sonnet for HIPAA authorization consistency checking.</strong> The LLM consistency check needs to reason about legal language and evaluate whether extracted dates and scope language are coherent. This is the kind of contextual reasoning where model capability matters. Sonnet (the current version is <code>us.anthropic.claude-sonnet-4-6-v1</code>) handles regulatory language well. Temperature set to zero for near-deterministic output. Cost per authorization validation: roughly $0.010 to $0.015 (approximately 1,000 to 1,500 input tokens, 300 to 500 output tokens).</p>
+<p><strong>Amazon Bedrock with Amazon Nova Pro or Claude Haiku for request classification.</strong> Classification is a simpler task than regulatory consistency checking. Nova Pro (<code>us.amazon.nova-pro-v1:0</code>) offers strong document understanding at lower cost. Claude Haiku 4.5 (<code>us.anthropic.claude-haiku-4-5-v1:0</code>) is slightly more expensive but returns richer reasoning explanations that are useful for routing records. Cost per classification call: roughly $0.001 to $0.002. Either model works; the choice depends on whether you value reasoning detail over cost.</p>
+<p><strong>AWS Lambda with four functions.</strong> The pipeline splits across four Lambda functions: extraction (rr-extract), validation (rr-validate), classification (rr-classify), and assembly and routing (rr-route). Keeping them separate makes it easier to update validation logic independently of extraction logic, which matters because HIPAA requirements do evolve. The validation Lambda requires a longer timeout than the extraction Lambda because it makes a Bedrock API call for the LLM consistency check (in addition to running the rule-based Python logic), and Bedrock calls can take 2 to 15 seconds depending on load and whether retry backoff kicks in.</p>
+<p><strong>Amazon DynamoDB.</strong> The structured request record lives in DynamoDB. The record captures the full lifecycle: extracted fields, rule-based validation result, LLM consistency findings, request type classification, routing decision, and status. DynamoDB's millisecond latency is appropriate for downstream fulfillment systems that query request status.</p>
+<p><strong>Amazon SQS for routing queues.</strong> Request type-specific queues decouple the pipeline from downstream fulfillment systems. Each queue feeds a different fulfillment team. A deficiency queue handles requests routed by the rule-based check. A review queue handles requests flagged by the LLM consistency check. Dead-letter queues on each SQS queue capture messages that fail downstream processing for later inspection.</p>
+<p><strong>Amazon SNS for deficiency notification.</strong> When the rule-based check fails an authorization, the pipeline publishes to an SNS topic. Subscriptions on that topic can feed a deficiency letter workflow, a ticketing system, or email notifications for urgent cases.</p>
+<p><strong>AWS KMS for customer-managed encryption.</strong> Medical records request forms are PHI. Every storage layer is encrypted with a customer-managed key: S3 documents, DynamoDB records, SQS queue messages. The key policy restricts access to the Lambda execution roles and authorized administrators.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[📠 Fax Server / Portal] --&gt;|Request PDF| B[S3 Bucket\nrecords-requests/]
+    B --&gt;|S3 Event| C[Lambda: rr-extract\nTimeout: 2 min]
+    C --&gt;|AnalyzeDocument\nFORMS + SIGNATURES| D[Amazon Textract]
+    D --&gt;|Fields + Signature Blocks| C
+    C --&gt;|Normalized fields\n+ signatures| E[Lambda: rr-validate\nTimeout: 5 min]
+    E --&gt;|Rule check first| F{Rule-Based\nElement Check}
+    F --&gt;|Missing elements\nor expired| G[SNS: rr-deficiency]
+    G --&gt;|Alert| H[Deficiency Letter\nWorkflow]
+    F --&gt;|All elements present| I[Bedrock Sonnet\nConsistency Check]
+    I --&gt;|LLM concerns flagged| J[SQS: rr-review\nHuman Review Queue]
+    I --&gt;|No concerns| K[Lambda: rr-classify\nTimeout: 3 min]
+    K --&gt;|Full request text| L[Bedrock Nova Pro\nRequest Classification]
+    L --&gt;|Request type +\nreasoning| M[Lambda: rr-route\nTimeout: 2 min]
+    M --&gt;|Structured record| N[DynamoDB\nrecords-requests]
+    M --&gt;|care_coordination| O[SQS: cc-fulfillment]
+    M --&gt;|legal| P[SQS: legal-fulfillment]
+    M --&gt;|underwriting| Q[SQS: underwriting-fulfillment]
+    M --&gt;|patient_access| R[SQS: patient-access]
+    M --&gt;|general| S[SQS: general-review]
+
+    style B fill:#f9f,stroke:#333
+    style D fill:#ff9,stroke:#333
+    style I fill:#e8f5e9,stroke:#2e7d32
+    style L fill:#e8f5e9,stroke:#2e7d32
+    style N fill:#9ff,stroke:#333
+    style F fill:#ffa,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Textract, S3, Lambda, DynamoDB, SQS, SNS, Bedrock, KMS, CloudWatch</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td><code>textract:AnalyzeDocument</code>, <code>s3:GetObject</code> on the requests bucket, <code>dynamodb:PutItem</code> and <code>dynamodb:UpdateItem</code> on the records-requests table, <code>sqs:SendMessage</code> on each routing queue, <code>sns:Publish</code> on the deficiency and review topics, <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> for the CMK, <code>bedrock:InvokeModel</code> scoped to the specific model ARNs used (not <code>*</code>)</td>
+</tr>
+<tr>
+<td><strong>Textract Features</strong></td>
+<td>FORMS + SIGNATURES in the <code>FeatureTypes</code> list</td>
+</tr>
+<tr>
+<td><strong>Bedrock Model Access</strong></td>
+<td>Enable <code>us.anthropic.claude-sonnet-4-6-v1</code> (HIPAA validation) and <code>us.amazon.nova-pro-v1:0</code> (request classification) in Bedrock Model Access. Cross-region inference profiles route across us-east-1, us-east-2, and us-west-2. Your Lambda's Converse API call goes to the <code>bedrock-runtime</code> VPC endpoint in your deployment region; AWS routes to backend regions transparently. PHI does not traverse the public internet. For organizations with geographic data restrictions beyond federal HIPAA, verify that all three regions are acceptable or use direct single-region model IDs without the <code>us.</code> prefix.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA required. Medical records request forms contain PHI including patient name, date of birth, and medical history descriptions. Amazon Bedrock is a HIPAA-eligible service. Models do not retain or train on customer data sent via Bedrock APIs.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. SQS queues: SSE-KMS. Lambda CloudWatch log groups: configure KMS encryption on each log group (Lambda does not do this automatically). All API calls over TLS.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: all Lambda functions in a VPC. Required VPC endpoints: S3 (gateway endpoint), DynamoDB (gateway endpoint), <code>com.amazonaws.REGION.bedrock-runtime</code> (interface endpoint, used by Lambda for all Converse API calls), <code>com.amazonaws.REGION.bedrock</code> (interface endpoint, for model access management), <code>com.amazonaws.REGION.textract</code> (interface endpoint), <code>com.amazonaws.REGION.sqs</code> (interface endpoint), <code>com.amazonaws.REGION.sns</code> (interface endpoint), <code>com.amazonaws.REGION.kms</code> (interface endpoint), <code>com.amazonaws.REGION.logs</code> (interface endpoint, for CloudWatch Logs). Note: <code>bedrock-runtime</code> and <code>bedrock</code> are two separate endpoints. A VPC with only <code>bedrock</code> will fail to route Converse API calls through the private network.</td>
+</tr>
+<tr>
+<td><strong>Lambda Timeouts</strong></td>
+<td>Lambda's default 3-second timeout fails on the first Bedrock API call. Configure: <code>rr-extract</code>: 2 minutes (Textract synchronous is fast, but allow for occasional slow responses). <code>rr-validate</code>: 5 minutes (Sonnet call can take 2 to 5 seconds under normal load, up to 15 seconds under high load; allow time for retry backoff). <code>rr-classify</code>: 3 minutes (Nova Pro is faster than Sonnet). <code>rr-route</code>: 2 minutes (DynamoDB and SQS calls only).</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all API calls touching PHI. Every authorization validation decision must be logged with document key, elements checked, and outcome. Deficiency determinations require an audit trail for HIPAA compliance purposes.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>HHS publishes a model HIPAA authorization form at https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/model-notices-of-privacy-practices/index.html. Create synthetic versions with varied layouts. Test cases: (1) complete valid authorization; (2) missing signature; (3) missing expiration; (4) expired authorization; (5) expiration date before signing date (LLM edge case); (6) ambiguous scope language; (7) free-text request that doesn't match standard categories. Never use real PHI in development.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Textract FORMS + SIGNATURES: $0.05/page. For a 2-page request form, Textract cost is $0.10. Bedrock Sonnet for authorization consistency check: approximately $0.010 to $0.015 per request. Bedrock Nova Pro for classification: approximately $0.001 per request. Total LLM overhead: $0.011 to $0.016 per request. Combined with Textract: approximately $0.11 to $0.18 per request form. DynamoDB, SQS, SNS costs at this document scale are negligible (under $0.001 per request). At 50,000 requests per year, total pipeline cost is approximately $5,500 to $9,000 annually. The LLM layer adds roughly $550 to $800 per year over the Textract-only baseline.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Textract (AnalyzeDocument)</strong></td>
+<td>Synchronous form field extraction (FORMS) and signature detection (SIGNATURES)</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Stores incoming request PDFs encrypted at rest with KMS; source for Lambda trigger. Medical records authorization documents are subject to HIPAA 6-year retention requirements (longer under some state laws). Configure S3 Object Lock on the authorizations bucket with an appropriate retention period. See Recipe 1.5 for the full Object Lock implementation pattern.</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock (Claude Sonnet)</strong></td>
+<td>HIPAA authorization consistency checking: reads full authorization text, flags date conflicts, ambiguous scope, and missing elements not captured in structured fields</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock (Nova Pro)</strong></td>
+<td>Request type classification: reads request narrative, determines routing category, handles free-text requests that keyword matching fails on</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (rr-extract)</strong></td>
+<td>Calls Textract, parses KEY_VALUE_SET blocks, extracts SIGNATURE blocks, returns normalized fields and signature data</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (rr-validate)</strong></td>
+<td>Runs rule-based element check first, then calls Bedrock Sonnet for consistency screening; routes deficient authorizations to SNS, flagged authorizations to review queue</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (rr-classify)</strong></td>
+<td>Calls Bedrock Nova Pro with request narrative and fields; returns request type, confidence, and reasoning for use by downstream fulfillment systems</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (rr-route)</strong></td>
+<td>Assembles structured record, writes to DynamoDB, routes to type-specific SQS queue</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores structured request records with validation status, LLM observations, classification reasoning, and routing metadata</td>
+</tr>
+<tr>
+<td><strong>Amazon SQS</strong></td>
+<td>Type-specific queues for fulfillment routing; deficiency queue; human review queue; all with dead-letter queues</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Deficiency notification to letter-generation workflow; review-queue notification for LLM-flagged cases</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption key for S3, DynamoDB, SQS, and Lambda CloudWatch log groups</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Logs, metrics, alarms for pipeline failures, deficiency rates, LLM flag rates, and authorization validation outcomes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Synchronous Textract extraction with FORMS and SIGNATURES.</strong> Same pattern as Recipe 1.1, with the addition of SIGNATURES in the feature types list. Textract's synchronous API handles one-to-two-page forms with one call and one response. No job polling, no SNS callbacks.</p>
+<p>The SIGNATURES feature instructs Textract to run an additional detection pass for handwritten signature regions. The result appears as SIGNATURE blocks alongside KEY_VALUE_SET, WORD, and LINE blocks. Each SIGNATURE block includes a Confidence score and a bounding box. The full page text from LINE blocks feeds the LLM steps later.</p>
+<pre class="code code-plain"><code>FUNCTION extract_records_request(bucket, document_key):
+    // Synchronous AnalyzeDocument: one call, one response.
+    // FORMS: key-value pair extraction (labeled fields).
+    // SIGNATURES: handwritten signature region detection.
+    response = textract.AnalyzeDocument(
+        Document = { Bucket: bucket, Name: document_key },
+        FeatureTypes = [&quot;FORMS&quot;, &quot;SIGNATURES&quot;]
+    )
+
+    all_blocks = response.Blocks
+
+    kv_blocks   = [b for b in all_blocks if b.BlockType == &quot;KEY_VALUE_SET&quot;]
+    sig_blocks  = [b for b in all_blocks if b.BlockType == &quot;SIGNATURE&quot;]
+    line_blocks = [b for b in all_blocks if b.BlockType == &quot;LINE&quot;]
+    block_map   = { b.Id: b for b in all_blocks }
+
+    RETURN {
+        kv_blocks:   kv_blocks,
+        sig_blocks:  sig_blocks,
+        line_blocks: line_blocks,
+        block_map:   block_map
+    }
+</code></pre>
+<p><strong>Step 2: Parse and normalize request fields.</strong> The FIELD_MAP normalization pattern from Recipe 1.1, applied to the medical records request vocabulary. Because there is no standard template, the map covers label variants across the most common form designs in the wild.</p>
+<pre class="code code-plain"><code>REQUEST_FIELD_MAP = {
+    &quot;patient_name&quot;:     [&quot;patient name&quot;, &quot;member name&quot;, &quot;name of individual&quot;, &quot;patient&quot;],
+    &quot;patient_dob&quot;:      [&quot;date of birth&quot;, &quot;dob&quot;, &quot;birth date&quot;, &quot;patient dob&quot;],
+    &quot;patient_id&quot;:       [&quot;medical record number&quot;, &quot;mrn&quot;, &quot;member id&quot;, &quot;patient id&quot;],
+    &quot;requestor_name&quot;:   [&quot;requesting party&quot;, &quot;requestor&quot;, &quot;requested by&quot;, &quot;authorized by&quot;],
+    &quot;requestor_org&quot;:    [&quot;organization&quot;, &quot;facility name&quot;, &quot;practice name&quot;, &quot;firm name&quot;],
+    &quot;requestor_fax&quot;:    [&quot;fax&quot;, &quot;fax number&quot;, &quot;fax #&quot;],
+    &quot;records_requested&quot;:[&quot;records requested&quot;, &quot;information requested&quot;, &quot;type of records&quot;,
+                         &quot;specific information to be disclosed&quot;, &quot;records needed&quot;],
+    &quot;date_range&quot;:       [&quot;date range&quot;, &quot;dates of service&quot;, &quot;treatment dates&quot;, &quot;from&quot;],
+    &quot;purpose&quot;:          [&quot;purpose&quot;, &quot;purpose of disclosure&quot;, &quot;reason for request&quot;, &quot;intended use&quot;],
+    &quot;authorization_date&quot;:[&quot;date signed&quot;, &quot;authorization date&quot;, &quot;signature date&quot;, &quot;date&quot;],
+    &quot;expiration_date&quot;:  [&quot;expiration date&quot;, &quot;expiration&quot;, &quot;this authorization expires&quot;,
+                         &quot;valid through&quot;, &quot;expires&quot;],
+    &quot;requestor_npi&quot;:    [&quot;npi&quot;, &quot;national provider identifier&quot;, &quot;provider npi&quot;]
+}
+
+FUNCTION parse_and_normalize_fields(kv_blocks, block_map):
+    // Extract raw key-value pairs using the KEY_VALUE_SET traversal pattern
+    // from Recipe 1.1. See that recipe for the full block traversal logic.
+    raw_kv = parse_key_value_pairs(kv_blocks, block_map)
+
+    normalized = empty map
+    FOR each canonical_name, variants in REQUEST_FIELD_MAP:
+        FOR each label in variants:
+            matching_keys = [k for k in raw_kv if label appears in lowercase(k)]
+            IF matching_keys is not empty:
+                best_match = matching_keys entry with highest confidence
+                normalized[canonical_name] = raw_kv[best_match]
+                BREAK
+
+    RETURN normalized
+</code></pre>
+<p><strong>Step 3: Extract signature data.</strong> Pull all SIGNATURE blocks and sort them into document reading order by page and vertical position. The page number matters downstream: the authorization signature is most likely on page 2 of a two-page form, not page 1.</p>
+<pre class="code code-plain"><code>FUNCTION extract_signatures(sig_blocks):
+    signatures = empty list
+
+    FOR each block in sig_blocks:
+        sig = {
+            confidence:  block.Confidence,
+            page:        block.Page,
+            bounding_box: {
+                top:    block.Geometry.BoundingBox.Top,
+                left:   block.Geometry.BoundingBox.Left,
+                width:  block.Geometry.BoundingBox.Width,
+                height: block.Geometry.BoundingBox.Height
+            }
+        }
+        signatures.append(sig)
+
+    // Sort into document reading order.
+    SORT signatures by (page, bounding_box.top)
+
+    RETURN signatures
+</code></pre>
+<p><strong>Step 4: Rule-based HIPAA element validation.</strong> This runs first and is authoritative. It checks the six required elements from 45 CFR § 164.508(c)(1): signature, signing date, description of records requested, purpose of disclosure, and expiration. It also checks that the expiration date, if it is a parseable date, has not already passed.</p>
+<p>If this step fails, the request is deficient. The LLM step does not run. The deficiency record captures the specific regulatory citations that triggered the failure, which is the audit trail you need.</p>
+<pre class="code code-plain"><code>REQUIRED_ELEMENTS = {
+    &quot;patient_or_rep_signature&quot;: &quot;Signature of patient or authorized representative (45 CFR § 164.508(c)(1)(vi))&quot;,
+    &quot;authorization_date&quot;:       &quot;Date the authorization was signed (45 CFR § 164.508(c)(1)(vi))&quot;,
+    &quot;records_requested&quot;:        &quot;Description of information to be disclosed (45 CFR § 164.508(c)(1)(i))&quot;,
+    &quot;purpose&quot;:                  &quot;Purpose of the requested disclosure (45 CFR § 164.508(c)(1)(iv))&quot;,
+    &quot;expiration_date&quot;:          &quot;Expiration date or event (45 CFR § 164.508(c)(1)(v))&quot;
+}
+
+SIGNATURE_CONFIDENCE_THRESHOLD = 70.0
+
+FUNCTION validate_elements_rule_based(normalized_fields, signatures):
+    result = {
+        passed:          true,   // set to false if any element is missing or expired
+        elements:        empty map,
+        missing:         empty list,
+        expired:         false,
+        event_expiration: false  // true when expiration is a non-date event string
+    }
+
+    // --- Signature check ---
+    high_conf_sigs = [s for s in signatures if s.confidence &gt;= SIGNATURE_CONFIDENCE_THRESHOLD]
+    has_signature  = length(high_conf_sigs) &gt; 0
+    result.elements[&quot;patient_or_rep_signature&quot;] = has_signature
+
+    IF NOT has_signature:
+        result.passed = false
+        IF signatures is empty:
+            result.missing.append(REQUIRED_ELEMENTS[&quot;patient_or_rep_signature&quot;])
+        ELSE:
+            // A signature was detected but below the confidence threshold.
+            // Low-confidence detection is handled separately from total absence.
+            result.missing.append(
+                REQUIRED_ELEMENTS[&quot;patient_or_rep_signature&quot;] +
+                &quot; (possible signature detected at &quot; + max_confidence(signatures) + &quot;% confidence; below threshold)&quot;
+            )
+
+    // --- Signing date ---
+    auth_date = normalized_fields.get(&quot;authorization_date&quot;)
+    has_auth_date = auth_date is not null AND auth_date.value.strip() is not empty
+    result.elements[&quot;authorization_date&quot;] = has_auth_date
+    IF NOT has_auth_date:
+        result.passed = false
+        result.missing.append(REQUIRED_ELEMENTS[&quot;authorization_date&quot;])
+
+    // --- Records description ---
+    records = normalized_fields.get(&quot;records_requested&quot;)
+    has_records = records is not null AND records.value.strip() is not empty
+    result.elements[&quot;records_requested&quot;] = has_records
+    IF NOT has_records:
+        result.passed = false
+        result.missing.append(REQUIRED_ELEMENTS[&quot;records_requested&quot;])
+
+    // --- Purpose ---
+    purpose = normalized_fields.get(&quot;purpose&quot;)
+    has_purpose = purpose is not null AND purpose.value.strip() is not empty
+    result.elements[&quot;purpose&quot;] = has_purpose
+    IF NOT has_purpose:
+        result.passed = false
+        result.missing.append(REQUIRED_ELEMENTS[&quot;purpose&quot;])
+
+    // --- Expiration ---
+    exp = normalized_fields.get(&quot;expiration_date&quot;)
+    has_expiration = exp is not null AND exp.value.strip() is not empty
+    result.elements[&quot;expiration_date&quot;] = has_expiration
+    IF NOT has_expiration:
+        result.passed = false
+        result.missing.append(REQUIRED_ELEMENTS[&quot;expiration_date&quot;])
+    ELSE:
+        exp_value = exp.value.strip()
+        exp_date  = attempt_date_parse(exp_value)
+        IF exp_date is not null:
+            IF exp_date &lt; today:
+                result.passed   = false
+                result.expired  = true
+                result.missing.append(
+                    &quot;Authorization expired &quot; + exp_date.to_string(&quot;YYYY-MM-DD&quot;) +
+                    &quot;. A current authorization is required.&quot;
+                )
+        ELSE:
+            // Non-date expiration event string. Flag for LLM and human review;
+            // it is not a rule-based failure because event-based expirations
+            // are valid under HIPAA.
+            result.event_expiration = true
+
+    RETURN result
+</code></pre>
+<p><strong>Step 5: LLM authorization consistency check.</strong> This step runs only when the rule-based check passes. It uses Bedrock Converse with Claude Sonnet to read the full authorization text alongside the extracted fields. The LLM looks for coherence issues that rules cannot detect: dates that conflict with each other, scope language that is ambiguous or inconsistent with the stated purpose, and required elements that are present in the document text but were not captured in structured fields.</p>
+<p>A critical framing note for the prompt: the LLM is asked to surface observations, not make compliance determinations. The system prompt establishes this explicitly. The response schema is designed to capture LLM observations separately from the rule-based determinations, so they never appear in the audit trail as if they were regulatory findings.</p>
+<pre class="code code-plain"><code>LLM_VALIDATION_SYSTEM_PROMPT = &quot;&quot;&quot;
+You are a healthcare compliance specialist reviewing HIPAA authorization forms.
+Your role is to identify logical inconsistencies and potential coherence issues
+in authorization documents. You are NOT making a legal determination of validity.
+You are flagging concerns for human review.
+
+Return a JSON object with this schema:
+{
+  &quot;concerns&quot;: [
+    {
+      &quot;type&quot;: &quot;date_conflict&quot; | &quot;scope_ambiguity&quot; | &quot;missing_element&quot; | &quot;other&quot;,
+      &quot;severity&quot;: &quot;high&quot; | &quot;medium&quot; | &quot;low&quot;,
+      &quot;description&quot;: &quot;Brief description of the concern (do not quote PHI)&quot;
+    }
+  ],
+  &quot;overall_coherence&quot;: &quot;no_concerns&quot; | &quot;minor_concerns&quot; | &quot;significant_concerns&quot;,
+  &quot;review_recommended&quot;: true | false
+}
+
+Return only valid JSON. No markdown fences, no explanatory text outside the JSON object.
+&quot;&quot;&quot;
+
+FUNCTION check_authorization_consistency_llm(normalized_fields, signatures, line_blocks, event_expiration):
+    // Build the document context for the LLM.
+    // Sanitize the full text before including in the prompt.
+    // Authorization forms are untrusted free-text authored by patients, attorneys,
+    // and providers. Strip control characters and injection patterns first.
+    // [EDITOR: review fix: sanitization step added; was only in Gap to Production in v2.]
+    full_text = join all line_blocks text values with newline
+    sanitized_text = sanitize_for_prompt(full_text)
+
+    // The coherence check requires the full authorization text.
+    // The LLM must see all field values (including dates, scope descriptions, and
+    // purpose statements) to detect cross-field inconsistencies and elements present
+    // in prose but absent from extracted fields.
+    // Full-text transmission is necessary for this use case; selective PHI suppression
+    // would defeat the coherence analysis. All transmission to Bedrock is covered by
+    // the BAA; AWS does not retain this data. The prompt instructs the model not to
+    // echo PHI in its response descriptions.
+    // [EDITOR: review fix: replaced &quot;pass structural information rather than raw PHI
+    // where possible&quot; which contradicted the code and the design intent.]
+
+    user_message = &quot;&quot;&quot;
+Review this HIPAA authorization for logical consistency.
+
+Extracted fields:
+- Signing date: {authorization_date}
+- Expiration date/event: {expiration_date}
+- Records requested: {records_requested}
+- Purpose of disclosure: {purpose}
+- Signature detected: {signature_detected} (confidence: {max_sig_confidence}%)
+- Event-based expiration: {event_expiration}
+
+Full document text:
+---
+{sanitized_text}
+---
+
+Check for:
+1. Date inconsistencies (signing date vs. expiration date; dates in the past when they should be current)
+2. Scope ambiguity (description of records is vague or conflicts with stated purpose)
+3. Required elements present in document text but absent from extracted fields
+4. Any other coherence issues that would concern a compliance reviewer
+
+Important: Do not include patient names, member IDs, or other PHI in your descriptions.
+Describe structural and logical issues only.
+&quot;&quot;&quot;
+
+    // Populate template with sanitized text and extracted values.
+    // Use normalized field values; fall back to &quot;(not extracted)&quot; if field is missing.
+    user_message = populate_template(user_message, normalized_fields, signatures, event_expiration, sanitized_text)
+
+    response = bedrock.converse(
+        modelId = &quot;us.anthropic.claude-sonnet-4-6-v1&quot;,
+        system  = [{ text: LLM_VALIDATION_SYSTEM_PROMPT }],
+        messages = [{ role: &quot;user&quot;, content: [{ text: user_message }] }],
+        inferenceConfig = { maxTokens: 512, temperature: 0 }
+    )
+
+    response_text = response.output.message.content[0].text
+    llm_result    = parse_json(response_text)
+    // On JSONDecodeError: retry once with an explicit JSON-only suffix appended
+    // to the user message. If the second attempt also fails, fall back to a safe
+    // default result and log the parse failure (metadata only, no response content).
+    // This closes the failure mode where the model includes markdown fences or
+    // preamble text despite being instructed not to.
+
+    // Do NOT log response_text. It may contain information derived from PHI.
+    // Log only the result metadata: concern count and overall_coherence value.
+    log: &quot;LLM consistency check: &quot; + llm_result.overall_coherence +
+         &quot;, concerns: &quot; + length(llm_result.concerns) +
+         &quot;, review_recommended: &quot; + llm_result.review_recommended
+
+    RETURN {
+        overall_coherence:  llm_result.get(&quot;overall_coherence&quot;, &quot;no_concerns&quot;),
+        concerns:           llm_result.get(&quot;concerns&quot;, []),
+        review_recommended: llm_result.get(&quot;review_recommended&quot;, false)
+    }
+</code></pre>
+<p><strong>Step 6: LLM request classification.</strong> The classification step reads the full request text and the extracted fields together. It uses a smaller, faster model than the validation step because classification is a simpler reasoning task.</p>
+<p>The response includes reasoning, not just a label. That reasoning goes into the DynamoDB record and the SQS message so fulfillment specialists have context, especially for ambiguous cases. Label the reasoning clearly as LLM-generated inference, not as a fact about the document.</p>
+<pre class="code code-plain"><code>CLASSIFICATION_CATEGORIES = {
+    &quot;care_coordination&quot;:  &quot;Treating physician or provider requesting records for continuity of care&quot;,
+    &quot;legal&quot;:              &quot;Attorney, law firm, or litigation-related request&quot;,
+    &quot;underwriting&quot;:       &quot;Insurance or financial underwriting purpose&quot;,
+    &quot;utilization_review&quot;: &quot;Utilization management, case management, or independent medical examination&quot;,
+    &quot;patient_access&quot;:     &quot;Patient or personal representative exercising right of access&quot;,
+    &quot;general&quot;:            &quot;Unclear purpose or category; route to general review queue&quot;
+}
+
+CLASSIFICATION_SYSTEM_PROMPT = &quot;&quot;&quot;
+You are a medical records routing specialist. Classify the medical records request
+into exactly one of these categories:
+- care_coordination: treating physician, continuity of care, new provider
+- legal: attorney, law firm, litigation, subpoena
+- underwriting: life insurance, disability insurance, financial underwriting
+- utilization_review: utilization management, case management, IME, disability review
+- patient_access: patient or personal representative requesting own records
+- general: unclear, ambiguous, or does not fit other categories
+
+Return JSON:
+{
+  &quot;request_type&quot;: &quot;&lt;category&gt;&quot;,
+  &quot;confidence&quot;: &lt;float 0.0-1.0&gt;,
+  &quot;reasoning&quot;: &quot;Brief explanation of classification basis (no PHI)&quot;
+}
+
+Return only valid JSON. No markdown, no text outside the JSON object.
+&quot;&quot;&quot;
+
+FUNCTION classify_request_type(normalized_fields, line_blocks):
+    full_text    = join all line_blocks text values with newline
+    purpose_text = normalized_fields.get(&quot;purpose&quot;, {}).value or &quot;(not provided)&quot;
+    requestor    = normalized_fields.get(&quot;requestor_org&quot;, {}).value or
+                   normalized_fields.get(&quot;requestor_name&quot;, {}).value or
+                   &quot;(not extracted)&quot;
+
+    user_message = &quot;&quot;&quot;
+Classify this medical records request.
+
+Requestor: {requestor}
+Purpose field: {purpose_text}
+
+Full request text:
+---
+{full_text}
+---
+&quot;&quot;&quot;
+    user_message = populate_template(user_message, requestor, purpose_text, full_text)
+
+    response = bedrock.converse(
+        modelId = &quot;us.amazon.nova-pro-v1:0&quot;,
+        system  = [{ text: CLASSIFICATION_SYSTEM_PROMPT }],
+        messages = [{ role: &quot;user&quot;, content: [{ text: user_message }] }],
+        inferenceConfig = { maxTokens: 256, temperature: 0 }
+    )
+
+    response_text = response.output.message.content[0].text
+    result        = parse_json(response_text)
+    // On JSONDecodeError: retry once with JSON-only suffix, same as Step 5.
+
+    // Log classification metadata only. No document content in logs.
+    log: &quot;Request classified as &quot; + result.get(&quot;request_type&quot;, &quot;unknown&quot;) +
+         &quot; (confidence: &quot; + result.get(&quot;confidence&quot;, 0.0) + &quot;)&quot;
+
+    RETURN {
+        request_type: result.get(&quot;request_type&quot;, &quot;general&quot;),
+        confidence:   clamp(result.get(&quot;confidence&quot;, 0.5), 0.0, 1.0),
+        reasoning:    result.get(&quot;reasoning&quot;, &quot;(classification reasoning unavailable)&quot;)
+    }
+</code></pre>
+<p><strong>Step 7: Assemble the record and route.</strong> The final step combines all extracted and validated data into a structured record, writes it to DynamoDB, and sends to the appropriate queue. The routing logic reflects three possible outcomes: rule-deficient (SNS notification only, no fulfillment), LLM-flagged (human review queue), and clean (type-specific fulfillment queue).</p>
+<p>The LLM observations in the DynamoDB record are stored under <code>llm_consistency_findings</code> with an explicit flag that these are model observations, not regulatory findings. This distinction matters if the record ever surfaces in a compliance audit.</p>
+<pre class="code code-plain"><code>FULFILLMENT_QUEUES = {
+    &quot;care_coordination&quot;:  env.CARE_COORDINATION_QUEUE_URL,
+    &quot;legal&quot;:              env.LEGAL_QUEUE_URL,
+    &quot;underwriting&quot;:       env.UNDERWRITING_QUEUE_URL,
+    &quot;utilization_review&quot;: env.UR_QUEUE_URL,
+    &quot;patient_access&quot;:     env.PATIENT_ACCESS_QUEUE_URL,
+    &quot;general&quot;:            env.GENERAL_REVIEW_QUEUE_URL
+}
+
+// Dedicated queue for LLM-flagged authorization reviews.
+// Distinct from FULFILLMENT_QUEUES[&quot;general&quot;]: LLM coherence concerns and
+// unclear request categories are different work items with different SLAs.
+// Matches the rr-review queue in the architecture diagram. [EDITOR: review fix]
+REVIEW_QUEUE_URL = env.REVIEW_QUEUE_URL
+
+FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
+                             rule_validation, llm_consistency, classification):
+    record = {
+        document_key:   document_key,
+        processed_at:   current UTC timestamp (ISO 8601),
+
+        patient: {
+            name:      normalized_fields.get(&quot;patient_name&quot;, {}).value,
+            dob:       normalized_fields.get(&quot;patient_dob&quot;, {}).value,
+            member_id: normalized_fields.get(&quot;patient_id&quot;, {}).value
+        },
+
+        requestor: {
+            name:         normalized_fields.get(&quot;requestor_name&quot;, {}).value,
+            organization: normalized_fields.get(&quot;requestor_org&quot;, {}).value,
+            fax:          normalized_fields.get(&quot;requestor_fax&quot;, {}).value,
+            npi:          normalized_fields.get(&quot;requestor_npi&quot;, {}).value
+        },
+
+        request_details: {
+            records_requested: normalized_fields.get(&quot;records_requested&quot;, {}).value,
+            date_range:        normalized_fields.get(&quot;date_range&quot;, {}).value,
+            purpose:           normalized_fields.get(&quot;purpose&quot;, {}).value
+        },
+
+        // Authoritative: rule-based validation only.
+        // This section is the audit trail for HIPAA compliance decisions.
+        authorization_rule_check: {
+            passed:             rule_validation.passed,
+            elements_present:   rule_validation.elements,
+            deficiency_reasons: rule_validation.missing,    // maps to regulatory citations
+            expired:            rule_validation.expired,
+            event_expiration:   rule_validation.event_expiration,
+            signature_detected: length(signatures),
+            signature_max_confidence: max_confidence(signatures) or 0.0,
+            signing_date:       normalized_fields.get(&quot;authorization_date&quot;, {}).value,
+            expiration_date:    normalized_fields.get(&quot;expiration_date&quot;, {}).value
+        },
+
+        // Non-authoritative: LLM screening layer.
+        // These are model observations, NOT regulatory findings.
+        // Label as such in any UI or report that surfaces this data.
+        llm_consistency_findings: {
+            note:               &quot;LLM model observations. Not a regulatory determination.&quot;,
+            overall_coherence:  llm_consistency.overall_coherence,
+            review_recommended: llm_consistency.review_recommended,
+            concerns:           llm_consistency.concerns
+        },
+
+        classification: {
+            request_type:  classification.request_type,
+            confidence:    classification.confidence,
+            // LLM-generated inference. Not a statement of fact about the document.
+            llm_reasoning: classification.reasoning
+        },
+
+        status: determine_status(rule_validation, llm_consistency)
+        // &quot;deficient&quot;          - rule_validation.passed == false
+        // &quot;pending_llm_review&quot; - rules passed, llm_consistency.review_recommended == true
+        // &quot;routed&quot;             - rules passed, no LLM concerns
+    }
+
+    // Write to DynamoDB with idempotency guard.
+    // All confidence floats must be stored as Decimal, not float.
+    dynamo_record = convert_floats_to_decimal(record)
+    write dynamo_record to DynamoDB table &quot;records-requests&quot; with:
+        condition: attribute_not_exists(document_key)
+
+    // Route based on validation outcome.
+    IF NOT rule_validation.passed:
+        publish to SNS deficiency topic:
+            document_key:    document_key,
+            missing_elements: rule_validation.missing,
+            expired:          rule_validation.expired
+        log: &quot;HIPAA auth deficient for &quot; + document_key +
+             &quot;. Rule failures: &quot; + join(rule_validation.missing, &quot;; &quot;)
+        RETURN record
+
+    IF llm_consistency.review_recommended:
+        publish to SNS review topic with llm_consistency.concerns
+        // Route to the dedicated review queue, not the general fulfillment queue.
+        // LLM-flagged authorizations and unclear-category requests are different
+        // work items with different SLAs and different coordinator workflows.
+        // [EDITOR: review fix: was FULFILLMENT_QUEUES[&quot;general&quot;] in v2.]
+        send to SQS at REVIEW_QUEUE_URL:
+            document_key:  document_key,
+            concerns:      llm_consistency.concerns,
+            overall_coherence: llm_consistency.overall_coherence
+        log: &quot;Auth passed rules; LLM flagged &quot; + length(llm_consistency.concerns) +
+             &quot; concern(s) for &quot; + document_key + &quot;. Routing to review queue.&quot;
+        RETURN record
+
+    // Both checks passed. Route to fulfillment.
+    queue_url = FULFILLMENT_QUEUES.get(classification.request_type, FULFILLMENT_QUEUES[&quot;general&quot;])
+    send to SQS queue at queue_url:
+        document_key:      document_key,
+        request_type:      classification.request_type,
+        records_requested: record.request_details.records_requested
+    log: &quot;Request &quot; + document_key + &quot; routed to &quot; + classification.request_type +
+         &quot; queue.&quot;
+    RETURN record
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter01.09-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample output for a care coordination request with complete authorization and no LLM concerns:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;document_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;records-requests/2026/03/01/fax-00519.pdf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;processed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-01T15:44:12Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;David Park&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;dob&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;07/23/1982&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;member_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AET6182940&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;requestor&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dr. Michael Torres&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;organization&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Louisville Cardiology Associates&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;fax&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;(502) 555-0291&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;npi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1740293847&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;request_details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;records_requested&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;All cardiology records including stress tests, echocardiograms, catheterization reports, and office visit notes&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;date_range&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01/01/2023 - present&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;purpose&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Continuity of care - patient transferring to new treating cardiologist&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;authorization_rule_check&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;passed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;elements_present&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;patient_or_rep_signature&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;authorization_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;records_requested&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;purpose&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;expiration_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;deficiency_reasons&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nt">&quot;expired&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;event_expiration&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;signature_detected&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;signature_max_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">91.4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;signing_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;02/28/2026&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;expiration_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;02/28/2027&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;llm_consistency_findings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;note&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LLM model observations. Not a regulatory determination.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;overall_coherence&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;no_concerns&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;review_recommended&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;concerns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;request_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;care_coordination&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.97</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;llm_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Request is from a treating cardiologist for cardiac records. Purpose explicitly states continuity of care for patient transferring to new provider.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;routed&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample output for a request where rules pass but LLM flags a date inconsistency:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;document_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;records-requests/2026/03/01/fax-00523.pdf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;processed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-01T16:02:19Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;authorization_rule_check&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;passed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;elements_present&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;patient_or_rep_signature&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;authorization_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;records_requested&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;purpose&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;expiration_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;deficiency_reasons&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nt">&quot;expired&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;signing_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;03/01/2026&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;expiration_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;02/15/2026&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;llm_consistency_findings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;note&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LLM model observations. Not a regulatory determination.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;overall_coherence&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;significant_concerns&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;review_recommended&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;concerns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date_conflict&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Signing date appears to be after expiration date. Authorization signed March 1, 2026 but expires February 15, 2026. This may indicate a data entry error or an already-expired authorization being reused.&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;request_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;underwriting&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.89</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;llm_reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Requestor is an insurance company and stated purpose indicates disability underwriting review.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending_llm_review&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>End-to-end latency (1-2 page form, warm Lambda)</td>
+<td>4-10 seconds</td>
+</tr>
+<tr>
+<td>Textract (FORMS + SIGNATURES, synchronous)</td>
+<td>1-3 seconds</td>
+</tr>
+<tr>
+<td>Bedrock Sonnet (HIPAA consistency check)</td>
+<td>2-5 seconds</td>
+</tr>
+<tr>
+<td>Bedrock Nova Pro (classification)</td>
+<td>1-2 seconds</td>
+</tr>
+<tr>
+<td>Forms field extraction accuracy</td>
+<td>91-96%</td>
+</tr>
+<tr>
+<td>Signature detection accuracy (clean digital PDF)</td>
+<td>92-97%</td>
+</tr>
+<tr>
+<td>Signature detection accuracy (fax-quality scan)</td>
+<td>83-91%</td>
+</tr>
+<tr>
+<td>Rule-based authorization validation accuracy (presence checks)</td>
+<td>95%+</td>
+</tr>
+<tr>
+<td>LLM date conflict detection rate (synthetic test set)</td>
+<td>Catches most obvious conflicts; edge cases vary</td>
+</tr>
+<tr>
+<td>Request type classification accuracy (LLM)</td>
+<td>91-96%</td>
+</tr>
+<tr>
+<td>Cost per 2-page request form</td>
+<td>~$0.12-0.18</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it still struggles:</strong> Fax-degraded signatures below the confidence threshold. Typed names in signature boxes that the LLM might reasonably treat as a missing signature. Multi-page authorizations where required elements span pages in ways that confuse field extraction. Authorizations written entirely in paragraphs with no labeled fields, where the rule-based check may incorrectly fail for element absence. The LLM consistency check can often catch when the rule-based check false-positives, but the recommended recovery is human review rather than automatic overrides.</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode above demonstrates the core pipeline. A production deployment in a real release-of-information operation requires several additions.</p>
+<p><strong>The HIPAA validation layer is still incomplete.</strong> The rule-based check covers 5 of the 6 elements from 45 CFR § 164.508(c)(1). Missing: the disclosing entity identity (who is authorized to disclose) and the recipient identity (who receives the records). Also missing: the three required statements from 164.508(c)(2) that must appear on the form (right to revoke, whether conditioning applies, re-disclosure risk). The LLM consistency check may catch some of these incidentally, but it is not configured to check them systematically. Your compliance team should review the full validation logic against 164.508 before deployment.</p>
+<p><strong>Rule-based checks for element presence have limits.</strong> The presence check confirms a field is populated. It does not evaluate the adequacy of the content. &quot;All records&quot; for the records description field passes the presence check. Whether &quot;all records&quot; meets the Privacy Rule's specificity requirement is a legal question. Whether &quot;continued care&quot; is an adequate purpose description depends on the context. The pipeline is not a lawyer. Adequacy review stays with your privacy officers.</p>
+<p><strong>The LLM is a screening layer, not a compliance gate.</strong> The LLM consistency check surfaces observations for human review. It does not override rule-based deficiency determinations, and it cannot make a deficient authorization valid. Frame this accurately when presenting the system to your legal and compliance teams. The right description: &quot;The LLM identifies potential coherence issues for human review. It does not perform legal compliance determinations.&quot; Framing it as &quot;the system validates HIPAA compliance&quot; overstates what it does and creates liability exposure.</p>
+<p><strong>LLM behavior is not perfectly deterministic.</strong> At temperature=0, Bedrock models are close to deterministic, but not perfectly so, and model updates can shift behavior. An authorization processed in March 2026 may get a slightly different LLM consistency assessment if reprocessed after a model update. This is not a problem for the rule-based layer, which is fully deterministic. It is a consideration for the LLM layer: if you need the ability to reproduce exact outputs for audit purposes, store the model ID and version used for each LLM call alongside the findings in the DynamoDB record. The Python companion shows where to add this.</p>
+<p><strong>LLM output retry on JSON parse failure.</strong> The consistency check and classification steps both call Bedrock and parse the response as JSON. When the model returns markdown fences or preamble text despite instructions, the parse fails. The recommended pattern: on first <code>JSONDecodeError</code>, append <code>&quot;\n\nYou MUST return only valid JSON. No markdown, no explanation.&quot;</code> to the user message and retry the Bedrock call once. If the second attempt also fails, fall back to a safe default and log the failure (metadata only, no response content). This is about 15 lines of code and closes the most common model output failure mode. The Python companion implements this pattern.</p>
+<p><strong>The signature confidence threshold is a policy decision.</strong> 70% is a reasonable starting point for fax-quality documents, but the right threshold depends on your organization's risk tolerance. Too high and you generate deficiency letters for valid authorizations where fax degradation hurt the signature. Too low and you accept artifacts as valid signatures. Your compliance and legal teams should set this threshold. It should be configurable per environment, not hardcoded.</p>
+<p><strong>No PHI in Lambda CloudWatch logs.</strong> The code explicitly avoids logging raw Bedrock response content and LLM reasoning strings. Verify before go-live that no Lambda in the pipeline logs patient name, member ID, authorization text, or any other PHI. CloudWatch log groups for all Lambda functions should be configured with KMS encryption, which Lambda does not configure automatically. Enable CloudWatch log data protection to automatically detect and mask common PHI patterns as an additional safety layer.</p>
+<p><strong>LLM concern description validation.</strong> The system prompt instructs the model not to include PHI in concern descriptions. LLM instruction compliance is not perfectly reliable. The Python companion includes a <code>_validate_no_phi_in_concerns()</code> stub that checks description values against known PHI patterns (date formats, member ID patterns) before writing concerns to DynamoDB, where they may surface in coordinator review UIs. Wire Bedrock Guardrails PII detection on the Converse API output for production-grade coverage: the <code>guardrailConfig</code> stub in <code>_call_bedrock_with_retry()</code> is the wiring point. The <code>model_versions</code> field in the DynamoDB record enables post-hoc audit of which model version produced a PHI-containing description if one is discovered. [EDITOR: review fix]</p>
+<p><strong>Authorized representative signatures need special handling.</strong> 45 CFR § 164.508(c)(1)(vi) allows personal representatives to sign, but requires documentation of the representative's authority. The pipeline validates signature presence but has no mechanism to detect or flag representative signatures versus patient signatures. A robust implementation includes a workflow for verifying representative authority when an authorization is signed by someone other than the patient.</p>
+<p><strong>Coordinator resolution and audit trail closure.</strong> When a coordinator resolves an LLM-flagged authorization in the review queue, the resolution needs to update the DynamoDB record and complete the routing. At minimum: a Lambda triggered by the coordinator's review UI updates the record's <code>status</code> from <code>pending_llm_review</code> to <code>approved</code> or <code>returned_deficient</code>, writes a <code>human_review</code> attribute capturing the reviewer identity (from their IAM or Cognito session), their determination, the timestamp, and a brief note. An approved request then routes to the appropriate fulfillment queue based on the stored classification. A returned-deficient case publishes to the deficiency SNS topic. This resolution step is outside this recipe's scope but is required for a complete HIPAA audit trail: a record stuck at <code>pending_llm_review</code> with no subsequent action is a compliance gap, and a record that moves to <code>routed</code> without documenting the coordinator's review decision is only marginally better. The Recipe 1.6 A2I wait-for-callback pattern is directly applicable for triggering the resolution step from a review UI. The Python companion includes a <code>resolve_review()</code> stub showing the DynamoDB update and SQS routing. [EDITOR: review fix]</p>
+<p><strong>Duplicate requests.</strong> The same request often arrives via multiple fax transmissions. The conditional DynamoDB write prevents duplicate records for the same document key, but &quot;same document, different fax&quot; creates two different S3 keys. Near-duplicate detection comparing patient ID, requestor fax, and records description before writing would catch most re-submissions. This is a straightforward addition but is outside this recipe's scope.</p>
+<p><strong>Service Unavailability.</strong> Medical records requests have regulatory response windows (typically 30 days under HIPAA, shorter under some state laws). While more forgiving than prior auth deadlines, a sustained Bedrock outage during a high-volume period can create a backlog that cascades into compliance violations. Production deployments need: (1) a DLQ with CloudWatch alarms for failed submissions, (2) a periodic scan for requests older than a configurable SLA window in processing state, and (3) monitoring that tracks requests approaching their regulatory response deadline so they can be escalated to manual processing before expiry.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Automated deficiency letter generation.</strong> When the authorization fails the rule-based check, the pipeline has everything it needs for a deficiency letter: requestor contact information, patient name, specific missing elements with regulatory citations, and the authorization date. Connecting the deficiency SNS topic to a Lambda that calls an LLM with the missing elements list generates a professional deficiency letter draft. The draft still goes through a human approval step before sending, but drafting from structured data is a well-bounded generative task. The deficiency rate in most operations is 20 to 35% of incoming requests; that's a lot of letters to draft manually.</p>
+<p><strong>Authorization expiration monitoring for standing authorizations.</strong> Some care coordination relationships involve standing authorizations that authorize ongoing records sharing. Write the expiration date to a DynamoDB TTL attribute at processing time and configure a Lambda trigger for items approaching expiration. A 30-day advance notification to the care coordinator allows proactive renewal before the authorization lapses and interrupts the records sharing workflow.</p>
+<p><strong>Prompt caching for high-volume deployments.</strong> The LLM validation and classification steps use the same system prompts for every request. Bedrock prompt caching stores those prompts with a 5-minute or 1-hour TTL at a write cost of 1.25x to 2x the base input price, but subsequent reads cost only 0.1x. At 50,000 requests per year with consistent daily volume, prompt caching cuts the input token cost for the system prompts by approximately 90%. For the validation step's longer system prompt, this is a meaningful budget line.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/API_AnalyzeDocument.html">Amazon Textract AnalyzeDocument API Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/how-it-works-signatures.html">Amazon Textract: Detecting Signatures</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html">Amazon Bedrock Converse API Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html">Amazon Bedrock Model IDs and Inference Profile ARNs</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/vpc-interface-endpoints.html">Amazon Bedrock VPC Interface Endpoints</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html">Amazon Bedrock Guardrails</a></li>
+<li><a href="https://aws.amazon.com/bedrock/pricing/">Amazon Bedrock Pricing</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data.html">Amazon CloudWatch Log Data Protection</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html">Amazon DynamoDB: Using Time to Live</a></li>
+</ul>
+<p><strong>Regulatory References:</strong></p>
+<ul>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/authorizations/index.html">HIPAA Privacy Rule: Authorizations (45 CFR § 164.508)</a></li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/access/index.html">HIPAA Right of Access (45 CFR § 164.524)</a></li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/model-notices-of-privacy-practices/index.html">HHS Model HIPAA Authorization Form</a></li>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/minimum-necessary-requirement/index.html">HIPAA Minimum Necessary Standard Guidance</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/aws-ai-intelligent-document-processing"><code>aws-ai-intelligent-document-processing</code></a>: Comprehensive IDP reference including multi-stage extraction, document classification, A2I human review, and generative AI enrichment patterns. The human review queue integration is directly applicable to this recipe's review queue for LLM-flagged authorizations.</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-code-samples"><code>amazon-textract-code-samples</code></a>: Official Textract samples including forms extraction and AnalyzeDocument usage. The key-value extraction and SIGNATURE block handling patterns are the foundation of Steps 1 through 3.</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example"><code>amazon-textract-and-amazon-comprehend-medical-claims-example</code></a>: Healthcare-specific forms extraction with CloudFormation deployment templates. Demonstrates field normalization and confidence gating patterns applicable here.</li>
+<li><a href="https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws"><code>guidance-for-low-code-intelligent-document-processing-on-aws</code></a>: Scalable IDP architecture covering ingestion, extraction, enrichment, and storage. Reference for production-grade pipeline design.</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/guidance/intelligent-document-processing-on-aws">Guidance for Intelligent Document Processing on AWS</a>: Reference architecture for classifying, extracting, and enriching documents at scale. Covers routing and storage patterns used in this recipe.</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock">Intelligent Healthcare Forms Analysis with Amazon Bedrock</a>: Extends forms extraction with generative AI for complex healthcare fields. The hybrid Textract-plus-LLM pattern here mirrors this recipe's approach.</li>
+<li><a href="https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/">Building a Medical Claims Processing Solution with Textract and Comprehend Medical</a>: End-to-end healthcare document processing with routing and compliance patterns.</li>
+</ul>
+<hr />
+<p><em>← <a href="chapter01.09-medical-records-request-extraction.html">Main Recipe 1.9</a> · <a href="chapter01.09-python-example.html">Python Example</a> · <a href="chapter01-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

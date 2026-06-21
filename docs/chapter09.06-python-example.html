@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 9.6: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-96-python-implementation-example">Recipe 9.6: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 9.6. It shows one way you could translate those concepts into working Python code using boto3 and a few standard libraries. It is not production-ready. There's no real deep learning model here (we mock the inference), no EHR integration, no FDA-validated decision logic, and the &quot;fundus images&quot; are synthetic numpy arrays. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a screening program on Monday morning. Consider it a starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and a few image-handling libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>Pillow<span class="w"> </span>scipy
+</pre></div>
+
+<p><code>Pillow</code> handles image loading and basic manipulation. <code>numpy</code> handles array operations for preprocessing. <code>scipy</code> provides signal processing functions used in the image quality assessment (Laplacian convolution for sharpness detection). In a real deployment, you'd also need a deep learning framework (PyTorch or TensorFlow) for local preprocessing and potentially for running the quality assessment model locally. For this example, we keep it to standard libraries and let SageMaker handle the classification model.</p>
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs <code>sagemaker:InvokeEndpoint</code>, <code>s3:GetObject</code>, <code>s3:PutObject</code>, <code>dynamodb:PutItem</code>, <code>dynamodb:GetItem</code>, and <code>sns:Publish</code>.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the steps, here's the configuration that drives the screening logic. These thresholds are the most important tunable parameters in the system. In production, you'd calibrate them on a clinical validation dataset with ophthalmologist input and regulatory review. The values below are reasonable starting points based on published literature, but your specific operating point depends on your population, camera hardware, and clinical workflow.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span>
+
+<span class="c1"># Configure structured logging. In production, use JSON-formatted output</span>
+<span class="c1"># for CloudWatch Logs Insights queries. Never log PHI field values.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Retry configuration for AWS API calls. Adaptive mode uses exponential</span>
+<span class="c1"># backoff with jitter, which handles burst throttling gracefully.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># --- Clinical Decision Thresholds ---</span>
+<span class="c1"># These thresholds determine when the system triggers a referral vs. clears a patient.</span>
+<span class="c1"># They represent the operating point on the sensitivity/specificity curve.</span>
+<span class="c1"># Lower REFERABLE_THRESHOLD = more sensitive (catch more disease, more false referrals).</span>
+<span class="c1"># Higher REFERABLE_THRESHOLD = more specific (fewer false referrals, risk missing disease).</span>
+<span class="c1">#</span>
+<span class="c1"># In a screening program, you generally want HIGH sensitivity (don&#39;t miss disease)</span>
+<span class="c1"># even at the cost of some specificity (extra referrals that turn out normal).</span>
+<span class="c1"># These values should be validated on YOUR patient population before deployment.</span>
+
+<span class="n">REFERABLE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.80</span>      <span class="c1"># P(moderate+ DR) to trigger referral</span>
+<span class="n">DME_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>            <span class="c1"># P(DME) to trigger referral independently</span>
+<span class="n">CONFIDENCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.60</span>     <span class="c1"># Below this, defer to human grader (model uncertain)</span>
+<span class="n">URGENT_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>         <span class="c1"># P(severe/PDR) to trigger urgent referral</span>
+
+<span class="c1"># --- Image Quality Thresholds ---</span>
+<span class="c1"># Minimum scores for each quality dimension. An image must pass ALL of these</span>
+<span class="c1"># to be considered gradable. If any dimension fails, the image is rejected</span>
+<span class="c1"># with a specific reason so the operator knows what to fix.</span>
+
+<span class="n">QUALITY_THRESHOLDS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;field_of_view&quot;</span><span class="p">:</span> <span class="mf">0.70</span><span class="p">,</span>      <span class="c1"># Must capture macula and optic disc</span>
+    <span class="s2">&quot;sharpness&quot;</span><span class="p">:</span> <span class="mf">0.60</span><span class="p">,</span>          <span class="c1"># Must resolve microaneurysms (tiny lesions)</span>
+    <span class="s2">&quot;illumination&quot;</span><span class="p">:</span> <span class="mf">0.65</span><span class="p">,</span>       <span class="c1"># Must have adequate dynamic range</span>
+    <span class="s2">&quot;artifact&quot;</span><span class="p">:</span> <span class="mf">0.70</span><span class="p">,</span>           <span class="c1"># Must be free of dust, lashes, reflections</span>
+<span class="p">}</span>
+
+<span class="c1"># --- Model Configuration ---</span>
+<span class="c1"># SageMaker endpoint hosting the DR classification model.</span>
+<span class="c1"># In production, this would be a validated, versioned model endpoint.</span>
+<span class="n">SAGEMAKER_ENDPOINT_NAME</span> <span class="o">=</span> <span class="s2">&quot;dr-screening-model-v2&quot;</span>
+
+<span class="c1"># Model input dimensions. Must match training specifications.</span>
+<span class="c1"># 512x512 is common for retinal models; some use 1024x1024 for higher detail.</span>
+<span class="n">MODEL_INPUT_SIZE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+
+<span class="c1"># --- Storage Configuration ---</span>
+<span class="n">S3_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;retinal-screening-images&quot;</span>
+<span class="n">DYNAMODB_TABLE</span> <span class="o">=</span> <span class="s2">&quot;screening-results&quot;</span>
+<span class="n">READING_QUEUE_TABLE</span> <span class="o">=</span> <span class="s2">&quot;reading-queue&quot;</span>
+
+<span class="c1"># --- SNS Topics ---</span>
+<span class="n">SNS_URGENT_REFERRAL_TOPIC</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:sns:us-east-1:123456789012:urgent-referrals&quot;</span>
+<span class="n">SNS_ROUTINE_REFERRAL_TOPIC</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:sns:us-east-1:123456789012:routine-referrals&quot;</span>
+<span class="n">SNS_NORMAL_RESULT_TOPIC</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:sns:us-east-1:123456789012:normal-results&quot;</span>
+<span class="n">SNS_RECAPTURE_TOPIC</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:sns:us-east-1:123456789012:recapture-required&quot;</span>
+
+<span class="c1"># --- ICDR Severity Scale ---</span>
+<span class="c1"># International Clinical Diabetic Retinopathy severity levels.</span>
+<span class="c1"># The model outputs a probability for each level.</span>
+<span class="n">SEVERITY_LEVELS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;No DR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Mild NPDR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Moderate NPDR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Severe NPDR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Proliferative DR&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+<hr />
+<h2 id="aws-clients">AWS Clients</h2>
+<div class="code"><pre><span></span><span class="c1"># Create AWS service clients. boto3 uses whatever credentials and region</span>
+<span class="c1"># are configured in your environment.</span>
+<span class="n">sagemaker_runtime</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker-runtime&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">sns_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sns&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="n">results_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">DYNAMODB_TABLE</span><span class="p">)</span>
+<span class="n">reading_queue_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">READING_QUEUE_TABLE</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-image-quality-assessment">Step 1: Image Quality Assessment</h2>
+<p><em>The pseudocode calls this <code>assess_image_quality(bucket, image_key)</code>. Before the classification model ever sees an image, we confirm it's actually gradable. A blurry, poorly-centered, or underexposed fundus image will produce unreliable predictions. This gate prevents the most common source of false negatives in screening programs.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">download_image_from_s3</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download a fundus image from S3 and return it as a PIL Image.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket name</span>
+<span class="sd">        key: S3 object key (path to the image file)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        PIL Image object ready for processing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+    <span class="n">image_bytes</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">image_bytes</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_sharpness</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate image sharpness using Laplacian variance.</span>
+
+<span class="sd">    The Laplacian operator detects edges. A sharp image has many strong edges</span>
+<span class="sd">    (high variance of the Laplacian). A blurry image has weak, diffuse edges</span>
+<span class="sd">    (low variance). This is a standard focus quality metric.</span>
+
+<span class="sd">    For retinal images, sharpness matters because microaneurysms (the earliest</span>
+<span class="sd">    sign of diabetic retinopathy) are tiny dots. If the image is blurry enough</span>
+<span class="sd">    to smear those dots into the background, the model will miss them.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Normalized sharpness score between 0.0 and 1.0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert to grayscale for edge detection.</span>
+    <span class="n">gray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Laplacian kernel (approximation using second derivatives).</span>
+    <span class="c1"># This highlights regions of rapid intensity change (edges).</span>
+    <span class="n">laplacian</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Convolve the image with the Laplacian kernel.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">convolve2d</span>
+    <span class="n">filtered</span> <span class="o">=</span> <span class="n">convolve2d</span><span class="p">(</span><span class="n">gray</span><span class="p">,</span> <span class="n">laplacian</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="s2">&quot;symm&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Variance of the Laplacian response. Higher = sharper.</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+
+    <span class="c1"># Normalize to 0-1 range. These bounds are empirical for fundus images.</span>
+    <span class="c1"># A variance below 100 is very blurry; above 1500 is very sharp.</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">((</span><span class="n">variance</span> <span class="o">-</span> <span class="mi">100</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1400</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">normalized</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_illumination_uniformity</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether the image has adequate and uniform illumination.</span>
+
+<span class="sd">    Fundus images should have a bright central region (the retina illuminated</span>
+<span class="sd">    by the camera flash) with gradual falloff toward the edges. Problems:</span>
+<span class="sd">    - Underexposed: everything is dark, pathology invisible</span>
+<span class="sd">    - Overexposed: washed out, no contrast between structures</span>
+<span class="sd">    - Uneven: one side bright, other side dark (camera misalignment)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Normalized illumination score between 0.0 and 1.0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Check overall brightness (mean pixel value).</span>
+    <span class="n">mean_brightness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gray</span><span class="p">)</span>
+
+    <span class="c1"># Check dynamic range (standard deviation of pixel values).</span>
+    <span class="c1"># A good fundus image uses most of the 0-255 range.</span>
+    <span class="n">std_brightness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gray</span><span class="p">)</span>
+
+    <span class="c1"># Penalize images that are too dark (mean &lt; 50) or too bright (mean &gt; 200).</span>
+    <span class="n">brightness_score</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_brightness</span> <span class="o">-</span> <span class="mi">125</span><span class="p">)</span> <span class="o">/</span> <span class="mi">125</span>
+
+    <span class="c1"># Penalize images with low dynamic range (flat histogram).</span>
+    <span class="n">range_score</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">std_brightness</span> <span class="o">/</span> <span class="mi">50</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">brightness_score</span> <span class="o">+</span> <span class="n">range_score</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_field_of_view</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate whether the image captures adequate retinal area.</span>
+
+<span class="sd">    A proper fundus image should show the optic disc and macula within the</span>
+<span class="sd">    field of view. If the patient blinked, the camera was misaligned, or</span>
+<span class="sd">    the pupil was too small, you get a partial image that&#39;s ungradable.</span>
+
+<span class="sd">    This is a simplified check based on the circular retinal area visible</span>
+<span class="sd">    in the image. A real implementation would use landmark detection</span>
+<span class="sd">    (find the optic disc and macula explicitly).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Normalized field of view score between 0.0 and 1.0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Fundus images typically show a bright circular region (the retina)</span>
+    <span class="c1"># against a dark background. Threshold to find the illuminated area.</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="mi">30</span>  <span class="c1"># pixels brighter than this are &quot;retina&quot;</span>
+    <span class="n">retinal_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gray</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">total_pixels</span> <span class="o">=</span> <span class="n">gray</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="c1"># The illuminated area should be at least 60% of the image frame.</span>
+    <span class="c1"># Less than that suggests partial capture or severe vignetting.</span>
+    <span class="n">coverage</span> <span class="o">=</span> <span class="n">retinal_pixels</span> <span class="o">/</span> <span class="n">total_pixels</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">coverage</span> <span class="o">/</span> <span class="mf">0.60</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">normalized</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">detect_artifacts</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check for common artifacts: dust spots, eyelash shadows, reflections.</span>
+
+<span class="sd">    Artifacts can mimic pathology (a dust spot looks like a hemorrhage) or</span>
+<span class="sd">    hide pathology (an eyelash shadow obscures the macula). Either way,</span>
+<span class="sd">    the image is unreliable for grading.</span>
+
+<span class="sd">    This simplified version checks for unusually bright spots (reflections)</span>
+<span class="sd">    and unusually dark linear features (eyelashes). A production system</span>
+<span class="sd">    would use a trained artifact detection model.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Normalized artifact-free score between 0.0 and 1.0.</span>
+<span class="sd">        Higher = fewer artifacts = better quality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Check for specular reflections (very bright spots).</span>
+    <span class="n">bright_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gray</span> <span class="o">&gt;</span> <span class="mi">250</span><span class="p">)</span>
+    <span class="n">bright_ratio</span> <span class="o">=</span> <span class="n">bright_pixels</span> <span class="o">/</span> <span class="n">gray</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="c1"># Check for very dark regions that shouldn&#39;t be there (eyelash shadows).</span>
+    <span class="c1"># Exclude the natural dark border of the fundus image.</span>
+    <span class="n">center_region</span> <span class="o">=</span> <span class="n">gray</span><span class="p">[</span>
+        <span class="n">gray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">4</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">gray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="n">gray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">4</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">gray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">dark_in_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">center_region</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="n">dark_ratio</span> <span class="o">=</span> <span class="n">dark_in_center</span> <span class="o">/</span> <span class="n">center_region</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="c1"># Score: penalize for reflections and dark artifacts.</span>
+    <span class="n">reflection_penalty</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">bright_ratio</span> <span class="o">*</span> <span class="mi">50</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">shadow_penalty</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dark_ratio</span> <span class="o">*</span> <span class="mi">20</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">reflection_penalty</span> <span class="o">-</span> <span class="n">shadow_penalty</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">assess_image_quality</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full quality assessment pipeline on a fundus image.</span>
+
+<span class="sd">    All four quality dimensions must pass their respective thresholds</span>
+<span class="sd">    for the image to be considered gradable. If any dimension fails,</span>
+<span class="sd">    the image is rejected with a specific reason so the camera operator</span>
+<span class="sd">    knows what to fix (retake with better focus, ask patient to open</span>
+<span class="sd">    eyes wider, clean the lens, etc.).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the image</span>
+<span class="sd">        image_key: S3 key of the fundus image</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with gradable (bool), quality_score (float), and if failed,</span>
+<span class="sd">        the reason and recommendation for recapture.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">download_image_from_s3</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">image_key</span><span class="p">)</span>
+
+    <span class="c1"># Run each quality check independently.</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;field_of_view&quot;</span><span class="p">:</span> <span class="n">calculate_field_of_view</span><span class="p">(</span><span class="n">image</span><span class="p">),</span>
+        <span class="s2">&quot;sharpness&quot;</span><span class="p">:</span> <span class="n">calculate_sharpness</span><span class="p">(</span><span class="n">image</span><span class="p">),</span>
+        <span class="s2">&quot;illumination&quot;</span><span class="p">:</span> <span class="n">calculate_illumination_uniformity</span><span class="p">(</span><span class="n">image</span><span class="p">),</span>
+        <span class="s2">&quot;artifact&quot;</span><span class="p">:</span> <span class="n">detect_artifacts</span><span class="p">(</span><span class="n">image</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Find any dimensions that failed their threshold.</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="n">score</span>
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">scores</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">score</span> <span class="o">&lt;</span> <span class="n">QUALITY_THRESHOLDS</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Overall quality is the minimum across all dimensions.</span>
+    <span class="c1"># One bad dimension makes the whole image ungradable.</span>
+    <span class="n">overall_quality</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">failures</span><span class="p">:</span>
+        <span class="c1"># Identify the worst-performing dimension for the recapture instruction.</span>
+        <span class="n">worst_dim</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">failures</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">failures</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+        <span class="n">recommendations</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;field_of_view&quot;</span><span class="p">:</span> <span class="s2">&quot;Reposition camera. Ensure optic disc and macula are visible.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sharpness&quot;</span><span class="p">:</span> <span class="s2">&quot;Refocus the camera. Ask patient to fixate on the target.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;illumination&quot;</span><span class="p">:</span> <span class="s2">&quot;Adjust flash intensity. Check for media opacities (cataracts).&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;artifact&quot;</span><span class="p">:</span> <span class="s2">&quot;Clean the lens. Ask patient to open eyes wider. Check for reflections.&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Image quality FAILED&quot;</span><span class="p">,</span>
+            <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span> <span class="s2">&quot;worst_dimension&quot;</span><span class="p">:</span> <span class="n">worst_dim</span><span class="p">,</span>
+                   <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">scores</span><span class="p">},</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;gradable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;quality_score&quot;</span><span class="p">:</span> <span class="n">overall_quality</span><span class="p">,</span>
+            <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">scores</span><span class="p">,</span>
+            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Failed quality check: </span><span class="si">{</span><span class="n">worst_dim</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">failures</span><span class="p">[</span><span class="n">worst_dim</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">QUALITY_THRESHOLDS</span><span class="p">[</span><span class="n">worst_dim</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;recommendation&quot;</span><span class="p">:</span> <span class="n">recommendations</span><span class="p">[</span><span class="n">worst_dim</span><span class="p">],</span>
+        <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Image quality PASSED&quot;</span><span class="p">,</span>
+        <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span> <span class="s2">&quot;quality_score&quot;</span><span class="p">:</span> <span class="n">overall_quality</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;gradable&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;quality_score&quot;</span><span class="p">:</span> <span class="n">overall_quality</span><span class="p">,</span>
+        <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">scores</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-model-inference-dr-classification">Step 2: Model Inference (DR Classification)</h2>
+<p><em>The pseudocode calls this <code>classify_retinal_image(bucket, image_key)</code>. The fundus image is preprocessed and sent to the SageMaker endpoint hosting the deep learning model. The model outputs probabilities for each ICDR severity level plus a separate DME probability.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">preprocess_for_model</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Preprocess a fundus image for model inference.</span>
+
+<span class="sd">    The preprocessing must exactly match what was done during model training.</span>
+<span class="sd">    Typical steps for retinal models:</span>
+<span class="sd">    1. Resize to the model&#39;s expected input dimensions</span>
+<span class="sd">    2. Normalize pixel values to [0, 1] or [-1, 1] range</span>
+<span class="sd">    3. Apply any color normalization (some models expect specific color balance)</span>
+<span class="sd">    4. Serialize to the format the endpoint expects</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Serialized image tensor as bytes, ready for the SageMaker endpoint.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Resize to model input dimensions. Use LANCZOS for high-quality downsampling.</span>
+    <span class="c1"># Fundus images are typically 2000x2000+; the model expects 512x512.</span>
+    <span class="n">resized</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">MODEL_INPUT_SIZE</span><span class="p">,</span> <span class="n">Image</span><span class="o">.</span><span class="n">LANCZOS</span><span class="p">)</span>
+
+    <span class="c1"># Convert to numpy array and normalize to [0, 1] range.</span>
+    <span class="n">img_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">resized</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span>
+
+    <span class="c1"># Some models expect channel-first format (C, H, W) instead of (H, W, C).</span>
+    <span class="c1"># Check your model&#39;s documentation. We&#39;ll use channel-last here.</span>
+    <span class="c1"># img_array shape: (512, 512, 3)</span>
+
+    <span class="c1"># Serialize as JSON with the pixel values as a nested list.</span>
+    <span class="c1"># Alternative formats: application/x-npy, application/x-image</span>
+    <span class="c1"># JSON is verbose but universally supported by SageMaker endpoints.</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;instances&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">img_array</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]})</span>
+    <span class="k">return</span> <span class="n">payload</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">classify_retinal_image</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Send a fundus image to the DR classification model and get predictions.</span>
+
+<span class="sd">    The model outputs a probability distribution over the 5 ICDR severity</span>
+<span class="sd">    levels plus a separate DME probability. This gives downstream logic</span>
+<span class="sd">    the flexibility to apply different thresholds for different clinical</span>
+<span class="sd">    contexts rather than being locked into a single hard classification.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the image</span>
+<span class="sd">        image_key: S3 key of the fundus image</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with per-level probabilities, DME probability, model version,</span>
+<span class="sd">        and inference time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">download_image_from_s3</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">image_key</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">preprocess_for_model</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+    <span class="c1"># Invoke the SageMaker endpoint.</span>
+    <span class="c1"># This is a synchronous call; it blocks until inference completes.</span>
+    <span class="c1"># Typical latency: 2-5 seconds for a single image on a GPU endpoint.</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">sagemaker_runtime</span><span class="o">.</span><span class="n">invoke_endpoint</span><span class="p">(</span>
+        <span class="n">EndpointName</span><span class="o">=</span><span class="n">SAGEMAKER_ENDPOINT_NAME</span><span class="p">,</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Parse the model response.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+
+    <span class="c1"># Expected response structure from the model:</span>
+    <span class="c1"># {</span>
+    <span class="c1">#   &quot;predictions&quot;: [[0.02, 0.05, 0.78, 0.12, 0.03]],  # ICDR probabilities</span>
+    <span class="c1">#   &quot;dme_predictions&quot;: [[0.85, 0.15]],                  # [no_dme, dme]</span>
+    <span class="c1">#   &quot;model_version&quot;: &quot;v2.3.1&quot;</span>
+    <span class="c1"># }</span>
+    <span class="n">probabilities</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dme_probs</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;dme_predictions&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">predictions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;no_dr_probability&quot;</span><span class="p">:</span> <span class="n">probabilities</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">:</span> <span class="n">probabilities</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">:</span> <span class="n">probabilities</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">:</span> <span class="n">probabilities</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+        <span class="s2">&quot;pdr_probability&quot;</span><span class="p">:</span> <span class="n">probabilities</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+        <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="n">dme_probs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># probability of DME present</span>
+        <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_version&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;severity_levels&quot;</span><span class="p">:</span> <span class="n">SEVERITY_LEVELS</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Model inference complete&quot;</span><span class="p">,</span>
+        <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span> <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;model_version&quot;</span><span class="p">]},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">predictions</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-clinical-decision-logic">Step 3: Clinical Decision Logic</h2>
+<p><em>The pseudocode calls this <code>apply_clinical_decision(predictions)</code>. This is where model output becomes a clinical action. The mapping from probabilities to referral decisions is the most clinically sensitive part of the system.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_clinical_decision</span><span class="p">(</span><span class="n">predictions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map model predictions to a clinical screening decision.</span>
+
+<span class="sd">    The decision logic handles four scenarios:</span>
+<span class="sd">    1. Model is uncertain (max probability below confidence threshold) -&gt; human review</span>
+<span class="sd">    2. High probability of sight-threatening disease (severe/PDR) -&gt; urgent referral</span>
+<span class="sd">    3. Referable DR detected (moderate+) -&gt; routine referral</span>
+<span class="sd">    4. DME detected (independent of DR severity) -&gt; routine referral</span>
+<span class="sd">    5. No referable disease -&gt; clear for annual rescreening</span>
+
+<span class="sd">    The thresholds here are configurable and MUST be validated on your specific</span>
+<span class="sd">    patient population before clinical deployment. A screening program&#39;s operating</span>
+<span class="sd">    point is a tradeoff between sensitivity (catching all disease) and specificity</span>
+<span class="sd">    (not overwhelming ophthalmology with false referrals).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        predictions: Output from classify_retinal_image()</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with decision, urgency, severity_grade, and supporting probabilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Calculate the probability of referable DR (moderate NPDR or worse).</span>
+    <span class="c1"># This is the key metric for the referral decision.</span>
+    <span class="n">referable_probability</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;pdr_probability&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Calculate urgency: severe NPDR or PDR requires expedited referral</span>
+    <span class="c1"># because these stages carry high risk of imminent vision loss.</span>
+    <span class="n">urgent_probability</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;pdr_probability&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Determine the highest-probability severity grade for the record.</span>
+    <span class="n">prob_list</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;no_dr_probability&quot;</span><span class="p">],</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">],</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">],</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">],</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;pdr_probability&quot;</span><span class="p">],</span>
+    <span class="p">]</span>
+    <span class="n">max_idx</span> <span class="o">=</span> <span class="n">prob_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">prob_list</span><span class="p">))</span>
+    <span class="n">severity_grade</span> <span class="o">=</span> <span class="n">SEVERITY_LEVELS</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
+    <span class="n">max_probability</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">prob_list</span><span class="p">)</span>
+
+    <span class="c1"># Decision logic with confidence gating.</span>
+    <span class="k">if</span> <span class="n">max_probability</span> <span class="o">&lt;</span> <span class="n">CONFIDENCE_THRESHOLD</span><span class="p">:</span>
+        <span class="c1"># Model is not confident enough for an autonomous decision.</span>
+        <span class="c1"># Route to a human grader (ophthalmologist or trained reader).</span>
+        <span class="c1"># This is a SAFETY feature, not a failure mode.</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="s2">&quot;HUMAN_REVIEW_REQUIRED&quot;</span>
+        <span class="n">urgency</span> <span class="o">=</span> <span class="s2">&quot;routine&quot;</span>
+
+    <span class="k">elif</span> <span class="n">urgent_probability</span> <span class="o">&gt;=</span> <span class="n">URGENT_THRESHOLD</span><span class="p">:</span>
+        <span class="c1"># High probability of sight-threatening disease. Urgent referral.</span>
+        <span class="c1"># Patient needs ophthalmology within days, not weeks.</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="s2">&quot;URGENT_REFERRAL&quot;</span>
+        <span class="n">urgency</span> <span class="o">=</span> <span class="s2">&quot;urgent&quot;</span>
+
+    <span class="k">elif</span> <span class="n">referable_probability</span> <span class="o">&gt;=</span> <span class="n">REFERABLE_THRESHOLD</span><span class="p">:</span>
+        <span class="c1"># Referable DR detected. Routine ophthalmology referral.</span>
+        <span class="c1"># Patient needs to be seen within 2-4 weeks.</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="s2">&quot;ROUTINE_REFERRAL&quot;</span>
+        <span class="n">urgency</span> <span class="o">=</span> <span class="s2">&quot;routine&quot;</span>
+
+    <span class="k">elif</span> <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;dme_probability&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">DME_THRESHOLD</span><span class="p">:</span>
+        <span class="c1"># DME detected independent of DR severity.</span>
+        <span class="c1"># Macular edema can occur at any DR stage and independently</span>
+        <span class="c1"># threatens central vision. Requires referral.</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="s2">&quot;ROUTINE_REFERRAL&quot;</span>
+        <span class="n">urgency</span> <span class="o">=</span> <span class="s2">&quot;routine&quot;</span>
+        <span class="n">severity_grade</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">severity_grade</span><span class="si">}</span><span class="s2"> with DME&quot;</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># No referable disease detected.</span>
+        <span class="c1"># Patient is safe to screen again in 12 months.</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="s2">&quot;NO_REFERRAL&quot;</span>
+        <span class="n">urgency</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">,</span>
+        <span class="s2">&quot;urgency&quot;</span><span class="p">:</span> <span class="n">urgency</span><span class="p">,</span>
+        <span class="s2">&quot;severity_grade&quot;</span><span class="p">:</span> <span class="n">severity_grade</span><span class="p">,</span>
+        <span class="s2">&quot;referable_probability&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">referable_probability</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;dme_probability&quot;</span><span class="p">],</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;urgent_probability&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">urgent_probability</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;max_probability&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">max_probability</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="n">predictions</span><span class="p">[</span><span class="s2">&quot;model_version&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Clinical decision rendered&quot;</span><span class="p">,</span>
+        <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">,</span> <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="n">severity_grade</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-store-results-and-trigger-actions">Step 4: Store Results and Trigger Actions</h2>
+<p><em>The pseudocode calls this <code>store_and_act(patient_id, image_key, quality_result, predictions, decision)</code>. Every screening event gets a complete audit record, and the appropriate downstream action is triggered based on the clinical decision.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_screening_result</span><span class="p">(</span>
+    <span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">image_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">quality_result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">predictions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">decision</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write the complete screening record to DynamoDB.</span>
+
+<span class="sd">    This record is the authoritative output of the screening pipeline.</span>
+<span class="sd">    It must contain everything needed for:</span>
+<span class="sd">    - Clinical use (what was the result, what action was taken)</span>
+<span class="sd">    - Regulatory audit (which model version, what were the raw predictions)</span>
+<span class="sd">    - Quality monitoring (track performance over time)</span>
+<span class="sd">    - Reprocessing (if a model is updated, rerun on stored images)</span>
+
+<span class="sd">    DynamoDB requires Decimal for numeric values, not float.</span>
+<span class="sd">    This is a known gotcha that will throw a TypeError if you forget.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">screening_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;scr-</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;screening_id&quot;</span><span class="p">:</span> <span class="n">screening_id</span><span class="p">,</span>
+        <span class="s2">&quot;screening_date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span>
+        <span class="s2">&quot;quality_score&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">quality_result</span><span class="p">[</span><span class="s2">&quot;quality_score&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">))),</span>
+        <span class="s2">&quot;severity_grade&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;severity_grade&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;referable_probability&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">decision</span><span class="p">[</span><span class="s2">&quot;referable_probability&quot;</span><span class="p">])),</span>
+        <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">decision</span><span class="p">[</span><span class="s2">&quot;dme_probability&quot;</span><span class="p">])),</span>
+        <span class="s2">&quot;clinical_decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;urgency&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;urgency&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;model_version&quot;</span><span class="p">],</span>
+        <span class="c1"># Store raw predictions for audit trail. Convert all floats to Decimal.</span>
+        <span class="s2">&quot;raw_predictions&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">predictions</span><span class="p">),</span> <span class="n">parse_float</span><span class="o">=</span><span class="n">Decimal</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;COMPLETE&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># DynamoDB key: patient_id (partition) + screening_date (sort)</span>
+    <span class="n">results_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">record</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Screening result stored&quot;</span><span class="p">,</span>
+        <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;screening_id&quot;</span><span class="p">:</span> <span class="n">screening_id</span><span class="p">,</span> <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">record</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">trigger_downstream_action</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">screening_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">decision</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Trigger the appropriate notification based on the clinical decision.</span>
+
+<span class="sd">    - URGENT_REFERRAL: Immediate provider notification (SNS)</span>
+<span class="sd">    - ROUTINE_REFERRAL: Standard referral notification (SNS)</span>
+<span class="sd">    - HUMAN_REVIEW_REQUIRED: Add to reading queue (DynamoDB)</span>
+<span class="sd">    - NO_REFERRAL: Patient notification of normal result (SNS)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">message_base</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+        <span class="s2">&quot;screening_id&quot;</span><span class="p">:</span> <span class="n">screening_id</span><span class="p">,</span>
+        <span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span>
+        <span class="s2">&quot;severity_grade&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;severity_grade&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;URGENT_REFERRAL&quot;</span><span class="p">:</span>
+        <span class="n">sns_client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">TopicArn</span><span class="o">=</span><span class="n">SNS_URGENT_REFERRAL_TOPIC</span><span class="p">,</span>
+            <span class="n">Subject</span><span class="o">=</span><span class="s2">&quot;URGENT: Diabetic Retinopathy Screening - Immediate Referral Required&quot;</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">message_base</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Urgent referral notification sent&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">})</span>
+
+    <span class="k">elif</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ROUTINE_REFERRAL&quot;</span><span class="p">:</span>
+        <span class="n">sns_client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">TopicArn</span><span class="o">=</span><span class="n">SNS_ROUTINE_REFERRAL_TOPIC</span><span class="p">,</span>
+            <span class="n">Subject</span><span class="o">=</span><span class="s2">&quot;Diabetic Retinopathy Screening - Referral Recommended&quot;</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">message_base</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Routine referral notification sent&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">})</span>
+
+    <span class="k">elif</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;HUMAN_REVIEW_REQUIRED&quot;</span><span class="p">:</span>
+        <span class="c1"># Add to reading queue for a qualified human grader.</span>
+        <span class="n">reading_queue_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+            <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;screening_id&quot;</span><span class="p">:</span> <span class="n">screening_id</span><span class="p">,</span>
+                <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+                <span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span>
+                <span class="s2">&quot;raw_predictions&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">decision</span><span class="p">),</span> <span class="n">parse_float</span><span class="o">=</span><span class="n">Decimal</span>
+                <span class="p">),</span>
+                <span class="s2">&quot;priority&quot;</span><span class="p">:</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;PENDING_REVIEW&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;queued_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Added to human reading queue&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;screening_id&quot;</span><span class="p">:</span> <span class="n">screening_id</span><span class="p">})</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># NO_REFERRAL: normal result, schedule next annual screening.</span>
+        <span class="n">message_base</span><span class="p">[</span><span class="s2">&quot;next_screening_due&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;12 months from screening date&quot;</span>
+        <span class="n">sns_client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">TopicArn</span><span class="o">=</span><span class="n">SNS_NORMAL_RESULT_TOPIC</span><span class="p">,</span>
+            <span class="n">Subject</span><span class="o">=</span><span class="s2">&quot;Diabetic Retinopathy Screening - Normal Result&quot;</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">message_base</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Normal result notification sent&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">})</span>
+</pre></div>
+
+<hr />
+<h2 id="full-pipeline-function">Full Pipeline Function</h2>
+<p>This assembles all four steps into a single callable function. The print statements show progress so you can trace execution during development.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_screening_pipeline</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute the complete diabetic retinopathy screening pipeline.</span>
+
+<span class="sd">    Steps:</span>
+<span class="sd">    1. Assess image quality (reject ungradable images immediately)</span>
+<span class="sd">    2. Classify the retinal image (invoke DR model)</span>
+<span class="sd">    3. Apply clinical decision logic (map predictions to actions)</span>
+<span class="sd">    4. Store results and trigger downstream actions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patient_id: Unique patient identifier</span>
+<span class="sd">        bucket: S3 bucket containing the fundus image</span>
+<span class="sd">        image_key: S3 key of the fundus image</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Complete screening record dict, or quality failure dict if image rejected.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DIABETIC RETINOPATHY SCREENING PIPELINE&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Patient: </span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image: s3://</span><span class="si">{</span><span class="n">bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">image_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Step 1: Quality Assessment ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Step 1/4] Assessing image quality...&quot;</span><span class="p">)</span>
+    <span class="n">quality_result</span> <span class="o">=</span> <span class="n">assess_image_quality</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">image_key</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">quality_result</span><span class="p">[</span><span class="s2">&quot;gradable&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ❌ Image REJECTED: </span><span class="si">{</span><span class="n">quality_result</span><span class="p">[</span><span class="s1">&#39;reason&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  📋 Recommendation: </span><span class="si">{</span><span class="n">quality_result</span><span class="p">[</span><span class="s1">&#39;recommendation&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Notify the capture site to retake the image.</span>
+        <span class="n">sns_client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">TopicArn</span><span class="o">=</span><span class="n">SNS_RECAPTURE_TOPIC</span><span class="p">,</span>
+            <span class="n">Subject</span><span class="o">=</span><span class="s2">&quot;Retinal Image Recapture Required&quot;</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+                <span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span>
+                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">quality_result</span><span class="p">[</span><span class="s2">&quot;reason&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;recommendation&quot;</span><span class="p">:</span> <span class="n">quality_result</span><span class="p">[</span><span class="s2">&quot;recommendation&quot;</span><span class="p">],</span>
+            <span class="p">}),</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;QUALITY_REJECTED&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+            <span class="s2">&quot;image_key&quot;</span><span class="p">:</span> <span class="n">image_key</span><span class="p">,</span>
+            <span class="s2">&quot;quality_result&quot;</span><span class="p">:</span> <span class="n">quality_result</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✓ Image quality PASSED (score: </span><span class="si">{</span><span class="n">quality_result</span><span class="p">[</span><span class="s1">&#39;quality_score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Step 2: Model Inference ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Step 2/4] Running DR classification model...&quot;</span><span class="p">)</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">classify_retinal_image</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">image_key</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✓ Model inference complete (version: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;model_version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    No DR: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;no_dr_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Mild NPDR: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;mild_npdr_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Moderate NPDR: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;moderate_npdr_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Severe NPDR: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;severe_npdr_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    PDR: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;pdr_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    DME: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;dme_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Step 3: Clinical Decision ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Step 3/4] Applying clinical decision logic...&quot;</span><span class="p">)</span>
+    <span class="n">decision</span> <span class="o">=</span> <span class="n">apply_clinical_decision</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✓ Decision: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;decision&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Severity: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;severity_grade&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Urgency: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;urgency&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Referable probability: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;referable_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Step 4: Store and Act ---</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Step 4/4] Storing results and triggering actions...&quot;</span><span class="p">)</span>
+    <span class="n">record</span> <span class="o">=</span> <span class="n">store_screening_result</span><span class="p">(</span>
+        <span class="n">patient_id</span><span class="p">,</span> <span class="n">image_key</span><span class="p">,</span> <span class="n">quality_result</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">decision</span>
+    <span class="p">)</span>
+    <span class="n">trigger_downstream_action</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;screening_id&quot;</span><span class="p">],</span> <span class="n">image_key</span><span class="p">,</span> <span class="n">decision</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✓ Screening record stored: </span><span class="si">{</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;screening_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SCREENING COMPLETE&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Result: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;severity_grade&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;decision&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">record</span>
+</pre></div>
+
+<hr />
+<h2 id="synthetic-test-data">Synthetic Test Data</h2>
+<p>For development and testing, here's how to generate synthetic screening scenarios without real patient images. This creates mock S3 events and simulates the model responses you'd see in production.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_synthetic_screening_batch</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a batch of synthetic screening scenarios for testing.</span>
+
+<span class="sd">    These represent the range of outcomes you&#39;d see in a real screening program:</span>
+<span class="sd">    - Normal results (majority of screenings)</span>
+<span class="sd">    - Mild NPDR (monitor, no referral)</span>
+<span class="sd">    - Moderate NPDR (routine referral)</span>
+<span class="sd">    - Severe/PDR (urgent referral)</span>
+<span class="sd">    - DME detected (referral regardless of DR grade)</span>
+<span class="sd">    - Low confidence (human review required)</span>
+<span class="sd">    - Poor quality image (recapture required)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scenarios</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pat-001&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Normal retina, no disease&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;no_dr_probability&quot;</span><span class="p">:</span> <span class="mf">0.92</span><span class="p">,</span>
+                <span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                <span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span>
+                <span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span>
+                <span class="s2">&quot;pdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span>
+                <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>
+                <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v2.3.1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;severity_levels&quot;</span><span class="p">:</span> <span class="n">SEVERITY_LEVELS</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;expected_decision&quot;</span><span class="p">:</span> <span class="s2">&quot;NO_REFERRAL&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pat-002&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Mild NPDR, below referral threshold&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;no_dr_probability&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+                <span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.72</span><span class="p">,</span>
+                <span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+                <span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>
+                <span class="s2">&quot;pdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span>
+                <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v2.3.1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;severity_levels&quot;</span><span class="p">:</span> <span class="n">SEVERITY_LEVELS</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;expected_decision&quot;</span><span class="p">:</span> <span class="s2">&quot;NO_REFERRAL&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pat-003&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Moderate NPDR, routine referral&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;no_dr_probability&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span>
+                <span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                <span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.78</span><span class="p">,</span>
+                <span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.12</span><span class="p">,</span>
+                <span class="s2">&quot;pdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>
+                <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+                <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v2.3.1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;severity_levels&quot;</span><span class="p">:</span> <span class="n">SEVERITY_LEVELS</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;expected_decision&quot;</span><span class="p">:</span> <span class="s2">&quot;ROUTINE_REFERRAL&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pat-004&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Proliferative DR, urgent referral&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;no_dr_probability&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+                <span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span>
+                <span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                <span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.22</span><span class="p">,</span>
+                <span class="s2">&quot;pdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.70</span><span class="p">,</span>
+                <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+                <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v2.3.1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;severity_levels&quot;</span><span class="p">:</span> <span class="n">SEVERITY_LEVELS</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;expected_decision&quot;</span><span class="p">:</span> <span class="s2">&quot;URGENT_REFERRAL&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pat-005&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;No DR but DME detected, referral needed&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;no_dr_probability&quot;</span><span class="p">:</span> <span class="mf">0.80</span><span class="p">,</span>
+                <span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">,</span>
+                <span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                <span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>
+                <span class="s2">&quot;pdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span>
+                <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="mf">0.82</span><span class="p">,</span>
+                <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v2.3.1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;severity_levels&quot;</span><span class="p">:</span> <span class="n">SEVERITY_LEVELS</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;expected_decision&quot;</span><span class="p">:</span> <span class="s2">&quot;ROUTINE_REFERRAL&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pat-006&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Model uncertain, needs human review&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;no_dr_probability&quot;</span><span class="p">:</span> <span class="mf">0.35</span><span class="p">,</span>
+                <span class="s2">&quot;mild_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
+                <span class="s2">&quot;moderate_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.20</span><span class="p">,</span>
+                <span class="s2">&quot;severe_npdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.12</span><span class="p">,</span>
+                <span class="s2">&quot;pdr_probability&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+                <span class="s2">&quot;dme_probability&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">,</span>
+                <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v2.3.1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;severity_levels&quot;</span><span class="p">:</span> <span class="n">SEVERITY_LEVELS</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;expected_decision&quot;</span><span class="p">:</span> <span class="s2">&quot;HUMAN_REVIEW_REQUIRED&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SYNTHETIC SCREENING BATCH - Testing Clinical Decision Logic&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">scenario</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- </span><span class="si">{</span><span class="n">scenario</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (Patient: </span><span class="si">{</span><span class="n">scenario</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">) ---&quot;</span><span class="p">)</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="n">apply_clinical_decision</span><span class="p">(</span><span class="n">scenario</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">])</span>
+
+        <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;✓&quot;</span> <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">scenario</span><span class="p">[</span><span class="s2">&quot;expected_decision&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;✗&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2"> Decision: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;decision&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Severity: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;severity_grade&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Referable prob: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;referable_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    DME prob: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">&#39;dme_probability&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">scenario</span><span class="p">[</span><span class="s2">&quot;expected_decision&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    ⚠️  MISMATCH: Expected </span><span class="si">{</span><span class="n">scenario</span><span class="p">[</span><span class="s1">&#39;expected_decision&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;BATCH COMPLETE&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+<span class="c1"># Run the synthetic test batch to verify decision logic.</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">create_synthetic_screening_batch</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="gap-to-production">Gap to Production</h2>
+<p>This example demonstrates the shape of a DR screening pipeline. Here's what you'd need to add before deploying to a real screening program:</p>
+<p><strong>Error handling and retries.</strong> Every AWS API call can fail. The <code>BOTO3_RETRY_CONFIG</code> handles transient throttling, but you also need application-level retries for SageMaker endpoint cold starts (which can take 30+ seconds if the endpoint scaled to zero), S3 eventual consistency edge cases, and DynamoDB conditional write conflicts. Wrap the full pipeline in a Step Functions state machine with per-step retry policies and a dead-letter queue for persistent failures.</p>
+<p><strong>Input validation.</strong> Validate image format (JPEG, PNG, TIFF, DICOM), file size (reject suspiciously small or large files), and metadata (patient ID format, required fields present) before processing. A malformed input should fail fast with a clear error, not propagate through the pipeline producing garbage results.</p>
+<p><strong>Real model deployment.</strong> This example mocks the SageMaker inference call. A real deployment requires: training or licensing a validated DR classification model, packaging it as a SageMaker model artifact, deploying to a GPU endpoint (ml.g4dn.xlarge minimum for acceptable latency), configuring auto-scaling policies, and implementing model versioning with A/B testing for updates.</p>
+<p><strong>Clinical validation.</strong> Before any patient-facing deployment, the system must be validated on a representative dataset from your target population. This means: collecting a validation set of fundus images graded by multiple ophthalmologists (gold standard), running the model on that set, calculating sensitivity/specificity/AUC at your chosen operating thresholds, and documenting the results for regulatory submission. The thresholds in this example are illustrative; your validated thresholds will differ.</p>
+<p><strong>FDA regulatory pathway.</strong> If the system makes autonomous referral decisions (no physician reviews the AI output), you need FDA clearance. If a physician reviews every result, the regulatory path is different but still exists. Either way, you need regulatory counsel involved early. The documentation requirements (design controls, risk analysis, clinical evidence) take months to prepare.</p>
+<p><strong>Structured logging and monitoring.</strong> Replace print statements with structured JSON logging. Build CloudWatch dashboards tracking: screening volume, ungradable rate, referral rate, model latency, and confidence score distributions. Set alarms for anomalies (sudden spike in ungradable rate might mean a camera is malfunctioning; sudden drop in referral rate might mean model drift).</p>
+<p><strong>IAM least-privilege.</strong> The example uses broad permissions. In production, each Lambda function gets only the specific actions it needs: the quality check Lambda can read from S3 but not invoke SageMaker; the inference Lambda can invoke the specific endpoint but not write to DynamoDB; the storage Lambda can write to DynamoDB but not publish to SNS. Use resource-level policies with specific ARNs.</p>
+<p><strong>VPC and network isolation.</strong> Place SageMaker endpoints and Lambda functions in a VPC. Use VPC endpoints for S3, DynamoDB, SageMaker Runtime, SNS, and CloudWatch Logs to keep all traffic off the public internet. This is a HIPAA requirement for PHI-handling workloads.</p>
+<p><strong>KMS encryption.</strong> Use customer-managed KMS keys (CMKs) for S3 bucket encryption, DynamoDB table encryption, and SageMaker endpoint data encryption. This gives you key rotation control and the ability to revoke access by disabling the key.</p>
+<p><strong>EHR integration.</strong> The screening result needs to flow back to the patient's electronic health record. This typically means HL7 FHIR or HL7v2 messaging to the EHR's results interface. The integration is often the hardest part of the project (not the AI) because EHR APIs are complex, vendor-specific, and require extensive testing with the health system's IT team.</p>
+<p><strong>Patient communication.</strong> Normal results need patient-friendly language (not &quot;No DR probability 0.92&quot;). Referral results need clear next-step instructions. Both need to comply with your organization's patient communication policies and potentially be available in multiple languages.</p>
+<p><strong>DynamoDB Decimal requirement.</strong> This example already handles the Decimal conversion (DynamoDB rejects Python floats), but it's worth calling out explicitly. If you forget this conversion anywhere in your pipeline, you'll get a <code>TypeError: Float types are not supported</code> that's confusing if you haven't seen it before. The <code>json.loads(..., parse_float=Decimal)</code> pattern handles nested structures cleanly.</p>
+<hr />
+<h2 id="navigation">Navigation</h2>
+<p><a href="chapter09.05-python-example.html">← 9.5: Chest X-Ray Triage (Python)</a> | <a href="chapter09-preface.html">Chapter 9 Index</a> | <a href="chapter09.07-python-example.html">9.7: Radiology AI Triage (Python) →</a></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

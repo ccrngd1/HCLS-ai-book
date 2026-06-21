@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 6.10: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-610-python-implementation-example">Recipe 6.10: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the multi-morbidity pattern discovery pipeline from Recipe 6.10. It demonstrates the core workflow (synthetic diagnosis data generation, patient-condition matrix construction, association rule mining, temporal sequence analysis, network construction with community detection, and statistical validation) using mlxtend, networkx, and boto3. It is not production-ready. Real multi-morbidity discovery requires populations of 200,000+ patients, clinical grouper mappings maintained by coding specialists, and months of iterative clinical validation. Think of this as the sketch that helps you understand the algorithmic shape of the problem, not something you'd present at a clinical governance meeting.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and several analytics libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>mlxtend<span class="w"> </span>networkx<span class="w"> </span>scipy
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code> (diagnosis data and results storage)</li>
+<li><code>sagemaker:CreateProcessingJob</code> (if running mining at scale)</li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:Query</code> (pattern storage and retrieval)</li>
+</ul>
+<p>For this example, we run association mining and network analysis locally using mlxtend and networkx. In production, you'd use SageMaker Processing Jobs for the compute-intensive mining steps and Amazon Neptune for the graph database. The algorithms are identical; only the infrastructure changes.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mlxtend.frequent_patterns</span><span class="w"> </span><span class="kn">import</span> <span class="n">fpgrowth</span><span class="p">,</span> <span class="n">association_rules</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">networkx.algorithms.community</span><span class="w"> </span><span class="kn">import</span> <span class="n">louvain_communities</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="c1"># Structured logging. Never log PHI field values (patient IDs, diagnosis details).</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Retry config for AWS API calls.</span>
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="c1"># AWS clients</span>
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="c1"># Configuration</span>
+<span class="n">RESULTS_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;multimorbidity-discovery-results&quot;</span>
+<span class="n">DIAGNOSIS_DATA_KEY</span> <span class="o">=</span> <span class="s2">&quot;raw/diagnosis-history.parquet&quot;</span>
+<span class="n">PATTERNS_TABLE</span> <span class="o">=</span> <span class="s2">&quot;discovered-patterns&quot;</span>
+
+<span class="c1"># Mining parameters</span>
+<span class="n">MIN_PREVALENCE</span> <span class="o">=</span> <span class="mf">0.01</span>          <span class="c1"># Conditions below 1% prevalence are excluded</span>
+<span class="n">MIN_SUPPORT</span> <span class="o">=</span> <span class="mf">0.005</span>            <span class="c1"># Minimum 0.5% of patients must have the combination</span>
+<span class="n">MAX_PATTERN_SIZE</span> <span class="o">=</span> <span class="mi">4</span>           <span class="c1"># Mine up to 4-condition combinations</span>
+<span class="n">MIN_LIFT</span> <span class="o">=</span> <span class="mf">1.5</span>                 <span class="c1"># Only keep patterns with lift above this threshold</span>
+<span class="n">FDR_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.05</span>           <span class="c1"># Benjamini-Hochberg false discovery rate cutoff</span>
+<span class="n">BOOTSTRAP_ITERATIONS</span> <span class="o">=</span> <span class="mi">100</span>     <span class="c1"># Stability testing resamples</span>
+<span class="n">STABILITY_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.80</span>     <span class="c1"># Pattern must appear in 80%+ of resamples</span>
+<span class="n">MIN_TEMPORAL_PATIENTS</span> <span class="o">=</span> <span class="mi">50</span>     <span class="c1"># Minimum patients for temporal sequence analysis</span>
+
+<span class="n">RANDOM_SEED</span> <span class="o">=</span> <span class="mi">42</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-generate-synthetic-diagnosis-history">Step 1: Generate Synthetic Diagnosis History</h2>
+<p><em>The main recipe's Step 1 extracts longitudinal diagnosis data from the EHR and rolls up ICD-10 codes to clinical categories. Here we generate synthetic data that mimics what you'd get after that ETL step. The synthetic data embeds several known multi-morbidity patterns at elevated co-occurrence rates, so we can verify the mining recovers them.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_synthetic_diagnoses</span><span class="p">(</span><span class="n">n_patients</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate synthetic longitudinal diagnosis data with embedded multi-morbidity patterns.</span>
+
+<span class="sd">    We create a population where certain condition combinations co-occur at rates</span>
+<span class="sd">    higher than independence would predict. This lets us verify that the mining</span>
+<span class="sd">    pipeline actually finds them.</span>
+
+<span class="sd">    Embedded patterns:</span>
+<span class="sd">    - Cardiorenal-metabolic: Diabetes + CKD + Heart Failure + Anemia (lift ~3.5)</span>
+<span class="sd">    - Mental-physical: Depression + Chronic Pain + Substance Use (lift ~2.8)</span>
+<span class="sd">    - Frailty triad: Osteoporosis + Falls + Cognitive Decline (lift ~3.0)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame with columns: patient_id, condition, first_documented_date</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+
+    <span class="c1"># Define condition categories and their base prevalences in an older population.</span>
+    <span class="c1"># These are roughly realistic for a Medicare-age cohort.</span>
+    <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;Hypertension&quot;</span><span class="p">:</span> <span class="mf">0.55</span><span class="p">,</span>
+        <span class="s2">&quot;Hyperlipidemia&quot;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+        <span class="s2">&quot;Type 2 Diabetes&quot;</span><span class="p">:</span> <span class="mf">0.28</span><span class="p">,</span>
+        <span class="s2">&quot;Obesity&quot;</span><span class="p">:</span> <span class="mf">0.35</span><span class="p">,</span>
+        <span class="s2">&quot;GERD&quot;</span><span class="p">:</span> <span class="mf">0.20</span><span class="p">,</span>
+        <span class="s2">&quot;Osteoarthritis&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">,</span>
+        <span class="s2">&quot;Depression&quot;</span><span class="p">:</span> <span class="mf">0.18</span><span class="p">,</span>
+        <span class="s2">&quot;Chronic Pain&quot;</span><span class="p">:</span> <span class="mf">0.22</span><span class="p">,</span>
+        <span class="s2">&quot;CKD&quot;</span><span class="p">:</span> <span class="mf">0.12</span><span class="p">,</span>
+        <span class="s2">&quot;Heart Failure&quot;</span><span class="p">:</span> <span class="mf">0.09</span><span class="p">,</span>
+        <span class="s2">&quot;COPD&quot;</span><span class="p">:</span> <span class="mf">0.11</span><span class="p">,</span>
+        <span class="s2">&quot;Atrial Fibrillation&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+        <span class="s2">&quot;Anemia&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">,</span>
+        <span class="s2">&quot;Osteoporosis&quot;</span><span class="p">:</span> <span class="mf">0.12</span><span class="p">,</span>
+        <span class="s2">&quot;Substance Use Disorder&quot;</span><span class="p">:</span> <span class="mf">0.06</span><span class="p">,</span>
+        <span class="s2">&quot;Cognitive Decline&quot;</span><span class="p">:</span> <span class="mf">0.07</span><span class="p">,</span>
+        <span class="s2">&quot;Falls History&quot;</span><span class="p">:</span> <span class="mf">0.09</span><span class="p">,</span>
+        <span class="s2">&quot;Peripheral Neuropathy&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+        <span class="s2">&quot;Sleep Apnea&quot;</span><span class="p">:</span> <span class="mf">0.14</span><span class="p">,</span>
+        <span class="s2">&quot;Anxiety&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Start with independent assignment based on prevalence.</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">base_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Track which patients get which conditions for pattern injection.</span>
+    <span class="n">patient_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">pid</span><span class="p">:</span> <span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">)}</span>
+
+    <span class="c1"># Assign conditions independently first.</span>
+    <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">condition</span><span class="p">,</span> <span class="n">prevalence</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">prevalence</span><span class="p">:</span>
+                <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+                <span class="c1"># Random onset date within a 10-year window.</span>
+                <span class="n">days_offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3650</span><span class="p">))</span>
+                <span class="n">onset</span> <span class="o">=</span> <span class="n">base_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_offset</span><span class="p">)</span>
+                <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-</span><span class="si">{</span><span class="n">pid</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;condition&quot;</span><span class="p">:</span> <span class="n">condition</span><span class="p">,</span>
+                    <span class="s2">&quot;first_documented_date&quot;</span><span class="p">:</span> <span class="n">onset</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">),</span>
+                <span class="p">})</span>
+
+    <span class="c1"># Inject multi-morbidity patterns at elevated rates.</span>
+    <span class="c1"># For patients who already have the &quot;seed&quot; condition, give them the</span>
+    <span class="c1"># remaining conditions in the pattern with high probability.</span>
+
+    <span class="c1"># Pattern 1: Cardiorenal-metabolic cascade</span>
+    <span class="c1"># Diabetes → CKD → Anemia → Heart Failure (temporal ordering)</span>
+    <span class="n">pattern1</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Type 2 Diabetes&quot;</span><span class="p">,</span> <span class="s2">&quot;CKD&quot;</span><span class="p">,</span> <span class="s2">&quot;Anemia&quot;</span><span class="p">,</span> <span class="s2">&quot;Heart Failure&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;Type 2 Diabetes&quot;</span> <span class="ow">in</span> <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span> <span class="ow">and</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.35</span><span class="p">:</span>
+            <span class="c1"># This patient gets the full cascade.</span>
+            <span class="n">cascade_start</span> <span class="o">=</span> <span class="n">base_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cond</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pattern1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">cond</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]:</span>
+                    <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cond</span><span class="p">)</span>
+                    <span class="c1"># Each subsequent condition appears 1-3 years after the previous.</span>
+                    <span class="n">onset</span> <span class="o">=</span> <span class="n">cascade_start</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">365</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mf">1.5</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">())))</span>
+                    <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-</span><span class="si">{</span><span class="n">pid</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;condition&quot;</span><span class="p">:</span> <span class="n">cond</span><span class="p">,</span>
+                        <span class="s2">&quot;first_documented_date&quot;</span><span class="p">:</span> <span class="n">onset</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">),</span>
+                    <span class="p">})</span>
+
+    <span class="c1"># Pattern 2: Mental-physical overlap</span>
+    <span class="n">pattern2</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Depression&quot;</span><span class="p">,</span> <span class="s2">&quot;Chronic Pain&quot;</span><span class="p">,</span> <span class="s2">&quot;Substance Use Disorder&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;Depression&quot;</span> <span class="ow">in</span> <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span> <span class="ow">and</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.30</span><span class="p">:</span>
+            <span class="n">onset_base</span> <span class="o">=</span> <span class="n">base_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cond</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pattern2</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">cond</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]:</span>
+                    <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cond</span><span class="p">)</span>
+                    <span class="n">onset</span> <span class="o">=</span> <span class="n">onset_base</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">365</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mf">0.8</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">())))</span>
+                    <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-</span><span class="si">{</span><span class="n">pid</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;condition&quot;</span><span class="p">:</span> <span class="n">cond</span><span class="p">,</span>
+                        <span class="s2">&quot;first_documented_date&quot;</span><span class="p">:</span> <span class="n">onset</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">),</span>
+                    <span class="p">})</span>
+
+    <span class="c1"># Pattern 3: Frailty triad</span>
+    <span class="n">pattern3</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Osteoporosis&quot;</span><span class="p">,</span> <span class="s2">&quot;Falls History&quot;</span><span class="p">,</span> <span class="s2">&quot;Cognitive Decline&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_patients</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;Osteoporosis&quot;</span> <span class="ow">in</span> <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span> <span class="ow">and</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.32</span><span class="p">:</span>
+            <span class="n">onset_base</span> <span class="o">=</span> <span class="n">base_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cond</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pattern3</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">cond</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]:</span>
+                    <span class="n">patient_conditions</span><span class="p">[</span><span class="n">pid</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cond</span><span class="p">)</span>
+                    <span class="n">onset</span> <span class="o">=</span> <span class="n">onset_base</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">365</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mf">1.2</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">())))</span>
+                    <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;PAT-</span><span class="si">{</span><span class="n">pid</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;condition&quot;</span><span class="p">:</span> <span class="n">cond</span><span class="p">,</span>
+                        <span class="s2">&quot;first_documented_date&quot;</span><span class="p">:</span> <span class="n">onset</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">),</span>
+                    <span class="p">})</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">records</span><span class="p">)</span>
+
+    <span class="c1"># Deduplicate: keep earliest onset per patient-condition pair.</span>
+    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;first_documented_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;first_documented_date&quot;</span><span class="p">])</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;first_documented_date&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+        <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">,</span> <span class="s2">&quot;condition&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generated </span><span class="si">%d</span><span class="s2"> diagnosis records for </span><span class="si">%d</span><span class="s2"> patients across </span><span class="si">%d</span><span class="s2"> conditions&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">n_patients</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;condition&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-build-patient-condition-matrix-and-compute-baselines">Step 2: Build Patient-Condition Matrix and Compute Baselines</h2>
+<p><em>The main recipe's Step 2 constructs the binary patient-condition matrix and computes individual prevalences plus expected co-occurrence rates under independence. These baselines are essential for calculating lift. Without them, you'd just find that common conditions co-occur frequently (not a discovery).</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_patient_condition_matrix</span><span class="p">(</span><span class="n">diagnoses_df</span><span class="p">,</span> <span class="n">min_prevalence</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Transform longitudinal diagnosis records into a binary patient-condition matrix.</span>
+
+<span class="sd">    Also computes individual condition prevalences and filters out rare conditions</span>
+<span class="sd">    that lack statistical power for combination analysis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        diagnoses_df: DataFrame with patient_id, condition, first_documented_date</span>
+<span class="sd">        min_prevalence: Minimum fraction of patients who must have a condition</span>
+<span class="sd">                        for it to be included in the analysis.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (binary_matrix DataFrame, prevalences dict, active_conditions list)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Pivot to binary matrix: rows = patients, columns = conditions, values = 0/1.</span>
+    <span class="n">binary_matrix</span> <span class="o">=</span> <span class="n">diagnoses_df</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span>
+        <span class="n">index</span><span class="o">=</span><span class="s2">&quot;patient_id&quot;</span><span class="p">,</span>
+        <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;condition&quot;</span><span class="p">,</span>
+        <span class="n">aggfunc</span><span class="o">=</span><span class="s2">&quot;size&quot;</span><span class="p">,</span>  <span class="c1"># count occurrences</span>
+        <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Convert counts to binary (presence/absence).</span>
+    <span class="n">binary_matrix</span> <span class="o">=</span> <span class="p">(</span><span class="n">binary_matrix</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="n">n_patients</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">binary_matrix</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Patient-condition matrix: </span><span class="si">%d</span><span class="s2"> patients x </span><span class="si">%d</span><span class="s2"> conditions&quot;</span><span class="p">,</span>
+                <span class="n">n_patients</span><span class="p">,</span> <span class="n">binary_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Compute prevalences.</span>
+    <span class="n">prevalences</span> <span class="o">=</span> <span class="p">(</span><span class="n">binary_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">n_patients</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="c1"># Filter to conditions meeting minimum prevalence.</span>
+    <span class="n">active_conditions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">cond</span> <span class="k">for</span> <span class="n">cond</span><span class="p">,</span> <span class="n">prev</span> <span class="ow">in</span> <span class="n">prevalences</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">prev</span> <span class="o">&gt;=</span> <span class="n">min_prevalence</span>
+    <span class="p">]</span>
+
+    <span class="n">filtered_matrix</span> <span class="o">=</span> <span class="n">binary_matrix</span><span class="p">[</span><span class="n">active_conditions</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;After prevalence filter (&gt;= </span><span class="si">%.1f%%</span><span class="s2">): </span><span class="si">%d</span><span class="s2"> conditions retained&quot;</span><span class="p">,</span>
+                <span class="n">min_prevalence</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_conditions</span><span class="p">))</span>
+
+    <span class="c1"># Log the top conditions by prevalence for sanity checking.</span>
+    <span class="n">sorted_prev</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">prevalences</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cond</span><span class="p">,</span> <span class="n">prev</span> <span class="ow">in</span> <span class="n">sorted_prev</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%s</span><span class="s2">: </span><span class="si">%.1f%%</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">cond</span><span class="p">,</span> <span class="n">prev</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">filtered_matrix</span><span class="p">,</span> <span class="n">prevalences</span><span class="p">,</span> <span class="n">active_conditions</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-association-rule-mining-with-fp-growth">Step 3: Association Rule Mining with FP-Growth</h2>
+<p><em>The main recipe's Step 3 applies FP-Growth to find frequent condition combinations and computes lift, confidence, and leverage. FP-Growth is preferred over Apriori for dense datasets because it avoids expensive candidate generation. The mlxtend library provides a clean implementation that works directly with our binary DataFrame.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">mine_association_rules</span><span class="p">(</span><span class="n">binary_matrix</span><span class="p">,</span> <span class="n">min_support</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">min_lift</span><span class="o">=</span><span class="mf">1.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run FP-Growth frequent itemset mining and compute association metrics.</span>
+
+<span class="sd">    FP-Growth efficiently finds all condition combinations that appear in at</span>
+<span class="sd">    least min_support fraction of patients. Then we compute lift, confidence,</span>
+<span class="sd">    and leverage for each combination to identify those that co-occur more</span>
+<span class="sd">    than chance would predict.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        binary_matrix: Binary patient-condition DataFrame (from Step 2)</span>
+<span class="sd">        min_support: Minimum fraction of patients with the combination</span>
+<span class="sd">        max_len: Maximum number of conditions in a pattern</span>
+<span class="sd">        min_lift: Minimum lift to retain a pattern</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame of discovered patterns with association metrics</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_patients</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">binary_matrix</span><span class="p">)</span>
+
+    <span class="c1"># Run FP-Growth to find frequent itemsets.</span>
+    <span class="c1"># This is the computationally expensive step. For 200k patients and 280 conditions,</span>
+    <span class="c1"># you&#39;d run this on a SageMaker Processing Job. For our 5k synthetic patients,</span>
+    <span class="c1"># it runs in seconds locally.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running FP-Growth (min_support=</span><span class="si">%.3f</span><span class="s2">, max_len=</span><span class="si">%d</span><span class="s2">)...&quot;</span><span class="p">,</span> <span class="n">min_support</span><span class="p">,</span> <span class="n">max_len</span><span class="p">)</span>
+    <span class="n">frequent_itemsets</span> <span class="o">=</span> <span class="n">fpgrowth</span><span class="p">(</span>
+        <span class="n">binary_matrix</span><span class="p">,</span>
+        <span class="n">min_support</span><span class="o">=</span><span class="n">min_support</span><span class="p">,</span>
+        <span class="n">max_len</span><span class="o">=</span><span class="n">max_len</span><span class="p">,</span>
+        <span class="n">use_colnames</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Use condition names instead of column indices</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">frequent_itemsets</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No frequent itemsets found. Try lowering min_support.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found </span><span class="si">%d</span><span class="s2"> frequent itemsets&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frequent_itemsets</span><span class="p">))</span>
+
+    <span class="c1"># Filter to multi-condition patterns (size &gt;= 2).</span>
+    <span class="c1"># Single conditions aren&#39;t &quot;patterns&quot; in the multi-morbidity sense.</span>
+    <span class="n">frequent_itemsets</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frequent_itemsets</span><span class="p">[</span><span class="s2">&quot;itemsets&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="nb">len</span><span class="p">)</span>
+    <span class="n">multi_condition</span> <span class="o">=</span> <span class="n">frequent_itemsets</span><span class="p">[</span><span class="n">frequent_itemsets</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Multi-condition itemsets (size &gt;= 2): </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">multi_condition</span><span class="p">))</span>
+
+    <span class="c1"># Compute association rules (lift, confidence, leverage).</span>
+    <span class="c1"># We use lift as the primary metric because it normalizes for base rates.</span>
+    <span class="n">rules</span> <span class="o">=</span> <span class="n">association_rules</span><span class="p">(</span>
+        <span class="n">frequent_itemsets</span><span class="p">,</span>
+        <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;lift&quot;</span><span class="p">,</span>
+        <span class="n">min_threshold</span><span class="o">=</span><span class="n">min_lift</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rules</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No rules above min_lift=</span><span class="si">%.1f</span><span class="s2">. Try lowering threshold.&quot;</span><span class="p">,</span> <span class="n">min_lift</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="c1"># Also compute metrics for the full itemsets (not just antecedent→consequent rules).</span>
+    <span class="c1"># For multi-morbidity, we care about the full combination, not directional rules.</span>
+    <span class="n">patterns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">multi_condition</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">itemset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;itemsets&quot;</span><span class="p">])</span>
+        <span class="n">support</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;support&quot;</span><span class="p">]</span>
+        <span class="n">patient_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">support</span> <span class="o">*</span> <span class="n">n_patients</span><span class="p">)</span>
+
+        <span class="c1"># Compute expected support under independence.</span>
+        <span class="n">individual_prevalences</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">binary_matrix</span><span class="p">[</span><span class="n">cond</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">for</span> <span class="n">cond</span> <span class="ow">in</span> <span class="n">itemset</span>
+        <span class="p">]</span>
+        <span class="n">expected_support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">individual_prevalences</span><span class="p">)</span>
+
+        <span class="c1"># Lift: how much more often does this combination appear than expected?</span>
+        <span class="n">lift</span> <span class="o">=</span> <span class="n">support</span> <span class="o">/</span> <span class="n">expected_support</span> <span class="k">if</span> <span class="n">expected_support</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="c1"># Leverage: absolute difference between observed and expected.</span>
+        <span class="n">leverage</span> <span class="o">=</span> <span class="n">support</span> <span class="o">-</span> <span class="n">expected_support</span>
+
+        <span class="k">if</span> <span class="n">lift</span> <span class="o">&gt;=</span> <span class="n">min_lift</span><span class="p">:</span>
+            <span class="n">patterns</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;conditions&quot;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itemset</span><span class="p">)),</span>
+                <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">itemset</span><span class="p">),</span>
+                <span class="s2">&quot;support&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                <span class="s2">&quot;patient_count&quot;</span><span class="p">:</span> <span class="n">patient_count</span><span class="p">,</span>
+                <span class="s2">&quot;expected_support&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">expected_support</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+                <span class="s2">&quot;lift&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">lift</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="s2">&quot;leverage&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">leverage</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="p">})</span>
+
+    <span class="n">patterns_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">patterns</span><span class="p">)</span>
+    <span class="n">patterns_df</span> <span class="o">=</span> <span class="n">patterns_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;lift&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Patterns with lift &gt;= </span><span class="si">%.1f</span><span class="s2">: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">min_lift</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">))</span>
+    <span class="c1"># Show top 5 for sanity check.</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">patterns_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%s</span><span class="s2"> | lift=</span><span class="si">%.2f</span><span class="s2"> | n=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]),</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;lift&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;patient_count&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">patterns_df</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-temporal-sequence-analysis">Step 4: Temporal Sequence Analysis</h2>
+<p><em>The main recipe's Step 4 analyzes the temporal ordering of condition acquisition within each discovered pattern. This is where multi-morbidity discovery gets genuinely interesting: knowing that diabetes typically precedes CKD by 4 years gives you a prevention window. Static co-occurrence alone doesn't tell you that.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analyze_temporal_sequences</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">,</span> <span class="n">diagnoses_df</span><span class="p">,</span> <span class="n">min_patients</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For each discovered pattern, determine the dominant temporal ordering</span>
+<span class="sd">    of condition onset and compute inter-condition intervals.</span>
+
+<span class="sd">    This transforms &quot;these conditions co-occur&quot; into &quot;these conditions develop</span>
+<span class="sd">    in this order with these time gaps,&quot; which is directly actionable for</span>
+<span class="sd">    preventive care planning.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patterns_df: DataFrame of discovered patterns (from Step 3)</span>
+<span class="sd">        diagnoses_df: Original longitudinal diagnosis data with onset dates</span>
+<span class="sd">        min_patients: Minimum patients with the full pattern for temporal analysis</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of dicts with temporal analysis results for each pattern</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temporal_results</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">pattern_row</span> <span class="ow">in</span> <span class="n">patterns_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]</span>
+        <span class="n">patient_count</span> <span class="o">=</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;patient_count&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">patient_count</span> <span class="o">&lt;</span> <span class="n">min_patients</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Find patients who have ALL conditions in this pattern.</span>
+        <span class="n">pattern_diagnoses</span> <span class="o">=</span> <span class="n">diagnoses_df</span><span class="p">[</span><span class="n">diagnoses_df</span><span class="p">[</span><span class="s2">&quot;condition&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">conditions</span><span class="p">)]</span>
+
+        <span class="c1"># Group by patient and check who has the complete set.</span>
+        <span class="n">patient_cond_counts</span> <span class="o">=</span> <span class="n">pattern_diagnoses</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;patient_id&quot;</span><span class="p">)[</span><span class="s2">&quot;condition&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+        <span class="n">complete_patients</span> <span class="o">=</span> <span class="n">patient_cond_counts</span><span class="p">[</span>
+            <span class="n">patient_cond_counts</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">complete_patients</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_patients</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># For each complete patient, get the ordered sequence of condition onsets.</span>
+        <span class="n">sequences</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="n">complete_patients</span><span class="p">:</span>
+            <span class="n">patient_data</span> <span class="o">=</span> <span class="n">pattern_diagnoses</span><span class="p">[</span><span class="n">pattern_diagnoses</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pid</span><span class="p">]</span>
+            <span class="c1"># Sort by onset date to get temporal ordering.</span>
+            <span class="n">ordered</span> <span class="o">=</span> <span class="n">patient_data</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;first_documented_date&quot;</span><span class="p">)</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[</span><span class="s2">&quot;condition&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">sequences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+
+        <span class="c1"># Find the most common ordering (dominant sequence).</span>
+        <span class="c1"># Convert sequences to tuples for counting.</span>
+        <span class="n">sequence_tuples</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">]</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+        <span class="n">ordering_counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">sequence_tuples</span><span class="p">)</span>
+        <span class="n">dominant_ordering</span> <span class="o">=</span> <span class="n">ordering_counts</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dominant_sequence</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dominant_ordering</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">dominant_fraction</span> <span class="o">=</span> <span class="n">dominant_ordering</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
+
+        <span class="c1"># Compute median inter-condition intervals for the dominant ordering.</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dominant_sequence</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">cond_a</span> <span class="o">=</span> <span class="n">dominant_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">cond_b</span> <span class="o">=</span> <span class="n">dominant_sequence</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">days_between</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="n">complete_patients</span><span class="p">:</span>
+                <span class="n">patient_data</span> <span class="o">=</span> <span class="n">pattern_diagnoses</span><span class="p">[</span><span class="n">pattern_diagnoses</span><span class="p">[</span><span class="s2">&quot;patient_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pid</span><span class="p">]</span>
+                <span class="n">date_a</span> <span class="o">=</span> <span class="n">patient_data</span><span class="p">[</span><span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;condition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cond_a</span><span class="p">][</span>
+                    <span class="s2">&quot;first_documented_date&quot;</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">date_b</span> <span class="o">=</span> <span class="n">patient_data</span><span class="p">[</span><span class="n">patient_data</span><span class="p">[</span><span class="s2">&quot;condition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cond_b</span><span class="p">][</span>
+                    <span class="s2">&quot;first_documented_date&quot;</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">date_b</span> <span class="o">-</span> <span class="n">date_a</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+                <span class="k">if</span> <span class="n">delta</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Only count forward progressions.</span>
+                    <span class="n">days_between</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">days_between</span><span class="p">:</span>
+                <span class="n">median_years</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">days_between</span><span class="p">)</span> <span class="o">/</span> <span class="mf">365.25</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">iqr_years</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">days_between</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">days_between</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span> <span class="o">/</span> <span class="mf">365.25</span><span class="p">,</span>
+                    <span class="mi">1</span>
+                <span class="p">)</span>
+                <span class="n">intervals</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cond_a</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">cond_b</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;median_years&quot;</span><span class="p">:</span> <span class="n">median_years</span><span class="p">,</span>
+                    <span class="s2">&quot;iqr_years&quot;</span><span class="p">:</span> <span class="n">iqr_years</span><span class="p">,</span>
+                <span class="p">}</span>
+
+        <span class="n">temporal_results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;conditions&quot;</span><span class="p">:</span> <span class="n">conditions</span><span class="p">,</span>
+            <span class="s2">&quot;n_complete_patients&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">complete_patients</span><span class="p">),</span>
+            <span class="s2">&quot;dominant_ordering&quot;</span><span class="p">:</span> <span class="n">dominant_sequence</span><span class="p">,</span>
+            <span class="s2">&quot;dominant_fraction&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">dominant_fraction</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;intervals&quot;</span><span class="p">:</span> <span class="n">intervals</span><span class="p">,</span>
+            <span class="s2">&quot;n_alternative_orderings&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordering_counts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">})</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Temporal: </span><span class="si">%s</span><span class="s2"> | dominant order: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%.0f%%</span><span class="s2">)&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">conditions</span><span class="p">),</span>
+                    <span class="s2">&quot; → &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dominant_sequence</span><span class="p">),</span>
+                    <span class="n">dominant_fraction</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Temporal analysis complete for </span><span class="si">%d</span><span class="s2"> patterns&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">temporal_results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">temporal_results</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-comorbidity-network-construction-and-community-detection">Step 5: Comorbidity Network Construction and Community Detection</h2>
+<p><em>The main recipe's Step 5 builds a graph where conditions are nodes and edges represent statistically significant co-occurrence. Community detection finds clusters of tightly connected conditions. In production, you'd store this in Amazon Neptune. Here we use networkx for the same algorithms.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_comorbidity_network</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">,</span> <span class="n">prevalences</span><span class="p">,</span> <span class="n">fdr_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">min_lift</span><span class="o">=</span><span class="mf">1.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a comorbidity network from pairwise association patterns and</span>
+<span class="sd">    run community detection to find multi-morbidity neighborhoods.</span>
+
+<span class="sd">    Conditions become nodes. Edges connect conditions that co-occur significantly</span>
+<span class="sd">    more than chance predicts (after FDR correction). Community detection groups</span>
+<span class="sd">    conditions into clusters that may share underlying mechanisms.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patterns_df: DataFrame of discovered patterns (from Step 3)</span>
+<span class="sd">        prevalences: Dict of condition -&gt; prevalence (from Step 2)</span>
+<span class="sd">        fdr_threshold: Maximum adjusted p-value for edge inclusion</span>
+<span class="sd">        min_lift: Minimum lift for edge inclusion</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (networkx Graph, dict of community assignments)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Filter to pairwise patterns only (edges in the network).</span>
+    <span class="n">pairwise</span> <span class="o">=</span> <span class="n">patterns_df</span><span class="p">[</span><span class="n">patterns_df</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">pairwise</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No pairwise patterns found for network construction.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">(),</span> <span class="p">{}</span>
+
+    <span class="c1"># Compute chi-squared p-values for each pair.</span>
+    <span class="c1"># This tests whether the co-occurrence is statistically significant</span>
+    <span class="c1"># beyond what prevalence alone would predict.</span>
+    <span class="n">p_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">pairwise</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="c1"># Chi-squared test of independence.</span>
+        <span class="c1"># Observed: support * N patients have both conditions.</span>
+        <span class="c1"># Expected: product of individual prevalences * N.</span>
+        <span class="n">observed</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;support&quot;</span><span class="p">]</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;expected_support&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Use a simple z-test approximation for large samples.</span>
+        <span class="c1"># In production, you&#39;d use the full chi-squared contingency test.</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;patient_count&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;support&quot;</span><span class="p">]</span>  <span class="c1"># total population</span>
+        <span class="n">se</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">expected</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">expected</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">expected</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="p">(</span><span class="n">observed</span> <span class="o">-</span> <span class="n">expected</span><span class="p">)</span> <span class="o">/</span> <span class="n">se</span> <span class="k">if</span> <span class="n">se</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">p_value</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">z</span><span class="p">)))</span>  <span class="c1"># two-tailed</span>
+        <span class="n">p_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_value</span><span class="p">)</span>
+
+    <span class="n">pairwise</span><span class="p">[</span><span class="s2">&quot;p_value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_values</span>
+
+    <span class="c1"># Benjamini-Hochberg FDR correction.</span>
+    <span class="c1"># When testing thousands of pairs, many will appear &quot;significant&quot; by chance.</span>
+    <span class="c1"># FDR correction controls the expected proportion of false discoveries.</span>
+    <span class="n">sorted_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">p_values</span><span class="p">)</span>
+    <span class="n">n_tests</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_values</span><span class="p">)</span>
+    <span class="n">adjusted_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_tests</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">rank</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_indices</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">adjusted_p</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_values</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_tests</span> <span class="o">/</span> <span class="n">rank</span>
+
+    <span class="c1"># Enforce monotonicity (adjusted p-values should be non-decreasing).</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tests</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">adjusted_p</span><span class="p">[</span><span class="n">sorted_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+            <span class="n">adjusted_p</span><span class="p">[</span><span class="n">sorted_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span>
+            <span class="n">adjusted_p</span><span class="p">[</span><span class="n">sorted_indices</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">n_tests</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="p">)</span>
+
+    <span class="n">pairwise</span><span class="p">[</span><span class="s2">&quot;adjusted_p&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">adjusted_p</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="c1"># Filter to significant edges.</span>
+    <span class="n">significant</span> <span class="o">=</span> <span class="n">pairwise</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">pairwise</span><span class="p">[</span><span class="s2">&quot;adjusted_p&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">fdr_threshold</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">pairwise</span><span class="p">[</span><span class="s2">&quot;lift&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_lift</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Network edges: </span><span class="si">%d</span><span class="s2"> significant pairs (of </span><span class="si">%d</span><span class="s2"> tested)&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">significant</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairwise</span><span class="p">))</span>
+
+    <span class="c1"># Build the graph.</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+
+    <span class="c1"># Add all conditions as nodes with prevalence as an attribute.</span>
+    <span class="k">for</span> <span class="n">cond</span><span class="p">,</span> <span class="n">prev</span> <span class="ow">in</span> <span class="n">prevalences</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="n">prevalence</span><span class="o">=</span><span class="n">prev</span><span class="p">)</span>
+
+    <span class="c1"># Add significant co-occurrence relationships as weighted edges.</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">significant</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">cond_a</span><span class="p">,</span> <span class="n">cond_b</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">cond_a</span><span class="p">,</span> <span class="n">cond_b</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;lift&quot;</span><span class="p">],</span> <span class="n">support</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;support&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Remove isolated nodes (conditions with no significant connections).</span>
+    <span class="n">isolates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">isolates</span><span class="p">(</span><span class="n">G</span><span class="p">))</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">(</span><span class="n">isolates</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Network: </span><span class="si">%d</span><span class="s2"> nodes, </span><span class="si">%d</span><span class="s2"> edges (removed </span><span class="si">%d</span><span class="s2"> isolates)&quot;</span><span class="p">,</span>
+                <span class="n">G</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">(),</span> <span class="n">G</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">isolates</span><span class="p">))</span>
+
+    <span class="c1"># Community detection using Louvain algorithm.</span>
+    <span class="c1"># Finds groups of conditions more densely connected to each other</span>
+    <span class="c1"># than to the rest of the network. These communities represent</span>
+    <span class="c1"># multi-morbidity &quot;neighborhoods.&quot;</span>
+    <span class="n">communities_list</span> <span class="o">=</span> <span class="n">louvain_communities</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">RANDOM_SEED</span><span class="p">)</span>
+
+    <span class="c1"># Convert to node -&gt; community_id mapping.</span>
+    <span class="n">community_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">comm_id</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">communities_list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+            <span class="n">community_map</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">comm_id</span>
+
+    <span class="c1"># Assign community labels to nodes.</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">community_map</span><span class="p">,</span> <span class="s2">&quot;community&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Detected </span><span class="si">%d</span><span class="s2"> communities:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">communities_list</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">comm_id</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">communities_list</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Community </span><span class="si">%d</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">comm_id</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">members</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">G</span><span class="p">,</span> <span class="n">community_map</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-statistical-validation-and-stability-testing">Step 6: Statistical Validation and Stability Testing</h2>
+<p><em>The main recipe's Step 6 applies rigorous statistical filters to separate genuine patterns from artifacts of demographics or multiple testing. Bootstrap resampling tests whether patterns are stable or just noise from a particular sample. Patterns that survive validation are genuinely surprising given the population's characteristics.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">validate_patterns</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">,</span> <span class="n">binary_matrix</span><span class="p">,</span> <span class="n">min_lift_adjusted</span><span class="o">=</span><span class="mf">1.3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate discovered patterns through bootstrap stability testing.</span>
+
+<span class="sd">    A pattern is &quot;stable&quot; if it appears consistently across random resamples</span>
+<span class="sd">    of the patient population. Unstable patterns may be artifacts of the</span>
+<span class="sd">    specific sample rather than genuine population-level associations.</span>
+
+<span class="sd">    In production, you&#39;d also stratify by age/sex and adjust for healthcare</span>
+<span class="sd">    utilization (see the main recipe&#39;s Step 6 for the full validation approach).</span>
+<span class="sd">    Here we demonstrate the bootstrap stability component.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        patterns_df: DataFrame of discovered patterns</span>
+<span class="sd">        binary_matrix: Binary patient-condition matrix</span>
+<span class="sd">        min_lift_adjusted: Minimum lift threshold for validation</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame of validated patterns with stability scores</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">validated</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">n_patients</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">binary_matrix</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">pattern_row</span> <span class="ow">in</span> <span class="n">patterns_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Bootstrap stability test.</span>
+        <span class="c1"># Resample patients with replacement and recompute lift each time.</span>
+        <span class="c1"># If the pattern&#39;s lift stays above threshold in 80%+ of resamples,</span>
+        <span class="c1"># it&#39;s stable.</span>
+        <span class="n">stable_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">BOOTSTRAP_ITERATIONS</span><span class="p">):</span>
+            <span class="c1"># Resample patients with replacement.</span>
+            <span class="n">sample_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                <span class="n">n_patients</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">n_patients</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">binary_matrix</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample_indices</span><span class="p">]</span>
+
+            <span class="c1"># Compute support in this resample.</span>
+            <span class="c1"># A patient &quot;has the pattern&quot; if they have ALL conditions.</span>
+            <span class="n">has_all</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="n">conditions</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">sample_support</span> <span class="o">=</span> <span class="n">has_all</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+            <span class="c1"># Compute expected support under independence.</span>
+            <span class="n">individual_prevs</span> <span class="o">=</span> <span class="p">[</span><span class="n">sample</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">conditions</span><span class="p">]</span>
+            <span class="n">expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">individual_prevs</span><span class="p">)</span>
+
+            <span class="c1"># Compute lift.</span>
+            <span class="n">sample_lift</span> <span class="o">=</span> <span class="n">sample_support</span> <span class="o">/</span> <span class="n">expected</span> <span class="k">if</span> <span class="n">expected</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+
+            <span class="k">if</span> <span class="n">sample_lift</span> <span class="o">&gt;=</span> <span class="n">min_lift_adjusted</span><span class="p">:</span>
+                <span class="n">stable_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">stability</span> <span class="o">=</span> <span class="n">stable_count</span> <span class="o">/</span> <span class="n">BOOTSTRAP_ITERATIONS</span>
+
+        <span class="k">if</span> <span class="n">stability</span> <span class="o">&gt;=</span> <span class="n">STABILITY_THRESHOLD</span><span class="p">:</span>
+            <span class="n">validated</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="o">**</span><span class="n">pattern_row</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s2">&quot;stability&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">stability</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="p">})</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  VALIDATED: </span><span class="si">%s</span><span class="s2"> | lift=</span><span class="si">%.2f</span><span class="s2"> | stability=</span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">conditions</span><span class="p">),</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;lift&quot;</span><span class="p">],</span> <span class="n">stability</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  REJECTED (unstable): </span><span class="si">%s</span><span class="s2"> | stability=</span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">conditions</span><span class="p">),</span> <span class="n">stability</span><span class="p">)</span>
+
+    <span class="n">validated_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">validated</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Validation complete: </span><span class="si">%d</span><span class="s2"> of </span><span class="si">%d</span><span class="s2"> patterns survived&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">validated_df</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">validated_df</span>
+</pre></div>
+
+<hr />
+<h2 id="step-7-store-results-to-s3-and-dynamodb">Step 7: Store Results to S3 and DynamoDB</h2>
+<p><em>This step persists the validated patterns and temporal analysis to S3 (for batch analytics and QuickSight dashboards) and DynamoDB (for real-time lookup by clinical applications). In production, you'd also write the network to Neptune for interactive graph exploration.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_results</span><span class="p">(</span><span class="n">validated_patterns</span><span class="p">,</span> <span class="n">temporal_results</span><span class="p">,</span> <span class="n">network_graph</span><span class="p">,</span> <span class="n">community_map</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Persist discovery results to S3 and DynamoDB.</span>
+
+<span class="sd">    S3 gets the full analysis output (patterns, temporal sequences, network metrics)</span>
+<span class="sd">    for downstream analytics and visualization. DynamoDB gets individual pattern</span>
+<span class="sd">    records for real-time lookup by clinical decision support systems.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        validated_patterns: DataFrame of validated multi-morbidity patterns</span>
+<span class="sd">        temporal_results: List of temporal analysis dicts</span>
+<span class="sd">        network_graph: networkx Graph of the comorbidity network</span>
+<span class="sd">        community_map: Dict mapping conditions to community IDs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="c1"># --- Store full results to S3 ---</span>
+    <span class="n">results_payload</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;analysis_timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+        <span class="s2">&quot;n_validated_patterns&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">validated_patterns</span><span class="p">),</span>
+        <span class="s2">&quot;patterns&quot;</span><span class="p">:</span> <span class="n">validated_patterns</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;records&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;temporal_sequences&quot;</span><span class="p">:</span> <span class="n">temporal_results</span><span class="p">,</span>
+        <span class="s2">&quot;network_summary&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;n_nodes&quot;</span><span class="p">:</span> <span class="n">network_graph</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">(),</span>
+            <span class="s2">&quot;n_edges&quot;</span><span class="p">:</span> <span class="n">network_graph</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">(),</span>
+            <span class="s2">&quot;n_communities&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">community_map</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span>
+            <span class="s2">&quot;communities&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">comm_id</span><span class="p">):</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">community_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="n">comm_id</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">comm_id</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">community_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="n">results_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;results/</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y/%m/</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/patterns.json&quot;</span>
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">RESULTS_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">results_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">results_payload</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+        <span class="c1"># In production, specify your KMS key ARN with SSEKMSKeyId.</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Results stored to s3://</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">RESULTS_BUCKET</span><span class="p">,</span> <span class="n">results_key</span><span class="p">)</span>
+
+    <span class="c1"># --- Store individual patterns to DynamoDB ---</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">PATTERNS_TABLE</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">pattern_row</span> <span class="ow">in</span> <span class="n">validated_patterns</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="c1"># Find matching temporal result if available.</span>
+        <span class="n">temporal_match</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">temporal_results</span> <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]),</span>
+            <span class="kc">None</span>
+        <span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;pattern_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;MMP-</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;conditions&quot;</span><span class="p">:</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;support&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;support&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;patient_count&quot;</span><span class="p">:</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;patient_count&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;lift&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;lift&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;stability&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;stability&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;discovery_timestamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">&quot;clinical_review_status&quot;</span><span class="p">:</span> <span class="s2">&quot;pending&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Add temporal data if available.</span>
+        <span class="k">if</span> <span class="n">temporal_match</span><span class="p">:</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;dominant_ordering&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temporal_match</span><span class="p">[</span><span class="s2">&quot;dominant_ordering&quot;</span><span class="p">]</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;dominant_fraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">temporal_match</span><span class="p">[</span><span class="s2">&quot;dominant_fraction&quot;</span><span class="p">]))</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;intervals&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">temporal_match</span><span class="p">[</span><span class="s2">&quot;intervals&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Add community assignment.</span>
+        <span class="c1"># A pattern&#39;s community is the community of its first condition</span>
+        <span class="c1"># (or the most common community among its conditions).</span>
+        <span class="n">pattern_communities</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">community_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">pattern_row</span><span class="p">[</span><span class="s2">&quot;conditions&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">pattern_communities</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+            <span class="n">most_common_community</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">pattern_communities</span><span class="p">)</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;community_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">most_common_community</span>
+
+        <span class="c1"># DynamoDB does not accept Python floats. All numeric values must be Decimal.</span>
+        <span class="c1"># We&#39;ve already wrapped them above. This is a common gotcha that will raise</span>
+        <span class="c1"># TypeError if you forget.</span>
+        <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stored </span><span class="si">%d</span><span class="s2"> patterns to DynamoDB table &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">validated_patterns</span><span class="p">),</span> <span class="n">PATTERNS_TABLE</span><span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single function. In production, each step would be a separate SageMaker Processing Job or Glue job, orchestrated by Step Functions. Here we run them sequentially for clarity.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">discover_multimorbidity_patterns</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full multi-morbidity pattern discovery pipeline.</span>
+
+<span class="sd">    Steps:</span>
+<span class="sd">    1. Generate (or load) longitudinal diagnosis data</span>
+<span class="sd">    2. Build patient-condition matrix and compute baselines</span>
+<span class="sd">    3. Mine association rules with FP-Growth</span>
+<span class="sd">    4. Analyze temporal sequences for top patterns</span>
+<span class="sd">    5. Build comorbidity network and detect communities</span>
+<span class="sd">    6. Validate patterns through bootstrap stability testing</span>
+<span class="sd">    7. Store results to S3 and DynamoDB</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict with validated patterns, temporal results, and network summary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MULTI-MORBIDITY PATTERN DISCOVERY PIPELINE&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Generate synthetic diagnosis data.</span>
+    <span class="c1"># In production, this would be a Glue ETL job reading from your EHR data lake.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 1] Generating synthetic diagnosis history...&quot;</span><span class="p">)</span>
+    <span class="n">diagnoses_df</span> <span class="o">=</span> <span class="n">generate_synthetic_diagnoses</span><span class="p">(</span><span class="n">n_patients</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">diagnoses_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> records for &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">diagnoses_df</span><span class="p">[</span><span class="s1">&#39;patient_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span><span class="si">}</span><span class="s2"> patients&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Build patient-condition matrix.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 2] Building patient-condition matrix...&quot;</span><span class="p">)</span>
+    <span class="n">binary_matrix</span><span class="p">,</span> <span class="n">prevalences</span><span class="p">,</span> <span class="n">active_conditions</span> <span class="o">=</span> <span class="n">build_patient_condition_matrix</span><span class="p">(</span>
+        <span class="n">diagnoses_df</span><span class="p">,</span> <span class="n">min_prevalence</span><span class="o">=</span><span class="n">MIN_PREVALENCE</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Matrix shape: </span><span class="si">{</span><span class="n">binary_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Active conditions: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">active_conditions</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Mine association rules.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 3] Mining association rules (FP-Growth)...&quot;</span><span class="p">)</span>
+    <span class="n">patterns_df</span> <span class="o">=</span> <span class="n">mine_association_rules</span><span class="p">(</span>
+        <span class="n">binary_matrix</span><span class="p">,</span>
+        <span class="n">min_support</span><span class="o">=</span><span class="n">MIN_SUPPORT</span><span class="p">,</span>
+        <span class="n">max_len</span><span class="o">=</span><span class="n">MAX_PATTERN_SIZE</span><span class="p">,</span>
+        <span class="n">min_lift</span><span class="o">=</span><span class="n">MIN_LIFT</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Discovered </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> patterns with lift &gt;= </span><span class="si">{</span><span class="n">MIN_LIFT</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">patterns_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  No patterns found. Pipeline complete (no results).&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;patterns&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;network&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+
+    <span class="c1"># Step 4: Temporal sequence analysis.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 4] Analyzing temporal sequences...&quot;</span><span class="p">)</span>
+    <span class="n">temporal_results</span> <span class="o">=</span> <span class="n">analyze_temporal_sequences</span><span class="p">(</span>
+        <span class="n">patterns_df</span><span class="p">,</span> <span class="n">diagnoses_df</span><span class="p">,</span> <span class="n">min_patients</span><span class="o">=</span><span class="n">MIN_TEMPORAL_PATIENTS</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Temporal analysis complete for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">temporal_results</span><span class="p">)</span><span class="si">}</span><span class="s2"> patterns&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Build comorbidity network.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 5] Constructing comorbidity network...&quot;</span><span class="p">)</span>
+    <span class="n">network_graph</span><span class="p">,</span> <span class="n">community_map</span> <span class="o">=</span> <span class="n">build_comorbidity_network</span><span class="p">(</span>
+        <span class="n">patterns_df</span><span class="p">,</span> <span class="n">prevalences</span><span class="p">,</span> <span class="n">fdr_threshold</span><span class="o">=</span><span class="n">FDR_THRESHOLD</span><span class="p">,</span> <span class="n">min_lift</span><span class="o">=</span><span class="n">MIN_LIFT</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Network: </span><span class="si">{</span><span class="n">network_graph</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span><span class="si">}</span><span class="s2"> nodes, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">network_graph</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span><span class="si">}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Communities detected: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">community_map</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Validate patterns.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 6] Validating patterns (bootstrap stability)...&quot;</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">RANDOM_SEED</span><span class="p">)</span>
+    <span class="n">validated_df</span> <span class="o">=</span> <span class="n">validate_patterns</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">,</span> <span class="n">binary_matrix</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Validated: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">validated_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">patterns_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> patterns&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 7: Store results.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[Step 7] Storing results to S3 and DynamoDB...&quot;</span><span class="p">)</span>
+    <span class="n">store_results</span><span class="p">(</span><span class="n">validated_df</span><span class="p">,</span> <span class="n">temporal_results</span><span class="p">,</span> <span class="n">network_graph</span><span class="p">,</span> <span class="n">community_map</span><span class="p">)</span>
+
+    <span class="c1"># Print summary.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DISCOVERY COMPLETE&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Validated multi-morbidity patterns: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">validated_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Patterns with temporal analysis: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">temporal_results</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Network communities: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">community_map</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Top validated patterns:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">validated_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="s1">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;conditions&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    lift=</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;lift&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, stability=</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;stability&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, n=</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;patient_count&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">temporal_results</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Temporal sequences:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">temporal_results</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="s1">&#39; → &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;dominant_ordering&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> &quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;dominant_fraction&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">% of patients)&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">transition</span><span class="p">,</span> <span class="n">interval</span> <span class="ow">in</span> <span class="n">t</span><span class="p">[</span><span class="s2">&quot;intervals&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">transition</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">interval</span><span class="p">[</span><span class="s1">&#39;median_years&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> years &quot;</span>
+                      <span class="sa">f</span><span class="s2">&quot;(IQR: </span><span class="si">{</span><span class="n">interval</span><span class="p">[</span><span class="s1">&#39;iqr_years&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> years)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;patterns&quot;</span><span class="p">:</span> <span class="n">validated_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;records&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;temporal&quot;</span><span class="p">:</span> <span class="n">temporal_results</span><span class="p">,</span>
+        <span class="s2">&quot;network_nodes&quot;</span><span class="p">:</span> <span class="n">network_graph</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">(),</span>
+        <span class="s2">&quot;network_edges&quot;</span><span class="p">:</span> <span class="n">network_graph</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">(),</span>
+        <span class="s2">&quot;communities&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">community_map</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span>
+    <span class="p">}</span>
+
+<span class="c1"># Run the pipeline.</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">discover_multimorbidity_patterns</span><span class="p">()</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example demonstrates the algorithmic pipeline. Run it and you'll see discovered patterns, temporal sequences, and network communities. But there's a significant distance between &quot;runs on synthetic data locally&quot; and &quot;drives clinical care model decisions at a health system.&quot; Here's where that gap lives:</p>
+<p><strong>Population scale.</strong> This example uses 5,000 synthetic patients. Real multi-morbidity discovery needs 200,000+ patients for adequate statistical power on three-way and four-way combinations. At that scale, FP-Growth on a single machine becomes memory-constrained. You'd use SageMaker Processing Jobs with ml.m5.4xlarge or larger instances, or distribute the computation across a Spark cluster via Glue.</p>
+<p><strong>Clinical grouper maintenance.</strong> We skipped the ICD-10 rollup entirely (our synthetic data already uses clinical categories). In production, maintaining the mapping from 70,000+ ICD-10 codes to 200-300 clinical categories is a significant ongoing effort. Codes change annually. New conditions get added. Your clinical informatics team needs to own this mapping and update it with each code set release.</p>
+<p><strong>Confounder adjustment.</strong> The validation step here only does bootstrap stability. The main recipe's Step 6 also adjusts for age, sex, and healthcare utilization. Without these adjustments, your &quot;discoveries&quot; may just be &quot;things that happen to old people who see doctors frequently.&quot; Stratified analysis or propensity score matching is essential for credible results.</p>
+<p><strong>Neptune for the graph.</strong> We used networkx in-memory. For a production comorbidity network that gets queried interactively by clinical analysts, you'd store it in Amazon Neptune. Neptune supports Gremlin and openCypher queries, handles concurrent access, and persists the graph across sessions. The network can be updated incrementally as new data arrives without rebuilding from scratch.</p>
+<p><strong>Clinical review workflow.</strong> The pipeline produces patterns with <code>clinical_review_status: &quot;pending&quot;</code>. In production, you need a review interface (QuickSight dashboard or custom application) where clinicians can examine each pattern, mark it as &quot;known,&quot; &quot;novel and actionable,&quot; &quot;novel but not actionable,&quot; or &quot;artifact.&quot; Without this human-in-the-loop step, the patterns are just statistics, not clinical intelligence.</p>
+<p><strong>Error handling and retries.</strong> Every AWS API call (S3, DynamoDB, SageMaker) can fail transiently. Production code wraps each call in try/except with exponential backoff. The boto3 retry config helps, but you also need application-level retry logic for cases where a Processing Job fails mid-run and needs to be restarted from a checkpoint.</p>
+<p><strong>Logging and monitoring.</strong> The <code>print()</code> statements here are placeholders. Production uses structured JSON logging via AWS Lambda Powertools or the standard logging module with CloudWatch Logs. You want every pipeline run to produce machine-parseable log entries with: population size, conditions analyzed, patterns discovered, patterns validated, runtime per step, and any errors. CloudWatch alarms should fire if the pipeline produces zero validated patterns (something is wrong) or if runtime exceeds expected bounds.</p>
+<p><strong>IAM least-privilege.</strong> The IAM role for the SageMaker Processing Job should have exactly: <code>s3:GetObject</code> and <code>s3:PutObject</code> scoped to specific buckets, <code>dynamodb:PutItem</code> scoped to the patterns table, and <code>kms:Decrypt</code>/<code>kms:GenerateDataKey</code> for the encryption keys. Not <code>s3:*</code>. Not <code>AdministratorAccess</code>.</p>
+<p><strong>VPC and encryption.</strong> Diagnosis histories are PHI. All compute (SageMaker, Glue) runs in a VPC with VPC endpoints for S3, DynamoDB, and CloudWatch. Neptune requires VPC deployment (there's no public endpoint option). All data at rest is encrypted with KMS customer-managed keys. All transit is TLS 1.2+.</p>
+<p><strong>Temporal data quality.</strong> Our synthetic data has clean onset dates. Real EHR data has conditions documented at the same encounter (making temporal ordering ambiguous), conditions carried forward from historical records (making &quot;first documented&quot; unreliable), and coding practices that vary across providers. You'll need heuristics to handle these edge cases: same-day conditions might be ordered by encounter type (inpatient diagnoses likely preceded outpatient documentation), and &quot;first documented&quot; should exclude encounters where the condition was clearly historical.</p>
+<p><strong>DynamoDB Decimal requirement.</strong> This example already wraps numeric values in <code>Decimal()</code> (see Step 7). DynamoDB's boto3 resource layer does not accept Python floats. If you add new numeric fields to the pattern records, remember to wrap them. The <code>TypeError: Float types are not supported</code> error is one of those things that bites everyone exactly once.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter06.10-multi-morbidity-pattern-discovery.html">Recipe 6.10</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

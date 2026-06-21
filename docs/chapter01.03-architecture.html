@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 1.3 Architecture and Implementation: Lab Requisition Form Extraction 🔶</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested nav-active" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-13-architecture-and-implementation-lab-requisition-form-extraction-">Recipe 1.3 Architecture and Implementation: Lab Requisition Form Extraction 🔶</h1>
+<p><em>Companion to <a href="chapter01.03-lab-requisition-extraction.html">Recipe 1.3: Lab Requisition Form Extraction 🔶</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Textract for document structure.</strong> Same rationale as Recipes 1.1 and 1.2. Lab requisitions are multi-page PDFs (fax servers generate PDFs from the incoming fax stream). They have structured fields (patient demographics, ordering provider, priority), checkbox grids (the ordered tests), and free-text areas (the diagnosis section, any additional clinical notes). The async <code>StartDocumentAnalysis</code> API with FORMS and TABLES feature types is the right tool, and the async flow from Recipe 1.2 carries over without modification. We won't repeat all of that code here; see Recipe 1.2 for the full async implementation.</p>
+<p><strong>Amazon Comprehend Medical for clinical NLP.</strong> This is the new service in the stack. Comprehend Medical is AWS's managed clinical NLP service, trained on clinical text corpora. It provides two APIs relevant to this recipe:</p>
+<ul>
+<li><code>DetectEntitiesV2</code>: Extracts clinical entities from free text, including medications, diagnoses, procedures, anatomy, and provider names. Each entity gets a category, type, confidence score, and semantic traits (negated, historical, hypothetical, pertaining to a family member).</li>
+<li><code>InferICD10CM</code>: Takes free text containing diagnostic information and returns a ranked list of ICD-10-CM codes with confidence scores for each. This is the specialized inference model for the coding problem.</li>
+</ul>
+<p>The reason to use a managed service here rather than an open-source clinical NLP library (spaCy with the <code>en_core_sci_sm</code> model, cTAKES, MetaMap) is operational: Comprehend Medical is an API call with no infrastructure to manage, scales automatically, is on the HIPAA eligible services list, and is actively maintained. The tradeoff is cost (you pay per character processed) and the opacity of the model (you can't fine-tune it on your own clinical data without going to custom model territory). For most healthcare document processing use cases, the managed API is the right default.</p>
+<p><strong>Two Lambda functions for orchestration.</strong> Same pattern as Recipe 1.2. The first Lambda starts the Textract job and exits. The second Lambda is triggered by the SNS completion notification, retrieves the Textract results, makes the Comprehend Medical calls, and assembles the final record. The Comprehend Medical calls are synchronous and fast (under 1 second for a typical diagnosis text snippet), so they run inline in the processing Lambda.</p>
+<p><strong>Amazon S3, DynamoDB, SNS, and KMS.</strong> Same services, same rationale as Recipe 1.2. Lab requisitions contain PHI and clinical information. Encrypt at rest with KMS, audit with CloudTrail, keep PHI in VPC-restricted resources.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    A[📠 Fax Server] --&gt;|PDF| B[S3 Bucket\nlab-reqs/]
+    B --&gt;|S3 Event| C[Lambda\nlab-req-start]
+    C --&gt;|StartDocumentAnalysis\nFORMS + TABLES| D[Amazon Textract]
+    D --&gt;|SNS Completion| E[SNS Topic\ntextract-jobs]
+    E --&gt;|Trigger| F[Lambda\nlab-req-process]
+    F --&gt;|GetDocumentAnalysis\npaginated| D
+    F --&gt;|Diagnosis text| G[Comprehend Medical\nInferICD10CM]
+    F --&gt;|Clinical notes text| H[Comprehend Medical\nDetectEntitiesV2]
+    G --&gt;|ICD-10 codes + scores| F
+    H --&gt;|Clinical entities| F
+    F --&gt;|Structured lab order| I[DynamoDB\nlab-orders]
+    F --&gt;|Low-confidence fields| J[Review Queue\n→ Recipe 1.6]
+
+    style B fill:#f9f,stroke:#333
+    style D fill:#ff9,stroke:#333
+    style G fill:#f96,stroke:#333
+    style H fill:#f96,stroke:#333
+    style I fill:#9ff,stroke:#333
+    style E fill:#ffa,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Everything from Recipe 1.2 (Textract, S3, Lambda ×2, SNS, DynamoDB, KMS), plus Amazon Comprehend Medical</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>All permissions from Recipe 1.2, plus: <code>comprehend:DetectEntitiesV2</code>, <code>comprehend:InferICD10CM</code></td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Comprehend Medical is a HIPAA-eligible service under the same account-level BAA as Textract. No additional BAA action required beyond the account-level agreement already in place.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled (default). Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; logs may contain clinical text fragments). All API calls over TLS. Clinical text sent to Comprehend Medical is not retained by AWS.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: both Lambdas in a VPC with VPC endpoints for S3 (gateway endpoint, free), Textract, DynamoDB, SNS, Comprehend Medical, CloudWatch Logs, and KMS. The KMS endpoint is required because S3 objects encrypted with SSE-KMS need a KMS call to decrypt; without it, Lambda in a private subnet fails with an opaque AccessDeniedException on the first document read. Enable VPC Flow Logs for network-level audit trail. CloudTrail covers API calls; Flow Logs cover network traffic, completing the HIPAA audit picture.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled for all Textract, Comprehend Medical, S3, and DynamoDB API calls. Lab requisitions are PHI-containing clinical documents; the full audit trail is a compliance requirement.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Quest Diagnostics and LabCorp publish sample requisition forms on their provider portals. Create synthetic versions with realistic patient names, DOBs, and ICD-10 codes. CMS provides ICD-10-CM code lookup tools at <a href="https://www.icd10data.com/">ICD10Data.com</a> for reference. Never use real PHI in development.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>Textract async (FORMS + TABLES): $0.065 per page ($0.05 forms + $0.015 tables), roughly $0.065 for a one-page lab req. Comprehend Medical InferICD10CM: $0.01 per 100 characters, so a 200-character diagnosis field costs ~$0.02. DetectEntitiesV2: $0.01 per 100 characters, similar range. Total per form: approximately $0.10-0.15 depending on text length.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Textract</strong></td>
+<td>Async multi-page document analysis: extracts key-value pairs (patient/provider fields), tables, and checkbox selections (ordered tests)</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical (InferICD10CM)</strong></td>
+<td>Takes diagnosis free text and returns ranked ICD-10-CM code candidates with confidence scores. Comprehend Medical is available in a subset of AWS regions. Verify your target region supports it before committing to this architecture. See the Comprehend Medical endpoints documentation for current availability.</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical (DetectEntitiesV2)</strong></td>
+<td>Extracts clinical entities (medications, diagnoses, procedures, providers) from any free-text field on the form</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Stores incoming faxed lab requisitions (PDF); encrypted at rest with KMS. Lab requisition records may be subject to HIPAA 6-year documentation retention and payer-specific claims substantiation requirements. For production deployments, configure S3 Object Lock (governance mode for development, compliance mode for production) on the requisitions bucket with an appropriate retention period. See Recipe 1.5 for the full Object Lock implementation pattern.</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (lab-req-start)</strong></td>
+<td>Triggered by S3 upload; submits the Textract async job and exits</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (lab-req-process)</strong></td>
+<td>Triggered by SNS notification; retrieves Textract results, calls Comprehend Medical, assembles structured record</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Receives Textract job completion signals; triggers the processing Lambda</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores structured lab order records; PHI encrypted at rest. Enable DynamoDB Point-in-Time Recovery (PITR) for tables storing PHI. PITR provides continuous backup and supports disaster recovery and incident response requirements under HIPAA.</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for S3 and DynamoDB</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Logs, metrics, and alarms for job failures, Comprehend Medical errors, and confidence distributions</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> The following AWS sample repos demonstrate the patterns used in this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example"><code>amazon-textract-and-amazon-comprehend-medical-claims-example</code></a>: Healthcare-specific: extracting and validating medical claims data with Textract and Comprehend Medical, including architecture and CloudFormation templates</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing"><code>amazon-textract-and-comprehend-medical-document-processing</code></a>: Workshop for building a medical document processing pipeline; covers PDF extraction, clinical entity recognition, and multi-stage orchestration with both services</li>
+<li><a href="https://github.com/aws-samples/aws-ai-intelligent-document-processing"><code>aws-ai-intelligent-document-processing</code></a>: Comprehensive IDP solutions with multi-stage extraction pipelines, A2I human review integration, and guidance implementations</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Steps 1 and 2: Async Textract extraction.</strong> This is identical to Recipe 1.2. The first Lambda submits a <code>StartDocumentAnalysis</code> job with FORMS and TABLES feature types, stores the job context, and exits. The second Lambda triggers on the SNS completion notification, retrieves all result pages via paginated <code>GetDocumentAnalysis</code> calls, and builds the block lookup index. See Recipe 1.2 for the complete pseudocode on both of these steps. We won't repeat them here.</p>
+<p><strong>Step 3: Parse the structured fields and ordered tests.</strong> Lab requisitions combine two types of structured content: key-value pairs for patient demographics and provider identification, and checkbox grids for the ordered tests. This step handles both. The key-value parsing is the same as Recipe 1.1 and Recipe 1.2. The checkbox parsing captures which tests were ordered. For each checked test, we attempt an immediate lookup against the CPT code table. Tests that don't match are preserved with a flag: not matching the table is different from not being ordered.</p>
+<pre class="code code-plain"><code>// CPT lookup table: normalized test name -&gt; CPT code
+// This covers the most common panels and individual tests.
+// It requires ongoing maintenance as the lab&#x27;s test catalog evolves.
+TEST_CPT_MAP = {
+    &quot;cbc&quot;:                         &quot;85025&quot;,    // complete blood count with differential
+    &quot;cbc with diff&quot;:               &quot;85025&quot;,
+    &quot;cbc w/diff&quot;:                  &quot;85025&quot;,
+    &quot;complete blood count&quot;:        &quot;85025&quot;,
+    &quot;bmp&quot;:                         &quot;80048&quot;,    // basic metabolic panel
+    &quot;basic metabolic panel&quot;:       &quot;80048&quot;,
+    &quot;cmp&quot;:                         &quot;80053&quot;,    // comprehensive metabolic panel
+    &quot;comprehensive metabolic&quot;:     &quot;80053&quot;,
+    &quot;comprehensive metabolic panel&quot;: &quot;80053&quot;,
+    &quot;lipid panel&quot;:                 &quot;80061&quot;,
+    &quot;lipid profile&quot;:               &quot;80061&quot;,
+    &quot;cholesterol panel&quot;:           &quot;80061&quot;,
+    &quot;tsh&quot;:                         &quot;84443&quot;,    // thyroid stimulating hormone
+    &quot;thyroid stimulating hormone&quot;: &quot;84443&quot;,
+    &quot;hba1c&quot;:                       &quot;83036&quot;,    // hemoglobin a1c
+    &quot;hemoglobin a1c&quot;:              &quot;83036&quot;,
+    &quot;glycated hemoglobin&quot;:         &quot;83036&quot;,
+    &quot;ua&quot;:                          &quot;81003&quot;,    // urinalysis
+    &quot;urinalysis&quot;:                  &quot;81003&quot;,
+    &quot;psa&quot;:                         &quot;84153&quot;,    // prostate specific antigen
+    &quot;prostate specific antigen&quot;:   &quot;84153&quot;,
+    &quot;vitamin d&quot;:                   &quot;82306&quot;,    // 25-hydroxyvitamin D
+    &quot;25-oh vitamin d&quot;:             &quot;82306&quot;,
+    &quot;ferritin&quot;:                    &quot;82728&quot;,
+    &quot;b12&quot;:                         &quot;82607&quot;,    // vitamin b12
+    &quot;vitamin b12&quot;:                 &quot;82607&quot;,
+    &quot;folate&quot;:                      &quot;82746&quot;,
+    &quot;uric acid&quot;:                   &quot;84550&quot;,
+    &quot;crp&quot;:                         &quot;86140&quot;,    // c-reactive protein
+    &quot;c-reactive protein&quot;:          &quot;86140&quot;,
+    &quot;esr&quot;:                         &quot;85651&quot;,    // erythrocyte sedimentation rate
+    &quot;a1c&quot;:                         &quot;83036&quot;,    // common abbreviation
+}
+
+FUNCTION parse_forms_and_checkboxes(all_blocks, block_map):
+    // Reuse the key-value parsing from Recipe 1.2.
+    // We&#x27;re looking for the standard patient/provider fields.
+    text_key_values, checkbox_fields = parse_forms(all_blocks, block_map)
+    // See Recipe 1.2 for the full parse_forms implementation.
+
+    // For each checked test, look up the CPT code.
+    ordered_tests = empty list
+
+    FOR each test_name, is_selected in checkbox_fields:
+        IF is_selected == True:
+            // Normalize: lowercase, strip whitespace, collapse multiple spaces.
+            normalized = lowercase(trim(test_name))
+
+            // Attempt CPT lookup on the normalized name.
+            cpt_code = TEST_CPT_MAP.get(normalized, null)
+
+            ordered_tests.append({
+                test_name:    trim(test_name),   // original label as it appears on the form
+                cpt_code:     cpt_code,           // null if not in our lookup table
+                cpt_mapped:   (cpt_code is not null)  // flag unmapped tests for manual review
+            })
+
+    RETURN text_key_values, ordered_tests
+</code></pre>
+<p><strong>Step 4: Extract the diagnosis text.</strong> The diagnosis field is the bridge between the structured extraction and the clinical NLP step. Lab requisitions have a dedicated area for diagnosis information, but it's filled with free text: sometimes formal diagnosis names, sometimes ICD-10 codes written directly, sometimes abbreviations, and sometimes a mix of all three. This step locates the diagnosis field(s) in the key-value output and extracts the raw text for NLP processing. The FIELD_MAP approach from Recipe 1.1 handles the common label variants. We also extract any clinical notes or &quot;additional information&quot; fields, which sometimes contain context that Comprehend Medical can use.</p>
+<pre class="code code-plain"><code>// Canonical field names for diagnosis-related content on lab requisitions.
+// Different requisition templates use different label text.
+DIAGNOSIS_LABELS = [
+    &quot;diagnosis&quot;, &quot;dx&quot;, &quot;icd-10&quot;, &quot;icd10&quot;, &quot;icd codes&quot;,
+    &quot;clinical diagnosis&quot;, &quot;diagnosis code&quot;, &quot;clinical indication&quot;,
+    &quot;indication&quot;, &quot;reason for test&quot;, &quot;medical necessity&quot;
+]
+
+NOTES_LABELS = [
+    &quot;notes&quot;, &quot;clinical notes&quot;, &quot;additional information&quot;,
+    &quot;comments&quot;, &quot;special instructions&quot;, &quot;clinical history&quot;
+]
+
+FUNCTION extract_clinical_text(text_key_values):
+    // Locate the diagnosis field among the extracted key-value pairs.
+    diagnosis_text = null
+    notes_text     = null
+
+    FOR each raw_label, data in text_key_values:
+        normalized_label = lowercase(trim(raw_label))
+
+        IF any variant in DIAGNOSIS_LABELS matches normalized_label:
+            diagnosis_text = trim(data.value)
+            // Keep going; there might be multiple diagnosis fields (primary/secondary).
+
+        IF any variant in NOTES_LABELS matches normalized_label:
+            notes_text = trim(data.value)
+
+    // Combine for Comprehend Medical if notes contain clinical information.
+    // Limit total text to stay within Comprehend Medical&#x27;s per-request character limit.
+    // InferICD10CM accepts up to 10,000 characters per request.
+    combined = join non-null of [diagnosis_text, notes_text] with &quot;. &quot;
+    IF length of combined &gt; 9800:
+        combined = first 9800 characters of combined  // leave some margin
+
+    RETURN diagnosis_text, notes_text, combined
+</code></pre>
+<p><strong>Step 5: Infer ICD-10 codes with Comprehend Medical.</strong> This is the step that transforms raw diagnosis text into actionable clinical codes. We pass the extracted diagnosis text to Comprehend Medical's <code>InferICD10CM</code> API, which returns a list of ICD-10-CM code candidates ranked by confidence score. Each candidate includes the original text span that triggered it (the &quot;evidence text&quot;), the inferred code, the code description, and a confidence score from 0 to 1.</p>
+<p>We apply a confidence threshold before accepting any code. The threshold here (0.70) is deliberately set lower than the OCR threshold in earlier recipes. Clinical NLP confidence and OCR confidence are not on the same scale: a 70% Comprehend Medical score on a common diagnosis is typically reliable enough to use, whereas a 70% OCR confidence on a character is borderline. Calibrate this based on your downstream use case. If these codes are going directly to a billing system, raise the threshold. If they're populating a draft for coder review, 0.70 is reasonable.</p>
+<p>We take the highest-confidence code per entity (the first concept in the sorted list). In practice, a well-specified diagnosis phrase maps to one primary code. If the same entity maps to multiple codes above the threshold, that usually indicates ambiguity in the original text that needs human review.</p>
+<pre class="code code-plain"><code>// Minimum confidence score to accept a Comprehend Medical ICD-10 inference.
+// Lower than OCR thresholds because CM confidence and OCR confidence are different scales.
+// Adjust based on downstream use: billing systems need higher thresholds than draft queues.
+ICD10_CONFIDENCE_THRESHOLD = 0.70
+
+FUNCTION infer_icd10_codes(diagnosis_text):
+    IF diagnosis_text is null or empty:
+        RETURN empty list, empty list    // nothing to infer; normal for some forms
+
+    // Call Comprehend Medical&#x27;s ICD-10-CM inference API.
+    // This API is specifically trained to map clinical language to ICD-10-CM codes.
+    response = call ComprehendMedical.InferICD10CM with:
+        text = diagnosis_text
+
+    accepted = empty list    // codes we trust enough to use
+    flagged  = empty list    // codes below threshold, held for review
+
+    FOR each entity in response.Entities:
+        // entity.Text is the span of text that triggered this entity (e.g., &quot;Type 2 diabetes&quot;)
+        // entity.ICD10CMConcepts is a ranked list of candidate codes, highest confidence first
+        IF entity.ICD10CMConcepts is empty:
+            CONTINUE    // no code candidates; skip
+
+        // Take the top-ranked (highest confidence) concept.
+        top_concept = entity.ICD10CMConcepts[0]
+
+        IF top_concept.Score &gt;= ICD10_CONFIDENCE_THRESHOLD:
+            accepted.append({
+                evidence_text: entity.Text,            // what text triggered this entity
+                icd10_code:    top_concept.Code,       // the inferred ICD-10-CM code
+                description:   top_concept.Description, // human-readable description
+                confidence:    round(top_concept.Score, 3)
+            })
+        ELSE:
+            // Low-confidence inference: preserve for review but don&#x27;t use automatically.
+            flagged.append({
+                evidence_text: entity.Text,
+                top_candidate: {
+                    icd10_code:  top_concept.Code,
+                    description: top_concept.Description,
+                    confidence:  round(top_concept.Score, 3)
+                }
+            })
+
+    RETURN accepted, flagged
+</code></pre>
+<p><strong>Step 6: Extract additional clinical entities.</strong> The diagnosis text often contains more than just diagnosis names. It might mention the ordering physician, a relevant medication, or a procedure that contextualizes the order. <code>DetectEntitiesV2</code> gives us a broader view of the clinical content in any free-text field on the form. We're particularly interested in catching entities that might improve downstream processing: a medication name that contextualizes an HbA1c order, or a provider name that doesn't appear in the structured provider fields.</p>
+<p>This step also helps catch clinical context that affects how the form should be processed. An entity tagged with a &quot;NEGATION&quot; trait means the patient does NOT have that condition. An entity tagged &quot;PERTAINS_TO_FAMILY&quot; means a family member has it, not the patient. These traits can change the meaning of a diagnosis entirely.</p>
+<pre class="code code-plain"><code>FUNCTION detect_clinical_entities(text):
+    IF text is null or empty:
+        RETURN {}
+
+    // Call Comprehend Medical&#x27;s general entity extraction API.
+    // Returns entities across six categories: MEDICATION, MEDICAL_CONDITION,
+    // ANATOMY, TEST_TREATMENT_PROCEDURE, PROTECTED_HEALTH_INFORMATION, TIME_EXPRESSION.
+    response = call ComprehendMedical.DetectEntitiesV2 with:
+        text = text
+
+    // Organize entities by category for easier downstream consumption.
+    entities_by_category = empty map
+
+    FOR each entity in response.Entities:
+        category = entity.Category   // e.g., &quot;MEDICAL_CONDITION&quot;, &quot;MEDICATION&quot;
+
+        entity_record = {
+            text:       entity.Text,                     // the original text span
+            type:       entity.Type,                     // more specific than category
+            confidence: round(entity.Score, 3),          // how sure Comprehend Medical is
+            // Traits: NEGATION, HYPOTHETICAL, PAST_HISTORY, PERTAINS_TO_FAMILY, SIGN, SYMPTOM.
+            // These modify how the entity should be interpreted.
+            traits:     [t.Name for t in entity.Traits if t.Score &gt;= 0.75]
+        }
+
+        IF category not in entities_by_category:
+            entities_by_category[category] = empty list
+
+        entities_by_category[category].append(entity_record)
+
+    RETURN entities_by_category
+</code></pre>
+<p><strong>Step 7: Medical necessity check.</strong> With ordered tests (CPT codes) and inferred diagnoses (ICD-10 codes) both in hand, we can run a basic medical necessity cross-reference before the order goes anywhere. This is a simplified check against a static mapping table. It is not a replacement for the utilization management system. But catching an obvious gap at extraction time, before the order leaves the queue, is measurably cheaper than catching it after the claim is denied.</p>
+<p>The mapping table encodes a simplified version of CMS LCD policies: for each diagnosis code prefix, which CPT codes are commonly supported. The prefix approach (first three characters of the ICD-10 code) avoids building an exhaustive code-level table while still capturing the relevant diagnostic categories.</p>
+<pre class="code code-plain"><code>// Simplified medical necessity mapping: ICD-10 prefix -&gt; list of supported CPT codes.
+// This is a starting point, not a comprehensive policy engine.
+// Real medical necessity validation requires a full LCD/NCD policy integration.
+MEDICAL_NECESSITY_MAP = {
+    &quot;E11&quot;: [&quot;83036&quot;, &quot;80053&quot;, &quot;80048&quot;, &quot;82306&quot;],  // Type 2 diabetes: HbA1c, CMP, BMP, Vit D
+    &quot;E10&quot;: [&quot;83036&quot;, &quot;80053&quot;, &quot;80048&quot;],            // Type 1 diabetes
+    &quot;E78&quot;: [&quot;80061&quot;, &quot;80053&quot;],                     // Hyperlipidemia: lipid panel, CMP
+    &quot;I10&quot;: [&quot;80053&quot;, &quot;80048&quot;],                     // Hypertension: CMP, BMP
+    &quot;I25&quot;: [&quot;80061&quot;, &quot;85025&quot;],                     // Chronic ischemic heart disease
+    &quot;N18&quot;: [&quot;80053&quot;, &quot;80048&quot;, &quot;84520&quot;],            // CKD: CMP, BMP, BUN
+    &quot;K76&quot;: [&quot;80076&quot;, &quot;80053&quot;],                     // Liver disease: hepatic function panel
+    &quot;D50&quot;: [&quot;85025&quot;, &quot;82728&quot;, &quot;82607&quot;],            // Iron deficiency anemia: CBC, ferritin, B12
+    &quot;Z00&quot;: [&quot;85025&quot;, &quot;80053&quot;, &quot;81003&quot;, &quot;80061&quot;],   // Routine exam: CBC, CMP, UA, lipid panel
+}
+
+FUNCTION check_medical_necessity(icd10_codes, ordered_tests):
+    // Build a set of all CPT codes that any of our ICD-10 codes supports.
+    supported_cpts = empty set
+
+    FOR each diagnosis in icd10_codes:
+        // Match on the first three characters of the ICD-10 code (the category prefix).
+        code_prefix = first 3 characters of diagnosis.icd10_code
+        cpts_for_code = MEDICAL_NECESSITY_MAP.get(code_prefix, empty list)
+        add all cpts_for_code to supported_cpts
+
+    // Check each ordered test against the supported set.
+    flags = empty list
+
+    FOR each test in ordered_tests:
+        IF test.cpt_code is null:
+            CONTINUE   // can&#x27;t check necessity for tests we couldn&#x27;t map to a CPT code
+
+        IF test.cpt_code not in supported_cpts:
+            // This test doesn&#x27;t match any of our diagnosis codes.
+            // Flag it for review. It may still be medically necessary;
+            // our mapping table is incomplete. Worth a human look.
+            flags.append({
+                test_name: test.test_name,
+                cpt_code:  test.cpt_code,
+                note:      &quot;No supporting diagnosis found in extracted codes. Review for medical necessity.&quot;
+            })
+
+    RETURN flags
+</code></pre>
+<blockquote>
+<p><strong>Human Review Infrastructure</strong></p>
+<p>This recipe flags low-confidence fields for human review but does not implement the review workflow itself. The full human review infrastructure, including Amazon A2I integration with a private HIPAA-trained workforce, reviewer interface configuration, correction audit trails, and feedback loops, is built in Recipe 1.6. For production deployments, apply Recipe 1.6's A2I pattern to the flagged fields from this recipe. Key requirements: reviewers must be HIPAA-trained staff operating under a BAA, corrections must be traceable in the audit record, and the review queue message format should be consistent across recipes to enable a unified review interface.</p>
+</blockquote>
+<p><strong>Step 8: Assemble the final record and store it.</strong> The last step combines the output of all previous steps into a single structured record and writes it to DynamoDB. Every composite confidence score from both Textract and Comprehend Medical travels with the record. The <code>needs_review</code> flag is set if any field was flagged by either system. The <code>icd10_flagged</code> list captures low-confidence code inferences separately from low-confidence text extractions, because the two types of uncertainty have different implications for downstream reviewers.</p>
+<pre class="code code-plain"><code>FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
+                             ordered_tests, icd10_accepted, icd10_flagged,
+                             clinical_entities, necessity_flags, text_flagged):
+
+    // Build the structured lab order record.
+    record = {
+        document_key:        document_key,                          // S3 path of the source PDF
+        extracted_at:        current UTC timestamp (ISO 8601),      // audit trail
+        needs_review:        (
+            length of text_flagged &gt; 0     // low-confidence OCR fields
+            OR length of icd10_flagged &gt; 0  // low-confidence ICD-10 inferences
+            OR length of necessity_flags &gt; 0  // medical necessity gaps
+        ),
+
+        patient: {
+            // Standard demographic fields from the key-value extraction.
+            name:          patient_fields.get(&quot;patient_name&quot;),
+            date_of_birth: patient_fields.get(&quot;date_of_birth&quot;),
+            member_id:     patient_fields.get(&quot;member_id&quot;),
+            account_number: patient_fields.get(&quot;account_number&quot;),
+        },
+
+        ordering_provider: {
+            name: provider_fields.get(&quot;provider_name&quot;),   // may also be populated from clinical entities
+            npi:  provider_fields.get(&quot;npi&quot;),
+            practice: provider_fields.get(&quot;practice_name&quot;),
+        },
+
+        ordered_tests: ordered_tests,    // list of { test_name, cpt_code, cpt_mapped }
+
+        diagnoses: {
+            // High-confidence ICD-10 inferences: safe to use downstream.
+            accepted: icd10_accepted,    // list of { evidence_text, icd10_code, description, confidence }
+            // Low-confidence inferences: preserved for reviewer to confirm or replace.
+            flagged:  icd10_flagged,     // list of { evidence_text, top_candidate }
+        },
+
+        clinical_entities: clinical_entities,   // entity map from DetectEntitiesV2
+
+        medical_necessity_flags: necessity_flags,  // tests without supporting diagnosis codes
+
+        // Low-confidence OCR fields (below Textract confidence threshold).
+        // These are distinct from ICD-10 inference flags.
+        flagged_fields: text_flagged,
+    }
+
+    // Write the record to the database.
+    write record to database table &quot;lab-orders&quot;
+
+    RETURN record
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter01.03-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample output for a faxed lab requisition:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;document_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lab-reqs/2026/03/01/fax-00184.pdf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;extracted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-01T14:52:33Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;needs_review&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;James Wilson&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;date_of_birth&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;11/22/1965&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;member_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AET7291048&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;account_number&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LAB-00291&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;ordering_provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dr. Sarah Chen&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;npi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1234567890&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;practice&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Riverside Internal Medicine&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;ordered_tests&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;test_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HbA1c&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cpt_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;83036&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cpt_mapped&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;test_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CMP&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cpt_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;80053&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cpt_mapped&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;test_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Lipid Panel&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cpt_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;80061&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;cpt_mapped&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;diagnoses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;accepted&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;evidence_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Type 2 diabetes mellitus&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;icd10_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;E11.9&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Type 2 diabetes mellitus without complications&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.946</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;evidence_text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hypertension&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;icd10_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I10&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Essential (primary) hypertension&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.982</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;clinical_entities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;MEDICAL_CONDITION&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Type 2 diabetes mellitus&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DX_NAME&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.976</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;traits&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hypertension&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DX_NAME&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.991</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;traits&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;TEST_TREATMENT_PROCEDURE&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HbA1c&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;TEST_NAME&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.887</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;traits&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;medical_necessity_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;test_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Lipid Panel&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cpt_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;80061&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;note&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;No supporting diagnosis found in extracted codes. Review for medical necessity.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;flagged_fields&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Typical Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>End-to-end latency</td>
+<td>10-20 seconds (dominated by async Textract job)</td>
+</tr>
+<tr>
+<td>ICD-10 inference accuracy</td>
+<td>85-95% for common diagnoses in clear text</td>
+</tr>
+<tr>
+<td>ICD-10 inference accuracy (from OCR of handwritten text)</td>
+<td>65-80% (OCR errors compound NLP errors)</td>
+</tr>
+<tr>
+<td>Checkbox test detection accuracy</td>
+<td>97-99% for cleanly printed checkboxes</td>
+</tr>
+<tr>
+<td>CPT mapping coverage</td>
+<td>80-90% for common panels; long tail requires table expansion</td>
+</tr>
+<tr>
+<td>Cost per lab requisition</td>
+<td>~$0.04-0.06 (Textract + two Comprehend Medical calls, varies with text length)</td>
+</tr>
+<tr>
+<td>Throughput</td>
+<td>Textract is the bottleneck; scales via concurrency limits</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong> Handwritten ICD-10 codes (especially the I/1/l confusion described earlier) are the most common failure mode. OCR reads &quot;I10&quot; as &quot;l10&quot;; Comprehend Medical receives bad input; the inference misses. Low-specificity diagnosis text (&quot;chronic conditions&quot; or &quot;routine labs&quot;) produces low-confidence or absent ICD-10 inferences. Lab requisitions from non-standard templates may have the diagnosis section in an unexpected location that the FIELD_MAP doesn't recognize. And CPT mapping for specialty tests (genetic panels, pathology, specialized assays) requires substantial table expansion.</p>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the two-stage extraction pattern. Deploying this to a real lab order workflow requires addressing several gaps. These are the ones that will catch you:</p>
+<p><strong>Comprehend Medical character limits per request.</strong> <code>InferICD10CM</code> accepts up to 10,000 UTF-8 characters per request; <code>DetectEntitiesV2</code> accepts up to 20,000. Diagnosis text on a typical lab requisition is well under either limit, but forms with extended clinical notes, attached medication lists, or multi-page clinical summaries can exceed the 10,000-character InferICD10CM limit. The pseudocode clips at 9,800 characters, which is conservative for InferICD10CM. A production implementation splits text at sentence boundaries, processes each chunk independently, and deduplicates the resulting entities. Silently truncating medical content is worse than processing it in chunks.</p>
+<p><strong>Composite confidence scoring.</strong> The pseudocode evaluates OCR confidence and ICD-10 inference confidence in separate steps with separate thresholds. In production, you need a composite score: the ICD-10 code confidence should account for the underlying OCR confidence of the text that produced it. A code inferred from text with 98% OCR confidence and 80% NLP confidence is more reliable than the same NLP score applied to text with 72% OCR confidence. Track the provenance of each field from Textract through Comprehend Medical.</p>
+<p><strong>ICD-10 code specificity gap.</strong> Comprehend Medical's <code>InferICD10CM</code> often returns the least-specific valid code: E11.9 (&quot;without complications&quot;) when the text contains enough information to support E11.65 (&quot;with hyperglycemia&quot;). This isn't a bug; it's a conservative default. But payer medical policies sometimes require the specific code to support a lab order. A production system captures the full ranked candidate list, not just the top result, and routes low-specificity codes to coder review when the downstream policy requires higher specificity.</p>
+<p><strong>The medical necessity table is a rough approximation.</strong> The MEDICAL_NECESSITY_MAP covers common cases in a simplified way. Real LCD and NCD policies from CMS run to pages of ICD-10 codes per test. Commercial payer policies differ from Medicare. Testing a production system against just this table will produce both false positives (flagging tests that are actually supported by the diagnosis) and false negatives (missing tests that should be flagged). Integrate with a medical policy rules engine or use the simplified check only as a pre-screening layer before full utilization management.</p>
+<p><strong>Dead Letter Queue.</strong> Both Lambdas receive asynchronous invocations. Configure SQS dead letter queues on both, with CloudWatch alarms on queue depth. A silently lost lab order is a patient care gap, not just a processing error.</p>
+<p><strong>Textract job failure handling.</strong> The SNS notification includes a <code>Status</code> field. Check it before calling <code>GetDocumentAnalysis</code>. A corrupted fax PDF, a page count that exceeds Textract's limit, or an internal Textract error results in <code>FAILED</code> status. Handle it explicitly: move the document to a <code>failed-documents/</code> prefix, update the job record, and fire an alarm. Don't let failures disappear silently.</p>
+<p><strong>CPT code table stale data.</strong> The AMA updates CPT codes annually. Tests added or renumbered after your last table update will produce <code>cpt_mapped: false</code> silently. Build a process to review <code>cpt_mapped: false</code> entries in production and use them to drive table updates. Track the unmapped test names; they're your roadmap for expanding coverage.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Automated order routing by priority.</strong> Lab requisitions often include a priority field: &quot;Routine,&quot; &quot;ASAP,&quot; &quot;STAT.&quot; Add a routing layer that sends STAT orders directly to the lab's urgent queue via HL7v2 ORM message (bypassing the human review queue), while routing routine orders with medical necessity flags to the review queue. Include priority classification in the structured output and build the downstream routing on top of it.</p>
+<p><strong>NPI validation and network check.</strong> Comprehend Medical's <code>DetectEntitiesV2</code> extracts provider names from clinical text. Cross-reference the extracted or structured NPI against the NPPES NPI Registry (a publicly available federal database) to validate that the provider is a real, active clinician. Layer on a network status check against your payer's network file to flag out-of-network referrals at order entry. This turns a document extraction step into a lightweight prior authorization pre-screening step.</p>
+<p><strong>Historical frequency validation.</strong> An HbA1c ordered for a patient who had one three weeks ago may not meet payer medical policy for test frequency. Before passing the structured order downstream, query the member's claims history for the same CPT codes in the trailing 90 to 365 days (the lookback period varies by test and payer). Route potential duplicates to utilization management for review rather than letting them surface as denials after the fact. This closes the loop between document extraction (this recipe) and claims trend analysis (Recipe 11.2).</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/API_InferICD10CM.html">Amazon Comprehend Medical: InferICD10CM API Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/API_DetectEntitiesV2.html">Amazon Comprehend Medical: DetectEntitiesV2 API Reference</a></li>
+<li><a href="https://aws.amazon.com/comprehend/medical/pricing/">Amazon Comprehend Medical Pricing</a></li>
+<li><a href="https://docs.aws.amazon.com/textract/latest/dg/async.html">Amazon Textract Async Operations</a></li>
+<li><a href="https://aws.amazon.com/textract/pricing/">Amazon Textract Pricing</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://www.cms.gov/medicare/coding-billing/icd-10-codes">CMS ICD-10-CM Official Guidelines for Coding and Reporting</a></li>
+<li><a href="https://www.cms.gov/medicare/coverage/coverage-determination-process/local-coverage-determinations-lcds">CMS Local Coverage Determinations (LCDs)</a></li>
+<li><a href="https://npiregistry.cms.hhs.gov/">NPPES NPI Registry</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example"><code>amazon-textract-and-amazon-comprehend-medical-claims-example</code></a>: Healthcare-specific sample application for extracting and validating medical claims using both Textract and Comprehend Medical, with CloudFormation deployment templates</li>
+<li><a href="https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing"><code>amazon-textract-and-comprehend-medical-document-processing</code></a>: Workshop for building a full medical document processing pipeline; covers PDF extraction, clinical entity recognition, and multi-stage Lambda orchestration</li>
+<li><a href="https://github.com/aws-samples/aws-ai-intelligent-document-processing"><code>aws-ai-intelligent-document-processing</code></a>: Comprehensive IDP solution samples with multi-stage extraction pipelines, A2I human review integration, and guidance implementations for common document workflows</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/guidance/intelligent-document-processing-on-aws">Guidance for Intelligent Document Processing on AWS</a>: Reference architecture for classifying, extracting, and enriching documents at scale</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical">Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical</a>: Deep dive on entity extraction and ICD-10 inference from clinical free text</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock">Intelligent Healthcare Forms Analysis with Amazon Bedrock</a>: Healthcare-specific forms processing with generative AI for complex or ambiguous fields</li>
+<li><a href="https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/">Building a Medical Claims Processing Solution with Textract and Comprehend Medical</a>: End-to-end industry blog post on combining both services for claims automation</li>
+</ul>
+<hr />
+<hr />
+<p><em>← <a href="chapter01.03-lab-requisition-extraction.html">Main Recipe 1.3</a> · <a href="chapter01.03-python-example.html">Python Example</a> · <a href="chapter01-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

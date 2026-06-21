@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 9.8: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-98-python-implementation-example">Recipe 9.8: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 9.8. Whole slide image analysis in production involves gigapixel images, GPU clusters, and months of model training. This example demonstrates the <em>shape</em> of the pipeline using synthetic data and simulated model inference. It shows how you'd orchestrate the AWS pieces (S3, SageMaker, DynamoDB, Step Functions) with boto3. Think of it as a map of the territory, not the territory itself. A starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and a few image processing libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>numpy<span class="w"> </span>pillow
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs:</p>
+<ul>
+<li><code>s3:GetObject</code>, <code>s3:PutObject</code> (slide storage and feature output)</li>
+<li><code>sagemaker:CreateTransformJob</code>, <code>sagemaker:DescribeTransformJob</code> (batch inference)</li>
+<li><code>dynamodb:PutItem</code>, <code>dynamodb:UpdateItem</code>, <code>dynamodb:GetItem</code> (metadata and results)</li>
+<li><code>sqs:SendMessage</code>, <code>sqs:ReceiveMessage</code> (work queue)</li>
+<li><code>states:StartExecution</code> (pipeline orchestration)</li>
+</ul>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>These go at the top of your module. They define the patch extraction parameters, model configuration, and AWS resource names. In production, most of these would come from environment variables or SSM Parameter Store.</p>
+<div class="code"><pre><span></span><span class="c1"># Patch extraction parameters.</span>
+<span class="c1"># 256x256 at 20x magnification is the standard for most pathology foundation models.</span>
+<span class="c1"># Larger patches (512x512) capture more context but require more GPU memory per batch.</span>
+<span class="c1"># Smaller patches (128x128) are faster but lose architectural context.</span>
+<span class="n">PATCH_SIZE</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">TARGET_MAGNIFICATION</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">TISSUE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.5</span>  <span class="c1"># minimum fraction of patch that must be tissue to include it</span>
+
+<span class="c1"># Feature extraction model configuration.</span>
+<span class="c1"># The feature dimension depends on your chosen foundation model.</span>
+<span class="c1"># Most pathology foundation models output 768-2048 dimensional vectors.</span>
+<span class="n">FEATURE_DIM</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">64</span>  <span class="c1"># patches per GPU inference batch</span>
+
+<span class="c1"># Confidence threshold for flagging uncertain predictions.</span>
+<span class="c1"># Below this, the result goes to a pathologist review queue rather than</span>
+<span class="c1"># being presented as a confident AI finding.</span>
+<span class="n">CONFIDENCE_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.80</span>
+
+<span class="c1"># AWS resource names. In production, pull these from environment variables.</span>
+<span class="n">SLIDE_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;pathology-slides&quot;</span>
+<span class="n">FEATURE_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;pathology-features&quot;</span>
+<span class="n">RESULTS_TABLE</span> <span class="o">=</span> <span class="s2">&quot;pathology-analysis-results&quot;</span>
+<span class="n">METADATA_TABLE</span> <span class="o">=</span> <span class="s2">&quot;pathology-slide-metadata&quot;</span>
+<span class="n">ANALYSIS_QUEUE</span> <span class="o">=</span> <span class="s2">&quot;pathology-analysis-queue&quot;</span>
+<span class="n">SAGEMAKER_MODEL_NAME</span> <span class="o">=</span> <span class="s2">&quot;pathology-feature-extractor&quot;</span>
+
+<span class="c1"># Stain normalization reference values (Macenko method).</span>
+<span class="c1"># These are the target stain vectors for H&amp;E normalization.</span>
+<span class="c1"># Derived from a reference slide that represents your &quot;ideal&quot; staining.</span>
+<span class="c1"># Different labs will need different reference values.</span>
+<span class="n">STAIN_REF_MATRIX</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;hematoxylin&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.70</span><span class="p">,</span> <span class="mf">0.29</span><span class="p">],</span>
+    <span class="s2">&quot;eosin&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="mf">0.11</span><span class="p">],</span>
+<span class="p">}</span>
+<span class="n">MAX_CONCENTRATION</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-slide-ingestion-and-metadata-extraction">Step 1: Slide Ingestion and Metadata Extraction</h2>
+<p><em>Maps to pseudocode Step 1: <code>ingest_slide(bucket, key)</code>. When a new whole slide image lands in S3, this function registers it, extracts header metadata, and queues it for analysis.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">botocore.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="n">BOTO3_RETRY_CONFIG</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_attempts&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">})</span>
+
+<span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">dynamodb</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+<span class="n">sqs_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sqs&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ingest_slide</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Register a new whole slide image and queue it for analysis.</span>
+
+<span class="sd">    In a real system, this reads the WSI file header (SVS, NDPI, TIFF, or DICOM)</span>
+<span class="sd">    to extract scanner metadata, magnification, and dimensions without downloading</span>
+<span class="sd">    the entire multi-gigabyte file. Here we simulate that with S3 head_object</span>
+<span class="sd">    metadata and assume the uploader tagged the object with relevant info.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the slide</span>
+<span class="sd">        key:    S3 object key (e.g., &quot;incoming/2026/05/case-4821/slide-01.svs&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The generated slide_id for tracking this slide through the pipeline.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get object metadata. In production, you&#39;d use a library like openslide</span>
+    <span class="c1"># to read the WSI header via byte-range requests. Here we use S3 object</span>
+    <span class="c1"># metadata as a stand-in.</span>
+    <span class="n">head_response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">head_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+    <span class="n">file_size</span> <span class="o">=</span> <span class="n">head_response</span><span class="p">[</span><span class="s2">&quot;ContentLength&quot;</span><span class="p">]</span>
+    <span class="n">content_type</span> <span class="o">=</span> <span class="n">head_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ContentType&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Extract custom metadata tags set during upload.</span>
+    <span class="c1"># Your slide scanner integration would populate these.</span>
+    <span class="n">user_metadata</span> <span class="o">=</span> <span class="n">head_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Metadata&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">scanner_model</span> <span class="o">=</span> <span class="n">user_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scanner-model&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+    <span class="n">magnification</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">user_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;objective-power&quot;</span><span class="p">,</span> <span class="s2">&quot;40&quot;</span><span class="p">))</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">user_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slide-width&quot;</span><span class="p">,</span> <span class="s2">&quot;100000&quot;</span><span class="p">))</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">user_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slide-height&quot;</span><span class="p">,</span> <span class="s2">&quot;80000&quot;</span><span class="p">))</span>
+    <span class="n">stain_type</span> <span class="o">=</span> <span class="n">user_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stain-type&quot;</span><span class="p">,</span> <span class="s2">&quot;H&amp;E&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Basic validation. A real WSI at 20x+ should be at least 10K pixels per side</span>
+    <span class="c1"># and at least 500MB. Anything smaller is likely a thumbnail or corrupted upload.</span>
+    <span class="k">if</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">10000</span> <span class="ow">or</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="mi">10000</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Slide dimensions </span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">height</span><span class="si">}</span><span class="s2"> are suspiciously small. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected at least 10000x10000 for a whole slide image.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">file_size</span> <span class="o">&lt;</span> <span class="mi">500_000_000</span><span class="p">:</span>  <span class="c1"># 500MB minimum</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Slide </span><span class="si">%s</span><span class="s2"> is only </span><span class="si">%d</span><span class="s2"> bytes. Real WSIs are typically 2-5GB. &quot;</span>
+            <span class="s2">&quot;Proceeding but flagging for review.&quot;</span><span class="p">,</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">file_size</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Generate a unique slide ID for tracking</span>
+    <span class="n">slide_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;WSI-</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Register in the metadata table</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">METADATA_TABLE</span><span class="p">)</span>
+    <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;slide_id&quot;</span><span class="p">:</span> <span class="n">slide_id</span><span class="p">,</span>
+        <span class="s2">&quot;s3_path&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scanner_model&quot;</span><span class="p">:</span> <span class="n">scanner_model</span><span class="p">,</span>
+        <span class="s2">&quot;magnification&quot;</span><span class="p">:</span> <span class="n">magnification</span><span class="p">,</span>
+        <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">width</span><span class="p">,</span>
+        <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">height</span><span class="p">,</span>
+        <span class="s2">&quot;stain_type&quot;</span><span class="p">:</span> <span class="n">stain_type</span><span class="p">,</span>
+        <span class="s2">&quot;file_size_bytes&quot;</span><span class="p">:</span> <span class="n">file_size</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;QUEUED&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ingested_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+    <span class="p">})</span>
+
+    <span class="c1"># Queue for analysis</span>
+    <span class="n">sqs_client</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span>
+        <span class="n">QueueUrl</span><span class="o">=</span><span class="n">ANALYSIS_QUEUE</span><span class="p">,</span>
+        <span class="n">MessageBody</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s2">&quot;slide_id&quot;</span><span class="p">:</span> <span class="n">slide_id</span><span class="p">,</span>
+            <span class="s2">&quot;s3_path&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;magnification&quot;</span><span class="p">:</span> <span class="n">magnification</span><span class="p">,</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">width</span><span class="p">,</span>
+            <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">height</span><span class="p">,</span>
+        <span class="p">}),</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ingested slide </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%d</span><span class="s2">x</span><span class="si">%d</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">slide_id</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">stain_type</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">slide_id</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-tissue-detection">Step 2: Tissue Detection</h2>
+<p><em>Maps to pseudocode Step 2: <code>detect_tissue(slide_id, s3_path)</code>. Identifies which regions of the slide contain tissue vs. empty glass. Uses a low-resolution thumbnail to avoid loading the full gigapixel image.</em></p>
+<div class="code"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">detect_tissue</span><span class="p">(</span><span class="n">slide_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">thumbnail_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a binary tissue mask from a low-resolution slide thumbnail.</span>
+
+<span class="sd">    In production, you&#39;d read the lowest pyramid level of the WSI file using</span>
+<span class="sd">    openslide or a similar library. Here we accept pre-extracted thumbnail bytes</span>
+<span class="sd">    (which you&#39;d get via a byte-range read of the WSI&#39;s lowest resolution level).</span>
+
+<span class="sd">    The approach: convert to HSV color space, threshold on saturation.</span>
+<span class="sd">    H&amp;E-stained tissue has distinct saturation (pink/purple) compared to</span>
+<span class="sd">    background glass (white, near-zero saturation). Otsu&#39;s method finds the</span>
+<span class="sd">    optimal threshold automatically.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        slide_id:        Slide identifier for logging</span>
+<span class="sd">        thumbnail_bytes: Raw image bytes of the slide thumbnail (lowest pyramid level)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (tissue_mask as numpy array, tissue_fraction as float)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load the thumbnail image</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">thumbnail_bytes</span><span class="p">))</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;RGB&quot;</span><span class="p">)</span>
+    <span class="n">img_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+    <span class="c1"># Convert RGB to HSV. We care about the saturation channel.</span>
+    <span class="c1"># Tissue (stained pink/purple) has high saturation.</span>
+    <span class="c1"># Background glass (white/clear) has near-zero saturation.</span>
+    <span class="c1"># This is more robust than simple grayscale thresholding because it</span>
+    <span class="c1"># handles slides with varying brightness levels.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImageFilter</span>
+
+    <span class="n">hsv_image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;HSV&quot;</span><span class="p">)</span>
+    <span class="n">hsv_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hsv_image</span><span class="p">)</span>
+    <span class="n">saturation</span> <span class="o">=</span> <span class="n">hsv_array</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># saturation channel</span>
+
+    <span class="c1"># Otsu thresholding: automatically find the optimal threshold that</span>
+    <span class="c1"># separates the two populations (tissue vs. background).</span>
+    <span class="c1"># This is a histogram-based method that minimizes intra-class variance.</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">_otsu_threshold</span><span class="p">(</span><span class="n">saturation</span><span class="p">)</span>
+    <span class="n">tissue_mask</span> <span class="o">=</span> <span class="n">saturation</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+
+    <span class="c1"># Morphological cleanup.</span>
+    <span class="c1"># Close small gaps (a tiny hole in tissue is still tissue).</span>
+    <span class="c1"># Remove small isolated specks (dust, scanner artifacts).</span>
+    <span class="n">tissue_mask</span> <span class="o">=</span> <span class="n">_morphological_close</span><span class="p">(</span><span class="n">tissue_mask</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">tissue_mask</span> <span class="o">=</span> <span class="n">_remove_small_objects</span><span class="p">(</span><span class="n">tissue_mask</span><span class="p">,</span> <span class="n">min_pixels</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+    <span class="c1"># Calculate tissue fraction</span>
+    <span class="n">tissue_fraction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">tissue_mask</span><span class="p">))</span> <span class="o">/</span> <span class="n">tissue_mask</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">if</span> <span class="n">tissue_fraction</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Slide </span><span class="si">%s</span><span class="s2"> has only </span><span class="si">%.1f%%</span><span class="s2"> tissue. Possible blank slide or failed scan.&quot;</span><span class="p">,</span>
+            <span class="n">slide_id</span><span class="p">,</span> <span class="n">tissue_fraction</span> <span class="o">*</span> <span class="mi">100</span>
+        <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Tissue detection for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%.1f%%</span><span class="s2"> tissue, mask shape </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">slide_id</span><span class="p">,</span> <span class="n">tissue_fraction</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">tissue_mask</span><span class="o">.</span><span class="n">shape</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tissue_mask</span><span class="p">,</span> <span class="n">tissue_fraction</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_otsu_threshold</span><span class="p">(</span><span class="n">channel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute Otsu&#39;s threshold for a single-channel image.</span>
+
+<span class="sd">    Finds the threshold that minimizes the weighted sum of intra-class variances</span>
+<span class="sd">    for the two groups (foreground and background). This is the standard approach</span>
+<span class="sd">    for automatic thresholding when you have a bimodal histogram.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Build histogram (256 bins for 8-bit image)</span>
+    <span class="n">hist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
+    <span class="n">total_pixels</span> <span class="o">=</span> <span class="n">channel</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="c1"># Compute cumulative sums and means for all possible thresholds</span>
+    <span class="n">sum_total</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="o">*</span> <span class="n">hist</span><span class="p">)</span>
+    <span class="n">sum_background</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">weight_background</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">max_variance</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">best_threshold</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">256</span><span class="p">):</span>
+        <span class="n">weight_background</span> <span class="o">+=</span> <span class="n">hist</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">weight_background</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">weight_foreground</span> <span class="o">=</span> <span class="n">total_pixels</span> <span class="o">-</span> <span class="n">weight_background</span>
+        <span class="k">if</span> <span class="n">weight_foreground</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">sum_background</span> <span class="o">+=</span> <span class="n">t</span> <span class="o">*</span> <span class="n">hist</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+        <span class="n">mean_background</span> <span class="o">=</span> <span class="n">sum_background</span> <span class="o">/</span> <span class="n">weight_background</span>
+        <span class="n">mean_foreground</span> <span class="o">=</span> <span class="p">(</span><span class="n">sum_total</span> <span class="o">-</span> <span class="n">sum_background</span><span class="p">)</span> <span class="o">/</span> <span class="n">weight_foreground</span>
+
+        <span class="c1"># Between-class variance</span>
+        <span class="n">variance</span> <span class="o">=</span> <span class="n">weight_background</span> <span class="o">*</span> <span class="n">weight_foreground</span> <span class="o">*</span> <span class="p">(</span><span class="n">mean_background</span> <span class="o">-</span> <span class="n">mean_foreground</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="k">if</span> <span class="n">variance</span> <span class="o">&gt;</span> <span class="n">max_variance</span><span class="p">:</span>
+            <span class="n">max_variance</span> <span class="o">=</span> <span class="n">variance</span>
+            <span class="n">best_threshold</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="k">return</span> <span class="n">best_threshold</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_morphological_close</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Morphological closing: dilate then erode. Fills small holes in tissue regions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndimage</span>
+    <span class="n">structure</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">))</span>
+    <span class="n">closed</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">binary_dilation</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">)</span>
+    <span class="n">closed</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">binary_erosion</span><span class="p">(</span><span class="n">closed</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">closed</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_remove_small_objects</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_pixels</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove connected components smaller than min_pixels.</span>
+<span class="sd">    Eliminates dust specks and scanner artifacts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndimage</span>
+    <span class="n">labeled</span><span class="p">,</span> <span class="n">num_features</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_features</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">labeled</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_pixels</span><span class="p">:</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">labeled</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">mask</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-patch-coordinate-generation">Step 3: Patch Coordinate Generation</h2>
+<p><em>Maps to pseudocode Step 3: <code>generate_patch_coordinates(slide_id, tissue_mask, slide_metadata)</code>. Determines which patches to extract from the full-resolution image based on the tissue mask.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_patch_coordinates</span><span class="p">(</span>
+    <span class="n">slide_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">tissue_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">slide_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">slide_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a list of (x, y) coordinates for patches that overlap with tissue.</span>
+
+<span class="sd">    Maps the low-resolution tissue mask back to full-resolution coordinates</span>
+<span class="sd">    and produces a manifest of patches to extract. Only patches where at least</span>
+<span class="sd">    TISSUE_THRESHOLD fraction is tissue get included.</span>
+
+<span class="sd">    A typical slide produces 10,000-50,000 patch coordinates. Each one will</span>
+<span class="sd">    become a separate inference call in the feature extraction step.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        slide_id:     Slide identifier for logging</span>
+<span class="sd">        tissue_mask:  Binary mask from detect_tissue (low-resolution)</span>
+<span class="sd">        slide_width:  Full-resolution slide width in pixels</span>
+<span class="sd">        slide_height: Full-resolution slide height in pixels</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of patch coordinate dicts with x, y, width, height fields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mask_h</span><span class="p">,</span> <span class="n">mask_w</span> <span class="o">=</span> <span class="n">tissue_mask</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># Scale factors between mask coordinates and full-resolution coordinates</span>
+    <span class="n">scale_x</span> <span class="o">=</span> <span class="n">slide_width</span> <span class="o">/</span> <span class="n">mask_w</span>
+    <span class="n">scale_y</span> <span class="o">=</span> <span class="n">slide_height</span> <span class="o">/</span> <span class="n">mask_h</span>
+
+    <span class="c1"># How many mask pixels correspond to one patch at full resolution?</span>
+    <span class="n">patch_mask_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">PATCH_SIZE</span> <span class="o">/</span> <span class="n">scale_x</span><span class="p">))</span>
+    <span class="n">patch_mask_h</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">PATCH_SIZE</span> <span class="o">/</span> <span class="n">scale_y</span><span class="p">))</span>
+
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Walk a grid across the tissue mask</span>
+    <span class="k">for</span> <span class="n">mask_y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask_h</span><span class="p">,</span> <span class="n">patch_mask_h</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">mask_x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask_w</span><span class="p">,</span> <span class="n">patch_mask_w</span><span class="p">):</span>
+            <span class="c1"># Extract the mask region corresponding to this patch</span>
+            <span class="n">region</span> <span class="o">=</span> <span class="n">tissue_mask</span><span class="p">[</span>
+                <span class="n">mask_y</span> <span class="p">:</span> <span class="n">mask_y</span> <span class="o">+</span> <span class="n">patch_mask_h</span><span class="p">,</span>
+                <span class="n">mask_x</span> <span class="p">:</span> <span class="n">mask_x</span> <span class="o">+</span> <span class="n">patch_mask_w</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Check tissue overlap</span>
+            <span class="k">if</span> <span class="n">region</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">tissue_overlap</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">region</span><span class="p">))</span> <span class="o">/</span> <span class="n">region</span><span class="o">.</span><span class="n">size</span>
+
+            <span class="k">if</span> <span class="n">tissue_overlap</span> <span class="o">&gt;=</span> <span class="n">TISSUE_THRESHOLD</span><span class="p">:</span>
+                <span class="c1"># Convert back to full-resolution coordinates</span>
+                <span class="n">full_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mask_x</span> <span class="o">*</span> <span class="n">scale_x</span><span class="p">)</span>
+                <span class="n">full_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mask_y</span> <span class="o">*</span> <span class="n">scale_y</span><span class="p">)</span>
+
+                <span class="n">coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">full_x</span><span class="p">,</span>
+                    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">full_y</span><span class="p">,</span>
+                    <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">PATCH_SIZE</span><span class="p">,</span>
+                    <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">PATCH_SIZE</span><span class="p">,</span>
+                <span class="p">})</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Generated </span><span class="si">%d</span><span class="s2"> patch coordinates for slide </span><span class="si">%s</span><span class="s2"> (from </span><span class="si">%d</span><span class="s2">x</span><span class="si">%d</span><span class="s2"> mask)&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">slide_id</span><span class="p">,</span> <span class="n">mask_w</span><span class="p">,</span> <span class="n">mask_h</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">coordinates</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-feature-extraction-via-sagemaker-batch-transform">Step 4: Feature Extraction via SageMaker Batch Transform</h2>
+<p><em>Maps to pseudocode Step 4: <code>extract_features(slide_id, s3_path, patch_coordinates)</code>. This is the GPU-intensive step. In production, you'd use SageMaker Batch Transform to process thousands of patches through a pre-trained pathology foundation model. Here we show how to set up and monitor that job.</em></p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="n">sagemaker_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sagemaker&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">BOTO3_RETRY_CONFIG</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_patch_manifest</span><span class="p">(</span><span class="n">slide_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write the patch coordinate manifest to S3 as input for SageMaker Batch Transform.</span>
+
+<span class="sd">    The manifest tells SageMaker which patches to extract and process.</span>
+<span class="sd">    Each line is a JSON object with the patch location. The SageMaker</span>
+<span class="sd">    inference container reads these, extracts the corresponding image region</span>
+<span class="sd">    from the WSI, runs it through the model, and writes feature vectors.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The S3 URI of the manifest file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">manifest_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;manifests/</span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">/patch-manifest.jsonl&quot;</span>
+
+    <span class="c1"># Write as JSON Lines (one JSON object per line)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span> <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coordinates</span><span class="p">]</span>
+    <span class="n">manifest_body</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">manifest_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">manifest_body</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/jsonl&quot;</span><span class="p">,</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">FEATURE_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">manifest_key</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">start_feature_extraction</span><span class="p">(</span><span class="n">slide_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">manifest_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Launch a SageMaker Batch Transform job to extract features from all patches.</span>
+
+<span class="sd">    Batch Transform is more cost-effective than a real-time endpoint for pathology</span>
+<span class="sd">    because: (1) slides arrive in bursts, not continuously, (2) latency requirements</span>
+<span class="sd">    are minutes not milliseconds, and (3) you can use spot instances for batch jobs.</span>
+
+<span class="sd">    The inference container is expected to:</span>
+<span class="sd">    1. Read patch coordinates from the manifest</span>
+<span class="sd">    2. Extract each patch from the WSI (via byte-range reads to S3)</span>
+<span class="sd">    3. Apply stain normalization</span>
+<span class="sd">    4. Run the patch through the feature extractor model</span>
+<span class="sd">    5. Write feature vectors to the output location</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The SageMaker transform job name for status polling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">job_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;pathology-features-</span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">output_uri</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">FEATURE_BUCKET</span><span class="si">}</span><span class="s2">/features/</span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">/&quot;</span>
+
+    <span class="n">sagemaker_client</span><span class="o">.</span><span class="n">create_transform_job</span><span class="p">(</span>
+        <span class="n">TransformJobName</span><span class="o">=</span><span class="n">job_name</span><span class="p">,</span>
+        <span class="n">ModelName</span><span class="o">=</span><span class="n">SAGEMAKER_MODEL_NAME</span><span class="p">,</span>
+        <span class="n">TransformInput</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;DataSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;S3DataSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;S3DataType&quot;</span><span class="p">:</span> <span class="s2">&quot;S3Prefix&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;S3Uri&quot;</span><span class="p">:</span> <span class="n">manifest_uri</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;ContentType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/jsonl&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SplitType&quot;</span><span class="p">:</span> <span class="s2">&quot;Line&quot;</span><span class="p">,</span>  <span class="c1"># each line is one inference request</span>
+        <span class="p">},</span>
+        <span class="n">TransformOutput</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;S3OutputPath&quot;</span><span class="p">:</span> <span class="n">output_uri</span><span class="p">,</span>
+            <span class="s2">&quot;AssembleWith&quot;</span><span class="p">:</span> <span class="s2">&quot;Line&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;KmsKeyId&quot;</span><span class="p">:</span> <span class="s2">&quot;alias/pathology-data-key&quot;</span><span class="p">,</span>  <span class="c1"># encrypt output at rest</span>
+        <span class="p">},</span>
+        <span class="n">TransformResources</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;InstanceType&quot;</span><span class="p">:</span> <span class="s2">&quot;ml.g4dn.xlarge&quot;</span><span class="p">,</span>  <span class="c1"># NVIDIA T4 GPU, good price/performance</span>
+            <span class="s2">&quot;InstanceCount&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="c1"># For large slides (50K+ patches), increase to 2-4 instances.</span>
+            <span class="c1"># SageMaker distributes the manifest across instances automatically.</span>
+        <span class="p">},</span>
+        <span class="n">MaxPayloadInMB</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>  <span class="c1"># each patch is small; keep payload size reasonable</span>
+        <span class="n">BatchStrategy</span><span class="o">=</span><span class="s2">&quot;MultiRecord&quot;</span><span class="p">,</span>  <span class="c1"># process multiple patches per request</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Started SageMaker transform job: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">job_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">job_name</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">wait_for_feature_extraction</span><span class="p">(</span><span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Poll the SageMaker Batch Transform job until completion.</span>
+
+<span class="sd">    In production, you&#39;d use Step Functions with a Wait state and a</span>
+<span class="sd">    DescribeTransformJob task rather than polling in a loop. This is</span>
+<span class="sd">    the simplified version for illustration.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The S3 URI where feature vectors were written.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">deadline</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="p">(</span><span class="n">timeout_minutes</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">deadline</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">sagemaker_client</span><span class="o">.</span><span class="n">describe_transform_job</span><span class="p">(</span>
+            <span class="n">TransformJobName</span><span class="o">=</span><span class="n">job_name</span>
+        <span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;TransformJobStatus&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;Completed&quot;</span><span class="p">:</span>
+            <span class="n">output_uri</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;TransformOutput&quot;</span><span class="p">][</span><span class="s2">&quot;S3OutputPath&quot;</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Feature extraction complete: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_uri</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">output_uri</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;Failed&quot;</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FailureReason&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Feature extraction job </span><span class="si">{</span><span class="n">job_name</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;Stopped&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Feature extraction job </span><span class="si">{</span><span class="n">job_name</span><span class="si">}</span><span class="s2"> was stopped&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Still running. Wait before polling again.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Job </span><span class="si">%s</span><span class="s2"> status: </span><span class="si">%s</span><span class="s2">. Waiting...&quot;</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Feature extraction job </span><span class="si">{</span><span class="n">job_name</span><span class="si">}</span><span class="s2"> did not complete within </span><span class="si">{</span><span class="n">timeout_minutes</span><span class="si">}</span><span class="s2"> minutes&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-mil-aggregation-and-classification">Step 5: MIL Aggregation and Classification</h2>
+<p><em>Maps to pseudocode Step 5: <code>aggregate_and_classify(slide_id, features, patch_coordinates)</code>. Takes the bag of patch features and produces a slide-level prediction using attention-based Multiple Instance Learning. The attention weights tell us which patches the model considers most diagnostic.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_features_from_s3</span><span class="p">(</span><span class="n">slide_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">features_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load the feature vectors produced by SageMaker Batch Transform.</span>
+
+<span class="sd">    The output is a numpy array of shape [num_patches, FEATURE_DIM].</span>
+<span class="sd">    Each row is the feature vector for one patch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># List all output files in the features directory</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;features/</span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">/&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">list_objects_v2</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span> <span class="n">Prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+
+    <span class="n">all_features</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Contents&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="c1"># Read each output file (SageMaker may split across multiple files)</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;Key&quot;</span><span class="p">])[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Each line is a JSON array representing one feature vector</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">feature_vector</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="n">all_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_vector</span><span class="p">)</span>
+
+    <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded features: shape </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">features</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">attention_mil_aggregate</span><span class="p">(</span><span class="n">features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Attention-based Multiple Instance Learning aggregation.</span>
+
+<span class="sd">    This is a simplified version of the Ilse et al. (2018) attention MIL mechanism.</span>
+<span class="sd">    In production, this would be a trained PyTorch/TensorFlow model loaded from</span>
+<span class="sd">    a model artifact. Here we simulate the forward pass to show the data flow.</span>
+
+<span class="sd">    The key idea: each patch gets an attention weight (0 to 1) indicating how</span>
+<span class="sd">    important it is for the slide-level prediction. The final prediction is a</span>
+<span class="sd">    weighted sum of patch features, where the weights are learned during training.</span>
+
+<span class="sd">    In a real deployment, this model is small enough to run on CPU (it&#39;s just</span>
+<span class="sd">    matrix multiplications over the pre-computed features). The GPU-heavy work</span>
+<span class="sd">    was done in Step 4.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        features: numpy array of shape [num_patches, FEATURE_DIM]</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (prediction_dict, attention_weights)</span>
+<span class="sd">        - prediction_dict: {&quot;benign&quot;: prob, &quot;malignant&quot;: prob}</span>
+<span class="sd">        - attention_weights: array of shape [num_patches] with values 0-1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_patches</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># --- Simulated MIL forward pass ---</span>
+    <span class="c1"># In production, these weight matrices come from a trained model checkpoint.</span>
+    <span class="c1"># The attention mechanism learns which morphological features (encoded in the</span>
+    <span class="c1"># feature vectors) are most indicative of malignancy.</span>
+
+    <span class="c1"># Attention network: projects features to attention scores</span>
+    <span class="c1"># Real architecture: features -&gt; tanh(V * features) -&gt; w^T -&gt; softmax</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># deterministic for illustration</span>
+    <span class="n">attention_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">FEATURE_DIM</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.01</span>
+    <span class="n">attention_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.01</span>
+
+    <span class="c1"># Compute attention scores</span>
+    <span class="n">hidden</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">features</span> <span class="o">@</span> <span class="n">attention_v</span><span class="p">)</span>  <span class="c1"># [num_patches, 128]</span>
+    <span class="n">raw_attention</span> <span class="o">=</span> <span class="p">(</span><span class="n">hidden</span> <span class="o">@</span> <span class="n">attention_w</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>  <span class="c1"># [num_patches]</span>
+
+    <span class="c1"># Softmax to get normalized attention weights (sum to 1)</span>
+    <span class="n">exp_attention</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">raw_attention</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">raw_attention</span><span class="p">))</span>
+    <span class="n">attention_weights</span> <span class="o">=</span> <span class="n">exp_attention</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">exp_attention</span><span class="p">)</span>
+
+    <span class="c1"># Weighted aggregation: slide-level representation</span>
+    <span class="n">slide_representation</span> <span class="o">=</span> <span class="n">attention_weights</span> <span class="o">@</span> <span class="n">features</span>  <span class="c1"># [FEATURE_DIM]</span>
+
+    <span class="c1"># Classification head: slide representation -&gt; class probabilities</span>
+    <span class="n">classifier_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">FEATURE_DIM</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.01</span>
+    <span class="n">classifier_b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">slide_representation</span> <span class="o">@</span> <span class="n">classifier_w</span> <span class="o">+</span> <span class="n">classifier_b</span>
+
+    <span class="c1"># Softmax for class probabilities</span>
+    <span class="n">exp_logits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logits</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">logits</span><span class="p">))</span>
+    <span class="n">probabilities</span> <span class="o">=</span> <span class="n">exp_logits</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">exp_logits</span><span class="p">)</span>
+
+    <span class="n">prediction</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;benign&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">probabilities</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">4</span><span class="p">)),</span>
+        <span class="s2">&quot;malignant&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">probabilities</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">4</span><span class="p">)),</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">prediction</span><span class="p">,</span> <span class="n">attention_weights</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_heatmap</span><span class="p">(</span>
+    <span class="n">patch_coordinates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+    <span class="n">attention_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">top_k_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">95.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map attention weights back to slide coordinates for visualization.</span>
+
+<span class="sd">    The heatmap shows the pathologist which regions the model focused on.</span>
+<span class="sd">    Patches in the top 5% of attention are marked as &quot;regions of interest&quot; (ROIs).</span>
+<span class="sd">    These are the areas the pathologist should examine first.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of dicts with x, y, attention, and is_roi fields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">attention_weights</span><span class="p">,</span> <span class="n">top_k_percentile</span><span class="p">))</span>
+
+    <span class="n">heatmap</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">patch_coordinates</span><span class="p">):</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">attention_weights</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">heatmap</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">coord</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">coord</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">coord</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">coord</span><span class="p">[</span><span class="s2">&quot;height&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;attention&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+            <span class="s2">&quot;is_roi&quot;</span><span class="p">:</span> <span class="n">weight</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">,</span>
+        <span class="p">})</span>
+
+    <span class="n">num_rois</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">heatmap</span> <span class="k">if</span> <span class="n">h</span><span class="p">[</span><span class="s2">&quot;is_roi&quot;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Heatmap: </span><span class="si">%d</span><span class="s2"> total patches, </span><span class="si">%d</span><span class="s2"> ROIs (top </span><span class="si">%.0f%%</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">heatmap</span><span class="p">),</span> <span class="n">num_rois</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">top_k_percentile</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">heatmap</span>
+</pre></div>
+
+<hr />
+<h2 id="step-6-store-results">Step 6: Store Results</h2>
+<p><em>Writes the final prediction, confidence, and heatmap to DynamoDB. Updates the slide status to COMPLETED.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">store_results</span><span class="p">(</span>
+    <span class="n">slide_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">prediction</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">attention_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">heatmap</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+    <span class="n">num_patches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">tissue_fraction</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">processing_start</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write analysis results to DynamoDB and update slide status.</span>
+
+<span class="sd">    The results record is what the pathologist viewer queries to display</span>
+<span class="sd">    AI findings alongside the slide image.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        slide_id:          Unique slide identifier</span>
+<span class="sd">        prediction:        Class probability dict (e.g., {&quot;benign&quot;: 0.08, &quot;malignant&quot;: 0.92})</span>
+<span class="sd">        attention_weights: Raw attention array (stored as S3 reference, not inline)</span>
+<span class="sd">        heatmap:           List of patch coordinates with attention and ROI flags</span>
+<span class="sd">        num_patches:       Total patches analyzed</span>
+<span class="sd">        tissue_fraction:   Fraction of slide that was tissue</span>
+<span class="sd">        processing_start:  When processing began (for latency tracking)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The stored result record.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Determine the predicted class and confidence</span>
+    <span class="n">predicted_class</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">prediction</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">prediction</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+    <span class="n">confidence</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">predicted_class</span><span class="p">]</span>
+
+    <span class="c1"># Extract just the ROI patches for the summary (full heatmap stored separately)</span>
+    <span class="n">top_regions</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">heatmap</span> <span class="k">if</span> <span class="n">h</span><span class="p">[</span><span class="s2">&quot;is_roi&quot;</span><span class="p">]]</span>
+
+    <span class="c1"># Store the full heatmap as a separate S3 object (too large for DynamoDB item)</span>
+    <span class="n">heatmap_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;heatmaps/</span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">/attention-heatmap.json&quot;</span>
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">FEATURE_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="n">heatmap_key</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">heatmap</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+        <span class="n">ContentType</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="n">ServerSideEncryption</span><span class="o">=</span><span class="s2">&quot;aws:kms&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">processing_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">-</span> <span class="n">processing_start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+    <span class="c1"># Write the results record</span>
+    <span class="c1"># DynamoDB requires Decimal for numeric values, not float.</span>
+    <span class="n">results_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">RESULTS_TABLE</span><span class="p">)</span>
+    <span class="n">result_record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;slide_id&quot;</span><span class="p">:</span> <span class="n">slide_id</span><span class="p">,</span>
+        <span class="s2">&quot;prediction&quot;</span><span class="p">:</span> <span class="n">predicted_class</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">confidence</span><span class="p">,</span> <span class="mi">4</span><span class="p">))),</span>
+        <span class="s2">&quot;class_probabilities&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">prediction</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;num_patches_analyzed&quot;</span><span class="p">:</span> <span class="n">num_patches</span><span class="p">,</span>
+        <span class="s2">&quot;tissue_fraction&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">tissue_fraction</span><span class="p">,</span> <span class="mi">4</span><span class="p">))),</span>
+        <span class="s2">&quot;processing_time_seconds&quot;</span><span class="p">:</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">processing_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span>
+        <span class="s2">&quot;top_regions&quot;</span><span class="p">:</span> <span class="n">top_regions</span><span class="p">[:</span><span class="mi">10</span><span class="p">],</span>  <span class="c1"># store top 10 ROIs inline</span>
+        <span class="s2">&quot;heatmap_path&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">FEATURE_BUCKET</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">heatmap_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;model_version&quot;</span><span class="p">:</span> <span class="n">SAGEMAKER_MODEL_NAME</span><span class="p">,</span>
+        <span class="s2">&quot;needs_review&quot;</span><span class="p">:</span> <span class="n">confidence</span> <span class="o">&lt;</span> <span class="n">CONFIDENCE_THRESHOLD</span><span class="p">,</span>
+        <span class="s2">&quot;completed_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="n">results_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">result_record</span><span class="p">)</span>
+
+    <span class="c1"># Update slide status in metadata table</span>
+    <span class="n">metadata_table</span> <span class="o">=</span> <span class="n">dynamodb</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="n">METADATA_TABLE</span><span class="p">)</span>
+    <span class="n">metadata_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+        <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;slide_id&quot;</span><span class="p">:</span> <span class="n">slide_id</span><span class="p">},</span>
+        <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">&quot;SET #s = :status, completed_at = :ts&quot;</span><span class="p">,</span>
+        <span class="n">ExpressionAttributeNames</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;#s&quot;</span><span class="p">:</span> <span class="s2">&quot;status&quot;</span><span class="p">},</span>
+        <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;:status&quot;</span><span class="p">:</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;:ts&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Stored results for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> (confidence </span><span class="si">%.2f</span><span class="s2">, </span><span class="si">%d</span><span class="s2"> patches, </span><span class="si">%.0f</span><span class="s2">s)&quot;</span><span class="p">,</span>
+        <span class="n">slide_id</span><span class="p">,</span> <span class="n">predicted_class</span><span class="p">,</span> <span class="n">confidence</span><span class="p">,</span> <span class="n">num_patches</span><span class="p">,</span> <span class="n">processing_time</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result_record</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into a single function. In production, each step would be a separate Lambda function orchestrated by Step Functions. This single-function version is useful for local testing and understanding the data flow.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analyze_slide</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full pathology slide analysis pipeline for one slide.</span>
+
+<span class="sd">    This orchestrates all five steps: ingest, tissue detection, patch extraction,</span>
+<span class="sd">    feature extraction, and MIL classification.</span>
+
+<span class="sd">    In a real deployment, Step Functions would orchestrate these as separate</span>
+<span class="sd">    Lambda/SageMaker steps with error handling, retries, and timeouts at each stage.</span>
+<span class="sd">    This single function shows the end-to-end flow.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the slide</span>
+<span class="sd">        key:    S3 object key for the WSI file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The analysis result record.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">processing_start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Ingest and register the slide</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step 1: Ingesting slide s3://</span><span class="si">{</span><span class="n">bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">slide_id</span> <span class="o">=</span> <span class="n">ingest_slide</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Registered as </span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Tissue detection</span>
+    <span class="c1"># In production, you&#39;d read the lowest pyramid level from the WSI.</span>
+    <span class="c1"># Here we simulate with a synthetic thumbnail.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 2: Detecting tissue regions&quot;</span><span class="p">)</span>
+    <span class="n">synthetic_thumbnail</span> <span class="o">=</span> <span class="n">_generate_synthetic_thumbnail</span><span class="p">()</span>
+    <span class="n">tissue_mask</span><span class="p">,</span> <span class="n">tissue_fraction</span> <span class="o">=</span> <span class="n">detect_tissue</span><span class="p">(</span><span class="n">slide_id</span><span class="p">,</span> <span class="n">synthetic_thumbnail</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Tissue fraction: </span><span class="si">{</span><span class="n">tissue_fraction</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Generate patch coordinates</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 3: Generating patch coordinates&quot;</span><span class="p">)</span>
+    <span class="c1"># Use metadata from ingestion (in production, read from DynamoDB)</span>
+    <span class="n">slide_width</span> <span class="o">=</span> <span class="mi">100000</span>
+    <span class="n">slide_height</span> <span class="o">=</span> <span class="mi">80000</span>
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">generate_patch_coordinates</span><span class="p">(</span>
+        <span class="n">slide_id</span><span class="p">,</span> <span class="n">tissue_mask</span><span class="p">,</span> <span class="n">slide_width</span><span class="p">,</span> <span class="n">slide_height</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span><span class="si">}</span><span class="s2"> patch coordinates&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Feature extraction via SageMaker</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 4: Extracting features (SageMaker Batch Transform)&quot;</span><span class="p">)</span>
+    <span class="n">manifest_uri</span> <span class="o">=</span> <span class="n">prepare_patch_manifest</span><span class="p">(</span><span class="n">slide_id</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">)</span>
+    <span class="n">job_name</span> <span class="o">=</span> <span class="n">start_feature_extraction</span><span class="p">(</span><span class="n">slide_id</span><span class="p">,</span> <span class="n">manifest_uri</span><span class="p">)</span>
+    <span class="n">features_uri</span> <span class="o">=</span> <span class="n">wait_for_feature_extraction</span><span class="p">(</span><span class="n">job_name</span><span class="p">)</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">load_features_from_s3</span><span class="p">(</span><span class="n">slide_id</span><span class="p">,</span> <span class="n">features_uri</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Extracted features: </span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: MIL aggregation and classification</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 5: Running MIL aggregation&quot;</span><span class="p">)</span>
+    <span class="n">prediction</span><span class="p">,</span> <span class="n">attention_weights</span> <span class="o">=</span> <span class="n">attention_mil_aggregate</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+    <span class="n">heatmap</span> <span class="o">=</span> <span class="n">generate_heatmap</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">attention_weights</span><span class="p">)</span>
+    <span class="n">predicted_class</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">prediction</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">prediction</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Prediction: </span><span class="si">{</span><span class="n">predicted_class</span><span class="si">}</span><span class="s2"> (confidence: </span><span class="si">{</span><span class="n">prediction</span><span class="p">[</span><span class="n">predicted_class</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ROIs identified: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">heatmap</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">h</span><span class="p">[</span><span class="s1">&#39;is_roi&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Store results</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 6: Storing results&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">store_results</span><span class="p">(</span>
+        <span class="n">slide_id</span><span class="o">=</span><span class="n">slide_id</span><span class="p">,</span>
+        <span class="n">prediction</span><span class="o">=</span><span class="n">prediction</span><span class="p">,</span>
+        <span class="n">attention_weights</span><span class="o">=</span><span class="n">attention_weights</span><span class="p">,</span>
+        <span class="n">heatmap</span><span class="o">=</span><span class="n">heatmap</span><span class="p">,</span>
+        <span class="n">num_patches</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span>
+        <span class="n">tissue_fraction</span><span class="o">=</span><span class="n">tissue_fraction</span><span class="p">,</span>
+        <span class="n">processing_start</span><span class="o">=</span><span class="n">processing_start</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Done. needs_review=</span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;needs_review&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_generate_synthetic_thumbnail</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a synthetic slide thumbnail for testing.</span>
+
+<span class="sd">    Creates a 500x400 image with a simulated tissue region (colored area)</span>
+<span class="sd">    surrounded by background (white). This stands in for the lowest pyramid</span>
+<span class="sd">    level of a real WSI.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create a white background (simulating glass)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;RGB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">245</span><span class="p">))</span>
+    <span class="n">pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="c1"># Add a simulated tissue region (pink/purple, like H&amp;E staining)</span>
+    <span class="c1"># Tissue occupies roughly the center 60% of the slide</span>
+    <span class="n">tissue_y_start</span><span class="p">,</span> <span class="n">tissue_y_end</span> <span class="o">=</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">320</span>
+    <span class="n">tissue_x_start</span><span class="p">,</span> <span class="n">tissue_x_end</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">400</span>
+
+    <span class="c1"># Simulate H&amp;E stained tissue: pink-purple with some variation</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+    <span class="n">tissue_region</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+        <span class="n">low</span><span class="o">=</span><span class="p">[</span><span class="mi">180</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">160</span><span class="p">],</span>
+        <span class="n">high</span><span class="o">=</span><span class="p">[</span><span class="mi">220</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">200</span><span class="p">],</span>
+        <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">tissue_y_end</span> <span class="o">-</span> <span class="n">tissue_y_start</span><span class="p">,</span> <span class="n">tissue_x_end</span> <span class="o">-</span> <span class="n">tissue_x_start</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">pixels</span><span class="p">[</span><span class="n">tissue_y_start</span><span class="p">:</span><span class="n">tissue_y_end</span><span class="p">,</span> <span class="n">tissue_x_start</span><span class="p">:</span><span class="n">tissue_x_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">tissue_region</span>
+
+    <span class="c1"># Convert back to image and then to bytes</span>
+    <span class="n">result_img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+    <span class="n">result_img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;PNG&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">buffer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+<span class="c1"># Run the pipeline against a test slide</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># NOTE: This will fail without real AWS resources configured.</span>
+    <span class="c1"># For local testing, mock the AWS calls or use localstack.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">analyze_slide</span><span class="p">(</span>
+        <span class="n">bucket</span><span class="o">=</span><span class="s2">&quot;pathology-slides&quot;</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;incoming/2026/05/case-9921/slide-01.svs&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Final Result ---&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example shows the shape of a pathology slide analysis pipeline. It demonstrates the orchestration pattern, the data flow between steps, and how the AWS services fit together. But there's a significant distance between this and something you'd deploy in a clinical lab. Here's where that gap lives:</p>
+<p><strong>The feature extraction model.</strong> This example simulates model inference with random weights. A real deployment uses a pathology foundation model (trained on millions of patches via self-supervised learning) that produces meaningful feature representations. Training or fine-tuning that model is a separate, substantial effort. You'd typically start with a pre-trained checkpoint and fine-tune the MIL classifier on your specific task (cancer type, grading system).</p>
+<p><strong>Whole slide image I/O.</strong> Reading patches from a gigapixel WSI requires specialized libraries (openslide, tifffile, or DICOM WSI readers) that handle the pyramidal file format and byte-range access. This example sidesteps that complexity entirely. In production, your SageMaker inference container needs these libraries installed and configured for each scanner format you support.</p>
+<p><strong>Stain normalization.</strong> The Macenko or Reinhard stain normalization methods are critical for cross-lab generalization. Without them, a model trained on slides from one lab will underperform on slides stained differently. This example mentions normalization but doesn't implement it. The implementation involves optical density decomposition and stain vector estimation, which adds meaningful complexity.</p>
+<p><strong>Error handling and retries.</strong> A 20-minute GPU job that fails at minute 19 because of a transient S3 error is expensive. Production pipelines need checkpoint/resume capability, idempotent processing (so retrying a failed slide doesn't produce duplicate results), and dead-letter queues for slides that repeatedly fail.</p>
+<p><strong>Step Functions orchestration.</strong> This example runs everything sequentially in one function. Production uses Step Functions to manage the pipeline as a state machine with: parallel processing of multiple slides, wait states for SageMaker jobs, error handling with retries at each step, and timeout protection. The Step Functions definition is a separate artifact.</p>
+<p><strong>Cost optimization.</strong> Feature extraction dominates cost. Production optimizations include: using spot instances for batch transform (60-70% savings), batching multiple slides into a single transform job, caching features for slides that need re-analysis with updated classifiers, and right-sizing GPU instances based on actual patch counts.</p>
+<p><strong>Multi-scanner support.</strong> Different WSI scanners (Aperio, Hamamatsu, Leica, Philips) produce different file formats with different color profiles. A production system needs format-specific readers and scanner-aware stain normalization. Testing across scanner types is essential before deployment.</p>
+<p><strong>Pathologist viewer integration.</strong> The heatmap and predictions need to appear in the pathologist's existing slide viewer (e.g., Sectra, Proscia, PathAI viewer). This requires integration with the viewer's API, overlay rendering at the correct coordinates and zoom levels, and a UX that doesn't disrupt the pathologist's workflow.</p>
+<p><strong>Regulatory considerations.</strong> If your system's output influences diagnostic decisions (even as &quot;decision support&quot;), you're likely in FDA-regulated territory. The regulatory pathway (510(k), De Novo, or Breakthrough Device) requires clinical validation studies, quality management systems, and ongoing post-market surveillance. This is a 12-18 month process per indication.</p>
+<p><strong>Audit trail and versioning.</strong> HIPAA requires a complete audit trail. Every slide processed, every model version used, every prediction made, and every pathologist action (confirmed, overridden, ignored) must be logged immutably. Model version tracking is critical: when you update the model, you need to know which predictions were made by which version.</p>
+<p><strong>Testing with real WSI data.</strong> Unit tests with synthetic thumbnails (like this example) verify the pipeline logic. But you also need integration tests with real whole slide images from public datasets (TCGA, Camelyon) to validate that the full pipeline produces clinically meaningful results. Never use patient slides in development without IRB approval and proper de-identification.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter09.08-pathology-slide-analysis.html">Recipe 9.8</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

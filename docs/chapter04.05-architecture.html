@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 4.5 Architecture and Implementation: Medication Adherence Intervention Targeting</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested nav-active" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-45-architecture-and-implementation-medication-adherence-intervention-targeting">Recipe 4.5 Architecture and Implementation: Medication Adherence Intervention Targeting</h1>
+<p><em>Companion to <a href="chapter04.05-medication-adherence-intervention-targeting.html">Recipe 4.5: Medication Adherence Intervention Targeting</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon SageMaker for the model training and serving stack.</strong> Four model families live here: the per-medication clinical-need scorer (gradient-boosted), the barrier classifier (gradient-boosted multi-class with optional LLM augmentation), the per-intervention engagement predictors (gradient-boosted binary, one per intervention type), and the per-intervention uplift estimators (causal forest or X-learner, one per intervention type). SageMaker Training Jobs handle periodic retraining. The recommendation run uses SageMaker Batch Transform; same reasoning as 4.4 (batch is dramatically cheaper than an idle real-time endpoint, and adherence runs are scheduled, not interactive). SageMaker is HIPAA-eligible under BAA.</p>
+<p><strong>Amazon SageMaker Feature Store for per-(patient, medication) features.</strong> This is where the Feature Store investment from Recipe 4.4 pays off again. The feature definitions for clinical risk, engagement history, demographics, SDOH proxies, and prior intervention engagement are reused. New features specific to this recipe (per-medication PDC, per-medication days-since-last-fill, regimen complexity, copay-paid history, channel mix) are added as new feature groups. The offline store powers the batch recommendation run; the online store powers any real-time intervention triggers (e.g., a refill-gap-detected event that fires a same-day intervention).</p>
+<p><strong>Amazon DynamoDB for the intervention catalog, recommendation log, patient profile, and engagement aggregates.</strong> Same <code>patient-profile</code> table from prior recipes; new attributes added (<code>pharmacy_data_quality</code>, <code>cash_pay_history</code>, <code>cost_sharing_tier</code>, <code>med_sync_enrolled</code>, <code>prior_interventions</code>). New table <code>intervention-catalog</code> for the dozens of intervention records. New table <code>barrier-classifications</code> keyed on (patient_id, therapeutic_class) for the latest barrier ranking. The recommendation log captures (patient_id, intervention_id, medication_class, run_date, priority, allocated, allocation_reason) for downstream attribution.</p>
+<p><strong>Amazon S3 for the data lake and recommendation outputs.</strong> Pharmacy claims land in S3 (via Kinesis Firehose from PBM feeds), the offline feature store is backed by S3, the eligible-target sets are written to S3 per run, and the recommendation outputs land in S3 for the orchestrator to consume. Engagement events and clinical outcomes accumulate in S3 for the long-horizon cost-effectiveness evaluation.</p>
+<p><strong>AWS Glue and Amazon Athena for adherence computation and outcome evaluation.</strong> The PDC computation is a SQL-shaped problem at scale: window functions over fill events, carry-forward joins, per-(patient, therapeutic_class) aggregation. Glue jobs run nightly to compute lag-aware PDC and emit the per-(patient, medication) feature snapshots to the offline feature store. Athena powers the cohort dashboards and the per-intervention effectiveness queries.</p>
+<p><strong>AWS Step Functions for batch orchestration.</strong> Same pattern as 4.4. The eight-stage batch pipeline is a Step Functions workflow: trigger on schedule, run target-set selection (Glue), run scoring (Batch Transform jobs in parallel for need, barrier, engagement, uplift), run combined ranking (Lambda), run allocation (Lambda), write outreach list (Lambda), trigger orchestrator (Lambda invoking 4.1's APIs and the staff-queue handoffs).</p>
+<p><strong>Amazon EventBridge for scheduling and refill-gap triggers.</strong> EventBridge schedules the weekly batch run. EventBridge rules also route real-time pharmacy-event signals: a <code>refill_gap_detected</code> event (patient is N days past expected refill) can trigger a same-day intervention pathway for high-risk medications, bypassing the weekly cycle for time-sensitive cases. Use EventBridge rules sparingly for real-time triggers; the operational complexity adds up fast.</p>
+<p><strong>Amazon Kinesis Data Streams for engagement and pharmacy events.</strong> Same engagement-event bus from 4.1 through 4.4. New event types: <code>pharmacy_fill_observed</code>, <code>refill_gap_detected</code>, <code>adherence_intervention_recommended</code>, <code>intervention_outreach_sent</code>, <code>intervention_engaged</code>, <code>intervention_completed</code>, <code>barrier_elicited</code>, <code>med_sync_enrolled</code>, <code>cost_assistance_initiated</code>, <code>cost_assistance_approved</code>, <code>pcp_override</code>, <code>pharmacist_consult_completed</code>. The attribution Lambda joins these events to the recommendation log in DynamoDB and persists per-(intervention, outcome) records.</p>
+<p><strong>Amazon Bedrock for barrier-classification second opinion, outreach tailoring, and pharmacist pre-call briefs.</strong> Three distinct LLM use cases:</p>
+<ol>
+<li>Barrier classification second opinion. A structured-output prompt that takes the patient's adherence pattern, claims context, and prior outreach notes, and returns <code>{predicted_barrier, confidence, rationale}</code>. Used as augmentation, not primary signal.</li>
+<li>Outreach message tailoring (same pattern as 4.4). The structured intervention assignment goes in, the personalized message comes out, the message goes through a clinical-claims validator before send.</li>
+<li>Pharmacist pre-call brief generation. A structured prompt produces a one-page brief: the patient's regimen, the suspected barrier, prior fill pattern, suggested talking points, contraindications. The pharmacist reads it before the call.</li>
+</ol>
+<p>Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models.</p>
+<p><strong>AWS Lambda for per-stage glue logic.</strong> The barrier classifier (rule-based stage), the priority combiner, the allocator, the orchestrator, the engagement-attribution worker, and the contact-cap enforcer all run as Lambdas. Same scale considerations as 4.4; the allocator can stay under the 250 MB layer ceiling for greedy allocation, and graduates to a containerized Lambda for LP-based allocation (Recipe 14.x).</p>
+<p><strong>Amazon Connect (or a contracted outreach platform) for telephonic pharmacist outreach.</strong> When the recommended intervention is a clinical pharmacist consult, the assignment flows into a staff work queue. Plans with in-house clinical pharmacists often build on Amazon Connect for the contact-center capabilities (call recording for QA, call-disposition codes feeding back into the engagement stream, integration with the scheduled-callback model). Plans with vendor pharmacist services use the vendor's queue. The AWS-specific piece is HIPAA-eligible call recording and the contact-flow-to-engagement-event integration.</p>
+<p><strong>Amazon SES for member-facing email and SMS through a partner.</strong> Same as 4.4; SES under BAA for email, SMS through Pinpoint or a contracted vendor under BAA.</p>
+<p><strong>Amazon QuickSight for operations dashboards.</strong> Cohort-sliced PDC trends, per-intervention completion and uplift, barrier-distribution dashboards, Star-Ratings-tracking dashboards (movement across the 80 percent PDC line by therapeutic class), capacity-utilization views. QuickSight on Athena, with row-level security for cohort-specific filters.</p>
+<p><strong>AWS KMS, CloudTrail, CloudWatch.</strong> Same PHI infrastructure pattern as prior recipes. Customer-managed keys, CloudTrail data events on PHI tables, CloudWatch alarms on batch-run failures and cohort-metric drift.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Sources
+      A1[PBM Retail Claims]
+      A2[PBM Mail-Order]
+      A3[Specialty Pharmacy]
+      A4[EHR Clinical Context]
+      A5[Engagement History]
+      A6[Catalog and Plan Config]
+    end
+
+    A1 --&gt;|Streaming| B1[Kinesis Firehose\npharmacy-claims]
+    A2 --&gt;|Streaming| B1
+    A3 --&gt;|Daily ETL| B1
+    A4 --&gt;|Daily ETL| C1[Glue Jobs]
+    A5 --&gt;|Streaming| C1
+    A6 --&gt;|Catalog updates| D1[Lambda\ncatalog-sync]
+
+    B1 --&gt; S1[S3\npharmacy-data-lake]
+    S1 --&gt; C1
+    C1 --&gt; F1[SageMaker Feature Store\nadherence + clinical features]
+    D1 --&gt; D2[DynamoDB\nintervention-catalog]
+
+    F1 --&gt; BC1[Step Functions\nbarrier-classification]
+    BC1 --&gt; BC2[Lambda\nrule-based classifier]
+    BC1 --&gt; BC3[SageMaker Batch Transform\nsupervised classifier]
+    BC1 --&gt; BC4[Bedrock\nLLM second opinion]
+    BC2 --&gt; BC5[DynamoDB\nbarrier-classifications]
+    BC3 --&gt; BC5
+    BC4 --&gt; BC5
+
+    E1[EventBridge\nweekly schedule] --&gt; SF1[Step Functions\nbatch-recommendation]
+    E2[EventBridge\nrefill-gap rule] --&gt; SF1
+
+    SF1 --&gt; G1[Glue\ntarget-set selection]
+    G1 --&gt; G2[S3\ntarget-patients]
+    G2 --&gt; H1[SageMaker Batch Transform\nclinical-need-scorer]
+    G2 --&gt; H2[SageMaker Batch Transform\nengagement-predictors]
+    G2 --&gt; H3[SageMaker Batch Transform\nuplift-estimators]
+    BC5 --&gt; H4[Lambda\nbarrier-fit-scorer]
+    H1 --&gt; I1[Lambda\npriority-combiner]
+    H2 --&gt; I1
+    H3 --&gt; I1
+    H4 --&gt; I1
+    I1 --&gt; I2[Lambda\nheterogeneous-allocator]
+    I2 --&gt; I3[DynamoDB\nrecommendation-log]
+    I2 --&gt; I4[Lambda\norchestrator]
+
+    I4 --&gt; J1[Bedrock\nmessage-tailoring]
+    I4 --&gt; J2[Bedrock\npharmacist-brief]
+    I4 --&gt; J3[DynamoDB\npatient-profile]
+    I4 --&gt; J4[Recipe 4.1\nchannel-optimizer]
+    J4 --&gt; K1[SES / SMS / Portal]
+    I4 --&gt; K2[Amazon Connect\npharmacist queue]
+    I4 --&gt; K3[Cost-assistance\nstaff queue]
+    I4 --&gt; K4[EHR Care-Team Inbox]
+    J1 --&gt; K1
+    J2 --&gt; K2
+
+    K1 -.Engagement events.-&gt; L1[Kinesis\nengagement-stream]
+    K2 -.Pharmacist events.-&gt; L1
+    K3 -.Cost-assist events.-&gt; L1
+    K4 -.PCP override events.-&gt; L1
+    B1 -.Fill events.-&gt; L1
+    L1 --&gt; L2[Lambda\nattribution]
+    L2 --&gt; L3[DynamoDB\nengagement-events]
+    L2 --&gt; L4[Kinesis Firehose]
+    L4 --&gt; S2[S3\nengagement-data-lake]
+    S2 --&gt; L5[Glue + Athena\noutcome-evaluation]
+    S2 --&gt; L6[QuickSight\ndashboards]
+    L3 --&gt; M1[SageMaker Training\nperiodic retrain]
+    M1 --&gt; H1
+    M1 --&gt; H2
+    M1 --&gt; H3
+    M1 --&gt; BC3
+
+    style F1 fill:#9ff,stroke:#333
+    style D2 fill:#9ff,stroke:#333
+    style I3 fill:#9ff,stroke:#333
+    style J3 fill:#9ff,stroke:#333
+    style L3 fill:#9ff,stroke:#333
+    style BC5 fill:#9ff,stroke:#333
+    style S1 fill:#cfc,stroke:#333
+    style S2 fill:#cfc,stroke:#333
+    style L1 fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon SageMaker (Training, Batch Transform, Feature Store), Amazon DynamoDB, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon SES, Amazon Pinpoint or contracted SMS provider, Amazon Connect (optional, for in-house pharmacist contact center), Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege: <code>sagemaker:CreateTransformJob</code> and <code>sagemaker:DescribeTransformJob</code> scoped to specific model ARNs; <code>dynamodb:GetItem</code> / <code>BatchWriteItem</code> / <code>UpdateItem</code> scoped to specific tables; <code>bedrock:InvokeModel</code> on specific foundation-model ARNs; <code>s3:GetObject</code> / <code>PutObject</code> scoped to feature, claims, and recommendation buckets; <code>kinesis:PutRecord</code> on the engagement stream; <code>ses:SendEmail</code> and <code>pinpoint:SendMessages</code> scoped to BAA-covered identities; <code>connect:*</code> scoped to the pharmacist-queue contact flow only. Never <code>*</code>.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker (Training, Batch Transform, Feature Store), DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, SES, Pinpoint, Connect (when configured for HIPAA workloads), KMS are on the HIPAA Eligible Services list.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>DynamoDB: customer-managed KMS at rest. S3: SSE-KMS with bucket-level keys (especially the pharmacy-claims bucket; raw fill data is highly sensitive). Kinesis and Firehose: server-side encryption. SageMaker training and inference: VPC-only, with KMS keys for model artifacts and Feature Store offline storage. Lambda log groups KMS-encrypted. The recommendation log contains (patient_id, intervention_id, medication_class, barrier) tuples that are highly inferential; treat as PHI from day one.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas in VPC. SageMaker training, Batch Transform, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (<code>states</code>), EventBridge (<code>events</code>), Glue, Athena, STS, SES, Pinpoint, Connect.  NAT Gateway only for external services without VPC endpoints (e.g., a manufacturer copay-card vendor portal); restrict egress with security groups.  PBM claims feeds typically arrive via SFTP over a Direct Connect tunnel or PrivateLink connection rather than over the public internet. VPC Flow Logs enabled.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the patient-profile table, intervention-catalog table, recommendation-log table, barrier-classifications table, and engagement-events table. Data events on the S3 buckets containing pharmacy claims, per-patient feature snapshots, and recommendation outputs.</td>
+</tr>
+<tr>
+<td><strong>Equity Governance</strong></td>
+<td>Document the allocator's policy weights (need vs. barrier-fit vs. engagement vs. uplift vs. cost-effectiveness trade-off), the equity floors (capacity reserved for cohorts with documented adherence disparities), and the cohort-monitoring thresholds before launch. Cross-functional review committee (medical director, pharmacist lead, equity lead, data science, vendor management) signs off on the policy and reviews quarterly. Star-Ratings-driven targeting decisions go through this committee, not just the analytics team.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>A starter set of synthetic patients with realistic medication regimens (Synthea can generate prescribing patterns; supplement with synthetic fill events at varying adherence levels). A small intervention catalog (3-5 interventions: text reminders, pharmacist consult, copay-card navigation, med-sync, regimen-simplification PCP referral). Synthetic engagement labels for engagement-prediction training. For uplift training, a randomized pilot is the gold standard; in development, simulated treatment-effect data lets you validate the modeling pipeline before running real members through it.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a 400,000-member health plan with ~80,000 chronic-medication patients running weekly: SageMaker Batch Transform (4 model families per run, ~80K rows per run, weekly): roughly $80-200/month at modest instance sizes. SageMaker Feature Store offline store: $50-100/month. SageMaker training (monthly retrain of 4 model families): $100-250/month. DynamoDB on-demand: $50-150/month. Lambda + Step Functions: $50-100/month. Bedrock for barrier classification + outreach tailoring + pharmacist briefs (~30K LLM calls per week, Haiku-class): $300-600/month. SES + Pinpoint SMS (~20K outreach per week): $40-100/month. Connect (if used, 4 FTE pharmacists): $200-400/month plus telephony. S3 + Glue + Athena: $150-400/month. QuickSight: $50/user/month for authors plus reader fees. Estimated total: $1,000-2,500/month range for a regional plan, before staff time and intervention vendor costs.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon SageMaker</strong></td>
+<td>Hosts the clinical-need scorer, barrier classifier, per-intervention engagement predictors, and per-intervention uplift estimators; runs training and Batch Transform jobs</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Per-(patient, medication) features (PDC, fill cadence, regimen complexity) reused across this recipe and Recipes 4.4, 4.6, 4.7</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Stores intervention catalog, recommendation log, patient profile (extended from 4.1/4.4), barrier classifications, and engagement aggregates</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Hosts the pharmacy-claims data lake, offline feature store, target-set lists, recommendation outputs, training data, and engagement data lake</td>
+</tr>
+<tr>
+<td><strong>AWS Glue</strong></td>
+<td>Adherence computation (PDC, regimen complexity), target-set selection, outcome-evaluation jobs</td>
+</tr>
+<tr>
+<td><strong>Amazon Athena</strong></td>
+<td>SQL access to data lake; powers cohort dashboards and per-intervention cost-effectiveness queries</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates the weekly batch recommendation pipeline and the barrier-classification pipeline with retry, DLQ, and per-stage visibility</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Schedules batch run; routes refill-gap-detected events for time-sensitive interventions; routes catalog change events</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Carries pharmacy fill events, engagement events, pharmacist consult events, and PCP overrides into attribution</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Firehose</strong></td>
+<td>Lands pharmacy claims and engagement events into S3 Parquet for evaluation and training data prep</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Runs the rule-based barrier classifier, priority combiner, heterogeneous allocator, orchestrator, attribution worker, and contact-cap enforcer</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock</strong></td>
+<td>Hosts the LLM for barrier-classification second opinion, member-facing message tailoring, and pharmacist pre-call briefs</td>
+</tr>
+<tr>
+<td><strong>Amazon SES</strong></td>
+<td>Bulk email delivery under BAA for adherence outreach</td>
+</tr>
+<tr>
+<td><strong>Amazon Pinpoint</strong></td>
+<td>SMS delivery for reminder interventions</td>
+</tr>
+<tr>
+<td><strong>Amazon Connect</strong></td>
+<td>Optional contact-center for in-house clinical pharmacist outreach; HIPAA-eligible when configured per AWS guidance</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Operational dashboards for adherence operations team, medical director, pharmacist lead, and equity committee</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for all PHI-containing stores</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics, cohort-sliced PDC and intervention dashboards, alarms</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for all PHI-related API calls</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> Useful aws-samples patterns for this recipe:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: XGBoost and SageMaker Batch Transform notebooks that mirror the per-intervention scoring pattern used here.</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage that maps onto the per-(patient, medication) feature pipeline.</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Demonstrates structured-output prompting applicable to the barrier-classification second opinion and message-tailoring steps.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Compute per-(patient, medication) adherence features.</strong> The PDC computation runs nightly. For each patient, for each chronic medication therapeutic class, compute carry-forward days-supply, the PDC over the trailing 365 days (and 90 days, for short-window targeting), and per-medication regimen features. Skip carry-forward and a 90-day mail-order patient looks like a non-adherent retail patient.</p>
+<pre class="code code-plain"><code>FUNCTION compute_adherence_features(patients, run_date):
+    // Pull settled fill claims for the trailing 12 months. The &quot;settled&quot;
+    // window means claims with fill_date at least 30 days before run_date,
+    // because retail claims arrive on a 1-2 day lag, mail-order on a 5-14
+    // day lag, and specialty up to 30 days. Computing adherence on
+    // not-yet-settled data produces noisy, biased numbers.
+    settled_window_end = run_date - 30 days
+    settled_window_start = settled_window_end - 365 days
+
+    fills = Athena.Query(&quot;&quot;&quot;
+        SELECT patient_id, ndc, therapeutic_class, fill_date, days_supply,
+               channel, copay_paid, was_cash_pay, pharmacy_id
+        FROM pharmacy_claims
+        WHERE fill_date BETWEEN :start AND :end
+          AND therapeutic_class IN :tracked_classes
+    &quot;&quot;&quot;, params = { start: settled_window_start, end: settled_window_end,
+                    tracked_classes: TRACKED_THERAPEUTIC_CLASSES })
+
+    FOR each (patient_id, therapeutic_class) in groupby(fills):
+        // Carry-forward construction: for each fill, mark days from
+        // fill_date through fill_date + days_supply - 1 as &quot;covered&quot;.
+        // Overlapping fills (early refills, stockpiling) extend the
+        // covered window but don&#x27;t double-count.
+        days_covered = build_covered_set(fills_for_class)
+
+        pdc_365 = len(days_covered ∩ trailing_365_days) / 365
+        pdc_90  = len(days_covered ∩ trailing_90_days) / 90
+
+        // Days since last fill: the gap between today and the most recent
+        // fill date. A patient on a 30-day supply who hasn&#x27;t filled in 45
+        // days has a 15-day gap. A patient on a 90-day mail-order supply
+        // who hasn&#x27;t filled in 45 days is fine.
+        last_fill_date = max(fills_for_class.fill_date)
+        days_since_last_fill = settled_window_end - last_fill_date
+        last_days_supply     = fills_for_class[-1].days_supply
+        gap_days             = max(0, days_since_last_fill - last_days_supply)
+
+        // Channel mix and cost-sharing pattern. These will feed the
+        // barrier classifier.
+        channel_mix      = compute_channel_distribution(fills_for_class)
+        copay_paid_stats = compute_copay_stats(fills_for_class)
+        cash_pay_count   = sum(fills_for_class.was_cash_pay)
+
+        feature_record = {
+            patient_id:              patient_id,
+            therapeutic_class:       therapeutic_class,
+            pdc_365:                 pdc_365,
+            pdc_90:                  pdc_90,
+            gap_days:                gap_days,
+            last_fill_date:          last_fill_date,
+            channel_mix:             channel_mix,
+            copay_paid_p50:          copay_paid_stats.p50,
+            copay_paid_p90:          copay_paid_stats.p90,
+            cash_pay_indicator:      (cash_pay_count &gt; 0),
+            run_date:                run_date,
+            data_quality_flag:       assess_data_completeness(fills_for_class)
+                // values include &#x27;complete&#x27;, &#x27;sparse_history&#x27;,
+                // &#x27;multi_pharmacy_fragmented&#x27;, &#x27;cash_pay_partial&#x27;,
+                // &#x27;recent_plan_change&#x27;. Downstream consumers can
+                // gate on this when adherence-by-claims is unreliable.
+        }
+
+        SageMaker.FeatureStore.PutRecord(
+            feature_group = &quot;patient-medication-adherence&quot;,
+            record        = feature_record
+        )
+
+    // Compute regimen-level features (across all chronic medications).
+    FOR each patient_id:
+        regimen = list_chronic_medications(patient_id, settled_window_end)
+        SageMaker.FeatureStore.PutRecord(
+            feature_group = &quot;patient-regimen&quot;,
+            record = {
+                patient_id:           patient_id,
+                regimen_size:         len(regimen),
+                doses_per_day_total:  sum(regimen.doses_per_day),
+                num_classes_tracked:  len(distinct(regimen.therapeutic_class)),
+                pharmacy_count:       count_distinct_pharmacies(regimen),
+                med_sync_enrolled:    member_profile(patient_id).med_sync_enrolled,
+                run_date:             run_date
+            }
+        )
+</code></pre>
+<p><strong>Step 2: Classify barriers per (patient, medication) below the adherence threshold.</strong> The rule-based classifier runs first and is deterministic; the supervised classifier refines confidence where labels exist; the LLM second opinion runs for high-stakes cases. The output is a ranked list of barriers per (patient, medication). Skip this and the recommender treats every adherence gap the same way.</p>
+<pre class="code code-plain"><code>FUNCTION classify_barriers(target_set, features, run_date):
+    FOR each (patient_id, therapeutic_class) in target_set:
+        adherence = features.get_adherence(patient_id, therapeutic_class)
+        regimen   = features.get_regimen(patient_id)
+        claims_context = features.get_claims_context(patient_id, therapeutic_class)
+            // Includes: most-recent-fill copay, trend in copay over time,
+            // formulary tier of the medication, brand-vs-generic status,
+            // recent fills of competing/substitute medications,
+            // recent gap onset relative to copay change events,
+            // recent gap onset relative to side-effect-coded encounters.
+        engagement_context = features.get_engagement_history(patient_id)
+            // Includes: prior intervention engagement, channel preference,
+            // language, prior elicited barriers (gold from pharmacist consults).
+
+        // Stage A: rule-based pass. Each rule emits one or more barrier
+        // hypotheses with rule-defined confidences. Multiple rules can fire.
+        rule_results = []
+
+        IF adherence.gap_days &gt; 30 AND
+           claims_context.most_recent_copay &gt; COPAY_HIGH_THRESHOLD AND
+           claims_context.gap_onset_aligned_with_copay_change:
+            rule_results.append({ barrier: &quot;cost&quot;,          rule_confidence: 0.85 })
+
+        IF claims_context.most_recent_copay &gt; COPAY_HIGH_THRESHOLD AND
+           NOT claims_context.gap_onset_aligned_with_copay_change AND
+           NOT member.lis_enrolled:
+            rule_results.append({ barrier: &quot;cost&quot;,          rule_confidence: 0.55 })
+
+        IF regimen.regimen_size &gt;= 4 AND
+           adherence.fills_pattern_is_sporadic AND
+           NOT regimen.med_sync_enrolled:
+            rule_results.append({ barrier: &quot;complexity&quot;,    rule_confidence: 0.65 })
+            rule_results.append({ barrier: &quot;forgetfulness&quot;, rule_confidence: 0.45 })
+
+        IF claims_context.recent_side_effect_encounter AND
+           adherence.gap_started_after_side_effect_encounter:
+            rule_results.append({ barrier: &quot;side_effects&quot;, rule_confidence: 0.80 })
+
+        IF therapeutic_class in SYMPTOMATIC_LATENT_CLASSES AND
+           adherence.discontinued_after_one_or_two_fills:
+            // Hypertension, statins: classic asymptomatic conditions where
+            // patients often stop because they &quot;feel fine&quot;.
+            rule_results.append({ barrier: &quot;beliefs&quot;, rule_confidence: 0.55 })
+
+        IF adherence.fills_pattern_is_consistent_then_stopped AND
+           NOT claims_context.recent_side_effect_encounter AND
+           claims_context.recent_pcp_encounter_count == 0:
+            rule_results.append({ barrier: &quot;access&quot;, rule_confidence: 0.40 })
+
+        // Stage B: supervised refinement. The supervised classifier was
+        // trained on (features, elicited-barrier) labels from prior
+        // pharmacist consult outcomes. Its output is a probability
+        // distribution over the six barrier classes. We blend it with the
+        // rule-based output rather than overriding, because the rule-based
+        // output is auditable and the supervised model is the augmentation.
+        supervised_probs = SupervisedClassifier.predict(features_for_classifier)
+
+        blended = blend_rule_and_supervised(rule_results, supervised_probs,
+                                             rule_weight = 0.6,
+                                             supervised_weight = 0.4)
+
+        // Stage C: LLM second opinion. Used only when:
+        // - blended top-1 confidence is low (&lt; 0.55), OR
+        // - the patient is high-priority on need score, OR
+        // - rule-based and supervised disagree materially.
+        llm_review = null
+        IF should_invoke_llm(blended, need_score):
+            llm_review = Bedrock.InvokeModel(
+                model_id = BARRIER_CLASSIFIER_MODEL_ID,
+                body     = build_barrier_prompt(adherence, claims_context,
+                                                 engagement_context, regimen,
+                                                 BARRIER_OUTPUT_SCHEMA)
+            )
+            llm_parsed = parse_json(llm_review.completion)
+                // { predicted_barrier, confidence, rationale,
+                //   alternative_barriers, uncertainty_notes }
+
+            // Validate the LLM output: barrier must be in allowed taxonomy,
+            // rationale must reference observed data points (not invent).
+            validate_barrier_review(llm_parsed, observed_data = features)
+                // 
+
+            // Flag for human review if LLM disagrees with blended top-1
+            // by a material margin and the case is high-stakes.
+            IF llm_parsed.predicted_barrier != blended.top_1.barrier AND
+               need_score &gt; NEED_REVIEW_THRESHOLD:
+                flag_for_pharmacist_review(patient_id, therapeutic_class,
+                                            blended, llm_parsed)
+
+        // Persist the ranked barriers. Do not collapse to a single label.
+        DynamoDB.PutItem(&quot;barrier-classifications&quot;, {
+            patient_id:        patient_id,
+            therapeutic_class: therapeutic_class,
+            run_date:          run_date,
+            ranked_barriers:   blended.ranked_list,
+                // [ { barrier: &quot;cost&quot;, confidence: 0.72, sources: [&quot;rule&quot;, &quot;supervised&quot;] },
+                //   { barrier: &quot;beliefs&quot;, confidence: 0.21, sources: [&quot;rule&quot;] }, ... ]
+            llm_second_opinion: llm_parsed,
+            data_quality_flag: adherence.data_quality_flag,
+            classifier_versions: {
+                rules:      RULES_VERSION,
+                supervised: SUPERVISED_MODEL_VERSION,
+                llm:        BARRIER_CLASSIFIER_MODEL_ID
+            }
+        })
+</code></pre>
+<p><strong>Step 3: Build the per-(patient, intervention, medication) candidate set with eligibility.</strong> Not every intervention is eligible for every (patient, medication). Cost-assistance navigation is gated on cost-sharing tier and brand status. Med-sync requires the patient's pharmacy to be a partner. Pharmacist consults require pharmacist availability in the patient's region/language. Skip the eligibility filter and you waste downstream model inference on combinations that can't ever be allocated.</p>
+<pre class="code code-plain"><code>FUNCTION build_candidate_triples(target_set, intervention_catalog, run_date):
+    candidates = []
+    FOR each (patient_id, therapeutic_class) in target_set:
+        member  = lookup_member(patient_id)
+        barriers = lookup_barriers(patient_id, therapeutic_class)
+
+        FOR each intervention in intervention_catalog:
+            // Hard eligibility filters.
+            IF intervention.brand_only AND
+               NOT lookup_medication(patient_id, therapeutic_class).is_brand:
+                CONTINUE
+
+            IF intervention.requires_lis AND NOT member.lis_enrolled:
+                CONTINUE
+
+            IF intervention.requires_partner_pharmacy AND
+               member.preferred_pharmacy_id NOT IN PARTNER_PHARMACIES:
+                CONTINUE
+
+            IF intervention.requires_language AND
+               member.preferred_language NOT IN intervention.supported_languages:
+                CONTINUE
+
+            // 
+
+            IF intervention.cooldown_days &gt; 0:
+                IF member.last_intervention_of_type(intervention.type)
+                   .completed_within(intervention.cooldown_days, run_date):
+                    CONTINUE
+
+            // Mutual-exclusion: if a higher-touch intervention is already
+            // scheduled or in-flight for this (patient, medication),
+            // exclude lower-touch alternatives that would conflict.
+            IF intervention.conflicts_with_inflight(patient_id, therapeutic_class):
+                CONTINUE
+
+            candidates.append({
+                patient_id:        patient_id,
+                therapeutic_class: therapeutic_class,
+                intervention_id:   intervention.intervention_id,
+                intervention_type: intervention.type,
+                intervention_cost: intervention.marginal_cost,
+                supported_barriers: intervention.supported_barriers,
+                barriers:          barriers,
+                run_date:          run_date
+            })
+
+    write_candidates(candidates, run_date)
+    RETURN candidates
+</code></pre>
+<p><strong>Step 4: Score need, barrier-fit, engagement, and uplift per candidate.</strong> Same fan-out pattern as Recipe 4.4. SageMaker Batch Transform jobs in parallel; do not loop sequentially across interventions or therapeutic classes. Skip uplift and you over-target patients who would have improved on their own.</p>
+<pre class="code code-plain"><code>FUNCTION score_candidates(candidates, run_date):
+    // Group candidates by intervention_type so each intervention&#x27;s models
+    // run on the relevant subset; the per-intervention engagement and
+    // uplift models are different model artifacts.
+    candidates_by_intervention = group_by(candidates, &quot;intervention_id&quot;)
+
+    job_handles = []
+    FOR each intervention_id, intervention_candidates in candidates_by_intervention:
+        candidate_path = &quot;s3://adherence-candidates/run_date=&quot; + run_date +
+                         &quot;/intervention=&quot; + intervention_id + &quot;/candidates.parquet&quot;
+        write_parquet(intervention_candidates, candidate_path)
+
+        // Need score is per (patient, medication) not per intervention,
+        // so it&#x27;s invoked once per therapeutic class rather than per
+        // (intervention, class). Submit it once per class.
+        FOR each therapeutic_class in distinct_classes(intervention_candidates):
+            need_job = SageMaker.CreateTransformJob(
+                transform_job_name = &quot;need-&quot; + therapeutic_class + &quot;-&quot; + run_date,
+                model_name         = NEED_MODEL_NAMES[therapeutic_class],
+                transform_input    = filter_to_class(candidate_path, therapeutic_class),
+                transform_output   = &quot;s3://adherence-scores/run_date=&quot; + run_date +
+                                    &quot;/need/&quot; + therapeutic_class + &quot;/&quot;,
+                instance_type      = &quot;ml.m5.large&quot;,
+                instance_count     = 1
+            )
+            job_handles.append(need_job)
+
+        // Engagement prediction: per-intervention model. Different
+        // intervention types have different engagement signatures.
+        engagement_job = SageMaker.CreateTransformJob(
+            transform_job_name = &quot;eng-&quot; + intervention_id + &quot;-&quot; + run_date,
+            model_name         = ENGAGEMENT_MODEL_NAMES[intervention_id],
+            transform_input    = candidate_path,
+            transform_output   = &quot;s3://adherence-scores/run_date=&quot; + run_date +
+                                &quot;/engagement/&quot; + intervention_id + &quot;/&quot;,
+            instance_type      = &quot;ml.m5.large&quot;,
+            instance_count     = 1
+        )
+        job_handles.append(engagement_job)
+
+        // Uplift estimate: per-intervention model. The uplift target is
+        // the change in PDC over the next 90 days conditional on
+        // recommendation. Causal forest with the intervention as the
+        // treatment indicator.
+        uplift_job = SageMaker.CreateTransformJob(
+            transform_job_name = &quot;uplift-&quot; + intervention_id + &quot;-&quot; + run_date,
+            model_name         = UPLIFT_MODEL_NAMES[intervention_id],
+            transform_input    = candidate_path,
+            transform_output   = &quot;s3://adherence-scores/run_date=&quot; + run_date +
+                                &quot;/uplift/&quot; + intervention_id + &quot;/&quot;,
+            instance_type      = &quot;ml.m5.xlarge&quot;,
+            instance_count     = 1
+        )
+        job_handles.append(uplift_job)
+
+    wait_for_jobs(job_handles)
+
+    // Barrier-fit scoring is a deterministic lookup, not a model call:
+    // for each candidate, the barrier-fit score is the dot product
+    // between the patient&#x27;s ranked-barriers vector and the intervention&#x27;s
+    // supported-barriers vector.
+    FOR candidate in candidates:
+        candidate.barrier_fit = compute_barrier_fit(
+            patient_barriers       = candidate.barriers,
+            intervention_supported = candidate.supported_barriers
+        )
+            // e.g., if patient barriers are [cost: 0.72, beliefs: 0.21]
+            // and intervention &quot;cost-assistance navigation&quot; supports
+            // {cost: 1.0, beliefs: 0.0}, barrier_fit = 0.72.
+            // For &quot;text reminder&quot; supporting {forgetfulness: 1.0,
+            // complexity: 0.6, beliefs: 0.0, cost: 0.0, side_effects: 0.0,
+            // access: 0.0}, the same patient&#x27;s barrier_fit would be ~0.0.
+
+    consolidate_scores(candidates, run_date)
+        // produces s3://adherence-scores/run_date=&lt;run_date&gt;/all-scores.parquet
+        // with columns: patient_id, therapeutic_class, intervention_id,
+        //               need_score, barrier_fit, engagement_prob,
+        //               uplift_estimate, intervention_cost
+</code></pre>
+<p><strong>Step 5: Combine scores into per-candidate priority with cost-effectiveness.</strong> The combination weights are policy: documented, version-controlled, reviewable. The cost-effectiveness term divides expected-uplift by intervention cost so a $0.05 reminder doesn't get crowded out by a $80 pharmacist consult on every candidate. Skip the cost term and the system over-allocates expensive interventions to patients where a cheaper one would have worked.</p>
+<pre class="code code-plain"><code>FUNCTION compute_priority(scored_candidates, policy):
+    // Policy weights live in versioned config, not code:
+    // {
+    //   need:           0.25,
+    //   barrier_fit:    0.20,
+    //   engagement:     0.10,
+    //   uplift:         0.35,
+    //   cost_efficiency: 0.10
+    // }
+    // The cost_efficiency term rewards interventions that produce uplift
+    // per dollar spent, computed as uplift_estimate / intervention_cost
+    // and normalized to [0, 1] within the candidate pool.
+
+    // Normalize within meaningful comparison groups. Need scores compare
+    // across classes (a clinical-need 0.8 means roughly the same thing
+    // for statins as for diabetes meds). Engagement and uplift are
+    // normalized within intervention type.
+    candidates_norm = normalize_scores(scored_candidates, policy.normalization)
+
+    FOR each row in candidates_norm:
+        cost_efficiency = row.uplift_estimate / max(row.intervention_cost, MIN_COST_FOR_DIVISION)
+        cost_efficiency_norm = normalize_within_intervention_type(cost_efficiency, row.intervention_type)
+
+        row.priority = (policy.weights.need        * row.need_score +
+                        policy.weights.barrier_fit * row.barrier_fit +
+                        policy.weights.engagement  * row.engagement_prob +
+                        policy.weights.uplift      * row.uplift_estimate +
+                        policy.weights.cost_efficiency * cost_efficiency_norm)
+
+        row.priority_components = {
+            need_contrib:           policy.weights.need * row.need_score,
+            barrier_fit_contrib:    policy.weights.barrier_fit * row.barrier_fit,
+            engagement_contrib:     policy.weights.engagement * row.engagement_prob,
+            uplift_contrib:         policy.weights.uplift * row.uplift_estimate,
+            cost_efficiency_contrib: policy.weights.cost_efficiency * cost_efficiency_norm
+        }
+
+    // Group by (patient, therapeutic_class) and sort interventions within
+    // each group. The same patient can have multiple medications and
+    // multiple top-ranked interventions across them.
+    grouped = group_by(candidates_norm, (&quot;patient_id&quot;, &quot;therapeutic_class&quot;))
+    FOR each (patient_id, therapeutic_class), group_rows in grouped:
+        sorted_rows = sort group_rows by priority DESC
+        FOR rank_pos, r in enumerate(sorted_rows):
+            r.intervention_rank_within_medication = rank_pos + 1
+
+    write_priority_table(candidates_norm, policy.policy_version, run_date)
+    RETURN candidates_norm
+</code></pre>
+<p><strong>Step 6: Allocate under heterogeneous capacities with multi-intervention-per-patient and equity floors.</strong> The allocator walks priority-sorted candidates and assigns slots subject to: each intervention's daily capacity, the cumulative per-patient cap (default: at most 2 interventions per run, at most 1 high-touch), the cross-intervention exclusions (a pharmacist consult on a medication suppresses lower-touch interventions for the same medication), and the equity floors. Skip the floors and the optimization quietly redistributes opportunity to the easiest-to-help cohorts.</p>
+<pre class="code code-plain"><code>FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
+    candidates_sorted = sort prioritized by priority DESC
+
+    // Per-intervention capacity and equity-floor counters.
+    capacity_remaining = {}
+    equity_remaining = {}
+    FOR each intervention in interventions:
+        capacity_remaining[intervention.intervention_id] = intervention.daily_capacity * RUN_HORIZON_DAYS
+        equity_remaining[intervention.intervention_id] = {}
+        FOR floor_cohort, floor_count in policy.equity_floors[intervention.intervention_id]:
+            equity_remaining[intervention.intervention_id][floor_cohort] = floor_count
+
+    // Per-patient counters.
+    patient_intervention_count = {}    // total interventions per patient this run
+    patient_high_touch_count   = {}    // high-touch (pharmacist, care manager) per patient
+    patient_contact_count_30d  = {}    // existing 30-day contact count from profile
+
+    allocated = []
+    FOR candidate in candidates_sorted:
+        member = lookup_member(candidate.patient_id)
+        intervention = lookup_intervention(candidate.intervention_id)
+
+        // Per-intervention capacity.
+        IF capacity_remaining[candidate.intervention_id] &lt;= 0:
+            CONTINUE
+
+        // Per-patient interventions-per-run cap.
+        IF patient_intervention_count.get(candidate.patient_id, 0) &gt;= policy.max_interventions_per_patient_per_run:
+            CONTINUE
+
+        // Per-patient high-touch cap.
+        IF intervention.is_high_touch:
+            IF patient_high_touch_count.get(candidate.patient_id, 0) &gt;= policy.max_high_touch_per_patient_per_run:
+                CONTINUE
+
+        // Per-patient contact-frequency cap (rolling 30-day).
+        existing_contacts = member.outreach_recent_30d_count
+            // 
+        new_contacts_this_run = patient_contact_count_30d.get(candidate.patient_id, 0)
+        IF intervention.generates_patient_contact AND
+           (existing_contacts + new_contacts_this_run) &gt;= policy.max_contacts_per_patient_30d:
+            CONTINUE
+
+        // Cross-intervention exclusions: e.g., a pharmacist consult on
+        // a medication absorbs the reminder for that medication.
+        IF already_allocated_conflicting(allocated, candidate):
+            CONTINUE
+
+        // Equity floor: prefer to use a floor slot if applicable.
+        cohort_features = lookup_cohort_features(candidate.patient_id)
+            // 
+        applicable_floors = applicable_floor_cohorts(cohort_features,
+                                                      policy.equity_floors[candidate.intervention_id])
+        used_floor = null
+        FOR floor_cohort in applicable_floors:
+            IF equity_remaining[candidate.intervention_id][floor_cohort] &gt; 0:
+                equity_remaining[candidate.intervention_id][floor_cohort] -= 1
+                used_floor = floor_cohort
+                BREAK
+
+        capacity_remaining[candidate.intervention_id] -= 1
+        patient_intervention_count[candidate.patient_id] = patient_intervention_count.get(candidate.patient_id, 0) + 1
+        IF intervention.is_high_touch:
+            patient_high_touch_count[candidate.patient_id] = patient_high_touch_count.get(candidate.patient_id, 0) + 1
+        IF intervention.generates_patient_contact:
+            patient_contact_count_30d[candidate.patient_id] = patient_contact_count_30d.get(candidate.patient_id, 0) + 1
+
+        allocated.append({
+            patient_id:        candidate.patient_id,
+            therapeutic_class: candidate.therapeutic_class,
+            intervention_id:   candidate.intervention_id,
+            intervention_type: candidate.intervention_type,
+            priority:          candidate.priority,
+            priority_components: candidate.priority_components,
+            allocation_reason: reason_string(candidate, used_floor),
+            cohort_features:   cohort_features,
+            run_date:          run_date,
+            policy_version:    policy.policy_version
+        })
+
+    // Second pass to fill any unfilled equity floors.
+    // 
+    FOR intervention_id, floor_remaining_per_cohort in equity_remaining:
+        FOR floor_cohort, floor_remaining in floor_remaining_per_cohort:
+            IF floor_remaining &gt; 0:
+                top_up_from_cohort(allocated, intervention_id, floor_cohort,
+                                   floor_remaining, prioritized,
+                                   patient_intervention_count, patient_high_touch_count)
+
+    DynamoDB.BatchWriteItem(&quot;recommendation-log&quot;, allocated)
+
+    emit_metric(&quot;adherence_allocations_made&quot;,
+                value = len(allocated),
+                dimensions = {
+                    run_date:       run_date,
+                    policy_version: policy.policy_version
+                })
+    RETURN allocated
+</code></pre>
+<p><strong>Step 7: Orchestrate outreach across heterogeneous channels.</strong> Patient-facing interventions go to the channel optimizer from Recipe 4.1. Staff-facing interventions go to staff queues with structured pre-work. Cost-assistance flows to a dedicated case-management queue. Med-sync flows to the partner pharmacy's API or a flagged-for-action work queue. Skip the per-intervention-type orchestration and your interventions become &quot;send a generic email&quot; regardless of what was actually allocated.</p>
+<pre class="code code-plain"><code>FUNCTION orchestrate_interventions(allocated, run_date, policy):
+    FOR row in allocated:
+        member = DynamoDB.GetItem(&quot;patient-profile&quot;, row.patient_id)
+        intervention = lookup_intervention(row.intervention_id)
+        medication = lookup_medication(row.patient_id, row.therapeutic_class)
+
+        // Build the structured prompt input common to all generation
+        // tasks. Identifiers are stripped before LLM calls; PHI is
+        // re-attached after.
+        de_identified_context = {
+            therapeutic_class:    row.therapeutic_class,
+            adherence_summary:    summarize_adherence_for_outreach(member, medication),
+            ranked_barriers:      lookup_barriers(row.patient_id, row.therapeutic_class).ranked_barriers,
+            preferred_language:   member.preferred_language,
+            tone:                 policy.outreach_tone,
+            data_quality_flag:    medication.data_quality_flag
+        }
+
+        BRANCH on intervention.type:
+            CASE &quot;text_reminder&quot;:
+                tailored = Bedrock.InvokeModel(
+                    model_id = REMINDER_MODEL_ID,
+                    body     = build_reminder_prompt(de_identified_context, intervention)
+                )
+                validate_reminder(tailored, intervention)
+                ChannelOptimizer.QueueOutreach(
+                    member_id    = row.patient_id,
+                    content_type = &quot;adherence_reminder&quot;,
+                    payload      = { tailored: tailored, fallback: intervention.default_template },
+                    urgency      = &quot;standard&quot;,
+                    tracking_id  = build_tracking_id(row, run_date)
+                )
+
+            CASE &quot;education&quot;:
+                content_match = match_education_content(de_identified_context, intervention)
+                ChannelOptimizer.QueueOutreach(
+                    member_id    = row.patient_id,
+                    content_type = &quot;adherence_education&quot;,
+                    payload      = { content_id: content_match.content_id, tailored_intro: content_match.intro },
+                    urgency      = &quot;standard&quot;,
+                    tracking_id  = build_tracking_id(row, run_date)
+                )
+
+            CASE &quot;pharmacist_consult&quot;:
+                // Generate the pharmacist pre-call brief.
+                brief = Bedrock.InvokeModel(
+                    model_id = PHARMACIST_BRIEF_MODEL_ID,
+                    body     = build_brief_prompt(de_identified_context, member,
+                                                    medication, intervention)
+                )
+                validate_pharmacist_brief(brief)
+
+                PharmacistQueue.Enqueue({
+                    patient_id:        row.patient_id,
+                    therapeutic_class: row.therapeutic_class,
+                    priority:          row.priority,
+                    suspected_barrier: de_identified_context.ranked_barriers[0],
+                    brief_text:        brief.parsed,
+                    target_window:     compute_target_window(row, intervention),
+                    tracking_id:       build_tracking_id(row, run_date)
+                })
+
+            CASE &quot;cost_assistance&quot;:
+                CostAssistanceQueue.Enqueue({
+                    patient_id:           row.patient_id,
+                    therapeutic_class:    row.therapeutic_class,
+                    medication_ndc:       medication.ndc,
+                    suspected_barrier:    &quot;cost&quot;,
+                    member_lis_status:    member.lis_enrolled,
+                    cost_sharing_tier:    medication.formulary_tier,
+                    tracking_id:          build_tracking_id(row, run_date)
+                })
+
+            CASE &quot;med_sync&quot;:
+                IF member.preferred_pharmacy_id IN PARTNER_PHARMACIES:
+                    PartnerPharmacyAPI.RequestMedSyncEnrollment({
+                        patient_id:           row.patient_id,
+                        therapeutic_classes:  member.regimen_classes,
+                        tracking_id:          build_tracking_id(row, run_date)
+                    })
+                ELSE:
+                    PharmacistQueue.Enqueue({
+                        // Fall back to staff-mediated med-sync conversation
+                        patient_id:        row.patient_id,
+                        therapeutic_class: row.therapeutic_class,
+                        intervention:      &quot;med_sync_referral&quot;,
+                        tracking_id:       build_tracking_id(row, run_date)
+                    })
+
+            CASE &quot;regimen_simplification&quot;:
+                // Requires prescriber action. Flag to PCP via care-team
+                // inbox with a structured talking-point briefing.
+                pcp_briefing = Bedrock.InvokeModel(
+                    model_id = PCP_BRIEFING_MODEL_ID,
+                    body     = build_pcp_prompt(de_identified_context, member, medication)
+                )
+                CareTeamInbox.PostNote(
+                    patient_id  = row.patient_id,
+                    briefing    = pcp_briefing.parsed,
+                    source      = &quot;adherence-recommender&quot;,
+                    suggested_action = &quot;consider regimen simplification (combination pill, once-daily, blister pack)&quot;,
+                    tracking_id = build_tracking_id(row, run_date)
+                )
+                // 
+
+        // Update contact-frequency counter optimistically when patient
+        // contact is generated. Reconcile in the engagement-attribution
+        // step if the send fails.
+        IF intervention.generates_patient_contact:
+            DynamoDB.UpdateItem(
+                &quot;patient-profile&quot;,
+                row.patient_id,
+                &quot;ADD outreach_recent_30d_count :one&quot;,
+                values = { &quot;:one&quot;: 1 }
+            )
+
+        // Emit a &#x27;adherence_intervention_recommended&#x27; event.
+        Kinesis.PutRecord(stream = &quot;engagement-stream&quot;, record = {
+            event_type:        &quot;adherence_intervention_recommended&quot;,
+            tracking_id:       build_tracking_id(row, run_date),
+            patient_id:        row.patient_id,
+            therapeutic_class: row.therapeutic_class,
+            intervention_id:   row.intervention_id,
+            intervention_type: row.intervention_type,
+            run_date:          row.run_date,
+            priority_components: row.priority_components,
+            allocation_reason: row.allocation_reason,
+            timestamp:         current UTC timestamp
+        })
+</code></pre>
+<p><strong>Step 8: Capture engagement, fill, and barrier-elicited events; update training data on appropriate horizons.</strong> Pharmacist consults that elicit a ground-truth barrier are gold for retraining the barrier classifier. Pharmacy fills observed after an intervention are the medium-horizon uplift signal. Clinical outcomes are the long-horizon signal. Skip this and the models stop learning, the dashboards stop reflecting reality, and you cannot honestly answer whether any intervention works.</p>
+<pre class="code code-plain"><code>FUNCTION process_adherence_event(event):
+    rec = lookup_recommendation_by_tracking_id(event.tracking_id)
+        // Some events (pharmacy_fill_observed, organic) won&#x27;t have a
+        // tracking_id. Match those to the most recent open recommendation
+        // for the same (patient_id, therapeutic_class) within an
+        // attribution window.
+    IF rec is null AND event.event_type == &quot;pharmacy_fill_observed&quot;:
+        rec = match_organic_fill_to_open_recommendation(event)
+
+    IF rec is null:
+        LOG(&quot;event with no matched recommendation: &quot; + str(event))
+        RETURN
+
+    IF event.patient_id != rec.patient_id:
+        LOG(&quot;event patient_id mismatch with recommendation; dropping&quot;)
+        RETURN
+
+    DynamoDB.PutItem(&quot;engagement-events&quot;, {
+        event_id:          new UUID,
+        tracking_id:       event.tracking_id,
+        patient_id:        event.patient_id,
+        therapeutic_class: rec.therapeutic_class,
+        intervention_id:   rec.intervention_id,
+        intervention_type: rec.intervention_type,
+        event_type:        event.event_type,
+        timestamp:         event.timestamp,
+        run_date:          rec.run_date,
+        priority:          rec.priority,
+        priority_components: rec.priority_components,
+        allocation_reason: rec.allocation_reason,
+        cohort_features:   rec.cohort_features,
+        event_payload:     event.payload
+            // For barrier_elicited: { barrier: &quot;cost&quot;, source: &quot;pharmacist_consult&quot;, confidence: &quot;high&quot; }
+            // For pharmacy_fill_observed: { fill_date, days_supply, copay_paid, channel }
+            // For intervention_completed: { outcome_disposition, notes }
+    })
+
+    // Short-horizon engagement signals.
+    IF event.event_type in [&quot;intervention_outreach_opened&quot;,
+                             &quot;intervention_outreach_clicked&quot;,
+                             &quot;intervention_engaged&quot;,
+                             &quot;intervention_completed&quot;]:
+        update_engagement_training_label(rec, event)
+
+    // Barrier-elicited: a pharmacist or care manager confirmed a barrier
+    // through direct patient interaction. This is gold-label data for
+    // the supervised barrier classifier.
+    IF event.event_type == &quot;barrier_elicited&quot;:
+        update_barrier_classifier_training_label(rec, event)
+
+    // Medium-horizon adherence change. After an intervention, observed
+    // PDC over the next 90 days is the uplift outcome. Joins on the
+    // recommendation-log row and the subsequent fill events.
+    IF event.event_type == &quot;pharmacy_fill_observed&quot;:
+        update_uplift_observation(rec, event)
+
+    // PCP override: regulator-style signal that the recommendation was
+    // clinically declined. Strong negative label, also signals possible
+    // need-score miscalibration.
+    IF event.event_type == &quot;pcp_override&quot;:
+        DynamoDB.PutItem(&quot;pcp-overrides&quot;, {
+            override_id:    new UUID,
+            tracking_id:    event.tracking_id,
+            patient_id:     event.patient_id,
+            therapeutic_class: rec.therapeutic_class,
+            intervention_id: rec.intervention_id,
+            pcp_reason:     event.reason,
+            timestamp:      event.timestamp
+        })
+        flag_for_clinical_review(event)
+
+    // Cohort-sliced metrics for the equity dashboard.
+    emit_metric(&quot;adherence_engagement&quot;,
+                value = 1,
+                dimensions = {
+                    event_type:                    event.event_type,
+                    intervention_type:             rec.intervention_type,
+                    therapeutic_class:             rec.therapeutic_class,
+                    engagement_history_quartile:   rec.cohort_features.engagement_history_quartile,
+                    language:                      rec.cohort_features.language,
+                    sdoh_cohort:                   rec.cohort_features.sdoh_cohort
+                })
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter04.05-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample recommendation log entry:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;tracking_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;adherence-2026-05-04-pat-000482-statins-cost-assist-001&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;run_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-04&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pat-000482&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;therapeutic_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;statins&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intervention_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cost-assist-001&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intervention_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cost_assistance&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;priority&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.81</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;priority_components&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;need_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.20</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;barrier_fit_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;engagement_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.07</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;uplift_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.28</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cost_efficiency_contrib&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.08</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;allocation_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;top_priority_general_capacity&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;policy_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;adherence-policy-v0.3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;barrier_snapshot&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ranked_barriers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;barrier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cost&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.74</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;barrier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;beliefs&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;data_quality_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;complete&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;model_versions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;need_model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;need-statins-v4&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;engagement_model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eng-cost-assist-v3&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;uplift_model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uplift-cost-assist-v2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;barrier_classifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;barrier-blended-v5&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;cohort_features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;engagement_history_quartile&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;q3&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sdoh_cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate_food_security&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;age_band&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;55-64&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample tailored reminder payload (different patient, different barrier):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;tracking_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;adherence-2026-05-04-pat-000915-ras-reminder-002&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tailored&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;subject_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Quick reminder about your blood-pressure medication&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;opening_line&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hi James, just a quick check in.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Your last lisinopril fill was about 35 days ago. If you&#39;ve already refilled, ignore this. If not, your pharmacy can usually have it ready in a few hours.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;call_to_action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Tap here to request a refill, or reply OK if you already have it.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supportive, non-alarming&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;fallback_template&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ras-reminder-en-default&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;urgency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;preferred_language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample pharmacist pre-call brief:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;tracking_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;adherence-2026-05-04-pat-000482-statins-pharmacist-003&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;58F, T2DM, HTN, dyslipidemia. Statin on board: atorvastatin 40mg.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;adherence_picture&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;trailing_365_pdc&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.64</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;trailing_90_pdc&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.52</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;fill_pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;irregular fills every 45-50 days vs prescribed 30-day supply&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data_quality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;complete&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;suspected_barrier&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;beliefs&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moderate&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;rationale&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fill pattern consistent with deliberate skipping (not gaps). No copay change in last 12 months. No side-effect-coded encounters. Family history of statin intolerance documented.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;suggested_talking_points&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Open-ended question about how the medication has been going&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Listen for concerns about muscle pain, family history of statin reaction&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;If beliefs/concerns surface, validate and offer to discuss alternatives with PCP&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;If side effects, escalate to PCP with prompt timeline&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;contraindications_to_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="nt">&quot;estimated_call_duration_minutes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample quarterly outcome evaluation:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;evaluation_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eval-2026Q1-cost-assist-statins&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intervention_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cost-assist-001&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;therapeutic_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;statins&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;evaluation_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-10-01_to_2026-03-31&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;propensity_matched_difference_in_differences&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;primary_outcome&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pdc_change_at_90_days&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ate&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.11</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.25</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0008</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;interpretation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Treated members increased 90-day PDC by ~0.18 more than matched controls.&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;ate_by_cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;language=en&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.19</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.11</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.27</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;language=es&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.14</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.02</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.26</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;cohort&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sdoh_cohort=low_food_security&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;estimate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.21</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.09</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95_high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.33</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;secondary_outcomes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ldl_change_at_180_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;estimate_mg_dl&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-8.4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ci_95&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">-13.1</span><span class="p">,</span><span class="w"> </span><span class="mf">-3.7</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;sample_size_treated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sample_size_control&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">412</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Reminder-only baseline</th>
+<th>Recipe pipeline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Targeting precision (intervention matched to barrier)</td>
+<td>n/a (single intervention type)</td>
+<td>65-80% (per audit sample)</td>
+</tr>
+<tr>
+<td>Per-intervention engagement rate</td>
+<td>12-18% (text reminders)</td>
+<td>25-45% (intervention-tailored)</td>
+</tr>
+<tr>
+<td>90-day PDC uplift (treated vs matched control)</td>
+<td>0.02-0.05 average across all targets</td>
+<td>0.10-0.20 in barrier-matched cohorts</td>
+</tr>
+<tr>
+<td>Star Ratings cohort movement (% of 75-79 PDC band crossing 80%)</td>
+<td>8-15%</td>
+<td>18-30%</td>
+</tr>
+<tr>
+<td>Cost per &quot;PDC point&quot; gained</td>
+<td>($high, dominated by reminder spam waste)</td>
+<td>($more efficient through targeted spend)</td>
+</tr>
+<tr>
+<td>End-to-end batch run time (400K members, 10 interventions, 4 classes)</td>
+<td>n/a</td>
+<td>60-120 minutes</td>
+</tr>
+<tr>
+<td>Equity floor utilization</td>
+<td>n/a</td>
+<td>80-100% (configurable)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Patients with fragmented pharmacy data.</strong> Multi-pharmacy patients, members who use cash-pay or discount-card programs, members who recently switched plans: the recommender's view of their adherence is incomplete. The <code>data_quality_flag</code> exposes this, but downstream consumers (and your operations team) need to actually gate on it. A confident &quot;non-adherent&quot; label on a patient with <code>cash_pay_partial</code> data quality is a confidently wrong label.</li>
+<li><strong>Specialty pharmacy interactions.</strong> Many specialty medications (infusion therapies, biologics) have completely different fill cadences and clinical workflows than retail meds. The carry-forward PDC math doesn't apply cleanly. Most plans treat specialty as a separate adherence program with its own intervention catalog and its own measurement methodology; don't try to shoehorn specialty into the retail/mail-order pipeline.</li>
+<li><strong>Newly prescribed medications.</strong> A medication first prescribed 60 days ago has at most one or two fills of history. The PDC numbers are noisy, the engagement features for the patient-medication pair don't exist, and the uplift model has high uncertainty. The right behavior for new prescriptions is a &quot;primary adherence&quot; pathway: did the patient fill at all? That's a different intervention set (cost-assistance navigation, education on the new medication, pharmacist outreach to confirm side-effect tolerance) and a different measurement. Treat the first 60 to 90 days as a primary-adherence regime, not as PDC-driven targeting.</li>
+<li><strong>Therapeutic substitution patterns.</strong> A patient who switches from atorvastatin to rosuvastatin (often driven by a formulary change) looks like an adherence interruption to an NDC-level computation. Class-level computation handles the obvious case, but cross-class substitutions (a switch from a statin plus PCSK9 to bempedoic acid) require clinical knowledge to map correctly. The class definitions need a clinical pharmacist to review.</li>
+<li><strong>Cost-barrier identification at the boundary.</strong> Members with copays in the $20 to $50 range may or may not be cost-barriered depending on their financial situation. The classifier conflates &quot;high copay&quot; with &quot;cost barrier&quot; when the actual signal is the patient's discretionary income, which the plan doesn't see. Pharmacist-elicited barriers are the gold-label correction for this; until enough labels accumulate, expect the cost classifier to over-predict at the moderate-copay range and under-predict for low-income members with seemingly modest copays.</li>
+<li><strong>Patients with appropriate non-adherence.</strong> Sometimes the right answer is <em>not</em> adherence: a patient on a statin who can't tolerate any of the available molecules and is in shared decision-making with their PCP about discontinuing should not be a target for adherence intervention. The recommender doesn't know the difference between &quot;non-adherent&quot; and &quot;appropriately discontinued&quot; without explicit prescriber communication. The PCP-override path is the corrective; the pre-recommendation check (does the prescription show as <code>discontinued</code> rather than <code>active</code> in the EHR) catches the easier cases.</li>
+<li><strong>Star Ratings cut-point distortion.</strong> Patients in the 75 to 79 PDC band have outsized business value because moving them past 80 affects Star Ratings disproportionately. A purely uplift-driven recommender will rationally target them. A care-equity-driven recommender will weight the 30 to 50 PDC band more heavily, where clinical lift is larger but Star Ratings impact per member is smaller. Acknowledge the tension explicitly in the policy weights and document the trade-off; don't let either ideology silently win.</li>
+<li><strong>PCP override rate variation.</strong> Some PCPs override most adherence recommendations (clinical skepticism toward population-health outreach in general); some PCPs override almost none. A model that learns from overrides will down-weight recommendations to patients of high-override PCPs, even when those patients clinically need the intervention. Track override rates by PCP separately and feed only legitimate per-recommendation overrides (where the PCP cited a specific clinical reason) into the model retraining; don't let prescriber-level skepticism become a feature.</li>
+<li><strong>Cohorts with sparse pharmacist-elicited barriers.</strong> The supervised barrier classifier only learns well in cohorts where pharmacist outreach happens at meaningful volume. If the pharmacist queue prioritizes English-speaking, phone-comfortable members, the classifier gets better for them and stays guessing for everyone else. Equity floors in the pharmacist queue (capacity reserved for under-engaged cohorts) are not just about the intervention; they're about the <em>labels</em> the rest of the system depends on.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Adherence measurement validation against published methodology.</strong> The PDC computation has many small choices (which fills count, how to handle overlapping supplies, where the 365-day window starts and ends, how to treat hospitalizations and skilled-nursing stays during which the patient may not have outpatient pharmacy fills). The CMS Pharmacy Quality Alliance (PQA) measure specifications are the canonical reference for the Star Ratings classes. Compare your computed PDC distributions against your PBM-reported PDC distributions for the same population and the same window; sustained discrepancies flag a methodology bug. Engage a clinical pharmacist with quality-measure experience to review the implementation.</p>
+<p><strong>Pharmacy data ingestion contracts.</strong> PBM feeds vary in format (X12 NCPDP, proprietary CSVs, occasionally JSON over an API). Specialty pharmacy feeds are often separate vendors with separate formats. Mail-order is sometimes the same vendor as retail and sometimes not. The data engineering to ingest, normalize, and reconcile these feeds is its own project, with explicit reconciliation against PBM-reported member-level adherence dashboards. Plan for 8 to 16 weeks of ingestion engineering before the first model run.</p>
+<p><strong>Barrier-classifier label generation.</strong> The supervised barrier classifier needs labeled data. The labels come from pharmacist consults that elicit barriers explicitly. In year one, you have very few labels. Plan a structured barrier-elicitation protocol: pharmacist consults follow a guided conversation that captures barrier with high inter-rater agreement, the consult result is structured and stored, and the dataset accumulates over time. Without the protocol, pharmacist notes are unstructured text and the labels are too noisy to train on.</p>
+<p><strong>Uplift training data.</strong> Same caveat as Recipe 4.4. Without randomized treatment assignment in pilot cohorts, the uplift estimates conflate causal effect with engagement propensity. Plan randomized hold-outs from day one (10 to 20 percent of eligible members per intervention type, randomly assigned to no-intervention) so within 90 to 180 days you have a clean signal. The political conversation about &quot;but those members need help&quot; is real, and the conversation about &quot;we ran the program for two years and don't know if it worked&quot; is also real, and worse.</p>
+<p><strong>Heterogeneous cost modeling.</strong> The cost-effectiveness term in the priority function uses each intervention's marginal cost. The marginal cost is not always obvious: a text reminder costs cents to send but may consume contact-cap budget that could have been used for a higher-yield intervention; a pharmacist consult costs FTE time that's hard to allocate cleanly when the pharmacist also does intake calls and quality-measure outreach. Build a transparent cost model with clinical, financial, and operations input, and revisit it as actual cost data accumulates. The early version will be wrong; that's fine, as long as you know which numbers are estimates and which are measured.</p>
+<p><strong>Star Ratings cycle awareness.</strong> CMS Star Ratings measurement years are calendar-aligned, with cut points published in the spring for the prior measurement year. The recommender should know where in the measurement cycle each target patient sits (months remaining for them to recover their PDC for this measurement year), which affects the urgency of intervention and the appropriate intervention choice (a patient with 60 days remaining and a PDC of 73 percent has a different math problem than the same patient on day 1 of the year). Encode the cycle in the policy. Don't pretend it doesn't exist; don't optimize purely against it either.</p>
+<p><strong>Wellness-program coordination (Recipe 4.4) and care-management coordination (Recipe 4.7).</strong> A patient on a wellness program (DPP) and an adherence-targeting program (statin reminder) and a care-management program (high-risk diabetes) can easily get four to seven outreach contacts per month from the plan's various optimizations, which is too many. Cross-recipe orchestration in this chapter requires a global contact-frequency cap that all recipes' orchestrators consult; the patient-profile DynamoDB table is the natural place for the shared counter. Recipes 4.1, 4.2, 4.4, 4.5, 4.6, and 4.7 all need to read and update the same counter, and the cap policy needs to live in a place all of them respect.</p>
+<p><strong>Outreach-message governance for adherence content.</strong> Adherence reminders are a regulated communication category. State boards of pharmacy have varying rules about who can send reminders for what medications, and what disclosures are required. Manufacturer-funded reminder programs (where the manufacturer pays for the outreach for their drug) have additional anti-kickback considerations. Engage your compliance counsel on the message governance before launch. A reminder validator should enforce: the message contains required disclosures, the message does not make unapproved clinical claims, the message is identified as plan-sponsored where required, and the message respects state-specific pharmacy advertising rules.</p>
+<p><strong>Privacy in the recommendation log and barrier classifications.</strong> The barrier-classifications table joins (patient_id, therapeutic_class, barrier) and is <em>highly</em> inferential. A row indicating &quot;patient has a cost barrier on diabetes medication&quot; is sensitive in ways that go beyond clinical PHI: it implies socioeconomic distress. The recommendation log similarly joins patient to specific medications and intervention types in ways that could reveal disease state and financial status. Apply tight controls: customer-managed KMS, CloudTrail data events, narrow IAM read scopes, defined retention (90 to 180 days for individually-attributed records; longer retention only after de-identification), and explicit deletion jobs with alarming.</p>
+<p><strong>Idempotency and retry semantics.</strong> Same pattern as 4.4. Each stage's outputs are addressed by (run_date, intervention_id, patient_id, therapeutic_class) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.</p>
+<p><strong>Cohort fairness review process.</strong> Same pattern as 4.4. Quarterly review with cross-functional committee; specific findings produce action items with owners. For adherence specifically, watch for: barrier-distribution disparities by language and SDOH cohort (a classifier that under-predicts cost barriers in a specific cohort is encoding bias from training-label distribution); engagement-rate disparities by intervention type within the same cohort; PDC change disparities post-intervention. Each axis is its own monitoring dashboard.</p>
+<p><strong>Cost-per-PDC-point-gained tracking.</strong> The cost numbers in the prerequisites table are infrastructure only. Production reporting needs to ladder up to per-intervention total cost (infrastructure + staff time + intervention vendor invoices) divided by PDC points gained in the targeted cohort, separated from organic PDC change (the matched-control comparison). That number is what gets compared to expected long-horizon savings (avoided hospitalizations, avoided ED visits, avoided downstream complications). The data engineering to track this end-to-end is its own project.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Refill-gap real-time triggers.</strong> Beyond the weekly batch run, an EventBridge rule can fire on a <code>refill_gap_detected</code> event (patient is N days past expected refill for a high-priority medication) and trigger a same-day intervention pathway. This collapses the time-to-intervention from a week to hours, which matters for medications where short gaps have meaningful clinical risk (anticoagulants, certain anti-rejection drugs). The pathway shares the recommender's allocation logic but bypasses the batch schedule.</p>
+<p><strong>Primary adherence pathway for newly prescribed medications.</strong> A medication first prescribed within the last 30 to 60 days needs a different intervention set: did the patient fill at all (primary adherence)? Did the first fill happen within an acceptable window of prescription? Cost-assistance navigation, pharmacist outreach to confirm side-effect tolerance, and patient education on the new medication are the appropriate intervention types. PDC is not yet meaningful for these patients. Run a parallel, lower-volume pipeline with a primary-adherence target set.</p>
+<p><strong>Specialty pharmacy adherence.</strong> Specialty medications (biologics, infusions, oral oncology) have different fill cadences, different side-effect profiles, different cost structures, and different stakeholder relationships (specialty pharmacy provider, prescriber, manufacturer hub services). Build a specialty-specific pipeline rather than forcing specialty into the retail/mail-order pipeline; share the recommendation infrastructure but with a specialty-specific intervention catalog and measurement methodology.</p>
+<p><strong>Caregiver-mediated interventions.</strong> Some patients have an engaged caregiver (adult child, spouse, paid home health aide) who is already involved in medication management. The recommender can route reminders or pharmacist consults through the caregiver with the patient's consent. Add a <code>caregiver_relationship</code> and <code>caregiver_consent</code> field to the patient profile; gate caregiver-mediated interventions on explicit consent (this is a common HIPAA edge case and warrants careful documentation).</p>
+<p><strong>Closed-loop EHR integration with adherence flags.</strong> Beyond the PCP-alert pattern, embed the adherence picture directly in the EHR's medication-list view. The PCP, looking at the patient's chart during a visit, sees a small badge next to each chronic medication: green for adherent, yellow for borderline, red for materially non-adherent, with the suspected barrier on hover. The visit becomes the intervention. This is one of the highest-impact interventions available and one of the hardest to build because EHR integration is purpose-built per EHR vendor (Epic, Cerner / Oracle Health, Athena, Veradigm) with their own integration platforms.</p>
+<p><strong>Med-sync expansion.</strong> Patients on five or more chronic medications often benefit dramatically from medication synchronization (all chronic meds aligned to a single refill date, with the pharmacy proactively confirming the bundle). The recommender can target med-sync enrollment as a standalone intervention for high-regimen-complexity patients regardless of their current PDC; the lift comes from preventing future adherence drift, not from correcting current non-adherence. Add a &quot;preventive&quot; intervention category.</p>
+<p><strong>Cost-assistance cascade.</strong> Cost-assistance is not one intervention; it's a cascade of options ordered by cost-savings yield: formulary substitution to a generic if available, manufacturer copay card for branded medications, foundation grant programs (especially for chronic specialty medications), Medicare LIS enrollment for income-eligible Part D members, state pharmaceutical assistance programs where they exist, $4 generic lists at major retailers. Build the cascade as a structured workflow with the case-management staff working through the options in order, with a structured outcome at each step, rather than as a single &quot;cost-assistance&quot; intervention type.</p>
+<p><strong>Cross-recipe orchestration with Recipe 4.4 (Wellness Programs) and 4.7 (Care Management).</strong> A patient with diabetes who is non-adherent to metformin and not enrolled in DPP and not in care management is a candidate for all three recommendations from three separate recipes. The cross-recipe orchestrator avoids redundant outreach (no four-week-blast of three recipes' recommendations) and sequences (often, address adherence first because the medications are already prescribed and a quick win, then enroll in lifestyle programs that take longer to show effect). Define explicit interaction rules.</p>
+<p><strong>Behavioral economics nudges.</strong> Beyond information-based reminders, some plans experiment with commitment devices, social comparisons (de-identified peer adherence rates), small gamification, or modest financial incentives where regulations permit. The evidence for these is mixed and context-dependent; treat them as additional intervention types in the catalog with their own engagement and uplift models, not as universally-applicable enhancements.</p>
+<p><strong>LLM-generated longitudinal motivational sequences.</strong> Beyond the initial outreach, an LLM can generate context-aware progress messages over time (&quot;you've been on schedule for 6 weeks; here's a thought from your pharmacist about staying steady&quot;). This crosses into Chapter 11 territory, but the structured input (current adherence trajectory, last clinical update, prior elicited concerns) is a great fit for short, personalized motivational text. Treat as enhancement, not replacement, for human pharmacist or care-team engagement.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html">Amazon SageMaker Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html">Amazon SageMaker Batch Transform</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/xgboost.html">Amazon SageMaker XGBoost Built-in Algorithm</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/inference-call-tools.html">Amazon Bedrock structured output and function calling</a></li>
+<li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html">Amazon EventBridge Scheduler</a></li>
+<li><a href="https://docs.aws.amazon.com/ses/latest/dg/Welcome.html">Amazon SES Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/pinpoint/latest/userguide/welcome.html">Amazon Pinpoint User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html">Amazon Connect Administrator Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/quicksight/latest/user/welcome.html">Amazon QuickSight User Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Reference notebooks for XGBoost, Batch Transform, and end-to-end ML pipelines applicable to the per-intervention scoring stack</li>
+<li><a href="https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop"><code>amazon-sagemaker-feature-store-end-to-end-workshop</code></a>: End-to-end Feature Store usage that maps to the per-(patient, medication) feature pipeline</li>
+<li><a href="https://github.com/aws-samples/amazon-bedrock-workshop"><code>amazon-bedrock-workshop</code></a>: Hands-on labs covering structured-output prompting that informs the barrier-classification second opinion and message-tailoring steps</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter AI/ML and Healthcare): browse for personalization and recommender reference architectures</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search &quot;uplift modeling,&quot; &quot;causal inference,&quot; &quot;SageMaker Batch Transform,&quot; and &quot;personalization&quot; for relevant deep-dives</li>
+<li><a href="https://aws.amazon.com/blogs/industries/">AWS for Industries Blog</a> (Healthcare and Life Sciences): search &quot;medication adherence&quot; for end-to-end customer architectures</li>
+</ul>
+<p><strong>External References (Conceptual and Methodological):</strong></p>
+<ul>
+<li><a href="https://www.pqaalliance.org/medication-adherence-measures">Pharmacy Quality Alliance (PQA) Measure Specifications</a>: canonical adherence-measurement methodology, including the Star Ratings adherence measures (statins, RAS antagonists, oral diabetes medications)</li>
+<li><a href="https://www.cms.gov/medicare/health-drug-plans/part-c-d-performance-data">CMS Medicare Part D Star Ratings Technical Notes</a>: Star Ratings methodology including cut points and measure specifications</li>
+<li><a href="https://github.com/py-why/EconML"><code>econml</code></a>: Microsoft Research's library for heterogeneous treatment effect estimation, applicable to the per-intervention uplift modeling</li>
+<li><a href="https://github.com/uber/causalml"><code>causalml</code></a>: Uber's causal-inference and uplift-modeling library</li>
+<li><a href="https://www.science.org/doi/10.1126/science.aax2342">Obermeyer et al. 2019, Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations</a>: foundational reference for healthcare-algorithm bias considerations relevant to this recipe's equity discussion</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient data generator including prescribing patterns useful for non-PHI development</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Adherence computation (PDC) + rule-based barrier classifier + 2-3 intervention types (text reminder, education, pharmacist consult) + greedy allocator + email/SMS outreach via Recipe 4.1's channel optimizer + minimal cohort dashboard</td>
+<td>10-12 weeks</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full pipeline: per-intervention engagement + uplift models (engagement-only on day one, randomized pilots feeding uplift training) + supervised barrier classifier with structured pharmacist-consult labels + LLM second opinion for high-stakes cases + cost-assistance cascade workflow + med-sync partner integration + heterogeneous capacity allocator with equity floors + Star-Ratings cycle awareness + LLM-tailored messaging + pharmacist pre-call briefs + outcome evaluation pipeline + cohort dashboards + audit log channel</td>
+<td>8-12 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Add refill-gap real-time triggers, primary-adherence pathway, specialty pharmacy pipeline, caregiver-mediated interventions, EHR-embedded adherence flags, behavioral economics nudges, cross-recipe orchestration with 4.4 and 4.7</td>
+<td>6-12 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter04.05-medication-adherence-intervention-targeting.html">Main Recipe 4.5</a> · <a href="chapter04.05-python-example.html">Python Example</a> · <a href="chapter04-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

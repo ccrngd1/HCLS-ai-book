@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.4 Architecture and Implementation: Medication Dispensing Anomalies</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested nav-active" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-34-architecture-and-implementation-medication-dispensing-anomalies">Recipe 3.4 Architecture and Implementation: Medication Dispensing Anomalies</h1>
+<p><em>Companion to <a href="chapter03.04-medication-dispensing-anomalies.html">Recipe 3.4: Medication Dispensing Anomalies</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Kinesis Data Streams for the dispense event feed.</strong> The ingest pipeline has to accept events from multiple upstream systems (CPOE order verifications, automated dispensing cabinet pulls, retail pharmacy fills) with different throughput profiles. Kinesis gives you durable, ordered event streams with multi-consumer fanout, which matters because the same event gets read by the real-time anomaly service, the batch aggregation pipeline, and the audit archive. HIPAA-eligible under the BAA.</p>
+<p><strong>AWS Lambda for the real-time anomaly service.</strong> The hot path (rule screening, cache lookup, z-score computation) targets p95 of 100-200ms; the end-to-end target from order-entry UI to pharmacist-side flag is under 500ms (cabinet-pull experiences are tighter, typically sub-second). A Lambda function triggered by Kinesis records fits this profile: fast cold-start with SnapStart or provisioned concurrency, autoscales with event volume, and the per-invocation cost at typical pharmacy volumes is negligible. Keep the business logic small; offload anything heavy to async downstream steps. For cabinet-pull paths, provisioned concurrency on the hot-path Lambda is usually required to hit the sub-second budget consistently.</p>
+<p><strong>Amazon DynamoDB for the patient-context cache.</strong> Low-latency key-value reads are exactly what DynamoDB is for. The cache is keyed by patient ID and contains the recent demographic, lab, medication, and problem-list snapshots the anomaly service needs. Refreshed by a separate Lambda that consumes FHIR and HL7 events from the EHR feed. HIPAA-eligible and supports customer-managed KMS for encryption at rest.</p>
+<p><strong>Amazon SageMaker Feature Store for historical baseline statistics.</strong> For each drug-patient-profile combination, the population-level statistics (mean, stddev, percentiles) live in the feature store with timestamps. The real-time Lambda queries the online store for sub-second lookups; the training and recomputation code uses the offline store for point-in-time-correct retrieval. HIPAA-eligible.</p>
+<p><strong>Amazon SageMaker Processing for the batch pattern path.</strong> CUSUM, EWMA, and Isolation Forest computations run in SageMaker Processing jobs on a schedule. Feature extraction from the dispense history, model scoring, and output to S3 all happen in containerized scikit-learn scripts. For the supervised classifier (where labels exist), SageMaker built-in XGBoost matches the pattern used in Recipes 3.2 and 3.3.</p>
+<p><strong>Amazon Neptune for the controlled-substance transaction graph.</strong> The diversion detection pipeline is fundamentally a graph problem, and Neptune's property-graph model fits the user-station-drug-patient-transaction schema naturally. Gremlin queries handle the community detection and unusual-subgraph analysis. Neptune is HIPAA-eligible under the BAA.</p>
+<p><strong>Amazon OpenSearch Service for the alert and audit index.</strong> Every flag produced by the pipeline gets indexed for search and aggregation. The pharmacy director's dashboard queries OpenSearch for trend views; the audit team queries it for specific-patient lookups and regulatory reporting. OpenSearch supports fine-grained access control which matters when pharmacy, compliance, and IT security all need different slices of the same data.</p>
+<p><strong>Amazon MSK or Amazon MQ for HL7 integration.</strong> Most hospital EHR integrations speak HL7 v2 over MLLP (Minimal Lower Layer Protocol), and getting those messages into AWS typically uses an on-premises MLLP receiver that republishes to Amazon MQ (ActiveMQ flavor) or an MSK (Managed Kafka) topic. From there the event normalizer Lambda picks up and transforms into the canonical format. FHIR-native EHRs can push directly to API Gateway instead; both paths land in Kinesis for downstream consumption. The on-premises MLLP receiver is the PHI ingress surface into AWS, so the production posture matters: wrap MLLP in TLS (often called MLLPS) with mutual TLS authentication, deploy the receiver in a DMZ or integration tier rather than on the clinical network, connect to AWS via Direct Connect for production volumes (Site-to-Site VPN is acceptable for lower-volume and pilot deployments), and authenticate the AWS-side MQ or Kafka broker via mutual TLS or short-lived IAM-derived tokens rather than long-lived shared secrets. Raw MLLP without TLS is acceptable only in development environments with synthetic data.</p>
+<p><strong>Amazon S3 with AWS KMS for durable storage.</strong> Raw dispense events, patient-context snapshots, model artifacts, and feedback data all land in S3 with server-side encryption using customer-managed KMS keys. Parquet for the structured data, JSON for raw events. Lifecycle rules move cold data to S3 Glacier for long-term retention (pharmacy records often have 10-year or longer retention requirements depending on jurisdiction).</p>
+<p><strong>AWS Step Functions for orchestration.</strong> The daily and hourly batch pipelines (feature recomputation, trajectory scoring, graph rebuild, retraining) are multi-step workflows that benefit from Step Functions' visibility and retry semantics. Each major pipeline is a separate state machine.</p>
+<p><strong>Amazon EventBridge for routing flags.</strong> When a flag is produced, an EventBridge event goes out. Subscribers include the real-time alert delivery service, the audit logger, the metrics aggregator, and the feedback capture service. Using EventBridge rather than hard-coded integrations lets the pipeline evolve without touching the detection logic.</p>
+<p><strong>Amazon SNS and Amazon Pinpoint for alert delivery.</strong> Interrupt-severity alerts go to the pharmacist's workstation or phone through whatever integration the hospital uses (often a custom app that subscribes to SNS or an MDM-pushed notification channel). Lower-severity alerts go to email or to the EHR's secure messaging. Pinpoint handles patient-level outreach when the detected anomaly requires contacting the patient (outpatient early-refill patterns, for example). The notification payload follows the chapter-3-settled minimum-PHI convention: the SNS message carries event ID, severity, and routing tier only, and the pharmacist UI fetches the full record (drug, dose, patient context) by ID over a separate authenticated channel. PHI does not transit through SNS, downstream notification channels, or any subscriber logs.</p>
+<p><strong>Amazon QuickSight for pharmacy leadership dashboards.</strong> Override rates by alert type, adverse event correlations, diversion investigation queue depth, dispensing trend monitoring. QuickSight on top of Athena against the OpenSearch archive and the S3 analytics buckets. HIPAA-eligible.</p>
+<p><strong>Amazon Comprehend Medical for unstructured clinical context.</strong> Some of the most useful context for anomaly detection lives in free-text clinical notes (the reason for the medication, the clinical goals of care, the specific symptoms being treated). Comprehend Medical extracts medical entities and relationships from notes and makes them available to the anomaly detector as structured features. Use it sparingly: the cost per page of text adds up, so extract-once-and-cache is the right pattern.</p>
+<p><strong>Amazon Bedrock for LLM-assisted triage (optional, advanced).</strong> For the clinical-reasoning class of anomaly (does this dispense match the clinical intent in the note?), a HIPAA-eligible LLM through Bedrock can compare the dispense event against the patient's recent clinical notes and flag reasoning mismatches. Use only models with BAA coverage on the inference path; Amazon's foundation models on Bedrock are HIPAA-eligible, but third-party models on Bedrock have differing BAA postures, and the model's terms of service have to be reviewed before PHI-bearing prompts are sent. Construct prompts with minimum-necessary context (the relevant note excerpts, the dispense event, the active medication list, not the full chart), filter outputs for clinical-recommendation hallucinations, and log every prompt and response to the audit trail tied to the triage decision. Expensive and requires rigorous validation. Layer on top of the statistical detection, not a replacement for it. See Chapter 2's generative AI recipes (2.4 through 2.10) for the established BAA discipline for PHI-bearing LLM workloads.</p>
+<p><strong>Amazon CloudWatch and AWS CloudTrail.</strong> Standard operational and audit logging. CloudWatch dashboards for pipeline health, alert latency, override rates, and drift metrics. CloudTrail data events on every PHI-bearing store so access is auditable end-to-end.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart TB
+    A[EHR CPOE\nHL7 v2 / FHIR] --&gt; N[On-Prem MLLP Bridge\n+ Amazon MQ]
+    B[Automated Dispensing\nCabinets] --&gt; N
+    C[Retail / Mail Pharmacy\nPBM Feeds] --&gt; D[API Gateway]
+    E[State PDMP] --&gt; D
+
+    N --&gt; F[Amazon Kinesis\ndispense-events]
+    D --&gt; F
+
+    F --&gt; G[AWS Lambda\nevent-normalizer]
+    G --&gt;|RxNorm / NDC| H[(Amazon DynamoDB\npatient-context-cache)]
+    G --&gt; I[AWS Lambda\nreal-time-anomaly-service]
+
+    I --&gt;|Reads cache| H
+    I --&gt;|Reads baselines| J[(SageMaker Feature Store\ndrug-class baselines)]
+    I --&gt;|Rule library| K[(S3\nclinical-rules)]
+    I --&gt; L[Amazon EventBridge\nanomaly-events]
+
+    L --&gt; M1[Amazon SNS\ninterrupt-alerts]
+    L --&gt; M2[Amazon OpenSearch\nalert-audit-index]
+    L --&gt; M3[AWS Lambda\nfeedback-capture]
+
+    P[EventBridge Scheduler\n15-min / hourly / daily] --&gt; Q[AWS Step Functions\nbatch-pattern-pipeline]
+    Q --&gt; R[SageMaker Processing\ntrajectory-cusum]
+    Q --&gt; S[SageMaker Processing\nisolation-forest-scoring]
+    R --&gt; J
+    S --&gt; J
+    R --&gt; L
+    S --&gt; L
+
+    T[Dispense History\nS3 parquet] --&gt; U[SageMaker Processing\ngraph-builder]
+    U --&gt; V[(Amazon Neptune\ntransaction-graph)]
+    V --&gt; W[SageMaker Processing\ndiversion-analytics]
+    W --&gt; L
+
+    M2 --&gt; X[Amazon Athena]
+    X --&gt; Y[Amazon QuickSight\npharmacy-director-dashboard]
+
+    M3 --&gt; Z[S3 labels-parquet]
+    Z --&gt; AA[Quarterly SageMaker\nTraining Job]
+    AA --&gt; J
+
+    I --&gt; BB[Amazon CloudWatch\nlatency + override-rate metrics]
+
+    style H fill:#9ff,stroke:#333
+    style J fill:#9ff,stroke:#333
+    style V fill:#adf,stroke:#333
+    style K fill:#f9f,stroke:#333
+    style Z fill:#f9f,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon SageMaker (Processing, Training, Feature Store), Amazon Neptune, Amazon OpenSearch Service, Amazon S3, Amazon MQ or MSK, API Gateway, AWS Step Functions, Amazon EventBridge, Amazon SNS, Amazon Pinpoint, Amazon Comprehend Medical, Amazon Bedrock (optional), Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Least-privilege per role. Real-time anomaly Lambda role: <code>dynamodb:GetItem</code> on patient-context-cache only (no write), <code>sagemaker-featurestore-runtime:GetRecord</code> on baseline feature groups, <code>s3:GetObject</code> on clinical-rules bucket, <code>events:PutEvents</code> to the anomaly-events bus, <code>kinesis:GetRecords</code>. Cache-refresher Lambda role: <code>dynamodb:PutItem</code> and <code>dynamodb:UpdateItem</code> on patient-context-cache only, <code>kinesis:GetRecords</code> on the EHR event stream. Event normalizer Lambda role: <code>kinesis:GetRecords</code>, <code>dynamodb:PutItem</code>. Alert-delivery Lambda role: consumes events from the bus (no <code>events:PutEvents</code>), <code>sns:Publish</code> on the interrupt-alert topic only. Feedback-capture Lambda role: <code>dynamodb:PutItem</code> on processed-feedback-events table (conditional write for idempotency), <code>events:PutEvents</code> on a dedicated feedback-events bus only, <code>dynamodb:PutItem</code> on a label-write-only table, <code>s3:PutObject</code> on the labels-parquet bucket only. Batch pipelines: scoped to their specific input and output prefixes in S3. Diversion-pipeline roles are scoped separately and stricter (separate KMS keys, separate Neptune cluster access, separate IAM boundary). No <code>*</code> actions in production. Per-resource ARNs everywhere; no wildcard resource scopes.</td>
+</tr>
+<tr>
+<td><strong>BAA</strong></td>
+<td>AWS BAA signed. Every service listed is HIPAA-eligible under the BAA when configured properly. See the <a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a>.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Kinesis: server-side encryption with CMK. Neptune: encryption at rest with CMK. OpenSearch: encryption at rest and in-transit. SageMaker: KMS on volumes, model artifacts, and Feature Store. TLS 1.2 or higher in transit everywhere.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas, SageMaker jobs, and Neptune in a VPC with the following endpoints. Gateway: <code>s3</code>, <code>dynamodb</code>. Interface: <code>kinesis</code>, <code>sagemaker.api</code> (control-plane Processing and Training), <code>sagemaker.featurestore-runtime</code> (online baseline retrieval), <code>sagemaker.runtime</code> (if a real-time endpoint variant is used), <code>states</code> (Step Functions), <code>events</code> (EventBridge bus), <code>scheduler</code> (EventBridge Scheduler), <code>logs</code> (CloudWatch Logs), <code>monitoring</code> (CloudWatch <code>PutMetricData</code>), <code>kms</code>, <code>sns</code>, <code>bedrock-runtime</code>, <code>comprehendmedical</code>, plus OpenSearch via VPC. Neptune only accessible via VPC; no public endpoints. Pinpoint API is reached through its regional endpoint; if the calling Lambda is in a private subnet, route Pinpoint traffic via a NAT gateway or a Pinpoint VPC endpoint where available. VPC Flow Logs enabled on the VPC carrying Lambda, SageMaker, and Neptune traffic; logs delivered to a dedicated S3 bucket with KMS encryption and retention aligned to the deepest applicable requirement (HIPAA 6-year baseline; DEA 2-year minimum for controlled-substance-related records; state pharmacy boards 5-10 years where applicable). For the diversion-investigation Neptune cluster specifically, Flow Logs become evidentiary records and follow the organization's evidence-handling retention policy (typically 7+ years).</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on patient-context-cache, clinical-rules bucket, labels-parquet bucket, Neptune cluster operations, and OpenSearch domain operations. Every real-time anomaly decision is logged to an immutable audit trail.</td>
+</tr>
+<tr>
+<td><strong>Data Access Controls</strong></td>
+<td>Controlled-substance transaction data and diversion investigation records require stricter access controls than general medication data. Separate IAM roles, separate KMS keys, separate Neptune cluster or a dedicated logical partition. Access reviewed quarterly.</td>
+</tr>
+<tr>
+<td><strong>Subgroup data access</strong></td>
+<td>Subgroup performance and override-pattern monitoring requires read access to patient demographic attributes (age band, sex, race, ethnicity, preferred language, insurance type) and provider demographic attributes (specialty, training program, demographics where available under HR rules). These attributes may be governed differently from claims and clinical PHI in some regulatory regimes. Restrict read access to the demographic-and-attribute store to the retraining job role and the QuickSight dashboard role; audit subgroup queries via CloudTrail data events. The QuickSight dashboard backed by Athena should query an aggregated subgroup-metrics table (override rates by drug class by patient demographic, missed-ADE rates by drug class by demographic), not the raw demographic-joined anomaly archive, so dashboard-user access does not require row-level read on the subgroup attributes. Provider-demographic data has its own HR-confidentiality governance and may not be addressable by the same architectural pattern as patient-demographic data; coordinate with HR and legal on the provider side.</td>
+</tr>
+<tr>
+<td><strong>Clinical Governance</strong></td>
+<td>Pharmacy leadership signs off on rule thresholds, severity tier definitions, and alert delivery workflows before production deployment. Changes to interrupt-severity rules require re-approval. This is clinical decision support; treat the governance accordingly.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td><a href="https://github.com/synthetichealth/synthea">Synthea</a> generates synthetic medication orders and administrations suitable for development. <a href="https://mimic.mit.edu/">MIMIC-IV</a> has detailed ICU medication administration data, but access requires a data use agreement and credentialed access through PhysioNet. For drug reference data development, <a href="https://www.nlm.nih.gov/research/umls/rxnorm/index.html">RxNorm from the NLM</a> is free and sufficient to prototype the normalization pipeline. Never use real PHI in development.</td>
+</tr>
+<tr>
+<td><strong>Drug Reference Content</strong></td>
+<td>A licensed drug knowledge base (First Databank, Wolters Kluwer, Micromedex, Lexicomp, or Medi-Span) or a carefully-maintained open-source equivalent built on RxNorm + DailyMed. Budget vendor license fees. Plan for monthly update cycles.</td>
+</tr>
+<tr>
+<td><strong>EHR Integration</strong></td>
+<td>HL7 v2 or FHIR R4 feed from the EHR with at minimum: ADT for demographics and location, ORM/ORC/RXO/RXE (or FHIR MedicationRequest) for medication orders, ORU for lab results, and administrative feeds for problem list and allergies. An integration engine (Rhapsody, Mirth Connect, Cloverleaf, or Corepoint) on-premises is the usual bridge into the AWS ingest layer.</td>
+</tr>
+<tr>
+<td><strong>Controlled-Substance Integration</strong></td>
+<td>For diversion detection, read access to the automated dispensing cabinet transaction logs (Pyxis, Omnicell, BD) in near-real-time. Usually a vendor-specific integration. Also access to the state PDMP for outpatient controlled-substance dispensing data (availability and API varies by state).</td>
+</tr>
+<tr>
+<td><strong>Retention</strong></td>
+<td>HIPAA baseline is 6 years. Controlled-substance records have DEA retention requirements (typically 2 years for dispensing records, longer in some states). State pharmacy boards often impose additional requirements (5-10 years is common). Coordinate with legal and compliance for the specific schedule.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>For a mid-size hospital (say, 400 beds, 8,000 medication events per day, 2-3 million events per year): Kinesis and Lambda real-time path: ~$100-300/month. DynamoDB patient-context cache: ~$50-150/month depending on read pattern. SageMaker Feature Store: ~$20-60/month for this data volume. SageMaker Processing for batch scoring: ~$200-500/month. Neptune for diversion (smaller cluster): ~$400-800/month. OpenSearch alert-audit index: ~$300-600/month. Comprehend Medical and optional Bedrock: usage-dependent, typically $100-500/month. Total infrastructure: typically $1,500-4,000/month for a mid-size hospital. Compare to cost avoidance: the average preventable ADE costs roughly $5,000-$10,000 per event in additional care, and sentinel-event-level harms cost far more.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Kinesis Data Streams</strong></td>
+<td>Durable, multi-consumer event stream for dispense events</td>
+</tr>
+<tr>
+<td><strong>Amazon MQ / MSK</strong></td>
+<td>HL7 v2 ingress from on-premises EHR integration engine</td>
+</tr>
+<tr>
+<td><strong>Amazon API Gateway</strong></td>
+<td>FHIR and retail-pharmacy webhook ingress</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (event-normalizer)</strong></td>
+<td>Vocabulary mapping (RxNorm, NDC, internal formulary), unit conversion, patient ID resolution</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (real-time-anomaly-service)</strong></td>
+<td>Rule screening, z-score lookup, severity tiering, event routing</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda (feedback-capture)</strong></td>
+<td>Override reasons, confirmed-event linkage, labels persistence</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB (patient-context-cache)</strong></td>
+<td>Low-latency patient attribute reads at dispense time</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB (processed-feedback-events)</strong></td>
+<td>Idempotency guard for at-least-once event delivery on feedback capture</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Feature Store</strong></td>
+<td>Drug-class baseline statistics with point-in-time correctness</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Processing</strong></td>
+<td>Trajectory CUSUM, Isolation Forest, graph analytics</td>
+</tr>
+<tr>
+<td><strong>Amazon SageMaker Training</strong></td>
+<td>Supervised classifier retraining when labels accumulate</td>
+</tr>
+<tr>
+<td><strong>Amazon Neptune</strong></td>
+<td>Controlled-substance transaction graph and diversion analytics</td>
+</tr>
+<tr>
+<td><strong>Amazon OpenSearch Service</strong></td>
+<td>Alert and audit index for pharmacy and compliance search</td>
+</tr>
+<tr>
+<td><strong>Amazon S3 (clinical-rules)</strong></td>
+<td>Versioned rule library with drug-knowledge-base references</td>
+</tr>
+<tr>
+<td><strong>Amazon S3 (dispense-history)</strong></td>
+<td>Long-term event archive; source for batch scoring</td>
+</tr>
+<tr>
+<td><strong>Amazon S3 (labels-parquet)</strong></td>
+<td>Confirmed events and override data for supervised retraining</td>
+</tr>
+<tr>
+<td><strong>AWS Step Functions</strong></td>
+<td>Orchestrates batch pattern pipeline and retraining workflows</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Decouples anomaly detection from alert delivery, audit, and feedback</td>
+</tr>
+<tr>
+<td><strong>Amazon SNS</strong></td>
+<td>Interrupt-severity alert delivery to pharmacist workstations</td>
+</tr>
+<tr>
+<td><strong>Amazon Pinpoint</strong></td>
+<td>Patient-level outreach for outpatient anomaly patterns</td>
+</tr>
+<tr>
+<td><strong>Amazon Comprehend Medical</strong></td>
+<td>Entity extraction from free-text clinical notes for context features</td>
+</tr>
+<tr>
+<td><strong>Amazon Bedrock (optional)</strong></td>
+<td>LLM-assisted clinical-reasoning triage for advanced deployments</td>
+</tr>
+<tr>
+<td><strong>Amazon QuickSight</strong></td>
+<td>Pharmacy leadership dashboards; override rate and trend monitoring</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed keys for every PHI-bearing store</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Real-time latency, alert volume, override rate, drift metrics</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging on every PHI-bearing store and every rule change</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<blockquote>
+<p><strong>Reference implementations:</strong> These aws-samples repositories demonstrate patterns that apply here:</p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Random Cut Forest and Isolation Forest patterns for unsupervised detection; Feature Store integration examples; processing-job patterns.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: Search for &quot;healthcare,&quot; &quot;clinical decision support,&quot; and &quot;medication safety&quot; for adjacent patterns.</li>
+</ul>
+</blockquote>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Normalize the dispense event.</strong> The incoming event has a lot of variation in how drugs and doses are identified. The first job is to produce a canonical representation that the rest of the pipeline can reason about. Skip or rush this step, and the detectors see &quot;Tylenol 500mg&quot; and &quot;acetaminophen 500 mg PO&quot; as different drugs, and your patient-level trajectory features are nonsense.</p>
+<pre class="code code-plain"><code>FUNCTION normalize_dispense_event(raw_event):
+    // Source systems provide drug identifiers in multiple vocabularies.
+    // Map everything to RxNorm concept IDs; keep original identifier for audit.
+    drug_id = null
+    IF raw_event.has(&quot;ndc&quot;):
+        drug_id = RxNorm.get_concept_by_ndc(raw_event.ndc)
+    ELSE IF raw_event.has(&quot;formulary_id&quot;):
+        drug_id = formulary_to_rxnorm_crosswalk.lookup(raw_event.formulary_id)
+    ELSE IF raw_event.has(&quot;drug_name&quot;):
+        // Fallback: fuzzy match by name. Log low-confidence matches for review.
+        drug_id = RxNorm.fuzzy_match(raw_event.drug_name, min_confidence = 0.9)
+
+    IF drug_id == null:
+        emit_metric(&quot;unmapped_drug&quot;, 1, dimensions = { source: raw_event.source })
+        route_to_dead_letter_queue(raw_event, reason = &quot;drug_id_unresolved&quot;)
+        return null
+
+    // Dose normalization: parse number + unit, convert to canonical form.
+    // The knowledge base defines the canonical unit per drug (e.g., mg for
+    // most oral drugs, units for insulin, mEq for electrolytes).
+    canonical_unit = drug_reference.get_canonical_unit(drug_id)
+    dose_canonical = convert_units(raw_event.dose_value, raw_event.dose_unit, canonical_unit)
+
+    // Frequency normalization: turn &quot;Q6H PRN&quot; or &quot;every 6 hours as needed&quot;
+    // into structured (min_interval_hours, max_interval_hours, prn_flag).
+    frequency = parse_frequency(raw_event.sig_text or raw_event.frequency_field)
+
+    // Resolve patient identifier to the enterprise ID.
+    patient_id = patient_master.resolve(
+        mrn           = raw_event.patient_mrn,
+        source_system = raw_event.source
+    )
+
+    canonical_event = {
+        event_id: generate_event_id(),
+        source_event_id: raw_event.source_event_id,
+        source: raw_event.source,     // &quot;cpoe&quot; | &quot;adc&quot; | &quot;retail&quot; | &quot;pdmp&quot;
+        event_type: raw_event.event_type, // &quot;order&quot; | &quot;verify&quot; | &quot;dispense&quot; | &quot;administer&quot;
+        event_timestamp: raw_event.timestamp,
+        patient_id: patient_id,
+        drug_rxnorm: drug_id,
+        drug_display_name: drug_reference.get_display_name(drug_id),
+        dose_value: dose_canonical.value,
+        dose_unit: dose_canonical.unit,
+        dose_per_kg: null,   // computed after weight lookup
+        route: normalize_route(raw_event.route),
+        frequency: frequency,
+        ordered_by: raw_event.ordering_provider,
+        dispensed_by: raw_event.dispensing_user,
+        station_id: raw_event.dispensing_station,
+        raw_identifier: {        // keep original for audit
+            ndc: raw_event.get(&quot;ndc&quot;),
+            formulary_id: raw_event.get(&quot;formulary_id&quot;),
+            name: raw_event.get(&quot;drug_name&quot;)
+        }
+    }
+    return canonical_event
+</code></pre>
+<p><strong>Step 2: Join patient context and compute derived features.</strong> Before scoring, the event needs patient-specific context (weight, labs, active meds, diagnoses). The patient-context cache is the source; staleness matters and is tracked per field.</p>
+<pre class="code code-plain"><code>FUNCTION enrich_with_patient_context(canonical_event):
+    context = DynamoDB.GetItem(&quot;patient-context-cache&quot;, { patient_id: canonical_event.patient_id })
+
+    // Attach context fields with staleness tracking. A weight from three
+    // weeks ago is useless for an ICU patient whose fluid balance has
+    // shifted dramatically; we flag staleness so the scorer can decide.
+    enriched = canonical_event.copy()
+    enriched.patient_age_years   = context.age_years
+    enriched.patient_weight_kg   = context.weight_kg
+    enriched.weight_observed_at  = context.weight_observed_at
+    enriched.weight_is_stale     = staleness_check(context.weight_observed_at,
+                                                   max_days = max_weight_age_for_acuity(context.acuity))
+    enriched.patient_height_cm   = context.height_cm
+    enriched.patient_acuity      = context.acuity       // &quot;icu&quot; | &quot;ward&quot; | &quot;outpatient&quot; | &quot;ed&quot;
+    enriched.patient_location    = context.unit
+
+    // Renal function: use most recent eGFR or compute Cockcroft-Gault from SCr.
+    enriched.egfr                = context.egfr
+    enriched.egfr_observed_at    = context.egfr_observed_at
+    enriched.egfr_is_stale       = staleness_check(context.egfr_observed_at,
+                                                   max_days = 2 if context.acuity in [&quot;icu&quot;, &quot;ward&quot;] else 30)
+
+    // Hepatic indicators, electrolytes, anticoagulation status: same pattern.
+    enriched.ast  = context.ast
+    enriched.alt  = context.alt
+    enriched.inr  = context.inr
+    enriched.potassium = context.potassium
+
+    // Active medication list for interaction checks.
+    enriched.active_medications = context.active_medications   // list of RxNorm IDs
+
+    // Problem list and allergies for disease and allergy checks.
+    enriched.active_problems = context.active_problems         // list of ICD-10 codes
+    enriched.allergies       = context.allergies               // normalized allergen list
+
+    // Clinical-context flags that gate the anomaly checks. The oncology-protocol
+    // flag is the highest-value feature in the recipe (see &quot;The Honest Take&quot;);
+    // without it, the general detector flags chemotherapy doses constantly. These
+    // come from the EHR&#x27;s care-plan or oncology-specific EHR feed (Aria, Mosaiq,
+    // Beacon), not from diagnosis-code inference.
+    enriched.active_protocols       = context.active_protocols       // list of regimen identifiers
+    enriched.palliative_care_active = context.palliative_care_active // boolean
+
+    // Derived features the scorer will use.
+    IF enriched.patient_weight_kg and enriched.dose_unit in [&quot;mg&quot;, &quot;mcg&quot;, &quot;g&quot;, &quot;units&quot;]:
+        enriched.dose_per_kg = canonical_event.dose_value / enriched.patient_weight_kg
+
+    enriched.is_pediatric  = enriched.patient_age_years &lt; 18
+    enriched.is_geriatric  = enriched.patient_age_years &gt;= 65
+    enriched.is_neonate    = enriched.patient_age_years &lt; 0.0833  // under one month
+
+    enriched.ckd_stage = egfr_to_ckd_stage(enriched.egfr)
+
+    return enriched
+</code></pre>
+<p><strong>Step 3: Apply the rule-based screen.</strong> For each enriched event, run the clinical rules. These are the hard-stop checks: weight-based dose limits, renal dose adjustments, severe drug-drug interactions, direct allergy contraindications. Every rule fire produces a structured flag with the rule ID, the trigger values, and the severity.</p>
+<pre class="code code-plain"><code>FUNCTION rule_screen(enriched_event):
+    flags = []
+    rule_set = clinical_rules.get_active_rules_for_drug(enriched_event.drug_rxnorm)
+
+    // Protocol-aware suppression. If the patient is on an active oncology protocol
+    // and this drug is part of the protocol&#x27;s regimen, suppress general dose-range
+    // anomalies (the doses are wildly anomalous against the population baseline by
+    // clinical design). Weight-based and renal-adjustment checks still fire, because
+    // those are protocol-independent safety floors. Every suppression decision emits
+    // an audit metric so a missed dose error from a wrongly-set protocol flag is
+    // detectable retrospectively.
+    suppressed_rule_types = set()
+    FOR each protocol_id in enriched_event.active_protocols:
+        protocol = oncology_protocols.lookup(protocol_id)
+        IF enriched_event.drug_rxnorm in protocol.regimen_drugs:
+            suppressed_rule_types = suppressed_rule_types UNION protocol.suppressed_rule_types
+            emit_metric(&quot;rule_suppressed_by_protocol&quot;, 1, dimensions = {
+                protocol_id: protocol_id,
+                drug: enriched_event.drug_rxnorm
+            })
+
+    FOR each rule in rule_set:
+        IF rule.type in suppressed_rule_types:
+            CONTINUE   // protocol membership suppresses this rule type for this drug
+
+        CASE rule.type:
+
+            &quot;max_dose_per_kg&quot;:
+                IF enriched_event.dose_per_kg is not null \
+                   AND enriched_event.dose_per_kg &gt; rule.threshold \
+                   AND enriched_event.patient_age_years in rule.age_applicable:
+                    flags.append({
+                        rule_id: rule.id,
+                        rule_type: &quot;max_dose_per_kg&quot;,
+                        severity: rule.severity,    // &quot;interrupt&quot; | &quot;synchronous&quot; | &quot;background&quot;
+                        actual: enriched_event.dose_per_kg,
+                        threshold: rule.threshold,
+                        message: f&quot;Dose {enriched_event.dose_per_kg:.2f} mg/kg exceeds maximum {rule.threshold} mg/kg for patient age {enriched_event.patient_age_years}&quot;,
+                        reference: rule.reference_source
+                    })
+
+            &quot;renal_dose_adjustment_required&quot;:
+                IF enriched_event.ckd_stage &gt;= rule.ckd_stage_trigger \
+                   AND enriched_event.dose_value &gt; rule.max_dose_at_stage[enriched_event.ckd_stage]:
+                    flags.append({
+                        rule_id: rule.id,
+                        rule_type: &quot;renal_dose_adjustment&quot;,
+                        severity: rule.severity,
+                        actual: enriched_event.dose_value,
+                        threshold: rule.max_dose_at_stage[enriched_event.ckd_stage],
+                        message: f&quot;Dose requires renal adjustment; patient eGFR {enriched_event.egfr} puts them in CKD stage {enriched_event.ckd_stage}&quot;,
+                        reference: rule.reference_source
+                    })
+
+            &quot;drug_drug_interaction&quot;:
+                IF rule.interacting_drug_rxnorm in enriched_event.active_medications:
+                    flags.append({
+                        rule_id: rule.id,
+                        rule_type: &quot;drug_drug_interaction&quot;,
+                        severity: rule.severity,
+                        paired_drug: rule.interacting_drug_rxnorm,
+                        message: rule.message,
+                        reference: rule.reference_source
+                    })
+
+            &quot;allergy_contraindication&quot;:
+                FOR each allergen in enriched_event.allergies:
+                    IF allergen.normalized_id == rule.direct_allergen:
+                        // Direct allergen match (e.g., penicillin-allergic patient
+                        // receiving penicillin). Interrupt severity is appropriate.
+                        flags.append({
+                            rule_id: rule.id,
+                            rule_type: &quot;allergy_contraindication_direct&quot;,
+                            severity: &quot;interrupt&quot;,
+                            allergen: allergen.normalized_id,
+                            reaction: allergen.reaction,
+                            message: f&quot;Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is the same agent&quot;,
+                            reference: rule.reference_source
+                        })
+                    ELSE IF allergen.normalized_id in rule.cross_reactive_allergens:
+                        // Cross-reactivity (e.g., penicillin-allergic patient
+                        // receiving a cephalosporin). Severity depends on (1) the
+                        // specific drug pair (penicillin / first-gen cephalosporin
+                        // cross-reactivity is roughly 1-2%; penicillin / third-gen
+                        // is essentially nil; penicillin / carbapenem is under 1%)
+                        // and (2) the reaction history (anaphylaxis vs. rash vs.
+                        // unspecified). Defer to the rule&#x27;s per-pair severity
+                        // rather than a global &quot;interrupt.&quot; See ASHP and Joint
+                        // Commission guidance on penicillin-allergy de-labeling
+                        // and beta-lactam stewardship.
+                        flags.append({
+                            rule_id: rule.id,
+                            rule_type: &quot;allergy_cross_reactive&quot;,
+                            severity: rule.cross_reactive_severity[allergen.reaction_type] OR &quot;synchronous&quot;,
+                            allergen: allergen.normalized_id,
+                            reaction: allergen.reaction,
+                            message: f&quot;Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is potentially cross-reactive (per-pair severity calibration applies)&quot;,
+                            reference: rule.reference_source
+                        })
+
+            // Additional rule types: min_dose, max_daily_dose, duplicate_therapy,
+            // max_frequency, max_duration, qt_prolongation_with_hypokalemia, etc.
+
+    return flags
+</code></pre>
+<p><strong>Step 4: Compute population-level z-scores.</strong> For drugs with enough dispensing volume to build a stable distribution, compare the current event against the baseline for patients with similar characteristics. The baselines live in the Feature Store, refreshed periodically by the batch pipeline.</p>
+<pre class="code code-plain"><code>FUNCTION population_zscore_check(enriched_event):
+    // Identify the patient profile bucket for baseline lookup.
+    profile_bucket = build_profile_bucket(
+        age_band: age_to_band(enriched_event.patient_age_years),   // &quot;neonate&quot; | &quot;infant&quot; | &quot;child&quot; | &quot;adult&quot; | &quot;elderly&quot;
+        acuity: enriched_event.patient_acuity,
+        ckd_stage: enriched_event.ckd_stage,
+        indication: enriched_event.indication if available else &quot;unspecified&quot;
+    )
+
+    flags = []
+
+    // Look up the baseline distribution for this drug + profile.
+    baseline = FeatureStore.GetRecord(
+        feature_group = &quot;drug-class-baselines&quot;,
+        record_id     = f&quot;{enriched_event.drug_rxnorm}:{profile_bucket}&quot;
+    )
+
+    IF baseline is null or baseline.sample_size &lt; MIN_BASELINE_SAMPLES:
+        // Not enough data for a stable baseline; skip this check.
+        return flags
+
+    // Dose z-score.
+    IF baseline.dose_median is not null AND baseline.dose_mad &gt; 0:
+        robust_z = (enriched_event.dose_value - baseline.dose_median) / (1.4826 * baseline.dose_mad)
+        IF abs(robust_z) &gt;= POP_DOSE_Z_THRESHOLD: // e.g., 3.0
+            flags.append({
+                type: &quot;population_dose_zscore&quot;,
+                feature: &quot;dose_value&quot;,
+                actual: enriched_event.dose_value,
+                baseline_median: baseline.dose_median,
+                robust_z: robust_z,
+                profile: profile_bucket,
+                severity: zscore_to_severity(robust_z)
+            })
+
+    // Dose-per-kg z-score (for weight-based drugs).
+    IF enriched_event.dose_per_kg is not null \
+       AND baseline.dose_per_kg_median is not null \
+       AND baseline.dose_per_kg_mad &gt; 0:
+        robust_z_kg = (enriched_event.dose_per_kg - baseline.dose_per_kg_median) / (1.4826 * baseline.dose_per_kg_mad)
+        IF abs(robust_z_kg) &gt;= POP_DOSE_PER_KG_Z_THRESHOLD:
+            flags.append({
+                type: &quot;population_dose_per_kg_zscore&quot;,
+                feature: &quot;dose_per_kg&quot;,
+                actual: enriched_event.dose_per_kg,
+                baseline_median: baseline.dose_per_kg_median,
+                robust_z: robust_z_kg,
+                profile: profile_bucket,
+                severity: zscore_to_severity(robust_z_kg)
+            })
+
+    return flags
+</code></pre>
+<p><strong>Step 5: Route the flags based on severity.</strong> The rule and z-score outputs are combined into a single event and routed. Interrupt-severity flags fan out synchronously to the pharmacist's workstation. Lower-severity flags go to review queues and trend analytics.</p>
+<pre class="code code-plain"><code>FUNCTION route_flags(enriched_event, rule_flags, zscore_flags):
+    all_flags = rule_flags + zscore_flags
+
+    IF length(all_flags) == 0:
+        // No flags; record the event in the audit log and move on.
+        OpenSearch.Index(&quot;dispense-audit&quot;, enriched_event)
+        return
+
+    // The overall severity is the highest severity of any individual flag.
+    overall_severity = max(flag.severity for flag in all_flags)
+
+    anomaly_event = {
+        event_id: enriched_event.event_id,
+        patient_id: enriched_event.patient_id,
+        drug_rxnorm: enriched_event.drug_rxnorm,
+        drug_display_name: enriched_event.drug_display_name,
+        event_timestamp: enriched_event.event_timestamp,
+        source: enriched_event.source,
+        flags: all_flags,
+        flag_count: length(all_flags),
+        severity: overall_severity,
+        context_snapshot: summary_of(enriched_event),    // weight, labs, active meds
+        detected_at: NOW()
+    }
+
+    EventBridge.PutEvent(
+        bus     = &quot;medication-anomaly-events&quot;,
+        detail  = anomaly_event,
+        source  = &quot;medication-anomaly-service&quot;,
+        detail_type = f&quot;MedicationAnomaly.{overall_severity}&quot;
+    )
+
+    // Index for audit and search.
+    OpenSearch.Index(&quot;medication-anomalies&quot;, anomaly_event)
+
+    // Interrupt severity triggers synchronous notification.
+    // The SNS message carries the event ID, severity, and a coarse routing tier
+    // only; the pharmacist UI fetches the full record (drug, dose, patient,
+    // context) by ID. PHI does not transit through SNS, downstream notification
+    // channels (SMS, pager, mobile push, Slack/Teams webhooks), or any logs they
+    // generate. For high-stigma drug classes (HIV antiretrovirals, opioid-use-
+    // disorder treatments, gender-affirming hormones, certain psychiatric
+    // medications), even the drug display name is a diagnostic disclosure on a
+    // lock screen and should not appear in the notification subject line.
+    IF overall_severity == &quot;interrupt&quot;:
+        SNS.Publish(
+            topic   = INTERRUPT_ALERT_TOPIC,
+            message = {
+                event_id: anomaly_event.event_id,
+                severity: &quot;interrupt&quot;,
+                routing_tier: anomaly_event.severity,
+                fetch_by_id: True
+            },
+            attributes = {
+                &quot;patient_location&quot;: enriched_event.patient_location,
+                &quot;severity&quot;: &quot;interrupt&quot;
+            }
+        )
+</code></pre>
+<p><strong>Step 6: Run the batch pattern pipeline.</strong> On a schedule (hourly for ICU-level trajectory detection, daily for broader pattern work), a Step Functions workflow runs the SageMaker Processing jobs for CUSUM trajectory detection and Isolation Forest multivariate scoring. Per-patient-day feature vectors get built from recent dispenses and scored against the Isolation Forest trained on historical data.</p>
+<pre class="code code-plain"><code>FUNCTION batch_trajectory_scoring(as_of_timestamp):
+    // For continuous and frequent-dose drugs (insulin, vasopressors, PRN pain meds),
+    // build per-patient trajectories over the rolling window.
+    window_start = as_of_timestamp - 72 hours
+    active_patients = get_active_patients(as_of = as_of_timestamp)
+
+    FOR each patient in active_patients:
+        FOR each drug in CONTINUOUS_MONITORING_DRUGS: // e.g., insulin, morphine, heparin
+            dispense_series = get_dispense_series(
+                patient_id   = patient.id,
+                drug_rxnorm  = drug,
+                window_start = window_start,
+                window_end   = as_of_timestamp
+            )
+
+            IF length(dispense_series) &lt; MIN_SERIES_LENGTH:
+                continue
+
+            // CUSUM on the dose trajectory to detect sustained shifts.
+            cusum = cusum_detect(
+                series = dispense_series.doses_per_hour,
+                target = dispense_series.baseline_rate_pre_window,
+                k      = 0.5 * dispense_series.stddev_pre_window,
+                h      = 4 * dispense_series.stddev_pre_window
+            )
+
+            IF cusum.signal_fired AND cusum.change_point_within(window_start, as_of_timestamp):
+                flag = {
+                    type: &quot;trajectory_cusum&quot;,
+                    patient_id: patient.id,
+                    drug_rxnorm: drug,
+                    change_point: cusum.change_point,
+                    pre_change_mean: cusum.pre_mean,
+                    post_change_mean: cusum.post_mean,
+                    shift_magnitude: cusum.post_mean - cusum.pre_mean,
+                    severity: trajectory_severity(drug, cusum),
+                    message: build_trajectory_message(drug, cusum)
+                }
+                EventBridge.PutEvent(
+                    bus     = &quot;medication-anomaly-events&quot;,
+                    detail  = flag,
+                    source  = &quot;medication-anomaly-service&quot;,
+                    detail_type = f&quot;MedicationAnomaly.{flag.severity}&quot;
+                )
+
+        // Per-patient-day feature vector for Isolation Forest scoring.
+        patient_day_vector = build_patient_day_features(patient, as_of_timestamp)
+        if_score = isolation_forest.score(patient_day_vector)
+
+        IF if_score &lt;= ISOLATION_FOREST_THRESHOLD:
+            flag = {
+                type: &quot;patient_day_isolation_forest&quot;,
+                patient_id: patient.id,
+                as_of: as_of_timestamp,
+                anomaly_score: if_score,
+                top_contributors: shap_explain(isolation_forest, patient_day_vector, top_k = 5),
+                severity: &quot;synchronous&quot;   // typically not interrupt-severity from batch path
+            }
+            EventBridge.PutEvent(
+                bus     = &quot;medication-anomaly-events&quot;,
+                detail  = flag,
+                source  = &quot;medication-anomaly-service&quot;,
+                detail_type = f&quot;MedicationAnomaly.{flag.severity}&quot;
+            )
+</code></pre>
+<p><strong>Step 7: Capture feedback and close the loop.</strong> Every alert generates a response (the pharmacist acknowledges, overrides, acts on, or escalates it). Every confirmed adverse drug event from incident reporting links back to the dispense records. This feedback is the training signal for rule tuning and retraining.</p>
+<pre class="code code-plain"><code>FUNCTION on_pharmacist_response(response_event):
+    // response_event: { anomaly_event_id, response, response_reason, responded_at,
+    //                   responding_user, action_taken }
+
+    // Idempotency guard: EventBridge delivers at-least-once, and Lambda async
+    // retries on failure. A redelivered event that runs the OpenSearch update,
+    // label write, and metric emission twice would double-count override metrics
+    // (which drive rule-retirement decisions) and bias the training distribution.
+    // Derive a deterministic event key and conditional-write it to a dedup table
+    // before any side effects run.
+    idempotency_key = hash(response_event.anomaly_event_id + &quot;:&quot; + response_event.response)
+    already_processed = DynamoDB.PutItem(
+        table          = &quot;processed-feedback-events&quot;,
+        item           = { pk: idempotency_key, processed_at: NOW(), ttl: NOW() + 7 days },
+        condition      = &quot;attribute_not_exists(pk)&quot;   // fails if key already exists
+    )
+    IF already_processed == CONDITION_CHECK_FAILED:
+        // Duplicate delivery; safe to drop.
+        return
+
+    anomaly = OpenSearch.Get(&quot;medication-anomalies&quot;, response_event.anomaly_event_id)
+
+    // Update the anomaly record with the response.
+    anomaly.response         = response_event.response       // &quot;acknowledged&quot; | &quot;override&quot; | &quot;modified_order&quot; | &quot;cancelled_order&quot;
+    anomaly.response_reason  = response_event.response_reason
+    anomaly.responded_at     = response_event.responded_at
+    anomaly.responding_user  = response_event.responding_user
+    anomaly.action_taken     = response_event.action_taken
+
+    OpenSearch.Update(&quot;medication-anomalies&quot;, response_event.anomaly_event_id, anomaly)
+
+    // Feed into override-rate metrics for rule tuning.
+    FOR each flag in anomaly.flags:
+        emit_metric(&quot;flag_response&quot;, 1, dimensions = {
+            rule_id: flag.rule_id or flag.type,
+            response: response_event.response,
+            severity: flag.severity
+        })
+
+    // If a modification or cancellation happened, this is a &quot;true positive&quot; signal.
+    IF response_event.response in [&quot;modified_order&quot;, &quot;cancelled_order&quot;]:
+        label_row = {
+            anomaly_event_id: anomaly.event_id,
+            flags: anomaly.flags,
+            context_snapshot: anomaly.context_snapshot,
+            label: &quot;action_taken&quot;,
+            label_source: &quot;pharmacist_response&quot;,
+            labeled_at: response_event.responded_at
+        }
+        S3.PutObject(
+            bucket = &quot;medication-anomaly-labels&quot;,
+            key    = date_partitioned_key(response_event.responded_at) + &quot;/&quot; + uuid() + &quot;.parquet&quot;,
+            body   = parquet_encode([label_row])
+        )
+
+FUNCTION on_adverse_event_report(ade_event):
+    // A confirmed adverse drug event from incident reporting.
+    // Idempotency guard: same pattern as on_pharmacist_response. A redelivered
+    // ADE event would corrupt the missed-adverse-event signal (the most important
+    // feedback signal in the pipeline) and bias the supervised classifier&#x27;s
+    // training distribution.
+    idempotency_key = hash(ade_event.id + &quot;:ade_linkage&quot;)
+    already_processed = DynamoDB.PutItem(
+        table          = &quot;processed-feedback-events&quot;,
+        item           = { pk: idempotency_key, processed_at: NOW(), ttl: NOW() + 7 days },
+        condition      = &quot;attribute_not_exists(pk)&quot;
+    )
+    IF already_processed == CONDITION_CHECK_FAILED:
+        return   // Duplicate delivery; safe to drop.
+
+    // Find dispense records for this patient within the event window.
+    related_dispenses = search_dispense_events(
+        patient_id = ade_event.patient_id,
+        window     = (ade_event.event_date - 48 hours, ade_event.event_date)
+    )
+
+    FOR each dispense in related_dispenses:
+        label_row = {
+            dispense_event_id: dispense.event_id,
+            drug_rxnorm: dispense.drug_rxnorm,
+            context_snapshot: dispense.context_snapshot,
+            ade_category: ade_event.category,
+            ade_severity: ade_event.severity,
+            had_alert: dispense.had_anomaly_flag,
+            label: &quot;adverse_event_confirmed&quot;,
+            label_source: &quot;incident_report&quot;,
+            labeled_at: ade_event.reported_at
+        }
+        S3.PutObject(
+            bucket = &quot;medication-anomaly-labels&quot;,
+            key    = date_partitioned_key(ade_event.reported_at) + &quot;/&quot; + uuid() + &quot;.parquet&quot;,
+            body   = parquet_encode([label_row])
+        )
+
+        // Critical: if an adverse event happened and the system did NOT flag it,
+        // that&#x27;s a false negative. Emit a metric and escalate for review.
+        IF not dispense.had_anomaly_flag:
+            emit_metric(&quot;missed_adverse_event&quot;, 1, dimensions = {
+                drug: dispense.drug_rxnorm,
+                ade_category: ade_event.category
+            })
+            EventBridge.PutEvent(
+                bus     = &quot;medication-anomaly-events&quot;,
+                detail  = { dispense_event_id: dispense.event_id, ade_event_id: ade_event.id },
+                source  = &quot;medication-anomaly-service&quot;,
+                detail_type = &quot;MedicationAnomaly.MissedEvent&quot;
+            )
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter03.04-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample interrupt-severity alert for a pediatric dose anomaly:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;event_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DISP-2026-05-12T19:42:18Z-884412&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-0044221&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;drug_rxnorm&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;723&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;drug_display_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;amoxicillin 500 mg oral tablet&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;event_timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T19:42:18Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cpoe&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rule_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MAX_DOSE_PER_KG_AMOXICILLIN_PEDIATRIC_AOM_HIGH_DOSE&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;rule_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;max_dose_per_kg&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;interrupt&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;actual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">71.4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;threshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">50.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dose 71.4 mg/kg per dose exceeds the per-dose ceiling of 50.0 mg/kg for patient age 4.3 years (weight 14 kg). Standard pediatric amoxicillin for AOM under current AAP high-dose guidance is 80-90 mg/kg/day divided BID, which works out to approximately 40-45 mg/kg per dose.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;drug_kb_v2026.05_amoxicillin_pediatric_dosing&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;population_dose_per_kg_zscore&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;feature&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dose_per_kg&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;actual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">71.4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;baseline_median&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">41.5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;robust_z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;profile&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pediatric:child:outpatient:ckd_none:indication_otitis_media&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;interrupt&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;flag_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;interrupt&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;context_snapshot&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;patient_age_years&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;patient_weight_kg&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;weight_observed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T10:15:00Z&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;weight_is_stale&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;patient_acuity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;outpatient&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;egfr&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;active_medications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nt">&quot;active_protocols&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nt">&quot;allergies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T19:42:18.215Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;narrative_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Prescribed amoxicillin dose of 1000 mg is 71.4 mg/kg per dose based on patient weight of 14 kg, substantially above the AAP high-dose AOM target of 40-45 mg/kg per dose (80-90 mg/kg/day divided BID). Recommend verifying intended dose; a likely intent is 600 mg per dose twice daily for high-dose AOM.&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample synchronous-review alert from the batch trajectory pipeline:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;trajectory_cusum&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;patient_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PT-0122118&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;drug_rxnorm&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5856&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;drug_display_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;insulin regular 100 unit/mL injectable&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;change_point&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12T13:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;pre_change_mean&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.4</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;post_change_mean&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">11.8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;shift_magnitude&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">9.4</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;synchronous&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;units_per_hour&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Insulin infusion rate has trended from 2.4 U/hr to 11.8 U/hr over the past 14 hours, a 4.9x increase. Combined with rising temperature (baseline 37.2C, current 38.9C) and rising white blood cell count (baseline 8.1, current 14.3), pattern is consistent with emerging infection/sepsis. Recommend clinical review.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;supporting_context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;dispense_count_in_window&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;temperature_trend&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;+1.7C over 14h&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wbc_trend&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;+6.2 over 18h&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;urine_output_trend&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;-15 mL/hr over 12h&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-13T03:02:17Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample diversion-pattern alert from the graph analytics pipeline:</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;controlled_substance_pattern&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;subject_user_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;USR-RN-088221&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;subject_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;registered_nurse&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;pattern_category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pull_administration_discrepancy&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;window_start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-15&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;window_end&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-12&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;signals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;signal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pull_without_administration_rate&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;actual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.14</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peer_median&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.02</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peer_p95&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;robust_z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.1</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;signal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;waste_witness_rate&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;actual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.82</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peer_median&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.15</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peer_p95&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.35</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;robust_z&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.6</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;signal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;off_unit_administrations&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;actual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peer_median&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;peer_p95&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;investigation&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;routing&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;diversion_investigation_team&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;User shows elevated rates of controlled-substance pulls without matching administrations and unusually high waste-witness-required rate (self-witness patterns). Requires investigation before any disciplinary or clinical inference.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;note&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Pattern matches diversion indicators consistent with ASHP guidance and common production detection patterns; does not constitute proof of diversion. Investigation to be conducted under existing pharmacy-compliance protocol with HR and legal involvement as appropriate.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;detected_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-13T06:00:00Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative; measure against your own data):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Rules only</th>
+<th>Rules + pop z-score</th>
+<th>Full pipeline (rules + z + trajectory + IF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Alerts per 1,000 dispense events</td>
+<td>120-250</td>
+<td>40-120</td>
+<td>25-80</td>
+</tr>
+<tr>
+<td>Pharmacist override rate</td>
+<td>85-95%</td>
+<td>60-80%</td>
+<td>40-65%</td>
+</tr>
+<tr>
+<td>Recall on dose errors (vs. chart review)</td>
+<td>60-75%</td>
+<td>75-85%</td>
+<td>82-92%</td>
+</tr>
+<tr>
+<td>Recall on drug interaction ADEs</td>
+<td>50-70%</td>
+<td>55-75%</td>
+<td>70-85%</td>
+</tr>
+<tr>
+<td>Recall on trajectory-related ADEs (sepsis, pain crisis)</td>
+<td>5-15%</td>
+<td>10-20%</td>
+<td>45-70%</td>
+</tr>
+<tr>
+<td>Diversion pattern detection (vs. investigator-confirmed)</td>
+<td>10-25% (only extreme cases)</td>
+<td>15-30%</td>
+<td>55-75%</td>
+</tr>
+<tr>
+<td>Real-time latency p95 (order entry to flag)</td>
+<td>50-150ms</td>
+<td>100-300ms</td>
+<td>100-400ms</td>
+</tr>
+<tr>
+<td>Batch trajectory cadence</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>15-60 min</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Pediatric weight-based dosing with stale weights.</strong> If the weight in the cache is days old and the patient is fluid-resuscitated (common in pediatric ICU), the dose-per-kg math is wrong. The system flags this with a staleness indicator, but correct handling requires workflow integration to ensure fresh weights on critical patients.</li>
+<li><strong>Oncology protocols.</strong> Doses that look wildly anomalous relative to general population baselines are correct for chemotherapy. A chemotherapy-aware detection path is required; the general detector should suppress or re-contextualize alerts for patients on active oncology protocols.</li>
+<li><strong>Compound and investigational drugs.</strong> Drugs without stable RxNorm mappings or without reference data in the knowledge base can't be scored. Route to a separate review path and flag for reference-data curation.</li>
+<li><strong>Order-verification vs. dispense vs. administration mismatch.</strong> A large class of medication errors happen at the administration step, not the dispense step. The pipeline sees the dispense; it doesn't always see whether the dose was actually given, given as prescribed, or given to the right patient. Integration with the barcode medication administration (BCMA) system closes this gap but is often a separate project.</li>
+<li><strong>PRN patterns.</strong> &quot;As needed&quot; orders make frequency checks harder because the intended frequency is an upper bound, not a schedule. Detecting overuse requires combining the order with the administration record, which complicates the real-time check.</li>
+<li><strong>Legitimate rare events.</strong> Low-frequency drugs with few historical dispenses can't build stable baselines. Rules catch some of the obvious cases; unusual-but-correct prescriptions for rare conditions may still generate false alerts.</li>
+<li><strong>Allergies stored as free text.</strong> Many EHRs have allergy fields that are partially or entirely free-text. The pipeline treats only normalized allergy entries as authoritative; unnormalized entries can be pipelined through Comprehend Medical but this adds latency and cost. Some allergy documentation simply won't be actionable by the detector.</li>
+<li><strong>Cross-encounter medication reconciliation gaps.</strong> If the home medication list was not reconciled on admission, drug-drug interactions between home meds and new inpatient orders may not fire. This is a data quality issue upstream, not a detection issue downstream, but its downstream effect is real.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode above gives you the shape. A production medication dispensing anomaly system closes several gaps that the recipe leaves intentionally light.</p>
+<p><strong>Clinical rule authoring is a program, not a project.</strong> The clinical rule library is the foundation of the pipeline, and it has to be authored, versioned, tested, and governed carefully. Most production systems have a dedicated clinical pharmacist or clinical informatics team that owns the rules. Each rule has a clinical justification, a reference source (specific knowledge-base entry or guideline citation), a severity rationale, and ongoing monitoring for override rates. Changes require approval. Large rule sets get peer-reviewed like code, with a merge-request workflow. Treat this as an ongoing operational program, not a one-time build.</p>
+<p><strong>Drug reference content licensing and integration.</strong> The recipe assumes you have access to drug reference data. In practice, this usually means a multi-year contract with First Databank, Wolters Kluwer, or Medi-Span, plus engineering time to integrate their daily update files, plus a process for reconciling discrepancies between the reference data and your internal formulary. Budget this explicitly. Open-source paths (RxNorm + DailyMed + Orange Book + custom rule derivation) exist but require significant clinical-informatics effort to build and maintain.</p>
+<p><strong>HL7 and FHIR integration is a team sport.</strong> Getting medication orders, administrations, and dispense events from the EHR and the automated dispensing cabinets reliably into the pipeline is an integration project that typically involves the hospital's integration engine team, the EHR vendor's implementation specialists, and the automated dispensing cabinet vendor. Timelines are routinely 6-12 months for the first integration, shorter for subsequent facilities in a multi-site rollout. Do not underestimate.</p>
+<p><strong>Real-time latency budget is tighter than it looks.</strong> The pharmacist experience requires that a flag be available by the time the verification screen opens. For the Pyxis/Omnicell pull experience, it has to happen before the drawer opens. These are sub-second experiences, and the cumulative latency of message transit, normalization, cache lookup, rule evaluation, and flag routing adds up. A well-designed system targets p95 under 500ms end-to-end and treats slower responses as a degraded mode (background notification rather than synchronous interrupt).</p>
+<p><strong>Graceful degradation when dependencies fail.</strong> If the patient-context cache is unavailable, the pipeline has to fall back to something, because failing to dispense medications is a worse safety outcome than missing an anomaly check. The fallback behavior (allow dispense with a logged gap, pass to a human verification step, block only for the highest-severity rules) is a clinical and operational decision that has to be made explicitly. Document the fallback paths and test them; they will be exercised sooner than you expect.</p>
+<p><strong>Feedback capture has to be designed for busy clinicians.</strong> An override reason form that takes 30 seconds to complete will be filled with &quot;other&quot; or whatever the first option is. A well-designed feedback capture asks the minimum necessary: was this alert clinically useful? If you overrode, which reason best fits? Optional one-line note. Every additional field is attrition. Design the UX in partnership with the pharmacists who'll use it, not as an afterthought.</p>
+<p><strong>Severity tiering governance.</strong> The definition of &quot;interrupt&quot; vs. &quot;synchronous&quot; vs. &quot;background&quot; severity is a clinical and operational decision, not a technical one. It should be governed by the pharmacy and therapeutics committee (or equivalent) and reviewed regularly based on override rates, adverse event correlations, and staff feedback. Tech-only severity decisions produce alert fatigue and loss of clinical trust. Let the clinicians drive this.</p>
+<p><strong>Diversion investigation has legal complexity.</strong> A flag that suggests a clinician may be diverting controlled substances is not an accusation. It's a pattern worth investigating. The investigation protocol has serious implications: chain of custody, human resources involvement, potentially law enforcement or DEA notification, legal privilege considerations, employee protections under labor law. Pharmacy compliance and legal need to own this workflow, not the engineering team that builds the detector.</p>
+<p><strong>Bias and equity monitoring.</strong> Medication dispensing anomaly systems can encode bias in several ways. A system trained on majority-population dosing patterns may flag as anomalous the legitimate dosing patterns for populations underrepresented in the training data. Pain management alerts can align with known racial disparities in opioid prescribing. Override patterns may differ by prescribing-physician demographics in ways that encode bias in the feedback loop. Subgroup monitoring dashboards (by patient demographics, by care setting, by prescribing physician demographics) are part of the minimum deployment, not optional.</p>
+<p><strong>Regulatory and accreditation alignment.</strong> Medication dispensing is regulated by the FDA for certain software functions, by state boards of pharmacy for operational practice, and by accrediting bodies (Joint Commission, DNV, CMS conditions of participation) for hospital compliance. Depending on how the anomaly detector interacts with clinical decisions, it may be considered Clinical Decision Support Software under FDA guidance. Coordinate with regulatory affairs and legal before production deployment. This isn't optional.</p>
+<p><strong>Data retention and audit trail integrity.</strong> Every alert, every override, every confirmed event has retention requirements that may extend well beyond the general HIPAA 6-year baseline. DEA records for controlled substances have specific retention mandates. State pharmacy board retention can be 5-10 years or longer. Sentinel event records may be retained permanently. The audit trail has to be immutable (typically S3 Object Lock or equivalent) because it will be subject to subpoena and regulatory review.</p>
+<p><strong>Disaster recovery and business continuity.</strong> The pipeline is in the medication-dispensing path. If the pipeline is down, pharmacy workflow has to continue, which means the downtime mode has to be documented, drilled, and tested. The rules layer should be deployable as a standalone fallback even if the ML components are unavailable. The pharmacy doesn't stop dispensing when AWS has an issue; plan accordingly.</p>
+<p><strong>Trigger idempotency on the feedback loop.</strong> EventBridge guarantees at-least-once delivery, and Lambda async invocation retries on failure. Without an idempotency guard at the feedback-capture Lambda, a redelivered pharmacist-response event or ADE event can run the OpenSearch update, the label write, and the metric emissions twice. Doubled override counts directly distort which rules look high-override and get retired by the rule-tuning loop, and a rule retired because of artificially-doubled counts is a missed-future-flag, which can be a missed-future-ADE. Derive a deterministic event key (the anomaly event ID plus the response type for pharmacist responses; the ADE event ID plus the dispense event ID for ADE reports) and use it as a write-once guard in DynamoDB before the OpenSearch update, the label write, and the metric emissions run. This is a recurring pattern across the cookbook's event-driven pipelines and is a strong candidate for a shared idempotency appendix.</p>
+<p><strong>DLQ and replay for the streaming Lambdas.</strong> A dropped event in the real-time-anomaly-service path is a dispense without an anomaly check, which is precisely the failure mode the entire pipeline is designed to prevent. Lambda's default async retry is two retries over six hours and then drop, with the only evidence in CloudWatch Logs. Configure each streaming Lambda's <code>OnFailure</code> destination to a dedicated SQS DLQ (<code>event-normalizer-dlq</code>, <code>real-time-anomaly-service-dlq</code>, <code>feedback-capture-dlq</code>); CloudWatch alarms on DLQ depth alert the on-call clinical-informatics and pharmacy-operations teams. For the real-time-anomaly-service DLQ specifically, alarm threshold is 1, because a single dropped dispense event is a patient-safety event. Replay events from the DLQ after fixing the root cause; for events older than the dispense window (typically one hour), escalate to clinical-informatics review rather than auto-replay because the dispense decision has already been made downstream.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>BCMA integration for administration-time anomaly detection.</strong> The recipe focuses on dispense-time detection. Extending it to the barcode medication administration (BCMA) scan at the bedside catches a different class of error: wrong patient, wrong time, wrong route, wrong dose-at-administration (for doses that are split after dispense). Integration with the BCMA feed requires the same normalization layer and a similar real-time Lambda, but the context has to include &quot;what was the patient supposed to be getting right now&quot; rather than &quot;is this dispense request reasonable.&quot; Closes the gap between the pharmacy and the bedside.</p>
+<p><strong>Outpatient and specialty pharmacy patterns.</strong> The inpatient-heavy architecture here maps cleanly to outpatient pharmacy with a few changes: the patient-context cache gets populated from claims rather than EHR events, the frequency of dispense events is lower (refills vs. rounds), and refill-pattern analytics (early refills, missed refills, doctor shopping visible across pharmacies via PDMP) become more important than single-event dose checks. A dedicated outpatient path sharing the rules library but with different feature engineering is usually the right pattern for organizations running both inpatient and outpatient pharmacy operations.</p>
+<p><strong>Medication reconciliation assist.</strong> The patient-context cache and the active medication list are also the foundation for medication reconciliation at admission, transfer, and discharge. A dedicated reconciliation path that uses the same data and adds home-medication-list ingestion from PBM feeds and patient interview can identify reconciliation gaps (drugs on the home list missing from the inpatient list, inpatient drugs missing from the discharge list) that often precede adverse events. Strong tie-in to the anomaly detection backbone.</p>
+<p><strong>PDMP integration for opioid stewardship.</strong> State PDMP data provides cross-pharmacy, cross-prescriber visibility into controlled-substance dispensing. Integrating PDMP queries into both the real-time detection (at order entry for a new opioid prescription) and the diversion path (comparing internal dispenses to external patterns) extends the reach of the system. PDMP integration is state-specific: each state has its own API, authentication, usage rules, and data-sharing constraints. Budget integration time per state.</p>
+<p><strong>Patient-level education and engagement.</strong> Some outpatient anomalies (early refills, missed refills, suspected non-adherence) are best addressed by patient outreach rather than provider review. A Pinpoint-based outreach workflow that sends context-aware messages (&quot;we noticed you refilled early; is everything okay with the dose?&quot; or &quot;it's been 14 days since your scheduled refill; need help getting to the pharmacy?&quot;) connects detection to intervention directly. Overlaps with Chapter 4 (Personalization) and Chapter 11 (Conversational AI) on the intervention side.</p>
+<p><strong>LLM-assisted clinical-reasoning triage.</strong> For synchronous-severity alerts, a HIPAA-eligible LLM (through Amazon Bedrock) can read the patient's recent clinical note, the medication order, and the detected anomaly, then generate a triage recommendation. &quot;The note mentions worsening sepsis; the dose increase is consistent with the clinical picture; suggest lower-severity disposition.&quot; This is not a replacement for human clinical judgment, and the LLM output has to be validated against clinical experience before being deployed. It's an accelerator for pharmacist triage, not a decision-maker. Adds cost and latency; suitable for the synchronous queue, not the interrupt path.</p>
+<p><strong>Closed-loop TPN and compounding sterile preparations.</strong> For IV admixtures and total parenteral nutrition orders, the anomaly space includes compounding errors (wrong base solution, wrong additive concentration, wrong ratio), which are a major source of historical harm events. A dedicated compounding anomaly path that integrates with the automated compounding device and the check-weight station adds a layer of verification that's specifically tuned for these high-risk preparations. A more specialized extension, but one that addresses a known class of severe patient-safety events.</p>
+<p><strong>Time-of-day and shift-pattern detection for controlled substances.</strong> The diversion graph analytics can be extended with temporal patterns: pulls at unusual times for the user's shift pattern, pulls from stations the user doesn't normally work, bursts of activity at shift change or during quiet overnight periods. These temporal features significantly increase the graph-based detector's precision for diversion patterns.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/streams/latest/dev/introduction.html">Amazon Kinesis Data Streams Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html">Amazon SageMaker Feature Store Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html">Amazon SageMaker Processing</a></li>
+<li><a href="https://docs.aws.amazon.com/sagemaker/latest/dg/randomcutforest.html">Amazon SageMaker Random Cut Forest Algorithm</a></li>
+<li><a href="https://docs.aws.amazon.com/neptune/latest/userguide/intro.html">Amazon Neptune User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html">Amazon OpenSearch Service Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html">Amazon Comprehend Medical Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html">AWS Step Functions Developer Guide</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html">Architecting for HIPAA on AWS (Whitepaper)</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/aws/amazon-sagemaker-examples"><code>amazon-sagemaker-examples</code></a>: Random Cut Forest and Isolation Forest patterns applicable to the multivariate anomaly detection layer; Feature Store examples that match the drug-class baseline architecture.</li>
+<li><a href="https://github.com/aws-samples"><code>aws-samples</code></a>: Search for &quot;healthcare,&quot; &quot;clinical decision support,&quot; &quot;hl7,&quot; and &quot;fhir&quot; for adjacent integration patterns.</li>
+<li><a href="https://github.com/aws-samples?q=healthcare"><code>aws-healthcare-lifesciences</code></a>: browse the aws-samples healthcare repos for adjacent patterns.</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter by AI/ML + Healthcare): browse for clinical decision support and pharmacy analytics reference architectures.</li>
+<li><a href="https://aws.amazon.com/blogs/machine-learning/">AWS Machine Learning Blog</a>: search for &quot;anomaly detection,&quot; &quot;clinical decision support,&quot; and &quot;medication&quot; for architectural deep-dives.</li>
+<li><a href="https://aws.amazon.com/healthlake/">AWS HealthLake</a>: managed FHIR repository that can serve as the patient-context data source for the pipeline in deployments that standardize on FHIR.</li>
+</ul>
+<p><strong>Industry, Clinical, and Regulatory References:</strong></p>
+<ul>
+<li><a href="https://www.ismp.org/">Institute for Safe Medication Practices (ISMP)</a>: publishes medication error reports, safety guidelines, and the ISMP list of high-alert medications, which is essential reference material for prioritizing the rules layer.</li>
+<li><a href="https://www.ashp.org/">ASHP (American Society of Health-System Pharmacists) Guidelines on Preventing Diversion of Controlled Substances</a>: the authoritative reference for diversion detection program design.</li>
+<li><a href="https://www.fda.gov/medical-devices/software-medical-device-samd/clinical-decision-support-software">FDA Guidance on Clinical Decision Support Software</a>: FDA's framework for when clinical decision support software is regulated as a medical device. Relevant for severity-tiered alerting that directly drives clinical action.</li>
+<li><a href="https://www.deadiversion.usdoj.gov/">DEA Controlled Substance Registrant Resources</a>: DEA registration, recordkeeping, and reporting requirements for controlled substance dispensing.</li>
+<li><a href="https://www.nlm.nih.gov/research/umls/rxnorm/index.html">National Library of Medicine RxNorm</a>: free drug concept vocabulary; foundational for vocabulary normalization.</li>
+<li><a href="https://dailymed.nlm.nih.gov/dailymed/">NLM DailyMed</a>: free structured product labels; useful for drug reference data in development environments.</li>
+<li><a href="https://www.jointcommission.org/resources/sentinel-event/sentinel-event-alert-newsletters/">The Joint Commission Sentinel Event Alerts on Medication Safety</a>: periodic publications on specific medication-safety failure patterns that often inform rule library priorities.</li>
+<li><a href="https://www.hl7.org/">HL7 International</a> and <a href="https://www.hl7.org/fhir/">HL7 FHIR</a>: the standards bodies for healthcare data interchange. HL7 v2 for legacy integrations, FHIR R4 for modern ones.</li>
+</ul>
+<p><strong>External References (Conceptual):</strong></p>
+<ul>
+<li><a href="https://cs.nju.edu.cn/zhouzh/zhouzh.files/publication/icdm08b.pdf">Isolation Forest (Liu, Ting, Zhou, 2008)</a>: the original Isolation Forest paper for multivariate unsupervised anomaly detection.</li>
+<li><a href="https://en.wikipedia.org/wiki/Statistical_process_control">Statistical Process Control (Wikipedia)</a>: conceptual background on CUSUM and EWMA control charts applicable to medication trajectory monitoring.</li>
+<li><a href="https://github.com/shap/shap">SHAP (SHapley Additive exPlanations)</a>: per-prediction explanation library, essential for producing analyst-facing explanations of multivariate anomaly flags.</li>
+<li><a href="https://github.com/synthetichealth/synthea">Synthea</a>: synthetic patient and medication data generator for non-PHI development environments.</li>
+<li><a href="https://mimic.mit.edu/">MIMIC-IV</a>: deidentified ICU data including detailed medication administration records, available through PhysioNet with a data use agreement. Useful for pilot and research development; not a substitute for production clinical data.</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Real-time rule-based screening for a subset of drugs (opioids, anticoagulants, pediatric antibiotics), HL7 ingest from one EHR, patient-context cache from ADT and ORM feeds, severity-tiered alert routing, override tracking</td>
+<td>4-6 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Full rules layer across drug formulary, population-level z-scores, trajectory CUSUM for continuous-dose drugs, Isolation Forest multivariate detection, drug reference content integration, subgroup fairness dashboards, full audit and governance, disaster recovery mode</td>
+<td>9-15 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>Diversion detection module with graph analytics, BCMA integration, outpatient and PDMP integration, LLM-assisted clinical triage, compounding anomaly path, multi-facility rollout</td>
+<td>12-24 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter03.04-medication-dispensing-anomalies.html">Main Recipe 3.4</a> · <a href="chapter03.04-python-example.html">Python Example</a> · <a href="chapter03-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

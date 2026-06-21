@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 13.3: Python Implementation Example</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested nav-active" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-133-python-implementation-example">Recipe 13.3: Python Implementation Example</h1>
+<blockquote>
+<p><strong>Heads up:</strong> This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 13.3. It shows one way you could translate those graph concepts into working Python code using boto3 and Neptune's openCypher endpoint. It is not production-ready. There's no connection pooling, no robust error handling, no input validation. Think of it as the sketchpad version: useful for understanding how ICD/CPT hierarchy data flows into a graph and how traversal queries work, not something you'd deploy to a coding department on Monday morning. A starting point, not a destination.</p>
+</blockquote>
+<hr />
+<h2 id="setup">Setup</h2>
+<p>You'll need the AWS SDK for Python and a few supporting libraries:</p>
+<div class="code"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>boto3<span class="w"> </span>requests
+</pre></div>
+
+<p>Your environment needs credentials configured (via environment variables, an instance profile, or <code>~/.aws/credentials</code>). The IAM role or user needs permissions for Neptune (<code>neptune-db:*</code> scoped to your cluster), S3 (<code>s3:GetObject</code> and <code>s3:PutObject</code> on the staging bucket), and network access to Neptune from within your VPC.</p>
+<p>Neptune doesn't use IAM for query authentication by default (it uses VPC-level network isolation). If you've enabled IAM auth on your cluster, you'll need to sign requests with SigV4. This example assumes VPC network access without IAM auth for simplicity.</p>
+<hr />
+<h2 id="config-and-constants">Config and Constants</h2>
+<p>Before we get to the steps, here's the configuration that drives the pipeline. These constants define the Neptune endpoint, the graph schema for medical code hierarchies, and the ICD-10-CM chapter structure we'll use to derive hierarchy from code structure.</p>
+<div class="code"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
+
+<span class="c1"># Configure logging. In production, use structured JSON logging</span>
+<span class="c1"># for CloudWatch Logs Insights queries.</span>
+<span class="c1"># PHI Safety: Code assignments linked to patients are part of the</span>
+<span class="c1"># designated record set. Never log patient-code associations.</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># Neptune cluster endpoint. Use the writer endpoint for loads,</span>
+<span class="c1"># reader endpoint for queries. In production, separate these.</span>
+<span class="c1">#</span>
+<span class="c1"># Neptune runs inside your VPC. This code must execute from within</span>
+<span class="c1"># the same VPC (Lambda in VPC, EC2, ECS, etc.) to reach it.</span>
+<span class="n">NEPTUNE_ENDPOINT</span> <span class="o">=</span> <span class="s2">&quot;your-neptune-cluster.cluster-xxxxxxxxxxxx.us-east-1.neptune.amazonaws.com&quot;</span>
+<span class="n">NEPTUNE_PORT</span> <span class="o">=</span> <span class="mi">8182</span>
+
+<span class="c1"># Neptune exposes openCypher queries via HTTPS POST to this path.</span>
+<span class="n">NEPTUNE_OPENCYPHER_URL</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">NEPTUNE_ENDPOINT</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">NEPTUNE_PORT</span><span class="si">}</span><span class="s2">/openCypher&quot;</span>
+
+<span class="c1"># S3 bucket for staging source files and Neptune bulk load CSVs.</span>
+<span class="n">STAGING_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;my-code-hierarchy-staging&quot;</span>
+
+<span class="c1"># Neptune bulk loader IAM role. This role must have S3 read access</span>
+<span class="c1"># to the staging bucket and a trust policy allowing Neptune to assume it.</span>
+<span class="n">NEPTUNE_LOAD_ROLE_ARN</span> <span class="o">=</span> <span class="s2">&quot;arn:aws:iam::123456789012:role/NeptuneLoadFromS3&quot;</span>
+
+<span class="c1"># AWS region for all service calls.</span>
+<span class="n">AWS_REGION</span> <span class="o">=</span> <span class="s2">&quot;us-east-1&quot;</span>
+
+<span class="c1"># Redis endpoint for caching traversal results.</span>
+<span class="c1"># Hierarchy queries are deterministic per version, so caching is very effective.</span>
+<span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="s2">&quot;your-redis-cluster.xxxxxxxxxxxx.use1.cache.amazonaws.com&quot;</span>
+<span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="mi">6379</span>
+
+<span class="c1"># Cache TTL: 24 hours. ICD-10 updates annually (Oct 1), CPT annually with</span>
+<span class="c1"># quarterly corrections. Flush cache explicitly on version loads.</span>
+<span class="n">CACHE_TTL_SECONDS</span> <span class="o">=</span> <span class="mi">86400</span>
+
+<span class="c1"># ICD-10-CM chapter ranges. The first character of the code determines</span>
+<span class="c1"># the chapter. This is how we derive the top-level hierarchy from code structure.</span>
+<span class="n">ICD10_CHAPTERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;Certain infectious and parasitic diseases&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;Certain infectious and parasitic diseases&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;Neoplasms&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;D&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;2-3&quot;</span><span class="p">,</span> <span class="s2">&quot;Neoplasms / Blood diseases&quot;</span><span class="p">),</span>  <span class="c1"># D00-D49 = neoplasms, D50-D89 = blood</span>
+    <span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;4&quot;</span><span class="p">,</span> <span class="s2">&quot;Endocrine, nutritional and metabolic diseases&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;Mental, behavioral and neurodevelopmental disorders&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;G&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;6&quot;</span><span class="p">,</span> <span class="s2">&quot;Diseases of the nervous system&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;H&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;7-8&quot;</span><span class="p">,</span> <span class="s2">&quot;Eye and adnexa / Ear and mastoid&quot;</span><span class="p">),</span>  <span class="c1"># H00-H59 = eye, H60-H95 = ear</span>
+    <span class="s2">&quot;I&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;9&quot;</span><span class="p">,</span> <span class="s2">&quot;Diseases of the circulatory system&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;J&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;10&quot;</span><span class="p">,</span> <span class="s2">&quot;Diseases of the respiratory system&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;11&quot;</span><span class="p">,</span> <span class="s2">&quot;Diseases of the digestive system&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;L&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;12&quot;</span><span class="p">,</span> <span class="s2">&quot;Diseases of the skin and subcutaneous tissue&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;13&quot;</span><span class="p">,</span> <span class="s2">&quot;Diseases of the musculoskeletal system&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;N&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;14&quot;</span><span class="p">,</span> <span class="s2">&quot;Diseases of the genitourinary system&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;O&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;15&quot;</span><span class="p">,</span> <span class="s2">&quot;Pregnancy, childbirth and the puerperium&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;P&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;16&quot;</span><span class="p">,</span> <span class="s2">&quot;Certain conditions originating in the perinatal period&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;Q&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;17&quot;</span><span class="p">,</span> <span class="s2">&quot;Congenital malformations&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;R&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;18&quot;</span><span class="p">,</span> <span class="s2">&quot;Symptoms, signs and abnormal clinical findings&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;19&quot;</span><span class="p">,</span> <span class="s2">&quot;Injury, poisoning&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;19&quot;</span><span class="p">,</span> <span class="s2">&quot;Injury, poisoning&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;V&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;20&quot;</span><span class="p">,</span> <span class="s2">&quot;External causes of morbidity&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;W&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;20&quot;</span><span class="p">,</span> <span class="s2">&quot;External causes of morbidity&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;20&quot;</span><span class="p">,</span> <span class="s2">&quot;External causes of morbidity&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;20&quot;</span><span class="p">,</span> <span class="s2">&quot;External causes of morbidity&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;21&quot;</span><span class="p">,</span> <span class="s2">&quot;Factors influencing health status&quot;</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1"># Node labels in our graph schema.</span>
+<span class="n">NODE_LABELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;icd10&quot;</span><span class="p">:</span> <span class="s2">&quot;ICD10CM&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cpt&quot;</span><span class="p">:</span> <span class="s2">&quot;CPT&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;chapter&quot;</span><span class="p">:</span> <span class="s2">&quot;Chapter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;block&quot;</span><span class="p">:</span> <span class="s2">&quot;Block&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Edge types connecting our nodes.</span>
+<span class="n">EDGE_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;is_child_of&quot;</span><span class="p">:</span> <span class="s2">&quot;IS_CHILD_OF&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;excludes1&quot;</span><span class="p">:</span> <span class="s2">&quot;EXCLUDES1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;excludes2&quot;</span><span class="p">:</span> <span class="s2">&quot;EXCLUDES2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;code_first&quot;</span><span class="p">:</span> <span class="s2">&quot;CODE_FIRST&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;use_additional&quot;</span><span class="p">:</span> <span class="s2">&quot;USE_ADDITIONAL&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cross_walks_to&quot;</span><span class="p">:</span> <span class="s2">&quot;CROSS_WALKS_TO&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;superseded_by&quot;</span><span class="p">:</span> <span class="s2">&quot;SUPERSEDED_BY&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-1-parse-icd-10-cm-source-files">Step 1: Parse ICD-10-CM Source Files</h2>
+<p><em>The pseudocode calls this <code>parse_icd10_to_graph(source_file_path)</code>. It reads the CMS order file (a fixed-width text file where each line represents one code) and produces graph nodes and edges. The hierarchy is derived from the code structure itself: E11 is parent of E11.6, which is parent of E11.65.</em></p>
+<div class="code"><pre><span></span><span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">AWS_REGION</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">derive_parent_code</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derive the parent code from an ICD-10-CM code by removing the last</span>
+<span class="sd">    character of specificity.</span>
+
+<span class="sd">    ICD-10-CM hierarchy is encoded in the code structure:</span>
+<span class="sd">      E11.65 -&gt; parent is E11.6</span>
+<span class="sd">      E11.6  -&gt; parent is E11</span>
+<span class="sd">      E11    -&gt; parent is the chapter/block level (handled separately)</span>
+
+<span class="sd">    The dot is cosmetic (separates category from subcategory) but the</span>
+<span class="sd">    hierarchy is purely positional.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Remove the dot for uniform handling. ICD-10 codes are 3-7 chars</span>
+    <span class="c1"># without the dot (the dot always appears after position 3).</span>
+    <span class="n">clean</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">clean</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="c1"># Three-character codes (categories like E11) are children of blocks.</span>
+        <span class="c1"># We&#39;ll handle block-level parenting separately.</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Drop the last character to get the parent.</span>
+    <span class="n">parent_clean</span> <span class="o">=</span> <span class="n">clean</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Re-insert the dot if the parent is longer than 3 characters.</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent_clean</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">parent_clean</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">parent_clean</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">parent_clean</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_icd10_order_file</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse the CMS ICD-10-CM order file into graph nodes and edges.</span>
+
+<span class="sd">    The order file is a fixed-width text file. Each line contains:</span>
+<span class="sd">      - Positions 1-5: sequence number</span>
+<span class="sd">      - Position 6: blank</span>
+<span class="sd">      - Positions 7-13: ICD-10-CM code (no dot, left-justified)</span>
+<span class="sd">      - Position 14: blank</span>
+<span class="sd">      - Position 15: 0 = non-billable header, 1 = billable code</span>
+<span class="sd">      - Position 16: blank</span>
+<span class="sd">      - Positions 17-76: short description (60 chars)</span>
+<span class="sd">      - Positions 77+: long description</span>
+
+<span class="sd">    CMS publishes this at:</span>
+<span class="sd">    https://www.cms.gov/medicare/coding-billing/icd-10-codes</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the downloaded CMS file</span>
+<span class="sd">        key: S3 key to the order file (e.g., &quot;icd10cm/FY2026/icd10cm_order_2026.txt&quot;)</span>
+<span class="sd">        version: Fiscal year version string (e.g., &quot;FY2026&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (nodes_list, edges_list) ready for Neptune bulk load formatting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Download the order file from S3.</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">77</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># skip malformed lines</span>
+
+        <span class="c1"># Parse fixed-width fields.</span>
+        <span class="c1"># The code field is positions 7-13 (0-indexed: 6:13), no dot included.</span>
+        <span class="n">raw_code</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">13</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">is_billable</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span>
+        <span class="n">short_desc</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">16</span><span class="p">:</span><span class="mi">76</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">long_desc</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">77</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">77</span> <span class="k">else</span> <span class="n">short_desc</span>
+
+        <span class="c1"># CMS stores codes without dots. Re-insert the dot after position 3</span>
+        <span class="c1"># for codes longer than 3 characters (standard display format).</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw_code</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">raw_code</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">raw_code</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">raw_code</span>
+
+        <span class="c1"># Determine the chapter from the first character.</span>
+        <span class="n">first_char</span> <span class="o">=</span> <span class="n">code</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="n">chapter_info</span> <span class="o">=</span> <span class="n">ICD10_CHAPTERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">first_char</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">))</span>
+
+        <span class="c1"># Create the node for this code.</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+            <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">NODE_LABELS</span><span class="p">[</span><span class="s2">&quot;icd10&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">long_desc</span><span class="p">,</span>
+            <span class="s2">&quot;short_desc&quot;</span><span class="p">:</span> <span class="n">short_desc</span><span class="p">,</span>
+            <span class="s2">&quot;is_billable&quot;</span><span class="p">:</span> <span class="n">is_billable</span><span class="p">,</span>
+            <span class="s2">&quot;chapter&quot;</span><span class="p">:</span> <span class="n">chapter_info</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+        <span class="c1"># Derive parent-child edge from code structure.</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">derive_parent_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">_child_of_</span><span class="si">{</span><span class="n">parent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+                <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">parent</span><span class="p">,</span>
+                <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">EDGE_TYPES</span><span class="p">[</span><span class="s2">&quot;is_child_of&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Parsed </span><span class="si">%d</span><span class="s2"> ICD-10-CM codes, </span><span class="si">%d</span><span class="s2"> parent-child edges from order file&quot;</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span>
+</pre></div>
+
+<hr />
+<h2 id="step-2-parse-cross-walk-mappings">Step 2: Parse Cross-Walk Mappings</h2>
+<p><em>The pseudocode calls this <code>parse_cpt_and_crosswalks(cpt_source, crosswalk_source)</code>. This step handles the ICD-to-CPT medical necessity mappings that tell you which diagnosis codes justify which procedure codes. The cross-walk data comes from CMS for Medicare (the NCCI edits files).</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">parse_crosswalk_file</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse an ICD-10 to CPT cross-walk file into graph edges.</span>
+
+<span class="sd">    CMS publishes medical necessity mappings as part of the National Correct</span>
+<span class="sd">    Coding Initiative (NCCI). These files map ICD-10 diagnosis codes to CPT</span>
+<span class="sd">    procedure codes that are considered medically necessary given that diagnosis.</span>
+
+<span class="sd">    The format varies by source. This example assumes a CSV with columns:</span>
+<span class="sd">    icd_code, cpt_code, effective_date, end_date, payer</span>
+
+<span class="sd">    In reality, you&#39;ll need separate parsers for:</span>
+<span class="sd">    - CMS NCCI files (Medicare)</span>
+<span class="sd">    - LCD/NCD files (local/national coverage determinations)</span>
+<span class="sd">    - Payer-specific files (commercial plans, each in their own format)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the cross-walk file</span>
+<span class="sd">        key: S3 key to the cross-walk CSV</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of edge dictionaries for Neptune bulk load.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="n">icd_code</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;icd_code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">cpt_code</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;cpt_code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">payer</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;payer&quot;</span><span class="p">,</span> <span class="s2">&quot;Medicare&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">effective</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;effective_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">end_date</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="n">edge</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">icd_code</span><span class="si">}</span><span class="s2">_crosswalk_</span><span class="si">{</span><span class="n">cpt_code</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">payer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">icd_code</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;CPT:</span><span class="si">{</span><span class="n">cpt_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">EDGE_TYPES</span><span class="p">[</span><span class="s2">&quot;cross_walks_to&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;payer&quot;</span><span class="p">:</span> <span class="n">payer</span><span class="p">,</span>
+            <span class="s2">&quot;effective&quot;</span><span class="p">:</span> <span class="n">effective</span><span class="p">,</span>
+            <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">end_date</span> <span class="k">if</span> <span class="n">end_date</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parsed </span><span class="si">%d</span><span class="s2"> cross-walk edges from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">),</span> <span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">edges</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_exclusion_annotations</span><span class="p">(</span><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse ICD-10-CM excludes annotations into graph edges.</span>
+
+<span class="sd">    ICD-10-CM has two types of exclusion relationships:</span>
+<span class="sd">    - EXCLUDES1: Mutually exclusive. Never code together. The two conditions</span>
+<span class="sd">      cannot coexist (e.g., acquired vs. congenital form of same condition).</span>
+<span class="sd">    - EXCLUDES2: Not included here, but CAN be coded together if both are</span>
+<span class="sd">      documented. Means &quot;this code doesn&#39;t cover that concept, look elsewhere.&quot;</span>
+
+<span class="sd">    These annotations are published by CMS alongside the code files.</span>
+<span class="sd">    Format assumed: CSV with columns: source_code, target_code, type, note</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket containing the annotation file</span>
+<span class="sd">        key: S3 key to the exclusions CSV</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of edge dictionaries for Neptune bulk load.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;source_code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;target_code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">exc_type</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>  <span class="c1"># &quot;EXCLUDES1&quot; or &quot;EXCLUDES2&quot;</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;note&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Only create edges for recognized exclusion types.</span>
+        <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">EDGE_TYPES</span><span class="p">[</span><span class="s2">&quot;excludes1&quot;</span><span class="p">],</span> <span class="n">EDGE_TYPES</span><span class="p">[</span><span class="s2">&quot;excludes2&quot;</span><span class="p">]):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unknown exclusion type &#39;</span><span class="si">%s</span><span class="s2">&#39; for </span><span class="si">%s</span><span class="s2"> -&gt; </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">edge</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">exc_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">target</span><span class="p">,</span>
+            <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">exc_type</span><span class="p">,</span>
+            <span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="n">note</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parsed </span><span class="si">%d</span><span class="s2"> exclusion edges from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">),</span> <span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">edges</span>
+</pre></div>
+
+<hr />
+<h2 id="step-3-format-and-bulk-load-into-neptune">Step 3: Format and Bulk Load into Neptune</h2>
+<p><em>The pseudocode calls this <code>load_graph_to_neptune(nodes, edges, neptune_endpoint, s3_staging_bucket)</code>. Neptune's bulk loader expects CSV files in S3 with specific header conventions. Node files need <code>~id</code>, <code>~label</code>, and property columns. Edge files need <code>~id</code>, <code>~from</code>, <code>~to</code>, <code>~label</code>, and property columns.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">format_nodes_as_neptune_csv</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Transform node dictionaries into Neptune bulk load CSV format.</span>
+
+<span class="sd">    Neptune&#39;s CSV loader expects specific column headers:</span>
+<span class="sd">    - ~id: unique node identifier (required)</span>
+<span class="sd">    - ~label: node type label (required)</span>
+<span class="sd">    - property_name:datatype: typed property columns</span>
+
+<span class="sd">    Data types: String (default), Int, Double, Bool, Date</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+    <span class="c1"># Header row with Neptune&#39;s required column naming.</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+        <span class="s2">&quot;~id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;~label&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;description:String&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;short_desc:String&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;is_billable:Bool&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;chapter:String&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;version:String&quot;</span><span class="p">,</span>
+    <span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+            <span class="n">node</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+            <span class="n">node</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">],</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;short_desc&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_billable&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>  <span class="c1"># Neptune expects &quot;true&quot;/&quot;false&quot;</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chapter&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">format_edges_as_neptune_csv</span><span class="p">(</span><span class="n">edges</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Transform edge dictionaries into Neptune bulk load CSV format.</span>
+
+<span class="sd">    Neptune&#39;s edge CSV expects:</span>
+<span class="sd">    - ~id: unique edge identifier (required)</span>
+<span class="sd">    - ~from: source node ~id (required)</span>
+<span class="sd">    - ~to: target node ~id (required)</span>
+<span class="sd">    - ~label: edge type (required)</span>
+<span class="sd">    - property_name:datatype: typed property columns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+    <span class="c1"># Header row.</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+        <span class="s2">&quot;~id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;~from&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;~to&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;~label&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;note:String&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payer:String&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;effective:String&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;end_date:String&quot;</span><span class="p">,</span>
+    <span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+            <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+            <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">],</span>
+            <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span>
+            <span class="n">edge</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">],</span>
+            <span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;note&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;payer&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;effective&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">upload_and_bulk_load</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upload formatted CSVs to S3 and trigger Neptune&#39;s bulk loader.</span>
+
+<span class="sd">    The bulk loader is dramatically faster than inserting nodes one at a time</span>
+<span class="sd">    via openCypher (minutes vs. hours for 70,000+ nodes). It&#39;s also idempotent</span>
+<span class="sd">    if you use consistent ~id values: reloading the same file updates existing</span>
+<span class="sd">    nodes rather than creating duplicates.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Load status response from Neptune.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Format as Neptune CSV.</span>
+    <span class="n">node_csv</span> <span class="o">=</span> <span class="n">format_nodes_as_neptune_csv</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+    <span class="n">edge_csv</span> <span class="o">=</span> <span class="n">format_edges_as_neptune_csv</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+
+    <span class="c1"># Upload to S3 staging bucket.</span>
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">STAGING_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="s2">&quot;neptune-load/nodes/icd10_nodes.csv&quot;</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">node_csv</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">s3_client</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span>
+        <span class="n">Bucket</span><span class="o">=</span><span class="n">STAGING_BUCKET</span><span class="p">,</span>
+        <span class="n">Key</span><span class="o">=</span><span class="s2">&quot;neptune-load/edges/icd10_edges.csv&quot;</span><span class="p">,</span>
+        <span class="n">Body</span><span class="o">=</span><span class="n">edge_csv</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Uploaded </span><span class="si">%d</span><span class="s2"> nodes and </span><span class="si">%d</span><span class="s2"> edges to S3 staging&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">))</span>
+
+    <span class="c1"># Trigger Neptune bulk load via the loader API.</span>
+    <span class="c1"># This is a POST to the Neptune loader endpoint (separate from the query endpoint).</span>
+    <span class="n">loader_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">NEPTUNE_ENDPOINT</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">NEPTUNE_PORT</span><span class="si">}</span><span class="s2">/loader&quot;</span>
+
+    <span class="n">load_request</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">STAGING_BUCKET</span><span class="si">}</span><span class="s2">/neptune-load/&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;iamRoleArn&quot;</span><span class="p">:</span> <span class="n">NEPTUNE_LOAD_ROLE_ARN</span><span class="p">,</span>
+        <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="n">AWS_REGION</span><span class="p">,</span>
+        <span class="s2">&quot;failOnError&quot;</span><span class="p">:</span> <span class="s2">&quot;FALSE&quot;</span><span class="p">,</span>  <span class="c1"># log errors but continue loading valid records</span>
+        <span class="s2">&quot;parallelism&quot;</span><span class="p">:</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">,</span>   <span class="c1"># use all available loader threads</span>
+        <span class="s2">&quot;updateSingleCardinalityProperties&quot;</span><span class="p">:</span> <span class="s2">&quot;TRUE&quot;</span><span class="p">,</span>  <span class="c1"># update existing nodes on reload</span>
+    <span class="p">}</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">loader_url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">load_request</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="n">load_result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+    <span class="n">load_id</span> <span class="o">=</span> <span class="n">load_result</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">][</span><span class="s2">&quot;loadId&quot;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Neptune bulk load started: loadId=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">load_id</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;load_id&quot;</span><span class="p">:</span> <span class="n">load_id</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">load_result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]}</span>
+</pre></div>
+
+<hr />
+<h2 id="step-4-query-the-hierarchy">Step 4: Query the Hierarchy</h2>
+<p><em>The pseudocode calls this <code>handle_query(request)</code>. This is where the graph pays off. Queries that would be recursive CTEs in SQL become simple traversal expressions in openCypher. Each function below implements one query pattern from the main recipe.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">execute_opencypher</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute an openCypher query against Neptune and return the results.</span>
+
+<span class="sd">    Neptune&#39;s openCypher endpoint accepts POST requests with the query</span>
+<span class="sd">    as a form parameter. Parameters are passed separately for safe</span>
+<span class="sd">    parameterization (no injection risk).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query: openCypher query string with $parameter placeholders</span>
+<span class="sd">        parameters: dict of parameter name -&gt; value</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of result rows (each row is a dict of column -&gt; value).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">parameters</span><span class="p">:</span>
+        <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+        <span class="n">NEPTUNE_OPENCYPHER_URL</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
+        <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/x-www-form-urlencoded&quot;</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_children</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">99</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;FY2026&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find all descendant codes under a given code in the hierarchy.</span>
+
+<span class="sd">    This is the most common query pattern. A population health analyst asks</span>
+<span class="sd">    &quot;give me all diabetes codes&quot; and you traverse the subtree under E11.</span>
+<span class="sd">    A coding tool asks &quot;what are the specific codes under this category?&quot;</span>
+<span class="sd">    and you walk one level down.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code: Starting code (e.g., &quot;E11&quot; for Type 2 diabetes)</span>
+<span class="sd">        depth: Maximum traversal depth (1 = direct children only, 99 = all)</span>
+<span class="sd">        version: Fiscal year version to filter by</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of descendant codes with descriptions and depth levels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># openCypher variable-length path pattern: *1..N means 1 to N hops.</span>
+    <span class="c1"># We traverse IS_CHILD_OF edges in reverse (descendants point UP to parents,</span>
+    <span class="c1"># so we follow the edge backwards to find children).</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH path = (start {`~id`: $code})&lt;-[:`IS_CHILD_OF`*1..</span><span class="si">%d</span><span class="s2">]-(descendant)</span>
+<span class="s2">        WHERE descendant.version = $version</span>
+<span class="s2">        RETURN descendant.`~id` AS code,</span>
+<span class="s2">               descendant.description AS description,</span>
+<span class="s2">               descendant.is_billable AS billable,</span>
+<span class="s2">               length(path) AS depth_level</span>
+<span class="s2">        ORDER BY descendant.`~id`</span>
+<span class="s2">    &quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">depth</span>  <span class="c1"># openCypher in Neptune doesn&#39;t support parameterized path lengths</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">execute_opencypher</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">})</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;get_children(</span><span class="si">%s</span><span class="s2">, depth=</span><span class="si">%d</span><span class="s2">): </span><span class="si">%d</span><span class="s2"> results&quot;</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_ancestors</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Walk up the hierarchy from a code to the chapter level.</span>
+
+<span class="sd">    Useful for reporting rollups: &quot;this patient has E11.65, which rolls up</span>
+<span class="sd">    to E11.6 (complications), which rolls up to E11 (Type 2 DM), which is</span>
+<span class="sd">    in Chapter 4 (Endocrine).&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code: Starting code (e.g., &quot;E11.65&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of ancestor codes ordered from nearest parent to chapter level.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH path = (start {`~id`: $code})-[:`IS_CHILD_OF`*1..10]-&gt;(ancestor)</span>
+<span class="s2">        RETURN ancestor.`~id` AS code,</span>
+<span class="s2">               ancestor.description AS description,</span>
+<span class="s2">               length(path) AS levels_up</span>
+<span class="s2">        ORDER BY levels_up</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">execute_opencypher</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">})</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;get_ancestors(</span><span class="si">%s</span><span class="s2">): </span><span class="si">%d</span><span class="s2"> levels&quot;</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_crosswalks</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_system</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CPT&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find all codes in another system linked by cross-walk edges.</span>
+
+<span class="sd">    The critical question for coding and billing: &quot;which CPT procedure codes</span>
+<span class="sd">    are justified by this ICD diagnosis code?&quot; Or in reverse: &quot;which diagnoses</span>
+<span class="sd">    support medical necessity for this procedure?&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code: Source code (e.g., &quot;E11.65&quot;)</span>
+<span class="sd">        target_system: Target code system label (default &quot;CPT&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of cross-walked codes with payer and effective date info.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH (start {`~id`: $code})-[r:`CROSS_WALKS_TO`]-&gt;(target)</span>
+<span class="s2">        WHERE target.`~label` = $target_system</span>
+<span class="s2">        RETURN target.`~id` AS code,</span>
+<span class="s2">               target.description AS description,</span>
+<span class="s2">               r.payer AS payer,</span>
+<span class="s2">               r.effective AS effective_date</span>
+<span class="s2">        ORDER BY target.`~id`</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">execute_opencypher</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span> <span class="s2">&quot;target_system&quot;</span><span class="p">:</span> <span class="n">target_system</span><span class="p">})</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;get_crosswalks(</span><span class="si">%s</span><span class="s2"> -&gt; </span><span class="si">%s</span><span class="s2">): </span><span class="si">%d</span><span class="s2"> results&quot;</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">target_system</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_exclusions</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find codes that cannot be reported together with this one (EXCLUDES1).</span>
+
+<span class="sd">    EXCLUDES1 means mutually exclusive: these two conditions cannot coexist</span>
+<span class="sd">    in the same patient at the same time. Coding both on the same claim is</span>
+<span class="sd">    always an error. This is different from EXCLUDES2, which means &quot;not</span>
+<span class="sd">    included here, but you CAN code both if both are documented.&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code: Code to check exclusions for (e.g., &quot;E11&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of excluded codes with the exclusion note explaining why.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH (start {`~id`: $code})-[r:`EXCLUDES1`]-(excluded)</span>
+<span class="s2">        RETURN excluded.`~id` AS code,</span>
+<span class="s2">               excluded.description AS description,</span>
+<span class="s2">               r.note AS exclusion_note</span>
+<span class="s2">        ORDER BY excluded.`~id`</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">execute_opencypher</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">})</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;get_exclusions(</span><span class="si">%s</span><span class="s2">): </span><span class="si">%d</span><span class="s2"> exclusions&quot;</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_siblings</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find codes that share the same parent (sibling codes).</span>
+
+<span class="sd">    Useful for coding assistance: &quot;You picked E11.65, but did you consider</span>
+<span class="sd">    E11.64 or E11.69?&quot; Shows the coder what other options exist at the</span>
+<span class="sd">    same level of specificity.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code: Code to find siblings for (e.g., &quot;E11.65&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of sibling codes (same parent, different code).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH (start {`~id`: $code})-[:`IS_CHILD_OF`]-&gt;(parent)&lt;-[:`IS_CHILD_OF`]-(sibling)</span>
+<span class="s2">        WHERE sibling.`~id` &lt;&gt; $code</span>
+<span class="s2">        RETURN sibling.`~id` AS code,</span>
+<span class="s2">               sibling.description AS description,</span>
+<span class="s2">               sibling.is_billable AS billable</span>
+<span class="s2">        ORDER BY sibling.`~id`</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">execute_opencypher</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">})</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;get_siblings(</span><span class="si">%s</span><span class="s2">): </span><span class="si">%d</span><span class="s2"> siblings&quot;</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">results</span>
+</pre></div>
+
+<hr />
+<h2 id="step-5-handle-version-transitions">Step 5: Handle Version Transitions</h2>
+<p><em>The pseudocode calls this <code>apply_version_update(...)</code>. When CMS publishes a new ICD-10-CM version each October, the graph needs to incorporate changes without destroying history. New codes get new nodes. Retired codes get SUPERSEDED_BY edges pointing to their replacements.</em></p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_version_update</span><span class="p">(</span>
+    <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">new_order_file_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">gems_file_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_version</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">new_version</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply an annual ICD-10-CM version update to the graph.</span>
+
+<span class="sd">    This function:</span>
+<span class="sd">    1. Parses the new version&#39;s order file</span>
+<span class="sd">    2. Compares against current graph contents</span>
+<span class="sd">    3. Adds new codes, marks retired codes, updates descriptions</span>
+<span class="sd">    4. Creates SUPERSEDED_BY edges using GEMs (General Equivalence Mappings)</span>
+
+<span class="sd">    The GEMs file maps old codes to new codes when codes are retired or split.</span>
+<span class="sd">    CMS publishes GEMs at:</span>
+<span class="sd">    https://www.cms.gov/medicare/coding-billing/icd-10-codes/general-equivalence-mappings-gems</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bucket: S3 bucket with the new version files</span>
+<span class="sd">        new_order_file_key: S3 key to the new version&#39;s order file</span>
+<span class="sd">        gems_file_key: S3 key to the GEMs mapping file</span>
+<span class="sd">        current_version: Current version string (e.g., &quot;FY2025&quot;)</span>
+<span class="sd">        new_version: New version string (e.g., &quot;FY2026&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Summary of changes applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parse the new version&#39;s codes.</span>
+    <span class="n">new_nodes</span><span class="p">,</span> <span class="n">new_edges</span> <span class="o">=</span> <span class="n">parse_icd10_order_file</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">new_order_file_key</span><span class="p">,</span> <span class="n">new_version</span><span class="p">)</span>
+    <span class="n">new_code_ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">new_nodes</span><span class="p">}</span>
+
+    <span class="c1"># Get current codes from the graph.</span>
+    <span class="n">current_codes_query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH (n:`ICD10CM` {version: $version})</span>
+<span class="s2">        RETURN n.`~id` AS code</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">current_results</span> <span class="o">=</span> <span class="n">execute_opencypher</span><span class="p">(</span><span class="n">current_codes_query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">current_version</span><span class="p">})</span>
+    <span class="n">current_code_ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">current_results</span><span class="p">}</span>
+
+    <span class="c1"># Identify changes.</span>
+    <span class="n">added_codes</span> <span class="o">=</span> <span class="n">new_code_ids</span> <span class="o">-</span> <span class="n">current_code_ids</span>
+    <span class="n">retired_codes</span> <span class="o">=</span> <span class="n">current_code_ids</span> <span class="o">-</span> <span class="n">new_code_ids</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Version update </span><span class="si">%s</span><span class="s2"> -&gt; </span><span class="si">%s</span><span class="s2">: </span><span class="si">%d</span><span class="s2"> added, </span><span class="si">%d</span><span class="s2"> retired&quot;</span><span class="p">,</span>
+        <span class="n">current_version</span><span class="p">,</span> <span class="n">new_version</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">added_codes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">retired_codes</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Parse GEMs file for retired code mappings.</span>
+    <span class="c1"># GEMs format: source_code, target_code, flags</span>
+    <span class="n">gems_response</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">gems_file_key</span><span class="p">)</span>
+    <span class="n">gems_content</span> <span class="o">=</span> <span class="n">gems_response</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">gems_map</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># old_code -&gt; [new_code, ...]</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">gems_content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">old_code</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">new_code</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">old_code</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gems_map</span><span class="p">:</span>
+                <span class="n">gems_map</span><span class="p">[</span><span class="n">old_code</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">gems_map</span><span class="p">[</span><span class="n">old_code</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_code</span><span class="p">)</span>
+
+    <span class="c1"># Create SUPERSEDED_BY edges for retired codes.</span>
+    <span class="n">superseded_edges</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">retired_codes</span><span class="p">:</span>
+        <span class="n">replacements</span> <span class="o">=</span> <span class="n">gems_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">code</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">replacement</span> <span class="ow">in</span> <span class="n">replacements</span><span class="p">:</span>
+            <span class="c1"># Re-insert dot for display format.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">replacement</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">replacement_formatted</span> <span class="o">=</span> <span class="n">replacement</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">replacement</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">replacement_formatted</span> <span class="o">=</span> <span class="n">replacement</span>
+
+            <span class="n">superseded_edges</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">_superseded_by_</span><span class="si">{</span><span class="n">replacement_formatted</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">new_version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+                <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">replacement_formatted</span><span class="p">,</span>
+                <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">EDGE_TYPES</span><span class="p">[</span><span class="s2">&quot;superseded_by&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;effective&quot;</span><span class="p">:</span> <span class="n">new_version</span><span class="p">,</span>
+            <span class="p">})</span>
+
+        <span class="c1"># Mark the retired code as inactive.</span>
+        <span class="n">retire_query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            MATCH (n {`~id`: $code})</span>
+<span class="s2">            SET n.status = &#39;RETIRED&#39;, n.retired_in = $version</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="n">execute_opencypher</span><span class="p">(</span><span class="n">retire_query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">new_version</span><span class="p">})</span>
+
+    <span class="c1"># Bulk load the new nodes and all new edges (hierarchy + superseded).</span>
+    <span class="n">all_new_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">new_nodes</span> <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">added_codes</span><span class="p">]</span>
+    <span class="n">all_new_edges</span> <span class="o">=</span> <span class="n">new_edges</span> <span class="o">+</span> <span class="n">superseded_edges</span>
+
+    <span class="k">if</span> <span class="n">all_new_nodes</span> <span class="ow">or</span> <span class="n">all_new_edges</span><span class="p">:</span>
+        <span class="n">upload_and_bulk_load</span><span class="p">(</span><span class="n">all_new_nodes</span><span class="p">,</span> <span class="n">all_new_edges</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;current_version&quot;</span><span class="p">:</span> <span class="n">current_version</span><span class="p">,</span>
+        <span class="s2">&quot;new_version&quot;</span><span class="p">:</span> <span class="n">new_version</span><span class="p">,</span>
+        <span class="s2">&quot;codes_added&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">added_codes</span><span class="p">),</span>
+        <span class="s2">&quot;codes_retired&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">retired_codes</span><span class="p">),</span>
+        <span class="s2">&quot;superseded_edges_created&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">superseded_edges</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+
+<hr />
+<h2 id="putting-it-all-together">Putting It All Together</h2>
+<p>Here's the full pipeline assembled into callable functions. The ETL pipeline runs periodically (annually for ICD, quarterly for CPT). The query functions are what your API Gateway + Lambda setup calls in response to REST requests.</p>
+<div class="code"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_initial_load</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the full initial load pipeline: parse ICD-10-CM codes and</span>
+<span class="sd">    cross-walks, then bulk load into Neptune.</span>
+
+<span class="sd">    This is what you run once to bootstrap the graph, and then again</span>
+<span class="sd">    each year when CMS publishes the new version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Starting ICD/CPT Hierarchy Initial Load ===&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Parse ICD-10-CM order file.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 1: Parsing ICD-10-CM order file...&quot;</span><span class="p">)</span>
+    <span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">parse_icd10_order_file</span><span class="p">(</span>
+        <span class="n">bucket</span><span class="o">=</span><span class="n">STAGING_BUCKET</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;icd10cm/FY2026/icd10cm_order_2026.txt&quot;</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="s2">&quot;FY2026&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Parsed </span><span class="si">%d</span><span class="s2"> nodes, </span><span class="si">%d</span><span class="s2"> edges&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">))</span>
+
+    <span class="c1"># Step 2: Parse cross-walks and exclusions.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 2: Parsing cross-walks and exclusions...&quot;</span><span class="p">)</span>
+    <span class="n">crosswalk_edges</span> <span class="o">=</span> <span class="n">parse_crosswalk_file</span><span class="p">(</span>
+        <span class="n">bucket</span><span class="o">=</span><span class="n">STAGING_BUCKET</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;crosswalks/medicare_icd_cpt_crosswalk.csv&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">exclusion_edges</span> <span class="o">=</span> <span class="n">parse_exclusion_annotations</span><span class="p">(</span>
+        <span class="n">bucket</span><span class="o">=</span><span class="n">STAGING_BUCKET</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;icd10cm/FY2026/icd10cm_excludes.csv&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">all_edges</span> <span class="o">=</span> <span class="n">edges</span> <span class="o">+</span> <span class="n">crosswalk_edges</span> <span class="o">+</span> <span class="n">exclusion_edges</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Total edges: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_edges</span><span class="p">))</span>
+
+    <span class="c1"># Step 3: Upload and bulk load into Neptune.</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step 3: Uploading to S3 and triggering Neptune bulk load...&quot;</span><span class="p">)</span>
+    <span class="n">load_result</span> <span class="o">=</span> <span class="n">upload_and_bulk_load</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">all_edges</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Load started: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">load_result</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Initial Load Complete ===&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">load_result</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">handle_api_request</span><span class="p">(</span><span class="n">query_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Handle an API request by dispatching to the appropriate query function.</span>
+
+<span class="sd">    This is what your Lambda query handler calls after parsing the REST request</span>
+<span class="sd">    from API Gateway. In production, you&#39;d add Redis caching here (check cache</span>
+<span class="sd">    first, execute query on miss, store result).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query_type: One of &quot;children&quot;, &quot;ancestors&quot;, &quot;crosswalks&quot;, &quot;exclusions&quot;, &quot;siblings&quot;</span>
+<span class="sd">        code: The ICD-10 or CPT code to query</span>
+<span class="sd">        **kwargs: Additional parameters (depth, version, target_system)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Structured JSON response.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">depth</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;depth&quot;</span><span class="p">,</span> <span class="mi">99</span><span class="p">)</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;FY2026&quot;</span><span class="p">)</span>
+    <span class="n">target_system</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_system&quot;</span><span class="p">,</span> <span class="s2">&quot;CPT&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">query_type</span> <span class="o">==</span> <span class="s2">&quot;children&quot;</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">get_children</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">query_type</span> <span class="o">==</span> <span class="s2">&quot;ancestors&quot;</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">get_ancestors</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">query_type</span> <span class="o">==</span> <span class="s2">&quot;crosswalks&quot;</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">get_crosswalks</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">target_system</span><span class="o">=</span><span class="n">target_system</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">query_type</span> <span class="o">==</span> <span class="s2">&quot;exclusions&quot;</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">get_exclusions</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">query_type</span> <span class="o">==</span> <span class="s2">&quot;siblings&quot;</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">get_siblings</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Unknown query type: </span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+        <span class="s2">&quot;query_type&quot;</span><span class="p">:</span> <span class="n">query_type</span><span class="p">,</span>
+        <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+        <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">,</span>
+        <span class="s2">&quot;total_results&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">),</span>
+    <span class="p">}</span>
+
+<span class="c1"># Example usage: run queries against the loaded graph.</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Example 1: Get all children of E11 (Type 2 diabetes), depth 2.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Children of E11 (depth 2) ---&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">handle_api_request</span><span class="p">(</span><span class="s2">&quot;children&quot;</span><span class="p">,</span> <span class="s2">&quot;E11&quot;</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Example 2: Walk up from E11.65 to the chapter level.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Ancestors of E11.65 ---&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">handle_api_request</span><span class="p">(</span><span class="s2">&quot;ancestors&quot;</span><span class="p">,</span> <span class="s2">&quot;E11.65&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Example 3: What CPT codes does E11.65 justify?</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Cross-walks from E11.65 to CPT ---&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">handle_api_request</span><span class="p">(</span><span class="s2">&quot;crosswalks&quot;</span><span class="p">,</span> <span class="s2">&quot;E11.65&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Example 4: What codes can&#39;t be reported with E11?</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Exclusions for E11 ---&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">handle_api_request</span><span class="p">(</span><span class="s2">&quot;exclusions&quot;</span><span class="p">,</span> <span class="s2">&quot;E11&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Example 5: What are the sibling codes of E11.65?</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Siblings of E11.65 ---&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">handle_api_request</span><span class="p">(</span><span class="s2">&quot;siblings&quot;</span><span class="p">,</span> <span class="s2">&quot;E11.65&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+
+<hr />
+<h2 id="the-gap-between-this-and-production">The Gap Between This and Production</h2>
+<p>This example works. Point it at a Neptune cluster with loaded ICD-10-CM data and it will return structured hierarchy traversals. But there's a meaningful distance between &quot;works in a script&quot; and &quot;runs in a coding department handling real claims.&quot; Here's where that gap lives:</p>
+<p><strong>Error handling.</strong> Right now, if Neptune returns an error or the network times out, the whole thing crashes. A production system wraps every Neptune call in try/except blocks with specific handling for connection timeouts (Neptune is in a VPC, network issues happen), query timeouts (broad subtree traversals can be slow), and malformed responses. You want graceful degradation: return a partial result or a clear error message, not a stack trace.</p>
+<p><strong>Retries and backoff.</strong> Neptune can return throttling errors under sustained query load. The <code>requests</code> library doesn't retry by default. A production system uses <code>urllib3.util.retry.Retry</code> or a similar mechanism with exponential backoff. For the bulk loader specifically, you need polling logic that checks load status every few seconds until completion.</p>
+<p><strong>Input validation.</strong> This code trusts its inputs completely. A production system validates that the code parameter matches ICD-10-CM or CPT format before querying, rejects depth values that would cause unreasonably broad traversals (depth=99 on a chapter code returns thousands of results), and sanitizes any user-provided strings before passing them as openCypher parameters (even though parameterized queries prevent injection, defense in depth matters).</p>
+<p><strong>Caching.</strong> The main recipe describes a Redis caching layer. This example skips it entirely. In production, every query function checks Redis first (using a cache key built from code + query_type + depth + version), returns the cached result on hit, and stores the Neptune result on miss. Cache hit rates of 85-95% are typical because the same popular codes get queried repeatedly. Flush the cache on version updates.</p>
+<p><strong>Connection pooling.</strong> Each <code>requests.post()</code> call in this example opens a new HTTPS connection to Neptune. In production, use a <code>requests.Session()</code> with connection pooling to reuse TCP connections. Neptune supports persistent connections and the overhead of TLS handshakes on every query adds up at scale.</p>
+<p><strong>IAM least-privilege.</strong> The IAM role for the query Lambda should have exactly <code>neptune-db:ReadDataViaQuery</code> (not <code>neptune-db:*</code>). The ETL Lambda needs <code>neptune-db:WriteDataViaQuery</code> and the loader permissions. The Neptune load role needs only <code>s3:GetObject</code> on the specific staging bucket prefix. Separate roles for separate functions.</p>
+<p><strong>VPC configuration.</strong> Neptune requires VPC deployment. Your Lambda functions must be in the same VPC with security groups that allow outbound traffic to Neptune's port (8182). Add VPC endpoints for S3 (gateway endpoint, free) and CloudWatch Logs (interface endpoint) so Lambda can reach those services without a NAT gateway.</p>
+<p><strong>Monitoring.</strong> In production, emit CloudWatch metrics for: query latency (p50, p95, p99), cache hit rate, Neptune connection errors, bulk load duration, and graph size (node/edge counts). Set alarms on query latency spikes (which indicate cache misses after a version update) and on Neptune CPU utilization (which indicates queries that need optimization).</p>
+<p><strong>The annual version transition.</strong> The <code>apply_version_update</code> function here is simplified. In production, you'd run it in a staging environment first, validate that the new version's hierarchy is correct (spot-check known codes), then promote to production. The GEMs mappings are approximate, not exact. Some retired codes map to multiple replacements (one-to-many splits). Your analytics team needs to understand that historical queries spanning a version boundary may have slight discontinuities.</p>
+<p><strong>Neptune openCypher limitations.</strong> Neptune's openCypher support is good but not complete. Variable-length path patterns work, but some advanced Cypher features (like APOC procedures from Neo4j) don't exist. The <code>%d</code> string formatting for path length in this example is a workaround for Neptune not supporting parameterized path lengths. Test your specific query patterns against Neptune during development, not just against a local Neo4j instance.</p>
+<p><strong>Testing.</strong> There are no tests here. A production pipeline has unit tests for <code>derive_parent_code</code> (with known code/parent pairs), integration tests against a Neptune cluster loaded with a known subset of codes, and validation scripts that verify the loaded graph matches expected node/edge counts. Use the CMS-published code counts as your ground truth.</p>
+<hr />
+<p><em>Part of the Healthcare AI/ML Cookbook. See <a href="chapter13.03-icd-cpt-hierarchy-navigation.html">Recipe 13.3</a> for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

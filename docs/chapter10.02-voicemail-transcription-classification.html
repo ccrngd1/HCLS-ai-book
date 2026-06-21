@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 10.2: Voicemail Transcription and Classification ⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-102-voicemail-transcription-and-classification-">Recipe 10.2: Voicemail Transcription and Classification ⭐</h1>
+<p><strong>Complexity:</strong> Simple · <strong>Phase:</strong> MVP · <strong>Estimated Cost:</strong> ~$0.03-0.12 per voicemail (depending on length, ASR usage, and whether classification uses a managed service or a foundation model)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>It is 4:50 p.m. on a Friday at a mid-sized internal medicine practice. The clinical-support phone line has been forwarded to voicemail since the front desk left for the day. Over the next sixty-four hours, until someone arrives Monday morning, the practice's voicemail box accumulates forty-seven new messages.</p>
+<p>Most of those messages are routine. Mrs. Petrosian wants to confirm her Wednesday appointment. A pharmacy is calling about a prior-authorization fax that the practice already sent. Mr. Davis would like to know whether his blood-test results came back. A vendor wants to schedule a sales call. The IT contractor left a voicemail wishing the office a nice weekend.</p>
+<p>Three of those forty-seven messages are not routine. One is from an 82-year-old woman with congestive heart failure who has gained six pounds since Tuesday and is short of breath walking to the bathroom. One is from the spouse of a chemotherapy patient who has been running a 102 fever since Saturday afternoon and is asking whether they should go to the emergency room. One is from a 24-year-old who took a friend's prescription opioid for a tooth pain after running out of his own ibuprofen and is now experiencing what he describes as &quot;weird breathing&quot; and a heaviness in his chest.</p>
+<p>Monday morning, a nurse arrives, sits down with a notepad, and starts working through the box. She listens to each message in order. The first one is the IT contractor. The second is Mrs. Petrosian. The third is the pharmacy. By the time she gets to message twelve (the one about the chemotherapy patient with the fever), it has been forty-six hours since the call was placed, and it takes her another two minutes of listening before she identifies it as urgent. The patient is no longer febrile by then, because they went to the emergency room on Sunday afternoon, which is, technically, a successful outcome from the system's perspective. The bill, several thousand dollars in ER charges that an earlier triage call could have avoided, is not.</p>
+<p>Message thirty-one is the heart-failure patient. By the time the nurse calls back, the patient has gained another two pounds and is now too winded to finish a sentence. An ambulance is dispatched. Hospital admission for acute decompensation follows. The hospital readmission counts against the practice's quality scores, the patient suffers a clinical event that an earlier outreach could plausibly have prevented, and the cost to the system runs into the tens of thousands of dollars. The voicemail had been sitting in the box, unattended, for the entire weekend.</p>
+<p>Message thirty-eight is the young man with the borrowed opioid. By Monday morning he is asleep on his bathroom floor and his roommate is calling 911. Naloxone, ER, hospital admission, the whole cascade. The voicemail he left on Friday night, in which he plainly described chest tightness after taking an opioid he was not prescribed, sat in the queue for sixty-four hours.</p>
+<p>This is not a hypothetical. Some version of this story plays out in healthcare practices across the United States every week. The voicemail box is a queue, and the queue is FIFO by accident rather than by clinical priority. The nurse triaging the queue is doing her job competently and conscientiously. The system she is working inside, by being a flat list of audio recordings with no metadata beyond the caller's phone number and the time of the call, makes it nearly impossible for her to do that job well at scale.</p>
+<p>The cost of this is not abstract. Multiply across thousands of practices and tens of thousands of voicemail boxes:</p>
+<p>The patient who left a voicemail Friday afternoon describing a new severe headache, the worst of her life, who waits three days for a callback while a sentinel-event subarachnoid bleed sits unaddressed.</p>
+<p>The medication-side-effect call from the patient who started a new statin and is reporting muscle pain, which sits in the box long enough that the patient stops the medication on her own and never starts another one, leading to a cardiac event eighteen months later that the original prescriber's nurse line could have prevented.</p>
+<p>The mental-health call from a patient who is plainly suicidal, who specifically chose the medical-practice voicemail because she trusted her doctor, whose call goes through normal triage instead of being escalated to crisis lines, and who is dead before her primary care nurse listens to message twenty-two on Monday morning.</p>
+<p>The denial of access disguised as administrative routine: the Spanish-speaking caller whose voicemails consistently go uncalled-back because the front desk speaks English, who eventually stops calling, whose chronic disease management quietly degrades, who is silently lost from the panel.</p>
+<p>The legitimate refill request that the patient has now left voicemails about three times across two weeks because the first two went unreturned, which has now produced a frustrated patient, a confused pharmacist, and three voicemails that all need to be triaged when the nurse finally gets to them.</p>
+<p>The voicemail box at most healthcare practices is, candidly, a liability. It is the place where time-sensitive clinical signal goes to wait alongside vendor solicitations and confirmation calls. The good practices have built operational discipline around it: a designated triage role, defined service-level agreements, escalation paths to clinicians for urgent calls. The not-so-good practices treat it as the IT system that handles voicemail. Both sets of practices are working with the wrong substrate. The voicemail box, as a clinical workflow, has been the same since the 1980s.</p>
+<p>The opportunity is fairly direct: take the audio, transcribe it, classify it for clinical urgency and intent, sort the queue by priority, and surface the urgent calls before the routine ones. Add medical-entity extraction to surface the medication name, the symptom, the appointment date, so the staff member returning the call has context before they pick up the phone. Add a confidence-aware human review path so low-confidence transcriptions get listened to before they get acted on. Add subgroup-stratified accuracy monitoring so the practice notices if the system is silently underserving Spanish-speaking or older patients. Build the analytics layer that lets the practice see, for the first time, what its voicemail box actually contains.</p>
+<p>None of this requires real-time speech recognition. None of it requires the multi-turn dialog management that makes IVR engineering complicated (recipe 10.1). The voicemail comes in, sits in a queue for at most a few minutes, gets processed, and gets routed. The async nature of the workload makes most of the engineering decisions easier. The hard parts that remain are the parts you cannot avoid: the medical vocabulary in ASR, the clinical-urgency lexicon, the equity-monitoring discipline, the human review queue, and the integration with the practice's existing telephone system. Those are the things this recipe spends most of its time on.</p>
+<p>Let's get into it.</p>
+<hr />
+<h2 id="the-technology-async-voice-decoupled">The Technology: Async Voice, Decoupled</h2>
+<h3 id="how-voicemail-differs-from-live-calls">How Voicemail Differs from Live Calls</h3>
+<p>The IVR recipe (10.1) cared about latency. Streaming ASR, partial transcripts, sub-second dialog turns, endpointing tuned to a hundred-millisecond budget. Voicemail does not care about any of that. By the time the audio reaches the transcription pipeline, the caller has already hung up. There is no caller waiting on the other end of the line for a response. The pipeline can take ten seconds, or thirty seconds, or two minutes (within reason), and nobody experiences the latency directly.</p>
+<p>This single architectural difference reshapes the engineering. Streaming becomes optional. Endpointing becomes irrelevant (the recording has a defined start and end). Dialog management disappears entirely (one utterance per voicemail). Confidence-aware turn handling collapses into a simpler decision: fully process the message, or queue it for human review.</p>
+<p>What replaces those concerns? Different ones, and some of them are harder.</p>
+<p><strong>Audio quality variance is wider.</strong> The IVR audio comes from an active call leg through a contact-center platform with reasonably consistent telephony characteristics. Voicemail audio comes from whatever device the caller used (cell phone in a moving car, landline in a quiet kitchen, speakerphone in a noisy break room, hands-free Bluetooth in a parking garage), passes through whatever carrier path connected the call, and lands in whatever voicemail system the practice uses (legacy on-prem PBX, hosted UCaaS, embedded telephony in the EHR, the carrier's own voicemail-to-email service). The variance in audio quality is substantially wider than in a live IVR call.</p>
+<p><strong>Recording length varies wildly.</strong> Some voicemails are eight seconds. Some are four minutes. Some begin with a long pause as the caller hesitates before the beep ends; some end mid-sentence because the practice's voicemail system has a 90-second cap. The pipeline has to handle the full distribution gracefully.</p>
+<p><strong>Recordings include silence and noise that nobody triages live.</strong> The voicemail box accumulates spam-call hangups, pocket-dials with no speech, fax-machine tones from misdirected fax senders, and the occasional five-minute recording of someone's car radio because their phone redialed the practice from inside their pocket. The pipeline has to detect and route those without burning ASR budget on them.</p>
+<p><strong>Voicemails are signed, in a sense.</strong> The caller chose, deliberately, to leave a message. They thought about what they wanted to say. They held the phone up to their face for thirty to ninety seconds. The intent in a voicemail is, on average, more deliberate than the intent in an IVR utterance. That makes classification a little easier than the equivalent task in IVR. (The downside is that voicemails are also longer and more rambling, which makes intent extraction take a little more work.)</p>
+<p><strong>The clinical-urgency stakes are higher.</strong> A misrouted IVR call usually ends with a brief annoyance and a transfer. A misrouted voicemail can sit unread for days. The downside risk on a missed urgency signal is materially worse for voicemail than for IVR.</p>
+<p>These differences compound into a different architectural shape, with different priorities, even though the building blocks (ASR, classification, entity extraction, human review) are the same.</p>
+<h3 id="batch-speech-recognition">Batch Speech Recognition</h3>
+<p>The first stage of the pipeline is automatic speech recognition (ASR), this time in batch mode. The pipeline submits the full audio file to the ASR system and receives, after some processing time, a complete transcript with per-word and per-utterance confidence scores.</p>
+<p>A few specifics that matter for voicemail-class workloads.</p>
+<p><strong>Async APIs and retrieval-by-job-id.</strong> Most cloud ASR vendors offer two API modes: synchronous (call returns when transcription is done; works for short clips of perhaps thirty seconds or less) and asynchronous (you submit a job, get back a job ID, and poll or receive a callback when the result is ready; works for arbitrary length audio). For voicemail, async is the default choice because the message length distribution has a long tail and you do not want a Lambda function blocked for two minutes waiting on a synchronous transcription. The pipeline submits the job, hands off, and processes the result when it arrives. Job-completion notifications can be wired through SNS or EventBridge so the pipeline does not have to poll.</p>
+<p><strong>Speaker diarization is usually unnecessary.</strong> A voicemail typically has one speaker (the caller). Some have two (the caller plus a family member who chimes in), and rarely more. Unlike telehealth or ambient documentation, you do not need rigorous diarization. You need accurate transcription of whoever is speaking. If multiple speakers are present, treating their combined utterances as one transcript is usually fine for routing and triage purposes; the human reviewer can disambiguate when needed.</p>
+<p><strong>Domain-adapted language models pay off.</strong> A voicemail saying &quot;I am calling about my furosemide refill&quot; needs to transcribe the drug name correctly to support routing as a medication intent. General-purpose ASR will sometimes get it; medical-domain ASR (Transcribe Medical, Nuance, fine-tuned Whisper variants, vendor-specific clinical models) is dramatically more reliable on the medication names that drive the most common voicemail intents. For a healthcare voicemail pipeline, you want the medical-domain model, not the general-purpose one. The cost difference is small. The accuracy difference is large.</p>
+<p><strong>Telephony codec awareness.</strong> Voicemail audio often arrives compressed. WAV files at 8 kHz mono are common. MP3 is common. Vendor-specific codecs (G.711, G.729, GSM) appear in legacy systems. The transcription pipeline has to either handle the formats natively or transcode upstream. Transcoding is mostly mechanical (FFmpeg-class tooling) but introduces failure modes and quality loss; native handling is preferable when the ASR vendor supports it.</p>
+<p><strong>Length-aware processing.</strong> Very short audio (under a few seconds) is often spam, hangups, or pocket-dials, and is not worth running ASR on. Very long audio (more than the practice's voicemail cap) can sometimes appear as the result of system bugs or unusual capture paths, and may indicate a recording-error condition rather than a legitimate message. Length-based filtering at the front of the pipeline (drop the under-three-second clips, flag the over-five-minute clips for special handling) saves cost and improves the signal-to-noise ratio of the downstream classification.</p>
+<p><strong>Confidence is the gate, not the answer.</strong> ASR confidence scores feed the downstream confidence-aware logic in the same way they do for IVR. A high-confidence transcript with clear medical entities can be auto-classified and auto-routed. A medium-confidence transcript can be classified, with the result flagged for human verification before action. A low-confidence transcript (&quot;this audio is ninety seconds of street noise and the model is guessing&quot;) should not be acted on at all; route to a human listener.</p>
+<h3 id="voice-activity-detection-and-pre-processing">Voice Activity Detection and Pre-processing</h3>
+<p>Before the audio reaches the ASR system, a small pre-processing layer earns its keep.</p>
+<p><strong>Voice activity detection (VAD).</strong> A simple model that distinguishes speech from non-speech regions of the audio. Useful for two reasons. First, you can detect &quot;no speech detected&quot; voicemails (pocket-dials, silent hangups, fax-tone-only, music-only) and route them to a &quot;no transcription needed&quot; disposition without spending ASR cost. Second, you can trim leading or trailing silence before submitting to ASR, which marginally reduces transcription cost and slightly improves accuracy at the boundaries.</p>
+<p><strong>Background noise classification.</strong> Some recordings are dominated by non-speech audio (a baby crying, a TV in the background, music, traffic, mechanical noise). A simple acoustic classifier can flag these as &quot;noisy environment&quot; so the downstream confidence interpretation can be adjusted. The pipeline does not need to separate the signal from the noise; it needs to know that this recording is likely to produce a less reliable transcript.</p>
+<p><strong>Loudness normalization.</strong> Voicemails come in at vastly different loudness levels. Normalizing the input audio's loudness (RMS or peak) before transcription is a low-cost intervention that improves ASR consistency.</p>
+<p><strong>DTMF tone detection.</strong> Some &quot;voicemails&quot; are actually fax tones or DTMF sequences left by automated systems. Detecting DTMF in the audio is mechanical and lets you route those recordings appropriately rather than sending them to ASR.</p>
+<p>You do not need elaborate audio engineering. You need enough pre-processing to filter the obvious non-speech inputs and to marginally improve the speech inputs. Modern ASR systems are robust enough that aggressive pre-processing can actually hurt; light-touch is the right posture.</p>
+<h3 id="text-classification-intent-and-urgency">Text Classification: Intent and Urgency</h3>
+<p>Once you have a transcript, the next stage is classification. There are typically two parallel classification axes and one entity-extraction layer that feed the routing decision.</p>
+<p><strong>Intent classification.</strong> What is this voicemail about? Common categories for a healthcare practice voicemail box: medication question or refill request; appointment-related (schedule, reschedule, cancel, confirm); test-result inquiry; clinical-symptom report; billing question; insurance or prior-authorization question; vendor or business-related; spam or wrong-number; unclear. The exact taxonomy is institutional; most practices end up with eight to fifteen categories.</p>
+<p><strong>Urgency classification.</strong> Independent from intent, how time-sensitive is this voicemail? A common scheme: emergent (caller is reporting symptoms that suggest a medical emergency, or expressing suicidality); urgent (clinically time-sensitive but not emergency-room-now: medication side effects, worsening symptoms, fever in a high-risk patient); routine (medication refill, appointment confirmation, results inquiry, billing); low-priority (vendor solicitations, wrong numbers, spam). Urgency is partly inferable from intent, but not entirely; a &quot;medication refill&quot; intent for a routine antihypertensive is routine, while a &quot;medication refill&quot; intent for a chemotherapy adjunct in a patient who is now days late on the dose is more time-sensitive.</p>
+<p><strong>Medical entity extraction.</strong> What specific clinical entities does this voicemail mention? Drug names. Symptoms. Body parts. Conditions. Procedures. Lab tests. Dates. Phone numbers. Names of clinicians. The entity layer surfaces the actionable specifics in the message: &quot;the patient mentioned methotrexate, the symptom mouth sores, and the lab thyroid panel.&quot; The entities feed both the urgency classifier (some entities raise the urgency on their own; &quot;chest pain&quot; is one of those) and the routing decision (the medication-related voicemails go to the pharmacy queue with the medication name pre-populated).</p>
+<p>You can implement these layers in several ways.</p>
+<p><strong>Rule-based classifiers.</strong> Define keyword and regex patterns for each intent and urgency level. &quot;If the transcript contains 'refill' or 'prescription' or 'pharmacy', classify as medication intent. If the transcript contains 'chest pain' or 'can't breathe' or 'shortness of breath' or 'suicide', classify as emergent urgency, regardless of other classification.&quot; Easy to build, transparent, and (especially for the urgency-keyword layer) actually the right approach. The clinical urgency lexicon should be a rule layer on top of any ML classifier, because the cost of missing an emergent message is much higher than the cost of over-flagging.</p>
+<p><strong>Statistical text classifiers.</strong> Train a supervised classifier on labeled transcripts. Each labeled example is a transcript and its intent (and urgency) label. Standard supervised text classification: logistic regression over TF-IDF, gradient-boosted trees over text features, or fine-tuned transformer models. The models handle paraphrase variation (every way someone might say &quot;I want to refill my prescription&quot;) that rule-based systems struggle with.</p>
+<p><strong>LLM-based classifiers.</strong> Send the transcript to a foundation model with a prompt that lists the intents (and urgency categories) and ask the model to classify. Modern LLMs are excellent at this with few-shot prompting and minimal training data. The advantages: no per-intent training data, easy to extend, handles weird phrasings gracefully, can extract entities and rationales in the same call. The disadvantages: per-message inference cost (small but non-zero), occasional hallucinated categories that are not in your list (validate strictly), and the operational dependency on a model you do not fully control.</p>
+<p>For voicemail specifically, in 2026, the right answer is usually a hybrid. Run the urgency-keyword rule layer first (cheap, fast, safety-critical). Run an LLM- or transformer-based classifier on the rest of the transcript for intent and refined urgency. Run a managed medical-entity-extraction service (Amazon Comprehend Medical, similar offerings from other vendors, or NLP libraries like scispaCy or MedCAT for self-hosted) to extract clinical entities. Combine the outputs into a structured triage record.</p>
+<p><strong>Domain entity extraction.</strong> Comprehend Medical and equivalents extract medication names, conditions, anatomy, procedures, and tests as structured entities, often with mappings to standard ontologies (RxNorm for medications, ICD-10 for conditions, SNOMED for clinical concepts). The structured entities are far more useful for downstream routing than free-text mentions; &quot;the medication is RxNorm:104491 (lisinopril)&quot; is unambiguous in a way that &quot;the medication is lisinopril&quot; is not.</p>
+<h3 id="the-triage-queue">The Triage Queue</h3>
+<p>Once a voicemail is transcribed and classified, the output is a triage record: the audio reference, the transcript, the intent, the urgency, the extracted entities, the per-layer confidence scores, the caller phone number, and any patient context inferred from the phone number lookup. This record goes into a triage queue.</p>
+<p>The triage queue is not just a list. It is a priority data structure that the staff member working through the box sees, in priority order, so the urgent calls surface first. The architecture has to provide that. A simple FIFO queue defeats the entire point. The queue typically has the following properties.</p>
+<p><strong>Priority-aware ordering.</strong> Emergent urgency comes first. Within an urgency level, older messages come first (so a routine message does not sit in the queue forever just because new routine messages keep arriving). Within an urgency level and time bucket, certain intents may be prioritized (clinical-symptom intent ahead of billing intent, for instance). The ordering rules are explicit and reviewable.</p>
+<p><strong>Filtering and routing.</strong> The same queue may serve multiple staff roles. Pharmacy gets the medication-related queue. Scheduling gets the appointment-related queue. Nurse triage gets the clinical-symptom queue. Billing gets the billing queue. The architecture surfaces the right subset of messages to each role's view, not the full firehose.</p>
+<p><strong>Confidence flagging.</strong> Low-confidence classifications surface as such, so the staff member knows to listen to the audio rather than trusting the transcript. The interface presents the original audio playback alongside the transcript, with the entities highlighted in the transcript view.</p>
+<p><strong>Audit trail.</strong> Every action a staff member takes against a voicemail (listened, called back, marked resolved, escalated) is logged. The audit trail feeds the analytics layer that surfaces handle-time, time-to-callback, and outcomes by category.</p>
+<p><strong>Escalation paths.</strong> Emergent-urgency messages do not just sit at the top of the queue; they trigger an active notification (page, SMS, dashboard alert, depending on the institution's protocol) so a clinician sees them immediately rather than waiting for the next queue review.</p>
+<h3 id="where-the-field-has-moved">Where the Field Has Moved</h3>
+<p>Some practical updates worth knowing.</p>
+<p><strong>Foundation-model classification has displaced custom-trained classifiers for many use cases.</strong> Five years ago, a voicemail classification system would have required several thousand labeled examples to train a competent intent classifier. Today, an LLM with a well-designed prompt and a handful of few-shot examples can produce comparable or better classification with no training data. The operational dependency shifts (you depend on the foundation model vendor rather than on your own labeled dataset), but the time-to-launch is dramatically faster.</p>
+<p><strong>Embeddings-based retrieval over historical messages is increasingly used.</strong> When a voicemail comes in, embed it and check whether similar voicemails have been left by the same patient in the recent past. Useful for de-duplicating callbacks (the patient has already left this same message; consolidate) and for identifying patients who are repeatedly trying to reach the practice (a possible signal of a problem the system is not surfacing well).</p>
+<p><strong>Medical entity extraction has matured.</strong> The accuracy of cloud-managed medical-entity extraction (Comprehend Medical, Google Healthcare Natural Language API, Microsoft Text Analytics for Health) has reached the point where the entity extraction is rarely the bottleneck. The bottleneck has shifted to the upstream ASR accuracy (if the medication name was transcribed wrong, the entity extractor will miss it) and the downstream interpretation (an extracted &quot;chest pain&quot; entity has to be interpreted in context: was the patient describing their own current symptom, asking about a past episode, or relaying something about a family member).</p>
+<p><strong>Multilingual ASR has gotten substantially better but remains uneven across languages.</strong> Voicemail in English transcribes well. Voicemail in Spanish transcribes well. Voicemail in less-common-on-the-internet languages transcribes worse. The pipeline has to handle multilingual audio gracefully, which usually means language detection at the front of the pipeline and language-specific transcription paths downstream.</p>
+<p><strong>Voicemail systems themselves have moved.</strong> Legacy on-prem PBX voicemail still exists, but most healthcare practices have migrated to hosted UCaaS platforms (RingCentral, Zoom Phone, Microsoft Teams Phone, 8x8, Vonage, etc.) or to telephony embedded in their EHR (eClinicalWorks, athenaCommunicator, similar). Each platform has different APIs for accessing voicemail audio, different metadata fidelity, and different integration surfaces. The pipeline architecture has to be agnostic to the source system because most practices have heterogeneous environments.</p>
+<p><strong>Real-time transcription as a precursor to classification is becoming feasible.</strong> Some platforms now transcribe voicemails as they are being recorded (streaming the audio to ASR), so by the time the caller hangs up, the transcript already exists and the classification can run within seconds. Useful when the urgency-detection latency budget matters (a chest-pain voicemail is more time-sensitive than a refill voicemail; surfacing it within thirty seconds of being left rather than within thirty minutes of the next queue review is a meaningful improvement).</p>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>A voicemail transcription and classification pipeline splits cleanly into seven logical stages: ingestion (the voicemail audio reaches your system), pre-processing (filter noise, normalize loudness, detect speech), transcription (batch ASR), classification (intent, urgency, entity extraction), enrichment (patient context lookup), routing (to the right staff queue with the right priority), and observability (everything captured for analysis and improvement).</p>
+<pre class="code code-plain"><code>┌──────────────────── INGESTION ───────────────────────────┐
+│                                                           │
+│   [Voicemail recorded by source system]                  │
+│    - Hosted UCaaS, on-prem PBX, EHR-embedded telephony,  │
+│      or carrier voicemail-to-email                       │
+│   [Source system delivers the recording to the pipeline] │
+│    - Webhook + signed URL, S3 push, SFTP drop,           │
+│      IMAP-poll for voicemail-to-email, vendor API pull   │
+│   [Pipeline persists the audio to a secure object store] │
+│    - Encrypted at rest with customer-managed keys        │
+│    - Linked to a voicemail record with ANI, DNIS,        │
+│      timestamp, source-system-message-id                 │
+│           │                                               │
+│           ▼                                               │
+│   [Output: a voicemail record with audio reference and   │
+│    minimal metadata, awaiting processing]                │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌──────────────────── PRE-PROCESSING ──────────────────────┐
+│                                                           │
+│   [Length filter]                                         │
+│    - Drop or specially-handle clips under threshold      │
+│      (commonly 3 seconds: pocket dials, hangups)         │
+│    - Flag clips over threshold (e.g., 5 minutes) for     │
+│      human review without ASR                            │
+│                                                           │
+│   [Voice activity detection]                             │
+│    - Mark &quot;no speech detected&quot; recordings; route to a    │
+│      no-speech disposition without spending ASR budget   │
+│    - Optionally trim leading and trailing silence        │
+│                                                           │
+│   [DTMF / fax tone detection]                            │
+│    - Identify recordings that are tones rather than      │
+│      speech; route to fax/automated-system queue         │
+│                                                           │
+│   [Loudness normalization]                               │
+│    - Normalize RMS or peak loudness so ASR sees          │
+│      consistently-leveled audio                          │
+│                                                           │
+│   [Language detection (optional, for multilingual orgs)] │
+│    - Identify the primary language of the audio so the   │
+│      ASR call can use the correct model                  │
+│           │                                               │
+│           ▼                                               │
+│   [Output: voicemail record annotated with pre-          │
+│    processing decisions; either continued to ASR, or     │
+│    short-circuited to a non-ASR disposition]             │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌──────────────────── TRANSCRIPTION ───────────────────────┐
+│                                                           │
+│   [Submit async ASR job]                                  │
+│    - Medical-domain model preferred                       │
+│    - Single-speaker mode (diarization disabled by         │
+│      default)                                             │
+│    - Per-word and per-utterance confidence requested      │
+│                                                           │
+│   [Wait for job completion via callback or event]        │
+│                                                           │
+│   [Persist the transcript to the secure transcript       │
+│    archive, alongside the audio]                         │
+│    - Transcript is PHI; same governance as the audio     │
+│           │                                               │
+│           ▼                                               │
+│   [Output: voicemail record updated with transcript,     │
+│    word-level timing and confidence, and average         │
+│    confidence aggregate]                                  │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌──────────────────── CLASSIFICATION ──────────────────────┐
+│                                                           │
+│   [Urgency-keyword rule layer (runs first)]              │
+│    - Pattern-match against the clinical urgency lexicon  │
+│    - Sets urgency = emergent if a phrase matches,        │
+│      regardless of downstream classifier output          │
+│                                                           │
+│   [Intent classifier]                                    │
+│    - LLM, transformer, or trained classifier             │
+│    - Returns intent + per-intent confidence              │
+│    - &quot;Out of scope&quot; or &quot;low confidence&quot; returned as      │
+│      explicit values, not as the absence of a result     │
+│                                                           │
+│   [Urgency classifier]                                   │
+│    - LLM, transformer, or trained classifier             │
+│    - Returns urgency level + confidence                   │
+│    - Combined with rule-layer output: max(rule,          │
+│      classifier); rule layer can only escalate, never    │
+│      de-escalate                                          │
+│                                                           │
+│   [Medical entity extraction]                            │
+│    - Drugs, conditions, anatomy, procedures, tests,      │
+│      with ontology mappings (RxNorm, ICD-10, SNOMED)     │
+│           │                                               │
+│           ▼                                               │
+│   [Output: structured triage record with intent, urgency,│
+│    entities, all confidences, raw transcript reference,  │
+│    audio reference]                                       │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌──────────────────── ENRICHMENT ──────────────────────────┐
+│                                                           │
+│   [ANI-based patient lookup]                             │
+│    - Match caller phone number against patient index    │
+│    - Multiple matches: capture all candidates; do not    │
+│      assume identity                                      │
+│    - Zero matches: flag as &quot;unmatched caller&quot;             │
+│                                                           │
+│   [Patient context retrieval (when match is unique)]     │
+│    - Active medication list                              │
+│    - Recent appointments                                  │
+│    - Active care plans and chronic conditions            │
+│    - Recent voicemails from same caller (de-dupe         │
+│      detection)                                          │
+│                                                           │
+│   [De-duplication / repeat-caller detection]             │
+│    - If the same caller has left similar messages in     │
+│      the last 48 hours, flag for consolidation           │
+│           │                                               │
+│           ▼                                               │
+│   [Output: triage record enriched with patient context   │
+│    and repeat-caller status]                              │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌──────────────────── ROUTING ─────────────────────────────┐
+│                                                           │
+│   [Queue selection based on intent and patient context]  │
+│    - Pharmacy queue, scheduling queue, nurse triage      │
+│      queue, billing queue, general queue                 │
+│                                                           │
+│   [Priority assignment based on urgency]                 │
+│    - Emergent: top of queue + active notification        │
+│    - Urgent: top of queue with SLA flag                  │
+│    - Routine: standard ordering                           │
+│    - Low-priority: deprioritized or filtered out         │
+│                                                           │
+│   [Active notification path for emergent items]          │
+│    - Page or SMS to on-call clinician                    │
+│    - Dashboard alert in the staff interface              │
+│    - Audit-log every active notification                 │
+│                                                           │
+│   [Confidence-aware delivery]                             │
+│    - High confidence: triage record presented with       │
+│      transcript and entities highlighted                 │
+│    - Medium confidence: same, but with a &quot;verify before  │
+│      acting&quot; badge                                       │
+│    - Low confidence: queue with a &quot;listen to audio       │
+│      before acting&quot; badge                                │
+│           │                                               │
+│           ▼                                               │
+│   [Output: triage record placed in the appropriate       │
+│    staff queue with ordering, priority, and confidence   │
+│    metadata]                                              │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+
+┌──────────────────── OBSERVABILITY ───────────────────────┐
+│                                                           │
+│   [Per-voicemail audit record]                           │
+│    - Pre-processing decisions                             │
+│    - ASR job ID, model used, duration, confidence stats  │
+│    - All classification outputs and confidences          │
+│    - Entity extraction output                             │
+│    - Routing decision and the rule that fired            │
+│    - Staff actions: listened, called back, resolved,     │
+│      escalated, time stamps for each                     │
+│                                                           │
+│   [Per-voicemail audio and transcript]                   │
+│    - Encrypted at rest                                    │
+│    - Retention per institutional policy                   │
+│                                                           │
+│   [Aggregate metrics]                                    │
+│    - Volume by intent, urgency, time-of-day              │
+│    - Time-to-classification, time-to-callback by         │
+│      urgency tier                                         │
+│    - Misclassification rate (sampled human review)       │
+│    - Subgroup-stratified accuracy (language, dialect,    │
+│      age cohort, geographic region)                      │
+│    - Repeat-caller rate                                   │
+│           │                                               │
+│           ▼                                               │
+│   [Output: continuous improvement signals fed back to    │
+│    classifier prompts, urgency lexicon, and routing      │
+│    policy]                                                │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+</code></pre>
+<p>A few cross-cutting design points that the architecture has to bake in from the start.</p>
+<p><strong>Async, but emergent items get real-time treatment.</strong> Most of the pipeline is async: voicemail comes in, gets processed within a few minutes, sits in the queue. Emergent-urgency items are the exception: the moment the urgency classifier or rule layer flags one, the pipeline emits an active notification rather than waiting for the staff member to find it in the queue. This dual-mode architecture (async by default, real-time for emergent) is what lets the system serve both routine triage and clinical safety from a single pipeline.</p>
+<p><strong>Transcripts are PHI; treat them accordingly.</strong> Voicemail recordings are PHI (the recording typically contains the caller's name, phone number, and clinical content). Transcripts of those recordings are also PHI. Both are stored in encrypted object storage with customer-managed keys, with access controls that match the rest of the institution's PHI handling. Audit logs that record voicemail processing should reference the audio and transcript by ID, not embed the raw content; the raw content should live in the secure archive only.</p>
+<p><strong>The urgency lexicon is a clinical safety document.</strong> Same as in recipe 10.1: the urgency lexicon is the safety net for clinical signal that the ML classifier might miss. Treat it as a clinical safety artifact with version control, change review by clinical operations, scheduled refresh cadence, and a documented escalation path when a missed urgent voicemail surfaces.</p>
+<p><strong>Confidence thresholds are per-axis and per-action.</strong> Different actions on the triage record require different confidence floors. Auto-routing a voicemail to the pharmacy queue based on a high-confidence &quot;medication refill&quot; intent is a low-stakes action and can run on a moderate confidence threshold. Auto-escalating to the on-call clinician based on an emergent-urgency classification is a higher-stakes action (the consequences of a false positive are real, even if the consequences of a false negative are worse) and warrants a different threshold. Auto-resolving a voicemail without staff review is a still-different action and should require very high confidence and a narrow set of intents (and probably should not be done at all in MVP).</p>
+<p><strong>Sampled human review is non-negotiable.</strong> The pipeline cannot self-evaluate its accuracy. The institution needs a sampled audit process where a clinical reviewer listens to a random sample of voicemails per week and compares the human assessment to the pipeline's classification. The sample size is institutional but a few percent of total volume is a reasonable starting point. Without this, the pipeline drifts silently and nobody notices.</p>
+<p><strong>Subgroup-stratified accuracy must be visible.</strong> Voicemail ASR has worse accuracy on certain demographic groups (older speakers, non-native English speakers, speakers with hearing loss who modulate their voice differently). The pipeline must surface accuracy metrics stratified by language preference, age cohort, and (where data permits) accent group. Disparities exceeding configured thresholds should alert. This is not an optional analytics nice-to-have; it is the mechanism by which the institution detects whether the system is silently underserving specific patient populations.</p>
+<p><strong>The pipeline degrades to &quot;human listens to all voicemails&quot; gracefully.</strong> If any pipeline stage is unavailable (ASR vendor outage, classifier service down, queue infrastructure failure), the system should fall back to delivering the raw voicemail audio to the staff queue with a &quot;automated triage unavailable, please review manually&quot; flag. The voicemail box was reachable by humans before the pipeline existed; it must remain reachable by humans when the pipeline cannot run.</p>
+<p><strong>De-duplication and repeat-caller detection are operationally important.</strong> The same patient leaving four voicemails in two days about the same refill request should result in one consolidated triage record, not four. The repeat-caller signal is also clinically interesting: a patient who has tried to reach the practice three times in a week and not gotten through is a patient at risk of disengagement, regardless of the specific intents.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter10.02-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>The voicemail pipeline is the cleanest application of speech-AI to a healthcare problem in this chapter, and it's the recipe where the engineering risk is lowest and the clinical impact is highest. The async nature simplifies almost every architectural decision. The audio quality, while variable, is bounded (it's a voicemail, not a live ambient capture). The downstream consumers are humans (the staff queue), so the system is fundamentally a triage aid rather than a clinical decision-maker. The failure mode of &quot;the classifier was wrong&quot; is recoverable (the staff member listens to the audio and reclassifies). The success mode is not abstract: a single emergent voicemail surfaced two days earlier than it would have been is a real patient with a real outcome difference.</p>
+<p>The trap most specific to voicemail triage is treating the urgency classifier as the primary safety mechanism. It is not. The urgency-keyword rule layer is the primary safety mechanism. The classifier is the secondary refinement that catches phrases the rule layer didn't anticipate and lowers the false-positive rate on routine voicemails that happen to contain urgency-adjacent words. Build the rule layer first. Test it exhaustively. Treat it as a clinical safety document with appropriate governance. Build the classifier on top of that, with the explicit understanding that the classifier may de-prioritize a voicemail but cannot de-prioritize one that the rule layer flagged. The institutions that build this well treat the lexicon as the load-bearing safety wall and the classifier as the polish; the institutions that don't, treat the classifier as the safety wall and learn about the gaps from the missed-urgent-voicemail incident report.</p>
+<p>The trap closely related to that one is over-trusting the ASR transcript. ASR errors propagate. A misrecognized &quot;no&quot; in front of a phrase (&quot;I have no chest pain&quot; vs &quot;I have chest pain&quot;) inverts the clinical meaning. A misrecognized medication name causes the entity extractor to miss a drug interaction or surface a wrong drug for the staff member to confirm. The architectures that work treat the transcript as evidence, not ground truth. The audio is the source. The transcript is a cached interpretation of the audio that the staff member can falsify by listening. The interface design has to make it easy to listen to the audio at the moment in question, not require the staff member to scrub through the entire recording. Word-level timing in the transcript supports clickable playback at the relevant timestamp; build that into the UI.</p>
+<p>A third trap is under-investing in the staff interface. The pipeline's job is to make the staff member faster and more accurate. If the interface is bad (the queue doesn't sort right, the transcript is hard to read, the playback is buried, the reclassification flow is annoying), the staff member works around the pipeline rather than with it. They go back to listening to the raw audio in the order it came in. The investment ratio that separates successful deployments from frustrating ones is, in our experience, somewhere around 60% engineering on the pipeline and 40% engineering on the staff interface, not the 90/10 split that most projects start with. The interface is not a thin client over the pipeline; it is the primary product for the user who actually uses the system.</p>
+<p>A fourth trap is ignoring the equity dimension. Voicemail ASR systematically underperforms for non-English speakers, for older speakers, for speakers with hearing loss, for speakers from underrepresented dialect groups. If the pipeline silently routes those callers' voicemails through with lower-quality transcripts, lower-confidence classifications, and consequent default-to-human-review (which then takes longer in a busy queue), the system has built a structural delay into the responsiveness experienced by exactly the populations the practice's quality metrics most need to monitor. The mitigation is the subgroup-stratified accuracy dashboard, the conservative routing posture for low-confidence cases, and the periodic vendor evaluation. It is also, more fundamentally, the recognition that the pipeline's metrics in the aggregate can look excellent while the metrics for the underserved cohort look much worse.</p>
+<p>The thing that surprises people coming from text-NLP backgrounds is how much of the work is in the pre-processing and the audio handling. The classifier is the most interesting piece, and it gets a few hundred words of attention in any given recipe. The audio pipeline (format detection, transcoding, VAD, length filtering, fax-tone detection, loudness normalization) is where the operational headaches actually live. A bad audio pipeline produces classification errors that look like classifier errors but are actually upstream problems. Invest in the audio handling first; the classification falls out of accurate input.</p>
+<p>The thing that surprises people coming from telephony-engineering backgrounds is how much of the value is in the structured outputs, not in the transcription itself. A traditional voicemail-to-email service gives you the audio and a transcript and that's it. The triage pipeline gives you intent, urgency, entities with ontology mappings, patient context, repeat-caller signal, queue routing, and a structured audit trail. Each of those layers takes a small amount of additional engineering on top of the transcript and produces multiplicatively more operational value. The ratio between &quot;transcription as a feature&quot; and &quot;transcription as the foundation for a triage pipeline&quot; is something like 1:5 in operational impact for a similar 1:3 in engineering effort.</p>
+<p>The thing about Amazon Transcribe Medical specifically: it's competent on the medical-vocabulary axis and competent on the per-word confidence axis, which are the two things that matter most for this pipeline. It's not the most accurate medical ASR on the market (Nuance and a few specialized vendors are arguably better on certain specialty vocabularies), but the integration savings (managed service, async batch, native S3 input, native KMS encryption) outweigh the accuracy difference for most healthcare practices. For specialty practices with vocabulary not well-covered by Transcribe Medical's general-medical training, custom vocabulary lists provide meaningful improvement; for practices with very specialized vocabulary (oncology with novel drug names, niche subspecialties), evaluating purpose-built vendors is worthwhile.</p>
+<p>The thing about Amazon Comprehend Medical specifically: it's the entity extraction layer most healthcare developers will use because it's a managed service with HIPAA eligibility and it ships with the ontology mappings (RxNorm, ICD-10-CM, SNOMED CT) that the entities need. It misses some entities that domain-specific extractors would catch, and it doesn't reason about negation or temporal context as well as some research-grade medical NLP systems. For voicemail triage, the entity-extraction quality is sufficient for routing and surface-context purposes. For higher-stakes downstream uses (auto-population of clinical fields in the EHR, billing-code suggestion), the entity extraction needs more validation than this recipe builds.</p>
+<p>The thing about Amazon Bedrock for the classifier: foundation models are excellent at intent and urgency classification with well-designed prompts and a handful of few-shot examples. The trade-off is per-call inference cost and the operational dependency on the model vendor. For a voicemail-volume workload, the cost is modest; for very high volumes, the cost may motivate a smaller fine-tuned classifier. The right architectural posture in 2026 is to use foundation models for the launch, instrument the classifier-disagreement-with-human-review metric carefully, and revisit the build-versus-buy question at the one-year mark with real data on how often the classifier is wrong, on which intents, and what a custom-trained alternative would cost to maintain.</p>
+<p>The thing about per-voicemail cost: end-to-end, somewhere in the range of three to twelve cents of AWS infrastructure cost per voicemail (Transcribe Medical dominating the per-message cost, Bedrock and Comprehend Medical adding modestly, Lambda and storage rounding things out). Compare against the fully-loaded cost of a human triaging the same voicemail unaided (typically 90-180 seconds of nurse or front-desk time, often $2-5 of fully-loaded labor cost). The economic case is favorable, even before considering the clinical impact of faster emergent-call surfacing. The economic case strengthens further when you account for the secondary benefits: reduced call-back-cycle costs (the patient reaches a staff member faster, fewer follow-up voicemails), avoided unnecessary ER visits (the urgent-but-not-emergent voicemail gets a same-day clinical response instead of an ER visit because the message languished), and improved patient retention (patients who feel heard tend to stay).</p>
+<p>The thing I would do differently the second time: invest more, earlier, in the sampled human review process. The first version of any classifier ships with the prompt and the few-shot examples and a vague intent to evaluate accuracy later. The first month of production data is the most informative dataset you'll ever have for tuning the system, and the institutions that have the sampled review process running from week one improve much faster than the ones that bolt it on in month four. Build the disagreement-capture interface before launch, recruit the clinical reviewers, define the sampling cadence, and let the production traffic flow into a system that's already prepared to learn from it.</p>
+<p>The last thing, because it's specific to healthcare and to this recipe in particular: the voicemail box is, for many patients, the only after-hours channel they have to reach the practice. The decision to leave a voicemail is often made under stress (a symptom got worse, a medication ran out, a fever spiked, a child stopped responding well). The patient has weighed whether to call. They've spoken into a phone that may or may not be transmitting their words clearly. They've trusted that someone would listen. The pipeline's job is to honor that trust. Not to silently lose the urgent calls in the routine queue. Not to systematically deprioritize the patients whose speech the system handles less well. To listen, structure, prioritize, and route, so that the staff member calling back is calling back the right patient at the right time with the right context. Build the system that does that, and the metrics follow. Build the system that doesn't, and the patients who most needed the call back are the ones who silently leave the panel.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 10.1 (IVR Call Routing Enhancement):</strong> Same chapter, real-time analog of this recipe. Same speech-to-text-to-intent pipeline, same intent classification, same urgency-keyword rule layer pattern, but with streaming ASR, dialog management, and tighter latency constraints. The two systems share the urgency lexicon, the intent taxonomy, the patient-index lookup, and the back-office integrations.</li>
+<li><strong>Recipe 10.4 (Medical Transcription / Dictation):</strong> Shares Transcribe Medical and the medical-vocabulary tuning concerns; the dictation use case has higher accuracy requirements but uses the same core ASR substrate.</li>
+<li><strong>Recipe 10.6 (Speech-to-Text for Telehealth Documentation):</strong> Shares the streaming-ASR-and-confidence-aware pipeline patterns; adds multi-party diarization that voicemail does not need.</li>
+<li><strong>Recipe 10.7 (Ambient Clinical Documentation):</strong> The structured-output-from-speech pattern at a higher complexity tier; voicemail triage is the simpler analog of the ambient documentation pipeline.</li>
+<li><strong>Recipe 11.x (Conversational AI / Virtual Assistants):</strong> The intent and urgency classification techniques used in this recipe map directly onto the conversational AI assistants in chapter 11.</li>
+<li><strong>Recipe 8.x (Traditional NLP):</strong> The intent and urgency classification, entity extraction, and rule-based scanning techniques draw from the broader NLP methods covered in chapter 8.</li>
+<li><strong>Recipe 4.1 (Appointment Reminder Channel Optimization):</strong> The voicemail pipeline produces signal that feeds the channel-optimization model: patients who reliably respond to voicemail, patients who never call back, patients who consistently use after-hours voicemail.</li>
+<li><strong>Recipe 5.1 (Internal Duplicate Patient Detection):</strong> The ANI-based patient lookup hits the same duplicate-patient problem; this recipe consumes the patient-index pipeline that recipe 5.1 produces.</li>
+<li><strong>Recipe 2.5 (After-Visit Summary Generation):</strong> The summarization-from-conversation pattern used in the voicemail triage record's machine-generated summary draws from the LLM-summarization techniques covered in chapter 2.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>speech-voice-ai</code> · <code>voicemail</code> · <code>voicemail-transcription</code> · <code>voicemail-triage</code> · <code>async-asr</code> · <code>batch-asr</code> · <code>intent-classification</code> · <code>urgency-classification</code> · <code>medical-entity-extraction</code> · <code>clinical-triage-routing</code> · <code>urgency-lexicon</code> · <code>confidence-thresholding</code> · <code>voice-activity-detection</code> · <code>pre-processing-pipeline</code> · <code>priority-queue</code> · <code>repeat-caller-detection</code> · <code>patient-context-enrichment</code> · <code>human-in-the-loop</code> · <code>sampled-review</code> · <code>subgroup-accuracy</code> · <code>equity-monitoring</code> · <code>transcribe-medical</code> · <code>comprehend-medical</code> · <code>bedrock</code> · <code>step-functions</code> · <code>lambda</code> · <code>dynamodb</code> · <code>s3</code> · <code>sns</code> · <code>eventbridge</code> · <code>kms</code> · <code>secrets-manager</code> · <code>cloudwatch</code> · <code>cloudtrail</code> · <code>kinesis-firehose</code> · <code>glue</code> · <code>athena</code> · <code>quicksight</code> · <code>opensearch</code> · <code>simple</code> · <code>mvp</code> · <code>hipaa</code> · <code>phi-handling</code> · <code>audit-trail</code> · <code>staff-triage-ui</code> · <code>multilingual-asr</code></p>
+<hr />
+<p><em>← <a href="chapter10.01-ivr-call-routing-enhancement.html">Recipe 10.1: IVR Call Routing Enhancement</a> · <a href="chapter10-preface.html">Chapter 10 Index</a> · <a href="chapter10.03-voice-to-text-ehr-navigation.html">Recipe 10.3: Voice-to-Text for EHR Navigation</a> →</em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

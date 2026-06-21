@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 10.1 Architecture and Implementation: IVR Call Routing Enhancement</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested nav-active" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-101-architecture-and-implementation-ivr-call-routing-enhancement">Recipe 10.1 Architecture and Implementation: IVR Call Routing Enhancement</h1>
+<p><em>Companion to <a href="chapter10.01-ivr-call-routing-enhancement.html">Recipe 10.1: IVR Call Routing Enhancement</a>. This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.</em></p>
+<hr />
+<h2 id="the-aws-implementation">The AWS Implementation</h2>
+<h3 id="why-these-services">Why These Services</h3>
+<p><strong>Amazon Connect for the contact-center backbone.</strong> Connect is a managed cloud contact center that handles the telephony plumbing: SIP trunking, call routing, call recording, queue management, agent desktop integration. It comes with a visual flow editor (contact flows) that lets you wire up the IVR logic graphically and replaces a substantial amount of plumbing you'd otherwise build yourself. For an IVR specifically, Connect gives you the call leg, the audio stream, and the integration points with everything else. It is HIPAA-eligible under AWS BAA.</p>
+<p><strong>Amazon Lex for the NLU layer.</strong> Lex is a managed conversational platform built on the same underlying technology as Alexa. You define intents, sample utterances, and slot types. Lex hosts the model, performs ASR-and-intent classification, manages the slot-filling dialog, and integrates natively with Connect contact flows. For most healthcare IVR use cases, Lex is the right starting point because the integration cost is dramatically lower than wiring together separate ASR and NLU components yourself. Lex V2 specifically supports streaming conversation and multi-language bots.</p>
+<p><strong>Amazon Transcribe (or Transcribe Medical) for ASR.</strong> When you need ASR outside the Lex managed bot (for example, capturing the full call transcript for downstream analytics), Transcribe is the standalone service. Transcribe Medical is the medical-domain-tuned variant; for an IVR's intent classification needs, Transcribe Medical is overkill, but for capturing high-fidelity transcripts of calls that include clinical content, it's worth considering.</p>
+<p><strong>Amazon Polly for TTS responses.</strong> Polly synthesizes the system's prompts. The neural voice options are good enough for most IVR contexts; the older standard voices are cheaper if cost matters. Lex can call Polly natively for system prompts, or you can prerecord the most common prompts and play them as audio files for slightly better voice quality and lower per-call cost.</p>
+<p><strong>AWS Lambda for fulfillment and integration logic.</strong> Every action the IVR takes (look up the patient, queue a refill request, schedule a callback, fetch eligibility) runs in a Lambda function called by Lex (as a fulfillment hook) or by Connect (as an invocation step in the contact flow). Lambda's per-invocation isolation, fast cold-start, and scaling characteristics fit IVR workloads well.</p>
+<p><strong>Amazon DynamoDB for caller context and conversation state.</strong> The IVR needs short-term state (this caller's verification status, the slots collected so far) and longer-term state (this caller's recent call history, any flags). DynamoDB's per-key low-latency reads are a good fit. The verification context for an active call lives in DynamoDB with TTL set to expire shortly after call completion; longer-retention call records live elsewhere.</p>
+<p><strong>Amazon Comprehend Medical (optional) for clinical-content extraction.</strong> When the call transcript contains clinical content that downstream systems want to consume (medication mentions, condition mentions, symptom mentions for triage routing), Comprehend Medical extracts these as structured entities. This is more applicable to recipe 10.2 (voicemail transcription and classification) than to a high-volume IVR, but it's available if needed.</p>
+<p><strong>Amazon S3 for call recordings.</strong> Recordings are PHI, encrypted at rest with KMS customer-managed keys, lifecycle policies to move older recordings to cheaper storage tiers, retention bound by institutional and regulatory policy.</p>
+<p><strong>Amazon Kinesis Data Streams for real-time event flow.</strong> Connect emits Contact Trace Records (CTRs) and contact events to Kinesis, where downstream consumers (analytics, real-time dashboards, anomaly detection on call patterns) pick them up.</p>
+<p><strong>Amazon Athena and AWS Glue Data Catalog for analytics.</strong> CTRs land in S3 (via Kinesis Data Firehose), Glue catalogs them, and Athena gives you SQL access for the operational analytics: containment rate, top intents, error patterns, subgroup-stratified accuracy.</p>
+<p><strong>Amazon CloudWatch and Contact Lens for observability.</strong> CloudWatch tracks the operational metrics (Lambda errors, Lex confidence distributions, call volumes); Contact Lens is Connect's built-in conversation analytics layer that surfaces sentiment, talk-time imbalance, and keyword detection on call recordings.</p>
+<p><strong>AWS KMS for cryptographic-key custody.</strong> Customer-managed KMS keys for the call-recordings bucket, the DynamoDB tables holding caller context, the Lambda environment variables that hold integration secrets, and the Kinesis streams.</p>
+<p><strong>AWS Secrets Manager for back-office integration credentials.</strong> The Lambdas that call into the EHR, the appointment-scheduling system, and the e-prescribing system need credentials. Secrets Manager stores them with rotation per the institutional cadence.</p>
+<p><strong>Amazon EventBridge for cross-system event flow.</strong> When an IVR call results in an action that affects another system (a refill queued, a callback scheduled, an escalation logged), EventBridge fans the event out to the appropriate downstream consumers.</p>
+<p><strong>AWS CloudTrail for audit logging.</strong> API calls against the call-recordings bucket, the Lex bot configuration, the Lambda functions, and the KMS keys all log to CloudTrail with retention sized to the institutional regulatory floor.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<pre class="mermaid">flowchart LR
+    subgraph Telephony
+      CALLER[Caller&#x27;s Phone]
+      SIP[SIP Trunk or&lt;br/&gt;Carrier]
+    end
+
+    subgraph Contact_Center
+      CON[Amazon Connect&lt;br/&gt;Contact Flow]
+      CTR[Contact Trace&lt;br/&gt;Records]
+    end
+
+    subgraph Conversational_AI
+      LEX[Amazon Lex V2 Bot&lt;br/&gt;Intents and Slots]
+      POLLY[Amazon Polly&lt;br/&gt;TTS]
+    end
+
+    subgraph Fulfillment
+      L1[Lambda&lt;br/&gt;caller-verifier]
+      L2[Lambda&lt;br/&gt;intent-router]
+      L3[Lambda&lt;br/&gt;refill-fulfillment]
+      L4[Lambda&lt;br/&gt;appointment-fulfillment]
+      L5[Lambda&lt;br/&gt;urgency-escalator]
+    end
+
+    subgraph State_and_Data
+      DDB1[(DynamoDB&lt;br/&gt;active-call-context)]
+      DDB2[(DynamoDB&lt;br/&gt;caller-recent-history)]
+      SM[(Secrets Manager&lt;br/&gt;back-office creds)]
+    end
+
+    subgraph Back_Office
+      EHR[EHR API]
+      RX[e-Prescribing API]
+      SCHED[Scheduling System]
+    end
+
+    subgraph Analytics_and_Audit
+      KIN[Kinesis Data&lt;br/&gt;Streams]
+      FH[Kinesis Data&lt;br/&gt;Firehose]
+      S3R[(S3&lt;br/&gt;call recordings&lt;br/&gt;SSE-KMS)]
+      S3A[(S3&lt;br/&gt;CTR + transcripts&lt;br/&gt;SSE-KMS)]
+      GLUE[Glue Data&lt;br/&gt;Catalog]
+      ATH[Athena]
+      CL[Contact Lens]
+      CW[CloudWatch&lt;br/&gt;metrics + alarms]
+      CT[CloudTrail&lt;br/&gt;audit logs]
+    end
+
+    subgraph Cross_System
+      EB[EventBridge&lt;br/&gt;ivr-events bus]
+      AGENT[Agent Queue]
+      TRIAGE[Clinical Triage]
+    end
+
+    subgraph Identity
+      KMS[(AWS KMS&lt;br/&gt;customer-managed keys)]
+    end
+
+    CALLER --&gt; SIP
+    SIP --&gt; CON
+    CON --&gt; LEX
+    LEX --&gt; POLLY
+    POLLY --&gt; CON
+    LEX --&gt; L2
+    L2 --&gt; L1
+    L1 --&gt; DDB1
+    L1 --&gt; DDB2
+    L2 --&gt; L3
+    L2 --&gt; L4
+    L2 --&gt; L5
+    L3 --&gt; RX
+    L4 --&gt; SCHED
+    L1 --&gt; EHR
+    L3 --&gt; SM
+    L4 --&gt; SM
+    L1 --&gt; SM
+    L5 --&gt; TRIAGE
+    L2 --&gt; AGENT
+    CON --&gt; CTR
+    CTR --&gt; KIN
+    CON --&gt; S3R
+    KIN --&gt; FH
+    FH --&gt; S3A
+    S3A --&gt; GLUE
+    GLUE --&gt; ATH
+    S3R --&gt; CL
+    L2 --&gt; EB
+    EB --&gt; AGENT
+    EB --&gt; TRIAGE
+    KMS --&gt; S3R
+    KMS --&gt; S3A
+    KMS --&gt; DDB1
+    KMS --&gt; DDB2
+    KMS --&gt; SM
+    CON --&gt; CW
+    LEX --&gt; CW
+    L1 --&gt; CW
+    L2 --&gt; CW
+    L3 --&gt; CW
+    L4 --&gt; CW
+    L5 --&gt; CW
+    L2 --&gt; CT
+    L5 --&gt; CT
+
+    style DDB1 fill:#9ff,stroke:#333
+    style DDB2 fill:#9ff,stroke:#333
+    style S3R fill:#cfc,stroke:#333
+    style S3A fill:#cfc,stroke:#333
+    style LEX fill:#fcf,stroke:#333
+    style CON fill:#ffc,stroke:#333
+</pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AWS Services</strong></td>
+<td>Amazon Connect, Amazon Lex V2, Amazon Polly, AWS Lambda, Amazon DynamoDB, Amazon S3, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Glue Data Catalog, Amazon Athena, AWS KMS, AWS Secrets Manager, Amazon EventBridge, Amazon CloudWatch, AWS CloudTrail. Optionally: Amazon Transcribe Medical, Amazon Comprehend Medical, Amazon Connect Contact Lens.</td>
+</tr>
+<tr>
+<td><strong>External Inputs</strong></td>
+<td>Direct Inward Dialing (DID) phone numbers for the practice. Existing back-office system APIs for the integrations the IVR fulfills against (EHR, scheduling, e-prescribing, billing). An initial intent set with sample utterances per intent (typically derived from analyzing 1000-5000 historical call transcripts or call notes). A clinical-urgency-keyword lexicon, reviewed by clinical operations.</td>
+</tr>
+<tr>
+<td><strong>IAM Permissions</strong></td>
+<td>Per-Lambda least-privilege roles. The caller-verifier Lambda has scoped read access to the EHR API (or to the patient-index DynamoDB table) and write access to the active-call-context DynamoDB table only. The fulfillment Lambdas have scoped access to the specific back-office API they fulfill against, plus <code>secretsmanager:GetSecretValue</code> on the relevant secrets pinned to the current rotation. The intent-router Lambda has <code>events:PutEvents</code> on the IVR events bus. The urgency-escalator Lambda has <code>connect:StartContactStreaming</code> or equivalent for the triage-routing transfer plus PII-scoped audit-event emission. Connect's service role has scoped access to invoke the Lex bot and Polly. Lex's service role has scoped access to invoke the Lambda fulfillment hook. Avoid wildcard actions and resources in production.</td>
+</tr>
+<tr>
+<td><strong>BAA and Compliance</strong></td>
+<td>AWS BAA signed. Connect, Lex, Polly, Transcribe, Lambda, DynamoDB, S3, Kinesis, KMS, Secrets Manager, CloudWatch Logs, CloudTrail are HIPAA-eligible (verify the current list at build time).  Recording-consent disclosure played as the first audio after answer (&quot;This call may be recorded for quality and training purposes&quot; or whatever language the institution's legal team has approved for the jurisdictions you operate in). The disclosure is jurisdiction-aware: some U.S. states are one-party-consent, some are all-party-consent, and the disclosure plus continued participation is the standard pattern for satisfying both.</td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Connect call recordings: SSE-KMS with customer-managed keys, S3 bucket lifecycle to colder storage tiers, retention per institutional and state-specific medical-records-retention requirements. DynamoDB tables: customer-managed KMS at rest. Secrets Manager: customer-managed KMS. Lambda environment variables encrypted at rest with KMS. Lambda log groups: KMS-encrypted. TLS in transit for all back-office API calls.</td>
+</tr>
+<tr>
+<td><strong>VPC</strong></td>
+<td>Production: Lambdas that call back-office APIs run in VPC with subnets that have controlled egress to the back-office systems' network. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge so the Lambdas don't need NAT for AWS-internal calls. Connect itself is a managed service that runs outside your VPC; the integration with Lambda and Lex still terminates in your account.</td>
+</tr>
+<tr>
+<td><strong>CloudTrail</strong></td>
+<td>Enabled with data events on the call-recordings S3 bucket, the active-call-context DynamoDB table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Lex bot configuration changes logged (version control your bot definitions). Connect contact flow changes logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longest of HIPAA's six-year minimum, state medical-records-retention, and the institutional regulatory floor.</td>
+</tr>
+<tr>
+<td><strong>Sample Data</strong></td>
+<td>Synthetic call-transcript data for intent training (Synthea-derived patient demographics combined with synthetic intent utterances; do not use real recordings or real transcripts in development). The Connect sample contact flows (published by AWS) and the Lex sample bots provide working starting templates. Healthcare-specific intent libraries from vendor reference architectures provide a head start. Never use real PHI in development.</td>
+</tr>
+<tr>
+<td><strong>Cost Estimate</strong></td>
+<td>At a mid-sized practice scale (50,000 inbound calls per month, average 90-second IVR interaction, 30% containment): Connect typically $0.018 per minute for inbound calls plus per-minute charges for telephony; Lex typically $0.004 per request for streaming conversation; Polly typically negligible at this volume; Lambda invocations typically $20-100 per month at this volume; DynamoDB typically $50-200 per month; S3 for recordings typically $50-200 per month at this volume; Kinesis, Athena, CloudWatch, KMS typically $100-300 per month combined. Total AWS infrastructure typically $2,000-6,000 per month at this scale, dominated by Connect's per-minute telephony charges.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ingredients">Ingredients</h3>
+<table>
+<thead>
+<tr>
+<th>AWS Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amazon Connect</strong></td>
+<td>Cloud contact center; handles SIP, call routing, queues, agent integration, call recording, contact flow execution</td>
+</tr>
+<tr>
+<td><strong>Amazon Lex V2</strong></td>
+<td>Conversational AI; intent classification, slot filling, dialog management; integrated natively with Connect</td>
+</tr>
+<tr>
+<td><strong>Amazon Polly</strong></td>
+<td>TTS for system prompts (or Lex's built-in TTS for inline responses)</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda</strong></td>
+<td>Fulfillment and integration logic: caller-verifier, intent-router, refill-fulfillment, appointment-fulfillment, urgency-escalator</td>
+</tr>
+<tr>
+<td><strong>Amazon DynamoDB</strong></td>
+<td>Active-call-context (per-call ephemeral state with TTL); caller-recent-history (longer-retention call summary records)</td>
+</tr>
+<tr>
+<td><strong>Amazon S3</strong></td>
+<td>Call recordings (SSE-KMS, lifecycle policy); CTR archive; transcript archive</td>
+</tr>
+<tr>
+<td><strong>Amazon Kinesis Data Streams + Firehose</strong></td>
+<td>Real-time stream of Contact Trace Records and contact events into S3 for analytics</td>
+</tr>
+<tr>
+<td><strong>AWS Glue Data Catalog + Amazon Athena</strong></td>
+<td>SQL access to CTRs, transcripts, and IVR-decision audit data</td>
+</tr>
+<tr>
+<td><strong>AWS KMS</strong></td>
+<td>Customer-managed encryption keys for recordings, DynamoDB tables, Secrets Manager, Lambda environment variables</td>
+</tr>
+<tr>
+<td><strong>AWS Secrets Manager</strong></td>
+<td>Back-office API credentials with rotation</td>
+</tr>
+<tr>
+<td><strong>Amazon EventBridge</strong></td>
+<td>Cross-system event fan-out for IVR-driven actions (refill queued, callback scheduled, escalation logged)</td>
+</tr>
+<tr>
+<td><strong>Amazon CloudWatch</strong></td>
+<td>Operational metrics (call volumes, Lex confidence distributions, Lambda errors), alarms (DLQ depth, abandon rate, escalation rate spikes)</td>
+</tr>
+<tr>
+<td><strong>AWS CloudTrail</strong></td>
+<td>Audit logging for API calls against PHI-bearing resources and Lex/Connect configuration</td>
+</tr>
+<tr>
+<td><strong>Amazon Connect Contact Lens (optional)</strong></td>
+<td>Built-in conversation analytics on call recordings (sentiment, keywords, talk-time)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="code">Code</h3>
+<h4 id="walkthrough">Walkthrough</h4>
+<p><strong>Step 1: Answer the call and play the disclosure plus initial prompt.</strong> This is the contact flow's entry state. Connect picks up the call, plays the recording-and-privacy disclosure, then immediately hands off to the Lex bot for the initial open-ended prompt. The disclosure is jurisdiction-aware. Skip the disclosure and you have a recording-consent compliance gap; skip the immediate Lex handoff and you've built a legacy IVR with extra steps.</p>
+<pre class="code code-plain"><code>ON inbound_call(call_id, ani, dnis):
+    // call_id is Connect&#x27;s contact identifier;
+    // ani is the caller&#x27;s phone number (when not blocked);
+    // dnis is the dialed-in number (which entry point).
+
+    // Step 1A: persist initial call state. We use this as
+    // the join key for everything that follows.
+    active_call_context.put({
+        call_id: call_id,
+        ani: ani,
+        dnis: dnis,
+        started_at: current UTC timestamp,
+        verification_status: &quot;unverified&quot;,
+        slots_collected: {},
+        urgency_flag: false,
+        ttl: current UTC timestamp + 6 hours
+    })
+
+    // Step 1B: play the consent and recording disclosure.
+    // The exact wording is institutional and should be
+    // approved by general counsel for the jurisdictions
+    // you operate in.
+    // TODO (TechWriter): Expert review S6 (LOW).
+    // Hardcoding `consent-disclosure-en-us.wav` doesn&#x27;t
+    // capture the jurisdiction-aware variation called out
+    // in prose. Specify per-DNIS disclosure lookup with a
+    // conservative all-party-consent default for unknown
+    // jurisdictions; reference the Reporters Committee
+    // for Freedom of the Press tracker.
+    play_audio(&quot;consent-disclosure-en-us.wav&quot;)
+
+    // Step 1C: hand off to the Lex bot with an open-ended
+    // prompt. This is the moment the conversational IVR
+    // diverges from the legacy menu.
+    invoke_lex_bot(
+        bot_id=PATIENT_BOT_ID,
+        bot_alias=PATIENT_BOT_ALIAS_PROD,
+        session_id=call_id,
+        initial_prompt=&quot;Thanks for calling. &quot; +
+            &quot;How can I help you today?&quot;)
+</code></pre>
+<p><strong>Step 2: Lex returns a turn result; classify and route.</strong> The Lex bot has performed ASR, intent classification, and slot filling for the caller's first utterance. The turn result includes the intent, slot values, per-element confidence, and the raw transcript. The intent-router Lambda receives this as a fulfillment hook. Skip the per-intent confidence threshold and you'll route ambiguous utterances confidently to the wrong place.</p>
+<pre class="code code-plain"><code>FUNCTION handle_lex_turn(turn_event):
+    call_id = turn_event.session_id
+    transcript = turn_event.input_transcript
+    intent_name = turn_event.intent.name
+    intent_confidence = turn_event.intent.confidence
+    slots = turn_event.intent.slots
+
+    // TODO (TechWriter): Expert review S4 (MEDIUM).
+    // Lambda fulfillment-hook authentication of the Lex
+    // invocation source is not specified. Add a defense-
+    // in-depth guard that validates `turn_event.bot.bot_id`
+    // and `turn_event.bot.bot_alias_id` against the
+    // production constants and rejects mismatches. The
+    // Lambda&#x27;s resource-based policy should also pin the
+    // invoking principal to the production Lex bot ARN
+    // with the production alias.
+
+    // Step 2A: log the turn so we can audit it later
+    // regardless of routing outcome.
+    audit_log({
+        event_type: &quot;LEX_TURN_RECEIVED&quot;,
+        call_id: call_id,
+        intent_name: intent_name,
+        intent_confidence: intent_confidence,
+        transcript: transcript,
+        // TODO (TechWriter): Expert review S1 (HIGH).
+        // Audit log records raw transcript verbatim,
+        // creating a parallel PHI store outside the
+        // recordings-bucket governance. Replace
+        // `transcript` with `transcript_archive_ref`,
+        // `transcript_length_chars`, and `transcript_hash`;
+        // keep the full transcript in the secure transcript
+        // archive only. The Python companion already does
+        // this; the pseudocode here should match.
+        timestamp: current UTC timestamp
+    })
+
+    // Step 2B: urgency override. This runs before
+    // anything else. The lexicon is a versioned list
+    // of phrases that should never be routed through
+    // normal triage logic.
+    IF matches_urgency_lexicon(transcript):
+        Lambda.invoke_async(
+            &quot;urgency-escalator&quot;,
+            {call_id: call_id,
+             trigger_phrase: extract_match(transcript)})
+        RETURN response_with_action(&quot;transfer_clinical_triage&quot;)
+
+    // Step 2C: confidence-based routing. The thresholds
+    // are per-intent because the consequences of acting
+    // on a wrong intent vary widely.
+    threshold = load_per_intent_threshold(intent_name)
+
+    IF intent_confidence &lt; threshold.minimum_to_act:
+        // Below the floor: ask a clarifying question.
+        // Don&#x27;t guess, don&#x27;t escalate. Just ask again.
+        active_call_context.update(call_id, {
+            low_confidence_turn_count:
+                active_call_context.get(call_id)
+                  .low_confidence_turn_count + 1
+        })
+        IF active_call_context.get(call_id)
+              .low_confidence_turn_count &gt;= 3:
+            // We&#x27;ve tried three times and still don&#x27;t
+            // know. Stop asking and transfer.
+            RETURN response_with_action(
+                &quot;transfer_general_agent&quot;,
+                reason=&quot;repeated_low_confidence&quot;)
+        ELSE:
+            RETURN response_with_prompt(
+                &quot;I&#x27;m sorry, I didn&#x27;t quite catch that. &quot; +
+                &quot;Could you tell me in a few words what &quot; +
+                &quot;you&#x27;re calling about? You can also &quot; +
+                &quot;press 0 to speak with someone.&quot;)
+
+    // Step 2D: high enough confidence to proceed.
+    // Dispatch to the per-intent handler.
+    SWITCH intent_name:
+        CASE &quot;refill_prescription&quot;:
+            RETURN handle_refill_intent(call_id, slots)
+        CASE &quot;schedule_appointment&quot;:
+            RETURN handle_appointment_intent(call_id, slots)
+        CASE &quot;billing_question&quot;:
+            RETURN response_with_action(
+                &quot;transfer_billing_queue&quot;)
+        CASE &quot;ask_hours_or_location&quot;:
+            RETURN response_with_audio(
+                &quot;hours-and-location.wav&quot;) +
+                offer_additional_help()
+        CASE &quot;speak_to_nurse&quot;:
+            RETURN response_with_action(
+                &quot;transfer_nurse_line&quot;)
+        CASE &quot;operator&quot;:
+            RETURN response_with_action(
+                &quot;transfer_general_agent&quot;,
+                reason=&quot;caller_requested&quot;)
+        DEFAULT:
+            // Out-of-scope intent we recognized but
+            // can&#x27;t fulfill in self-service.
+            RETURN response_with_action(
+                &quot;transfer_general_agent&quot;,
+                reason=&quot;intent_recognized_no_handler&quot;)
+</code></pre>
+<p><strong>Step 3: Verify the caller before any action that touches PHI or the back office.</strong> A simple but easy-to-skip step. The caller-verifier Lambda checks whether the caller has already been verified for this call (verification persists for the session) and, if not, prompts for the verification slots and validates them. The exact verification policy varies. A common approach: date-of-birth plus partial phone-number-on-file or partial address. Skip this and the IVR will happily release a refill to whoever called.</p>
+<pre class="code code-plain"><code>FUNCTION verify_caller_if_needed(call_id, intent_name):
+    context = active_call_context.get(call_id)
+
+    // Step 3A: check whether this intent requires
+    // verification. Some don&#x27;t (&quot;what are your hours&quot;).
+    IF NOT intent_requires_verification(intent_name):
+        RETURN {verified: true,
+                reason: &quot;intent_does_not_require&quot;}
+
+    // Step 3B: check whether we&#x27;ve already verified
+    // this call.
+    IF context.verification_status == &quot;verified&quot;:
+        RETURN {verified: true,
+                reason: &quot;already_verified_this_session&quot;}
+
+    // Step 3C: check ANI-based pre-match. If we have a
+    // unique patient match against the caller&#x27;s phone
+    // number, that&#x27;s a useful signal but never
+    // sufficient on its own; we still ask for at
+    // least one verification slot.
+    ani_matches =
+        patient_index.lookup_by_phone(context.ani)
+
+    // Step 3D: collect verification slots. This is a
+    // sub-dialog Lex handles for us once we&#x27;ve
+    // declared the verification intent in the bot.
+    // TODO (TechWriter): Expert review S3 (MEDIUM).
+    // The &quot;dob_plus_partial_phone&quot; method is illustrative
+    // and may not meet the production bar for high-impact
+    // intents like prescription release. Specify an
+    // intent-keyed verification-strength matrix (no /
+    // basic / strong / out-of-band) and annotate this
+    // example as illustrative. Reference the institutional
+    // identity-and-access-governance policy as the
+    // canonical source.
+    RETURN response_with_sub_dialog(
+        &quot;verification_dialog&quot;,
+        context_hint={
+            ani_match_count: len(ani_matches),
+            verification_method: &quot;dob_plus_partial_phone&quot;
+        })
+
+FUNCTION verify_slots_returned(call_id, dob, partial_phone):
+    context = active_call_context.get(call_id)
+
+    // Step 3E: validate the slots against the patient
+    // index. We do not echo back any matching record
+    // identifiers in error messages; if verification
+    // fails, the caller gets a generic failure prompt
+    // and is offered another attempt or transfer.
+    candidates =
+        patient_index.lookup_by_dob_and_phone(
+            dob=dob,
+            partial_phone=partial_phone,
+            ani=context.ani)
+
+    IF len(candidates) == 1:
+        active_call_context.update(call_id, {
+            verification_status: &quot;verified&quot;,
+            verified_patient_id: candidates[0].patient_id,
+            verified_at: current UTC timestamp
+        })
+        audit_log({
+            event_type: &quot;CALLER_VERIFIED&quot;,
+            call_id: call_id,
+            verification_method: &quot;dob_plus_partial_phone&quot;,
+            timestamp: current UTC timestamp
+        })
+        RETURN {verified: true}
+
+    ELSE:
+        // Either zero or multiple matches. We don&#x27;t
+        // disclose which; we just say verification
+        // failed.
+        context.verification_failure_count += 1
+        IF context.verification_failure_count &gt;= 2:
+            // Stop trying after the second failure.
+            RETURN {verified: false,
+                    next_action: &quot;transfer_general_agent&quot;,
+                    reason:
+                        &quot;verification_failed_max_attempts&quot;}
+        ELSE:
+            RETURN {verified: false,
+                    next_action: &quot;retry_verification&quot;,
+                    reason: &quot;verification_failed&quot;}
+</code></pre>
+<p><strong>Step 4: Fulfill a self-service refill request as an example fulfillment path.</strong> With the caller verified and the intent classified, the refill-fulfillment Lambda takes over. It checks whether the requested medication is eligible for self-service refill (some are not; controlled substances usually require a clinical touch), submits the refill request to the e-prescribing system, and confirms with the caller. Skip the eligibility check and you'll auto-refill controlled substances, which is the kind of thing that ends careers.</p>
+<pre class="code code-plain"><code>FUNCTION handle_refill_intent(call_id, slots):
+    context = active_call_context.get(call_id)
+
+    // Step 4A: ensure caller is verified.
+    verification = verify_caller_if_needed(
+        call_id, &quot;refill_prescription&quot;)
+    IF NOT verification.verified:
+        RETURN verification.next_action
+
+    patient_id = context.verified_patient_id
+    medication_name = slots.medication_name
+
+    // Step 4B: if the medication slot wasn&#x27;t extracted,
+    // ask for it.
+    IF medication_name IS NULL OR
+       medication_name.confidence &lt; 0.7:
+        RETURN response_with_prompt(
+            &quot;Sure, I can help with that. &quot; +
+            &quot;Which medication would you like to refill?&quot;)
+
+    // Step 4C: look up the patient&#x27;s active medications.
+    // The refill request must match an existing
+    // prescription; we don&#x27;t write new ones from the
+    // IVR.
+    active_meds =
+        e_prescribing.get_active_medications(patient_id)
+
+    matching_med = fuzzy_match_medication(
+        spoken_name=medication_name,
+        candidates=active_meds)
+
+    IF matching_med IS NULL:
+        RETURN response_with_prompt(
+            &quot;I wasn&#x27;t able to find that medication &quot; +
+            &quot;on your active list. Let me transfer you &quot; +
+            &quot;to someone who can help.&quot;) +
+            transfer_general_agent_action()
+
+    // Step 4D: check eligibility for self-service refill.
+    // Controlled substances, expired prescriptions,
+    // prescriptions with no refills remaining, and
+    // certain clinical-flag medications are excluded.
+    eligibility = check_self_service_eligibility(
+        patient_id, matching_med)
+
+    IF NOT eligibility.eligible:
+        RETURN response_with_prompt(
+            &quot;I&#x27;d like to get you the right help with &quot; +
+            &quot;that one. Let me transfer you to our &quot; +
+            &quot;pharmacy team.&quot;) +
+            transfer_pharmacy_queue_action()
+
+    // Step 4E: queue the refill request. We don&#x27;t
+    // dispense, just queue it for the e-prescribing
+    // system&#x27;s normal flow.
+    // TODO (TechWriter): Expert review S2 (HIGH).
+    // Step 4E has no idempotency key. A Lex retry,
+    // EventBridge replay, or at-least-once Lambda
+    // invocation produces a duplicate refill request.
+    // Promote the (call_id, intent_name, turn_index)
+    // idempotency-key pattern from the production-gaps
+    // section into this pseudocode and require the
+    // e-prescribing API to honor the key. Apply the
+    // same pattern to the appointment-fulfillment path
+    // (Finding A8). Step 4F&#x27;s EventBridge.PutEvents
+    // should carry the idempotency_key in
+    // `detail.event_id` so consumers can deduplicate.
+    refill_request_id =
+        e_prescribing.queue_refill_request(
+            patient_id=patient_id,
+            medication_id=matching_med.medication_id,
+            requested_via=&quot;ivr_self_service&quot;,
+            requested_at=current UTC timestamp)
+
+    audit_log({
+        event_type: &quot;REFILL_REQUEST_QUEUED&quot;,
+        call_id: call_id,
+        patient_id: patient_id,
+        medication_id: matching_med.medication_id,
+        refill_request_id: refill_request_id,
+        timestamp: current UTC timestamp
+    })
+
+    // Step 4F: emit cross-system event so the e-prescribing
+    // pipeline picks it up.
+    EventBridge.PutEvents([{
+        source: &quot;ivr.refill&quot;,
+        detail_type: &quot;refill_request_queued&quot;,
+        detail: {
+            call_id: call_id,
+            patient_id: patient_id,
+            refill_request_id: refill_request_id,
+            queued_at: current UTC timestamp
+        }
+    }])
+
+    // Step 4G: confirm with the caller and offer
+    // additional help.
+    RETURN response_with_prompt(
+        &quot;Got it. I&#x27;ve sent your refill request for &quot; +
+        spoken_medication_name(matching_med) +
+        &quot; to the pharmacy team. &quot; +
+        &quot;You should hear back within one business day. &quot; +
+        &quot;Is there anything else I can help with?&quot;)
+</code></pre>
+<p><strong>Step 5: Capture the call disposition.</strong> When the call ends (caller hangs up, transfer completes, self-service fulfillment confirmed), the disposition is captured. This is the row that goes into analytics and feeds the per-intent accuracy metrics and the containment rate.</p>
+<pre class="code code-plain"><code>ON call_end(call_id, end_reason):
+    context = active_call_context.get(call_id)
+
+    disposition = {
+        call_id: call_id,
+        ani: context.ani,
+        dnis: context.dnis,
+        started_at: context.started_at,
+        ended_at: current UTC timestamp,
+        end_reason: end_reason,
+        // &quot;self_service_fulfilled&quot;,
+        // &quot;transferred_to_agent&quot;,
+        // &quot;transferred_to_triage&quot;,
+        // &quot;callback_scheduled&quot;,
+        // &quot;abandoned&quot;
+        verification_status: context.verification_status,
+        intents_classified:
+            context.intents_classified_history,
+        slots_collected: context.slots_collected,
+        urgency_flag_raised: context.urgency_flag,
+        low_confidence_turn_count:
+            context.low_confidence_turn_count,
+        verification_failure_count:
+            context.verification_failure_count
+    }
+
+    call_disposition_log.put(disposition)
+
+    audit_log({
+        event_type: &quot;CALL_DISPOSITION_RECORDED&quot;,
+        call_id: call_id,
+        end_reason: end_reason,
+        timestamp: current UTC timestamp
+    })
+
+    // The active-call-context entry will expire via
+    // its TTL; we don&#x27;t need to delete it explicitly.
+</code></pre>
+<blockquote>
+<p><strong>Curious how this looks in Python?</strong> The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the <a href="chapter10.01-python-example.html">Python Example</a>. It walks through each step with inline comments and notes on what you'd need to change for a real deployment.</p>
+</blockquote>
+<hr />
+<h3 id="expected-results">Expected Results</h3>
+<p><strong>Sample turn record from Lex (illustrative):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;session_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;contact-3a8e1c92-7b44-4e0a-91c5-5a7e2f8d9b0c&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;input_transcript&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I need to refill my lisinopril&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intent&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill_prescription&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;slots&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;medication_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lisinopril&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;resolutions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lisinopril&quot;</span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Lipitor&quot;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;interpreted_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T14:32:08.214Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;asr&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;telephony_audio_sample_rate_hz&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;average_word_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.89</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;endpoint_silence_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">720</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Sample call disposition record (illustrative):</strong></p>
+<div class="code"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;call_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;contact-3a8e1c92-7b44-4e0a-91c5-5a7e2f8d9b0c&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;started_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T14:31:22.001Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ended_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T14:33:47.612Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;duration_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">145</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;end_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;self_service_fulfilled&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;verification_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;verified&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;verification_method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dob_plus_partial_phone&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intents_classified_history&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;intent&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill_prescription&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.94</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;turn_index&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;slots_collected&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;medication_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lisinopril&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;urgency_flag_raised&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;low_confidence_turn_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;verification_failure_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;fulfillment&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refill_request_queued&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;refill_request_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rx-req-44182291&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;queued_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-05-21T14:33:31.450Z&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Performance benchmarks (illustrative, your mileage varies):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Legacy DTMF baseline</th>
+<th>Natural-language IVR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Average IVR navigation time before reaching the right destination</td>
+<td>90-180 seconds</td>
+<td>25-60 seconds</td>
+</tr>
+<tr>
+<td>Call abandonment rate during IVR navigation</td>
+<td>8-18%</td>
+<td>3-7%</td>
+</tr>
+<tr>
+<td>Self-service containment rate (call resolved without an agent)</td>
+<td>8-15%</td>
+<td>25-45%</td>
+</tr>
+<tr>
+<td>First-contact routing accuracy (caller reaches the right queue without an intermediate transfer)</td>
+<td>60-75%</td>
+<td>85-95%</td>
+</tr>
+<tr>
+<td>Average time-to-clinical-triage for callers with urgent concerns</td>
+<td>varies widely; often 90+ seconds</td>
+<td>5-15 seconds when urgency keywords detected</td>
+</tr>
+<tr>
+<td>Per-call AWS infrastructure cost</td>
+<td>n/a (legacy on-prem)</td>
+<td>$0.02-0.10</td>
+</tr>
+<tr>
+<td>Caller-reported satisfaction (CSAT) on IVR experience</td>
+<td>2.5-3.2 of 5</td>
+<td>3.5-4.2 of 5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where it struggles:</strong></p>
+<ul>
+<li><strong>Patients with strong accents or non-native English are systematically less well-served.</strong> The ASR error rate on accented English is higher; the intent classifier sees noisier transcripts; the dialog manager hits low-confidence thresholds more often and routes more of these callers to agents. The agent routing isn't a failure (the call still gets handled), but it's a containment gap, and it's a gap that disproportionately affects specific populations. Subgroup-stratified accuracy monitoring is non-negotiable, and improving the accent-handling specifically usually requires either model fine-tuning on representative audio or vendor switching.</li>
+<li><strong>Complex multi-intent utterances.</strong> &quot;I need a refill but I'm also feeling a flutter and I should ask about my upcoming appointment.&quot; The system has to pick one intent to act on, and either picks wrong or routes to an agent. This is fine in moderation but frustrating if it happens often. The mitigation is explicit support for &quot;anything else?&quot; loops at the end of each fulfillment, plus a designed escalation when the system detects multi-intent utterances.</li>
+<li><strong>Urgency lexicon coverage gaps.</strong> The lexicon is your safety net for clinical urgency. If a caller uses a phrase you didn't include (&quot;I feel really weird&quot;), the urgency override doesn't fire and the call routes through normal logic. The mitigation is continuous lexicon expansion driven by clinical-operations review of edge-case calls.</li>
+<li><strong>Medication name recognition.</strong> Drug names are notoriously hard for ASR. &quot;Methotrexate&quot; sounds like several other things. &quot;Furosemide&quot; frequently transcribes wrong. The mitigation is training-data augmentation with common medications, vendor-specific medical-vocabulary configuration, and explicit confirmation prompts for high-risk medications (&quot;I heard methotrexate, is that right?&quot;).</li>
+<li><strong>Caller verification under noisy conditions.</strong> Asking for date of birth in a noisy environment (caller is in a car, kids in the background) produces verification failures even when the caller is legitimate. The mitigation is ANI-based prefill where the match is unambiguous, and graceful fallback to agent transfer for repeated verification failures.</li>
+<li><strong>Cold start.</strong> A new IVR has imperfect intent definitions, gaps in slot extraction, and miscalibrated confidence thresholds. The first month or two of production traffic is also the noisiest, because callers are encountering the new system and producing utterances the development team didn't anticipate. The mitigation is conservative routing (when in doubt, transfer to an agent) for the launch period, plus a tight feedback loop where production transcripts are reviewed weekly and the bot is updated continuously.</li>
+<li><strong>Language coverage.</strong> The first version is almost always English-only. Adding Spanish (or other languages) is more than a translation task; it's another full set of intents, sample utterances, and validation. Multi-language IVRs are operationally heavier than single-language ones; budget accordingly.</li>
+<li><strong>Fraud and social engineering.</strong> Once the IVR can release information or trigger actions, it becomes a target for social engineers attempting to obtain refills or appointments under someone else's identity. The mitigation is the same verification discipline you'd apply to any phone-based authentication, plus rate limiting and pattern-based anomaly detection on the call stream.</li>
+</ul>
+<hr />
+<h2 id="why-this-isnt-production-ready">Why This Isn't Production-Ready</h2>
+<p>The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.</p>
+<p><strong>Per-intent confidence-threshold calibration.</strong> The thresholds in the pseudocode are placeholders. Calibrating them to balance containment against routing-error rate requires measurement against representative production traffic. The calibration is per-intent, per-caller-segment (different thresholds may make sense for different patient populations), and ongoing (the thresholds need re-calibration as the underlying NLU model is updated). Build the calibration as a recurring operational process rather than a one-time tuning exercise.</p>
+<p><strong>Subgroup-stratified accuracy monitoring with named ownership.</strong> The CloudWatch dashboards have to surface intent-classification accuracy and containment rate stratified by caller cohort: age bands (where you have the data), language preference, geographic region, accent group (where you can infer it). Disparities exceeding configured thresholds need to alert. The metric is institutionally important, not just engineering housekeeping; the institution that does not monitor subgroup performance silently delivers a worse experience to specific populations and learns about it from a complaint, an audit, or a lawsuit.</p>
+<p><strong>Urgency lexicon governance.</strong> The clinical-urgency-keyword lexicon is a safety-critical artifact. It needs version control, change review by clinical operations, scheduled refresh cadence, and a documented escalation path when a missed urgent call surfaces. Treat it as a clinical safety document with the procedural rigor that implies, not as a configuration file maintained by whoever last edited the bot.</p>
+<p><strong>Caller-verification policy beyond the simple example.</strong> The verification approach in the pseudocode (DOB plus partial phone) is illustrative. Real institutions have layered verification policies that vary by intent risk level, by detected fraud signals (caller calling from a never-seen-before number, pattern of rapid attempts), and by patient preference (some patients have asked for additional verification). The verification policy is an explicit document maintained by the institution's identity-and-access governance, not a snippet of Lambda code.</p>
+<p><strong>Connect Contact Lens and Voice ID configuration.</strong> Connect's built-in conversation analytics layer (Contact Lens) provides sentiment analysis, redaction of PII in transcripts, and keyword detection on call recordings. The redaction in particular is institutionally useful for downstream analytics (the analytics pipeline can consume redacted transcripts without re-handling raw PHI). Voice ID is the optional voice-biometric layer; we recommend skipping it in MVP, but if the institution decides to add it, the consent capture and biometric data handling become significant architectural concerns.</p>
+<p><strong>Idempotency and retry semantics for fulfillment.</strong> A fulfillment Lambda invoked twice (because the dialog turn was retried, because the EventBridge delivery duplicated) must not double-queue a refill, double-book an appointment, or double-emit an audit record. Use the (call_id, intent_name, turn_index) tuple as an idempotency key for fulfillment; use (call_id, fulfillment_action_id) for the event-emission record. Configure DLQs on every Lambda; alarm on DLQ depth.</p>
+<p><strong>Multi-language support architecture.</strong> If you need Spanish (and most U.S. healthcare organizations should), Lex V2 supports multi-language bots, but the operational pattern (one bot with locale-specific training, or one bot per locale, or a router bot that detects language and dispatches) is an architectural decision with real implications. Build for multi-language from the start even if you ship English-first; retrofitting multi-language onto a single-language design is more expensive than designing for it day one.</p>
+<p><strong>Disaster recovery and failover.</strong> The IVR is the front door. When it's down, callers can't reach the practice. The architecture needs an explicit failover path: if Lex is unavailable, drop to a DTMF menu in Connect; if Connect is unavailable, fail over to a backup carrier-side IVR. The recovery testing is institutionally important and is often the part of the architecture that's drawn nicely in slides and never actually exercised; build it and exercise it quarterly.</p>
+<p><strong>Continuous bot improvement workflow.</strong> Production transcripts surface intents you didn't define, slot values you didn't anticipate, and phrasings the model handles poorly. The improvement workflow (review production transcripts weekly, propose bot changes, test against a held-out evaluation set, deploy via versioned bot aliases, monitor for regressions) is a sustained engineering practice, not a launch task. Plan staffing accordingly.</p>
+<p><strong>Cost monitoring and cost-per-intent attribution.</strong> Connect's per-minute charges and Lex's per-request charges add up. Some intents are dramatically cheaper than others (a 10-second hours-and-location lookup costs much less than a 3-minute multi-turn refill dialog). The cost-per-intent and cost-per-call analytics let the operations team see which call patterns are economically efficient to handle in self-service and which are not. Build the dashboard.</p>
+<p><strong>Operational ownership.</strong> The IVR sits at the intersection of clinical operations, IT, contact center operations, marketing (the recorded greetings often have marketing input), and compliance. Establish clear ownership: who tunes the intent thresholds, who maintains the urgency lexicon, who approves bot changes before production deployment, who owns the contact-flow change management. Without clear ownership, the bot drifts, the metrics aren't reviewed, and the system you launched ages without improvement.</p>
+<hr />
+<h2 id="variations-and-extensions">Variations and Extensions</h2>
+<p><strong>Hybrid voice plus DTMF flow.</strong> Rather than committing fully to natural-language IVR, run both interaction modes in parallel: callers can speak their request or press a digit at any time. The voice layer handles the callers who prefer it; the DTMF fallback handles the callers who don't. This is the operationally safest starting point and is what most successful deployments actually look like. The architectural extension is parallel input handling in the contact flow plus consistent intent-resolution logic regardless of input mode.</p>
+<p><strong>LLM-augmented intent classification.</strong> Add a Lambda layer between Lex's intent output and the routing decision that, for low-confidence or out-of-scope Lex outputs, invokes an LLM to re-classify the transcript against the intent catalog. Use the LLM's output only when it returns one of the catalog intents at high confidence; otherwise fall back to Lex's &quot;fallback intent&quot; and clarification logic. The architectural extension is a ranking-style evaluator that compares Lex confidence and LLM confidence and selects the action with the higher confidence.</p>
+<p><strong>Outbound proactive callbacks.</strong> Beyond the inbound IVR, the same infrastructure supports outbound proactive calls: appointment reminders that ask the patient to confirm or reschedule, post-discharge check-in calls, no-show recovery calls. Connect supports outbound dialing; the same Lex bot definitions can drive outbound conversations. The architectural extension is the outbound dialing campaign manager, the consent-and-do-not-call list integration, and the per-campaign analytics.</p>
+<p><strong>Real-time agent assist on transferred calls.</strong> When a call transfers to an agent, push the call's IVR context (intent identified, slots captured, transcript) to the agent's screen as a &quot;screen pop&quot; so the agent doesn't have to start from zero. With Connect's Agent Workspace, the screen pop is straightforward; the architectural extension is the integration between the IVR's call-context store and the agent desktop's CRM panel.</p>
+<p><strong>Live transcript and translation for agent calls.</strong> During the agent leg of the call, run live transcription (Transcribe streaming) and, where applicable, real-time translation (recipe 10.10 territory). The agent gets a live transcript on screen; supervisors can quality-check calls in near-real-time; non-English-speaking callers can be served by English-speaking agents through translation. The architectural extension is the streaming transcript pipeline and the agent-desktop integration.</p>
+<p><strong>Authenticated patient portal hand-off.</strong> Some calls would be better served in the portal than on the phone. Detect these intents (account questions, statement disputes, complex billing inquiries) and offer to send the caller a portal link via SMS while staying on the line to confirm receipt. The architectural extension is SMS dispatch from the IVR, hand-off detection logic, and the closed-loop confirmation that the SMS arrived.</p>
+<p><strong>Multilingual IVR.</strong> Add Spanish (typically the second-priority language for U.S. healthcare). Lex V2 supports multi-locale bots; the architectural extension is the locale-detection logic at the start of the call (often &quot;press 1 for English, press 2 for Spanish&quot; or auto-detection from the caller's first utterance), separate intent training per locale, and the locale-aware fallback path. Plan for higher engineering and operational cost than the English-only version.</p>
+<p><strong>Voice biometric caller verification.</strong> Replace the DOB-plus-partial-phone verification with a voice-biometric verification that runs in the background as the caller speaks. Connect Voice ID provides the platform integration. The architectural extension is the consent-capture for the biometric data (one-time enrollment, ongoing voice samples used for verification), the regulatory compliance overlay (BIPA and similar state biometric privacy laws), and the fallback path for callers who decline or fail biometric verification. Recommend skipping in MVP; revisit only with a clear business case that justifies the regulatory overhead.</p>
+<p><strong>Conversational AI fulfillment for complex intents.</strong> For intents that require back-and-forth clarification beyond simple slot filling (a complex billing dispute, an ambiguous symptom description), use an LLM-driven dialog within a bounded scope to handle the conversation. The architectural extension is a &quot;complex dialog&quot; handler invoked for specific intents, with strict input-output contracts and a hard cap on dialog turns before escalating to a human.</p>
+<p><strong>Real-time fraud detection on the call stream.</strong> Pattern-detect anomalous call patterns (rapid attempts across multiple identities from the same ANI, callers using a phone number that has never appeared for this patient, voice characteristics inconsistent with the patient's known profile) and route flagged calls to enhanced verification or to a human agent. The architectural extension is a real-time anomaly-detection service that consumes the Connect event stream and emits flag signals back into the contact flow.</p>
+<p><strong>A/B testing of dialog variants.</strong> Run controlled experiments on prompt phrasing, intent definitions, confidence thresholds, and routing logic. Connect's contact flows support attribute-based routing; the architectural extension is the experiment framework that assigns calls to variants, captures outcomes, and surfaces statistically valid comparisons. Healthcare-specific consideration: ensure no experiment variant degrades clinical-urgency handling for any cohort.</p>
+<p><strong>Federated agent assist across multi-site practices.</strong> For a multi-site healthcare organization, the IVR routes to the right site's queue based on the caller's intent, the patient's home practice, and the available capacity at each site. The architectural extension is the cross-site routing logic, the per-site queue capacity awareness, and the site-specific contact flow variations.</p>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<p><strong>AWS Documentation:</strong></p>
+<ul>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html">Amazon Connect Administrator Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lexv2/latest/dg/what-is.html">Amazon Lex V2 Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/polly/latest/dg/what-is.html">Amazon Polly Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/transcribe/latest/dg/what-is.html">Amazon Transcribe Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/transcribe/latest/dg/transcribe-medical.html">Amazon Transcribe Medical</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html">Amazon DynamoDB Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/contact-lens.html">Amazon Connect Contact Lens</a></li>
+<li><a href="https://docs.aws.amazon.com/connect/latest/adminguide/voice-id.html">Amazon Connect Voice ID</a></li>
+<li><a href="https://aws.amazon.com/compliance/hipaa-eligible-services-reference/">AWS HIPAA Eligible Services Reference</a></li>
+</ul>
+<p><strong>AWS Sample Repos:</strong></p>
+<ul>
+<li><a href="https://github.com/amazon-connect/amazon-connect-snippets"><code>amazon-connect/amazon-connect-snippets</code></a>: Connect contact flow examples and Lambda integration patterns</li>
+<li><a href="https://github.com/aws-samples/amazon-connect-salesforce-lambda"><code>aws-samples/amazon-connect-salesforce-lambda</code></a>: Salesforce CRM integration patterns useful as a template for EHR integration</li>
+<li><a href="https://github.com/aws-samples/amazon-lex-bot-recommendations"><code>aws-samples/amazon-lex-bot-recommendations</code></a>: Lex bot design patterns and best practices</li>
+</ul>
+<p><strong>AWS Solutions and Blogs:</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/solutions/">AWS Solutions Library</a> (filter Healthcare and Life Sciences plus Contact Center): browse for healthcare-IVR and contact-center reference architectures</li>
+<li><a href="https://catalog.workshops.aws/amazon-connect/en-US">Amazon Connect Workshops</a>: hands-on workshops including healthcare-relevant scenarios</li>
+<li><a href="https://aws.amazon.com/blogs/contact-center/">AWS Contact Center Blog</a>: search &quot;healthcare&quot; and &quot;Lex&quot; for relevant deep-dives on patterns used here</li>
+<li><a href="https://aws.amazon.com/blogs/industries/category/industries/healthcare/">AWS for Industries: Healthcare and Life Sciences Blog</a>: search &quot;patient experience,&quot; &quot;contact center&quot; for relevant case studies</li>
+</ul>
+<p><strong>External References (Standards and Frameworks):</strong></p>
+<ul>
+<li><a href="https://www.hhs.gov/hipaa/for-professionals/privacy/index.html">HIPAA Privacy Rule</a>: governs the handling of PHI in IVR recordings and transcripts</li>
+<li><a href="https://www.fcc.gov/general/telephone-consumer-protection-act-1991">TCPA (Telephone Consumer Protection Act)</a>: governs outbound calls and SMS, including healthcare-specific exemptions</li>
+<li><a href="https://www.rcfp.org/reporters-recording-guide/">Reporters Committee for Freedom of the Press: Reporter's Recording Guide</a>: state-by-state recording-consent law tracker that informs the IVR's recording-disclosure language</li>
+<li><a href="https://www.section508.gov/">Section 508 Accessibility Standards</a>: federal accessibility requirements that constrain IVR design for callers with disabilities</li>
+<li><a href="https://www.w3.org/WAI/WCAG22/quickref/">WCAG (Web Content Accessibility Guidelines)</a>: accessibility standards that include voice-interface considerations</li>
+<li><a href="https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004&amp;ChapterID=57">BIPA (Illinois Biometric Information Privacy Act)</a>: state biometric-data law that constrains voice-ID deployments</li>
+</ul>
+<p><strong>Industry Resources:</strong></p>
+<ul>
+<li><a href="https://www.himss.org/">HIMSS Patient Engagement Resources</a>: industry-association resources on patient-engagement infrastructure, including IVR and contact-center patterns</li>
+<li><a href="https://www.healthcarecontactcentertimes.com/">Healthcare Contact Center Times</a>: industry publication covering operational patterns and benchmarks for healthcare contact centers</li>
+</ul>
+<hr />
+<h2 id="estimated-implementation-time">Estimated Implementation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scope</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic</td>
+<td>Single-language (English), 5-8 core intents (refill, appointment confirmation, hours/location, billing transfer, nurse-line transfer, operator), simple ANI-based prefill, basic verification (DOB plus partial phone), DTMF fallback throughout, basic CloudWatch metrics, no Contact Lens, no Voice ID, no urgency-lexicon-driven escalation</td>
+<td>2-4 months</td>
+</tr>
+<tr>
+<td>Production-ready</td>
+<td>Multi-intent coverage (15-25 intents covering refills, appointments, billing, results inquiry, prior-auth status, nurse-line triage, escalation paths), urgency-lexicon-driven escalation with clinical-operations review process, ANI-based prefill with fraud detection, verification-policy hierarchy, Contact Lens integration with PII redaction, subgroup-stratified accuracy monitoring with alarms, complete audit-and-attribution layer, multi-locale architecture (English plus Spanish), continuous improvement workflow with weekly transcript review, full disaster-recovery and failover testing, integration with EHR and e-prescribing back-office systems</td>
+<td>6-12 months</td>
+</tr>
+<tr>
+<td>With variations</td>
+<td>LLM-augmented intent classification for low-confidence cases, outbound proactive callback campaigns, real-time agent-assist with screen pop and live transcripts, authenticated patient-portal hand-off, voice-biometric verification with regulatory overlay (BIPA-aware deployment), conversational AI fulfillment for complex intents, real-time fraud detection on call stream, A/B testing framework, federated multi-site routing</td>
+<td>4-9 months beyond production-ready</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<p><em>← <a href="chapter10.01-ivr-call-routing-enhancement.html">Main Recipe 10.1</a> · <a href="chapter10.01-python-example.html">Python Example</a> · <a href="chapter10-preface.html">Chapter Preface</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>

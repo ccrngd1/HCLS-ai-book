@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe 3.2: Patient No-Show Pattern Detection ⭐</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pygments.css">
+</head>
+<body>
+  <button id="nav-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <div class="layout">
+    <aside class="sidebar-wrap">
+      <nav class="sidebar">
+<h3 class="nav-section">📖 Table of Contents</h3>
+<a class="nav-link" href="Home.html">Home</a>
+<a class="nav-link" href="README.html">Introduction</a>
+<h3 class="nav-section">Ch 1: Document Intelligence / OCR</h3>
+<a class="nav-link" href="chapter01-index.html">Overview</a>
+<a class="nav-link" href="chapter01-preface.html">Preface</a>
+<a class="nav-link" href="chapter01.01-insurance-card-scanning.html">1.1 — Insurance Card Scanning</a>
+<a class="nav-link nav-nested" href="chapter01.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.02-patient-intake-digitization.html">1.2 — Patient Intake Digitization</a>
+<a class="nav-link nav-nested" href="chapter01.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.03-lab-requisition-extraction.html">1.3 — Lab Requisition Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.04-prior-auth-document-processing.html">1.4 — Prior Auth Document Processing</a>
+<a class="nav-link nav-nested" href="chapter01.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.05-claims-attachment-processing.html">1.5 — Claims Attachment Processing</a>
+<a class="nav-link nav-nested" href="chapter01.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.06-handwritten-clinical-note-digitization.html">1.6 — Handwritten Clinical Notes</a>
+<a class="nav-link nav-nested" href="chapter01.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.07-prescription-label-ocr.html">1.7 — Prescription Label OCR</a>
+<a class="nav-link nav-nested" href="chapter01.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.08-eob-processing.html">1.8 — EOB Processing</a>
+<a class="nav-link nav-nested" href="chapter01.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.09-medical-records-request-extraction.html">1.9 — Medical Records Extraction</a>
+<a class="nav-link nav-nested" href="chapter01.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter01.10-historical-chart-migration.html">1.10 — Historical Chart Migration</a>
+<a class="nav-link nav-nested" href="chapter01.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter01.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 2: LLM / Generative AI</h3>
+<a class="nav-link" href="chapter02-preface.html">Preface</a>
+<a class="nav-link" href="chapter02.01-patient-message-response-drafting.html">2.1 — Patient Message Response Drafting</a>
+<a class="nav-link nav-nested" href="chapter02.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.02-medical-terminology-simplification.html">2.2 — Medical Terminology Simplification</a>
+<a class="nav-link nav-nested" href="chapter02.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.03-clinical-documentation-improvement.html">2.3 — Clinical Documentation Improvement</a>
+<a class="nav-link nav-nested" href="chapter02.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.04-prior-auth-letter-generation.html">2.4 — Prior Authorization Letter Generation</a>
+<a class="nav-link nav-nested" href="chapter02.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.05-after-visit-summary-generation.html">2.5 — After-Visit Summary Generation</a>
+<a class="nav-link nav-nested" href="chapter02.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.06-clinical-note-summarization.html">2.6 — Clinical Note Summarization</a>
+<a class="nav-link nav-nested" href="chapter02.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.07-literature-search-evidence-synthesis.html">2.7 — Literature Search and Evidence Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.08-ambient-clinical-documentation.html">2.8 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter02.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.09-clinical-decision-support-synthesis.html">2.9 — Clinical Decision Support Synthesis</a>
+<a class="nav-link nav-nested" href="chapter02.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter02.10-multi-modal-clinical-reasoning.html">2.10 — Multi-Modal Clinical Reasoning</a>
+<a class="nav-link nav-nested" href="chapter02.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter02.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 3: Anomaly Detection</h3>
+<a class="nav-link" href="chapter03-preface.html">Preface</a>
+<a class="nav-link" href="chapter03.01-duplicate-claim-detection.html">3.1 — Duplicate Claim Detection</a>
+<a class="nav-link nav-nested" href="chapter03.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.01-python-example.html">Python Example</a>
+<a class="nav-link nav-active" href="chapter03.02-patient-no-show-pattern-detection.html">3.2 — Patient No-Show Pattern Detection</a>
+<a class="nav-link nav-nested" href="chapter03.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.03-billing-code-anomalies.html">3.3 — Billing Code Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.04-medication-dispensing-anomalies.html">3.4 — Medication Dispensing Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.05-lab-result-outlier-detection.html">3.5 — Lab Result Outlier Detection</a>
+<a class="nav-link nav-nested" href="chapter03.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.06-healthcare-fraud-waste-abuse-detection.html">3.6 — Healthcare Fraud, Waste, and Abuse Detection</a>
+<a class="nav-link nav-nested" href="chapter03.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.07-patient-deterioration-early-warning.html">3.7 — Patient Deterioration Early Warning</a>
+<a class="nav-link nav-nested" href="chapter03.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.08-readmission-risk-anomaly-detection.html">3.8 — Readmission Risk Anomaly Detection</a>
+<a class="nav-link nav-nested" href="chapter03.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.09-cybersecurity-access-pattern-anomalies.html">3.9 — Cybersecurity / Access Pattern Anomalies</a>
+<a class="nav-link nav-nested" href="chapter03.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter03.10-epidemic-outbreak-detection.html">3.10 — Epidemic / Outbreak Detection</a>
+<a class="nav-link nav-nested" href="chapter03.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter03.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 4: Personalization / Recommendation</h3>
+<a class="nav-link" href="chapter04-preface.html">Preface</a>
+<a class="nav-link" href="chapter04.01-appointment-reminder-channel-optimization.html">4.1 — Appointment Reminder Channel Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.02-patient-education-content-matching.html">4.2 — Patient Education Content Matching</a>
+<a class="nav-link nav-nested" href="chapter04.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.03-provider-directory-search-optimization.html">4.3 — Provider Directory Search Optimization</a>
+<a class="nav-link nav-nested" href="chapter04.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.04-wellness-program-recommendations.html">4.4 — Wellness Program Recommendations</a>
+<a class="nav-link nav-nested" href="chapter04.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.05-medication-adherence-intervention-targeting.html">4.5 — Medication Adherence Intervention Targeting</a>
+<a class="nav-link nav-nested" href="chapter04.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.06-care-gap-prioritization.html">4.6 — Care Gap Prioritization</a>
+<a class="nav-link nav-nested" href="chapter04.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.07-care-management-program-enrollment.html">4.7 — Care Management Program Enrollment</a>
+<a class="nav-link nav-nested" href="chapter04.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.08-treatment-response-prediction.html">4.8 — Treatment Response Prediction</a>
+<a class="nav-link nav-nested" href="chapter04.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.09-personalized-care-plan-generation.html">4.9 — Personalized Care Plan Generation</a>
+<a class="nav-link nav-nested" href="chapter04.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter04.10-dynamic-treatment-regime-recommendation.html">4.10 — Dynamic Treatment Regime Recommendation</a>
+<a class="nav-link nav-nested" href="chapter04.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter04.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 5: Entity Resolution / Record Linkage</h3>
+<a class="nav-link" href="chapter05-preface.html">Preface</a>
+<a class="nav-link" href="chapter05.01-internal-duplicate-patient-detection.html">5.1 — Internal Duplicate Patient Detection</a>
+<a class="nav-link nav-nested" href="chapter05.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.02-provider-npi-matching.html">5.2 — Provider NPI Matching</a>
+<a class="nav-link nav-nested" href="chapter05.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.03-address-standardization-household-linkage.html">5.3 — Address Standardization and Household Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.04-insurance-eligibility-matching.html">5.4 — Insurance Eligibility Matching</a>
+<a class="nav-link nav-nested" href="chapter05.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.05-cross-facility-patient-matching.html">5.5 — Cross-Facility Patient Matching (HIE)</a>
+<a class="nav-link nav-nested" href="chapter05.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.06-claims-to-clinical-data-linkage.html">5.6 — Claims-to-Clinical Data Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.07-longitudinal-patient-matching-name-changes.html">5.7 — Longitudinal Patient Matching Across Name Changes</a>
+<a class="nav-link nav-nested" href="chapter05.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.08-privacy-preserving-record-linkage.html">5.8 — Privacy-Preserving Record Linkage</a>
+<a class="nav-link nav-nested" href="chapter05.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.09-national-scale-patient-matching.html">5.9 — National-Scale Patient Matching (TEFCA)</a>
+<a class="nav-link nav-nested" href="chapter05.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter05.10-deceased-patient-resolution-reconciliation.html">5.10 — Deceased Patient Resolution and Record Reconciliation</a>
+<a class="nav-link nav-nested" href="chapter05.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter05.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 6: Cohort Analysis / Clustering</h3>
+<a class="nav-link" href="chapter06-preface.html">Preface</a>
+<a class="nav-link" href="chapter06.01-geographic-patient-clustering.html">6.1 — Geographic Patient Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.02-utilization-pattern-segmentation.html">6.2 — Utilization Pattern Segmentation</a>
+<a class="nav-link nav-nested" href="chapter06.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.03-payer-mix-financial-risk-clustering.html">6.3 — Payer Mix Financial Risk Clustering</a>
+<a class="nav-link nav-nested" href="chapter06.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.04-disease-severity-stratification.html">6.4 — Disease Severity Stratification</a>
+<a class="nav-link nav-nested" href="chapter06.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.05-provider-practice-pattern-analysis.html">6.5 — Provider Practice Pattern Analysis</a>
+<a class="nav-link nav-nested" href="chapter06.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.06-patient-similarity-care-planning.html">6.6 — Patient Similarity for Care Planning</a>
+<a class="nav-link nav-nested" href="chapter06.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.07-clinical-trial-patient-matching.html">6.7 — Clinical Trial Patient Matching</a>
+<a class="nav-link nav-nested" href="chapter06.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.08-disease-subtype-discovery.html">6.8 — Disease Subtype Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.09-social-determinant-phenotyping.html">6.9 — Social Determinant Phenotyping</a>
+<a class="nav-link nav-nested" href="chapter06.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter06.10-multi-morbidity-pattern-discovery.html">6.10 — Multi-Morbidity Pattern Discovery</a>
+<a class="nav-link nav-nested" href="chapter06.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter06.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 7: Predictive Analytics / Risk Scoring</h3>
+<a class="nav-link" href="chapter07-preface.html">Preface</a>
+<a class="nav-link" href="chapter07.01-appointment-no-show-prediction.html">7.1 — Appointment No-Show Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.02-propensity-to-pay-scoring.html">7.2 — Propensity to Pay Scoring</a>
+<a class="nav-link nav-nested" href="chapter07.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.03-patient-churn-disenrollment-prediction.html">7.3 — Patient Churn / Disenrollment Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.04-ed-visit-prediction.html">7.4 — ED Visit Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.05-30-day-readmission-risk.html">7.5 — 30-Day Readmission Risk</a>
+<a class="nav-link nav-nested" href="chapter07.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.06-rising-risk-identification.html">7.6 — Rising Risk Identification</a>
+<a class="nav-link nav-nested" href="chapter07.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.07-length-of-stay-prediction.html">7.7 — Length of Stay Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.08-disease-progression-modeling.html">7.8 — Disease Progression Modeling</a>
+<a class="nav-link nav-nested" href="chapter07.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.09-mortality-risk-scoring-icu.html">7.9 — Mortality Risk Scoring (ICU)</a>
+<a class="nav-link nav-nested" href="chapter07.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.10-optimal-intervention-timing-prediction.html">7.10 — Optimal Intervention Timing Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.10-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.11-claim-denial-prediction.html">7.11 — Claim Denial / Prior-Auth Determination Prediction</a>
+<a class="nav-link nav-nested" href="chapter07.11-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.11-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter07.12-claim-cohort-matching.html">7.12 — Cohort Matching for Novel Claims</a>
+<a class="nav-link nav-nested" href="chapter07.12-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter07.12-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 8: NLP (Non-LLM)</h3>
+<a class="nav-link" href="chapter08-preface.html">Preface</a>
+<a class="nav-link" href="chapter08.01-chief-complaint-classification.html">8.1 — Chief Complaint Classification</a>
+<a class="nav-link nav-nested" href="chapter08.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.02-patient-sentiment-analysis.html">8.2 — Patient Sentiment Analysis</a>
+<a class="nav-link nav-nested" href="chapter08.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.03-icd-10-code-suggestion.html">8.3 — ICD-10 Code Suggestion</a>
+<a class="nav-link nav-nested" href="chapter08.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.04-medication-extraction-normalization.html">8.4 — Medication Extraction and Normalization</a>
+<a class="nav-link nav-nested" href="chapter08.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.05-problem-list-extraction.html">8.5 — Problem List Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.06-sdoh-extraction.html">8.6 — SDOH Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.07-adverse-event-detection-clinical-text.html">8.7 — Adverse Event Detection in Clinical Text</a>
+<a class="nav-link nav-nested" href="chapter08.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.08-clinical-assertion-classification.html">8.8 — Clinical Assertion Classification</a>
+<a class="nav-link nav-nested" href="chapter08.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.09-temporal-relationship-extraction.html">8.9 — Temporal Relationship Extraction</a>
+<a class="nav-link nav-nested" href="chapter08.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter08.10-phenotype-extraction-research.html">8.10 — Phenotype Extraction for Research</a>
+<a class="nav-link nav-nested" href="chapter08.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter08.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 9: Computer Vision / Medical Imaging</h3>
+<a class="nav-link" href="chapter09-preface.html">Preface</a>
+<a class="nav-link" href="chapter09.01-image-quality-assessment.html">9.1 — Image Quality Assessment</a>
+<a class="nav-link nav-nested" href="chapter09.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.02-patient-photo-verification.html">9.2 — Patient Photo Verification</a>
+<a class="nav-link nav-nested" href="chapter09.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.03-wound-photography-measurement.html">9.3 — Wound Photography Measurement</a>
+<a class="nav-link nav-nested" href="chapter09.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.04-dermatology-lesion-triage.html">9.4 — Dermatology Lesion Triage</a>
+<a class="nav-link nav-nested" href="chapter09.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.05-chest-xray-triage.html">9.5 — Chest X-Ray Triage</a>
+<a class="nav-link nav-nested" href="chapter09.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.06-diabetic-retinopathy-screening.html">9.6 — Diabetic Retinopathy Screening</a>
+<a class="nav-link nav-nested" href="chapter09.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.07-radiology-ai-triage-multi-modality.html">9.7 — Radiology AI Triage (Multi-Modality)</a>
+<a class="nav-link nav-nested" href="chapter09.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.08-pathology-slide-analysis.html">9.8 — Pathology Slide Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.09-surgical-video-analysis.html">9.9 — Surgical Video Analysis</a>
+<a class="nav-link nav-nested" href="chapter09.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter09.10-multi-modal-imaging-fusion-analysis.html">9.10 — Multi-Modal Imaging Fusion</a>
+<a class="nav-link nav-nested" href="chapter09.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter09.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 10: Speech / Voice AI</h3>
+<a class="nav-link" href="chapter10-preface.html">Preface</a>
+<a class="nav-link" href="chapter10.01-ivr-call-routing-enhancement.html">10.1 — IVR Call Routing Enhancement</a>
+<a class="nav-link nav-nested" href="chapter10.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.02-voicemail-transcription-classification.html">10.2 — Voicemail Transcription and Classification</a>
+<a class="nav-link nav-nested" href="chapter10.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.03-voice-to-text-ehr-navigation.html">10.3 — Voice-to-Text for EHR Navigation</a>
+<a class="nav-link nav-nested" href="chapter10.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.04-medical-transcription-dictation.html">10.4 — Medical Transcription (Dictation)</a>
+<a class="nav-link nav-nested" href="chapter10.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.05-patient-facing-voice-assistant.html">10.5 — Patient-Facing Voice Assistant</a>
+<a class="nav-link nav-nested" href="chapter10.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.06-speech-to-text-telehealth-documentation.html">10.6 — Speech-to-Text for Telehealth Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.07-ambient-clinical-documentation.html">10.7 — Ambient Clinical Documentation</a>
+<a class="nav-link nav-nested" href="chapter10.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.08-voice-biomarker-detection.html">10.8 — Voice Biomarker Detection</a>
+<a class="nav-link nav-nested" href="chapter10.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.09-speech-therapy-assessment-monitoring.html">10.9 — Speech Therapy Assessment and Monitoring</a>
+<a class="nav-link nav-nested" href="chapter10.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter10.10-multilingual-realtime-medical-interpretation.html">10.10 — Multilingual Real-Time Medical Interpretation</a>
+<a class="nav-link nav-nested" href="chapter10.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter10.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 11: Conversational AI / Virtual Assistants</h3>
+<a class="nav-link" href="chapter11-preface.html">Preface</a>
+<a class="nav-link" href="chapter11.01-faq-chatbot.html">11.1 — FAQ Chatbot</a>
+<a class="nav-link nav-nested" href="chapter11.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.02-appointment-scheduling-bot.html">11.2 — Appointment Scheduling Bot</a>
+<a class="nav-link nav-nested" href="chapter11.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.03-prescription-refill-request-bot.html">11.3 — Prescription Refill Request Bot</a>
+<a class="nav-link nav-nested" href="chapter11.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.04-pre-visit-intake-bot.html">11.4 — Pre-Visit Intake Bot</a>
+<a class="nav-link nav-nested" href="chapter11.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.05-insurance-benefits-navigator.html">11.5 — Insurance Benefits Navigator</a>
+<a class="nav-link nav-nested" href="chapter11.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.06-symptom-checker-triage-bot.html">11.6 — Symptom Checker / Triage Bot</a>
+<a class="nav-link nav-nested" href="chapter11.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.07-chronic-disease-management-coach.html">11.7 — Chronic Disease Management Coach</a>
+<a class="nav-link nav-nested" href="chapter11.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.08-mental-health-support-bot.html">11.8 — Mental Health Support Bot</a>
+<a class="nav-link nav-nested" href="chapter11.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.09-care-coordination-assistant.html">11.9 — Care Coordination Assistant</a>
+<a class="nav-link nav-nested" href="chapter11.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter11.10-clinical-trial-recruitment-conversationalist.html">11.10 — Clinical Trial Recruitment Conversationalist</a>
+<a class="nav-link nav-nested" href="chapter11.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter11.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 12: Time Series Analysis / Forecasting</h3>
+<a class="nav-link" href="chapter12-preface.html">Preface</a>
+<a class="nav-link" href="chapter12.01-appointment-volume-forecasting.html">12.1 — Appointment Volume Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.02-supply-inventory-forecasting.html">12.2 — Supply Inventory Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.03-ed-arrival-forecasting.html">12.3 — ED Arrival Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.04-lab-result-trend-analysis.html">12.4 — Lab Result Trend Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.05-hospital-census-forecasting.html">12.5 — Hospital Census Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.06-revenue-cycle-cash-flow-forecasting.html">12.6 — Revenue Cycle Cash Flow Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.07-vital-sign-trajectory-monitoring.html">12.7 — Vital Sign Trajectory Monitoring</a>
+<a class="nav-link nav-nested" href="chapter12.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.08-disease-progression-trajectory-modeling.html">12.8 — Disease Progression Trajectory Modeling</a>
+<a class="nav-link nav-nested" href="chapter12.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.09-epidemic-forecasting.html">12.9 — Epidemic Forecasting</a>
+<a class="nav-link nav-nested" href="chapter12.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter12.10-physiological-waveform-analysis.html">12.10 — Physiological Waveform Analysis</a>
+<a class="nav-link nav-nested" href="chapter12.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter12.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 13: Knowledge Graphs / Ontology</h3>
+<a class="nav-link" href="chapter13-preface.html">Preface</a>
+<a class="nav-link" href="chapter13.01-drug-formulary-navigation.html">13.1 — Drug Formulary Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.02-provider-directory-knowledge-graph.html">13.2 — Provider Directory as Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.03-icd-cpt-hierarchy-navigation.html">13.3 — ICD/CPT Hierarchy Navigation</a>
+<a class="nav-link nav-nested" href="chapter13.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.04-drug-drug-interaction-knowledge-base.html">13.4 — Drug-Drug Interaction Knowledge Base</a>
+<a class="nav-link nav-nested" href="chapter13.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.05-clinical-pathway-protocol-modeling.html">13.5 — Clinical Pathway Protocol Modeling</a>
+<a class="nav-link nav-nested" href="chapter13.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.06-care-gap-reasoning-engine.html">13.6 — Care Gap Reasoning Engine</a>
+<a class="nav-link nav-nested" href="chapter13.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.07-disease-gene-drug-relationship-graph.html">13.7 — Disease-Gene-Drug Relationship Graph</a>
+<a class="nav-link nav-nested" href="chapter13.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.08-medical-concept-normalization-mapping.html">13.8 — Medical Concept Normalization and Mapping</a>
+<a class="nav-link nav-nested" href="chapter13.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.09-literature-derived-knowledge-graph.html">13.9 — Literature-Derived Knowledge Graph</a>
+<a class="nav-link nav-nested" href="chapter13.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter13.10-federated-clinical-knowledge-network.html">13.10 — Federated Clinical Knowledge Network</a>
+<a class="nav-link nav-nested" href="chapter13.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter13.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 14: Optimization / Operations Research</h3>
+<a class="nav-link" href="chapter14-preface.html">Preface</a>
+<a class="nav-link" href="chapter14.01-appointment-slot-optimization.html">14.1 — Appointment Slot Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.02-patient-provider-assignment.html">14.2 — Patient-Provider Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.03-inventory-reorder-optimization.html">14.3 — Inventory Reorder Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.04-nurse-staffing-optimization.html">14.4 — Nurse Staffing Optimization</a>
+<a class="nav-link nav-nested" href="chapter14.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.05-operating-room-block-scheduling.html">14.5 — Operating Room Block Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.06-patient-flow-bed-assignment.html">14.6 — Patient Flow / Bed Assignment</a>
+<a class="nav-link nav-nested" href="chapter14.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.07-or-case-sequencing.html">14.7 — OR Case Sequencing</a>
+<a class="nav-link nav-nested" href="chapter14.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.08-ambulance-routing-dispatch.html">14.8 — Ambulance Routing and Dispatch</a>
+<a class="nav-link nav-nested" href="chapter14.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.09-chemotherapy-scheduling.html">14.9 — Chemotherapy Scheduling</a>
+<a class="nav-link nav-nested" href="chapter14.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter14.10-health-system-network-design.html">14.10 — Health System Network Design</a>
+<a class="nav-link nav-nested" href="chapter14.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter14.10-python-example.html">Python Example</a>
+<h3 class="nav-section">Ch 15: Reinforcement Learning</h3>
+<a class="nav-link" href="chapter15-preface.html">Preface</a>
+<a class="nav-link" href="chapter15.01-alert-threshold-optimization.html">15.1 — Alert Threshold Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.01-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.01-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.02-notification-timing-optimization.html">15.2 — Notification Timing Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.02-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.02-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.03-clinical-trial-adaptive-randomization.html">15.3 — Clinical Trial Adaptive Randomization</a>
+<a class="nav-link nav-nested" href="chapter15.03-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.03-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.04-sepsis-treatment-optimization.html">15.4 — Sepsis Treatment Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.04-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.04-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.05-ventilator-weaning-protocols.html">15.5 — Ventilator Weaning Protocols</a>
+<a class="nav-link nav-nested" href="chapter15.05-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.05-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.06-glucose-control-icu.html">15.6 — Glucose Control in ICU</a>
+<a class="nav-link nav-nested" href="chapter15.06-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.06-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.07-chronic-disease-treatment-personalization.html">15.7 — Chronic Disease Treatment Personalization</a>
+<a class="nav-link nav-nested" href="chapter15.07-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.07-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.08-chemotherapy-dose-optimization.html">15.8 — Chemotherapy Dose Optimization</a>
+<a class="nav-link nav-nested" href="chapter15.08-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.08-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.09-radiation-therapy-adaptive-planning.html">15.9 — Radiation Therapy Adaptive Planning</a>
+<a class="nav-link nav-nested" href="chapter15.09-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.09-python-example.html">Python Example</a>
+<a class="nav-link" href="chapter15.10-hospital-resource-allocation-uncertainty.html">15.10 — Hospital Resource Allocation Under Uncertainty</a>
+<a class="nav-link nav-nested" href="chapter15.10-architecture.html">Architecture and Implementation</a>
+<a class="nav-link nav-nested" href="chapter15.10-python-example.html">Python Example</a>
+</nav>
+    </aside>
+    <main class="content">
+      <article>
+        <h1 id="recipe-32-patient-no-show-pattern-detection-">Recipe 3.2: Patient No-Show Pattern Detection ⭐</h1>
+<p><strong>Complexity:</strong> Simple · <strong>Phase:</strong> MVP · <strong>Estimated Cost:</strong> ~$0.001-0.005 per appointment scored (mostly compute; feature pulls dominate)</p>
+<hr />
+<h2 id="the-problem">The Problem</h2>
+<p>Picture a Tuesday morning at a mid-sized multispecialty group. The scheduling coordinator is looking at today's grid. Seventy-two providers across fourteen clinics, about 1,100 scheduled visits. By the end of the day, somewhere between 140 and 200 of those slots will go empty. The coordinator already knows this because she does this math every Tuesday. The question she cannot answer before 9 a.m. is <em>which</em> 140 to 200.</p>
+<p>That's the no-show pattern detection problem in a sentence.</p>
+<p>Here's what happens when you can't answer it in advance. The nurse practitioner in family medicine sits for ten minutes past the appointment time, checks her inbox, pulls up the next chart, marks the patient as a no-show, and moves on. The slot is dead. Nobody is coming in to fill it because the patient two slots behind is already in a room. The behavioral health clinic that could have taken an urgent referral this morning never hears about the opening. The mammography unit that has a six-week backlog has an empty table for twenty minutes. Multiply across the day across the enterprise. A health system this size is losing the equivalent of five or six full-time provider days per week to no-shows, plus a parallel loss in downstream capacity that the analytics team never quite gets around to quantifying because it's too diffuse.</p>
+<p>Now consider what a no-show actually is, because the word hides a lot of structure:</p>
+<p>There's the patient who forgot. Genuinely forgot. Appointment was scheduled six weeks ago, the reminder system fired twice into a phone that's been in a drawer since Saturday, and nobody told them it was today.</p>
+<p>There's the patient who remembered but couldn't come. Work emergency. Kid got sick. Car wouldn't start. Bus didn't come. This one is context-dependent: sometimes the patient calls, sometimes they don't, and &quot;did they call&quot; correlates strongly with socioeconomic factors that are not a clinical failing.</p>
+<p>There's the patient who ghosts on purpose. Maybe they feel better. Maybe they don't like the provider. Maybe they were told they'd be charged for a visit they now realize they can't afford and are avoiding the conversation. This one looks the same as &quot;forgot&quot; in the data, but the intervention that would have kept them is completely different.</p>
+<p>There's the patient who tried to cancel and couldn't. Called the number on the appointment card, got a voicemail, hung up. Tried the portal, couldn't remember the login. Finally gave up and took the no-show. This one is operationally a system failure, not a patient failure, and it's embarrassingly common.</p>
+<p>And there's the patient who is a habitual no-show. Not because they don't care, but because their life circumstances (housing instability, transportation precarity, shift work with little notice, chronic conditions that flare unpredictably) make committing to a weekday appointment three weeks out genuinely hard to keep. Their no-show pattern is a signal about their life, not about the care the clinic is offering.</p>
+<p>The usual response to this mess is uniform: send every patient the same reminder via the same channel at the same time, then double-book the slots that historically no-show the most. Both of these are blunt instruments. The uniform reminder wastes budget on patients who don't need reminding and fails the patients who'd have responded to a different channel (see Recipe 4.1 for the channel optimization problem in detail). The double-booking punishes the patients who do show up for their slots, because the provider is now running thirty minutes behind and a legitimate reason someone had to wait.</p>
+<p>What you actually want to do is more targeted. You want to rank tomorrow's appointments by no-show risk. You want to intervene on the high-risk ones (extra reminder, phone outreach, transportation assistance, maybe an offer to reschedule to a more convenient time) before they become no-shows. And crucially, you want to know which of those high-risk appointments are driven by patient-level patterns versus appointment-level factors (wrong time of day for this patient, wrong provider, wrong prep instructions) because those two cases need different interventions.</p>
+<p>That's patient no-show pattern detection. The goal is not to predict every no-show. The goal is to produce a ranked list that makes the limited intervention capacity (phone calls, care coordinator outreach, reschedule offers) worth the hour it takes to work through each morning. The operations team doesn't need 99% accuracy. They need to be able to work 30 phone calls per morning and have the no-shows actually be in that 30.</p>
+<p>Let's get into how.</p>
+<hr />
+<h2 id="the-technology">The Technology</h2>
+<h3 id="is-this-prediction-anomaly-detection-or-both">Is This Prediction, Anomaly Detection, or Both?</h3>
+<p>A fair question up front: why is this recipe in an anomaly detection chapter rather than a predictive analytics chapter? The honest answer is that it's both, and which framing you reach for drives very different design choices.</p>
+<p>As pure prediction, the problem is: &quot;given an upcoming appointment, predict the probability it will no-show.&quot; Output is a probability. You rank by that probability and call the top of the list. This is the way most teams start, and for the simple case it's completely fine. You train a binary classifier on historical appointments (features at the time of scheduling plus features close to the appointment, labels from the actual show/no-show outcome), and you use it to score the upcoming schedule each morning.</p>
+<p>As anomaly detection, the framing is different: &quot;given this patient's history, does this upcoming appointment look unusually likely to no-show compared to their typical behavior?&quot; The baseline is the patient's own history, not the population. A patient with a 5% lifetime no-show rate and an appointment that scores 20% for today is a contextual anomaly. A patient with a 40% lifetime no-show rate and the same 20% score is actually below their baseline. The intervention strategy for these two cases is different. One is &quot;something unusual is happening with this appointment, look into it.&quot; The other is &quot;this is the normal rate for this patient, and the intervention should probably address the underlying pattern.&quot;</p>
+<p>In practice, most production systems do a hybrid: a population-level risk model produces a base score, and a patient-level deviation component adjusts the interpretation. The output to the operations team is a ranked list with a risk score and a &quot;this is unusual for this patient&quot; flag. Both pieces of information are useful, and the feature engineering, training data, and serving pipeline are nearly the same regardless of which framing you emphasize.</p>
+<p>For this recipe we're going to build the hybrid pattern, leaning into the anomaly framing since that's what puts it in Chapter 3. The pure prediction version is a straight simplification of what's here: skip the patient-level baseline piece and ship the classifier score.</p>
+<h3 id="the-features-that-actually-matter">The Features That Actually Matter</h3>
+<p>If you've never built a no-show model before, your first instinct is probably to load up every field in the appointments table and feed it to XGBoost. That works, in the sense that it produces numbers. It does not work in the sense of producing a model you can defend, debug, or improve. Better to know in advance which signals carry weight and why, because then you know what to instrument well and where to invest in data quality.</p>
+<p>Here's a rough taxonomy of the features that show up in no-show models, ordered roughly by how much predictive value they typically carry:</p>
+<p><strong>Historical no-show behavior (usually the single strongest feature).</strong> Count of prior no-shows, prior cancellations, and prior completions. Rolling rates over the last 3, 6, and 12 months. Day-of-week-specific rates (some patients never make Monday morning appointments but show reliably Friday afternoon). Provider-specific rates. Visit-type-specific rates (a patient who no-shows to dental but never to primary care). This feature family is powerful, but it's also the one with the most obvious fairness and feedback-loop concerns. More on that below.</p>
+<p><strong>Appointment characteristics.</strong> Lead time (how far in advance the appointment was scheduled). Visit type. Provider. Clinic location. Time of day. Day of week. Whether the appointment was rescheduled from an earlier slot. Whether the visit is a follow-up or a new problem. All of these carry signal. Lead time in particular is a big one: appointments scheduled more than four weeks out no-show at substantially higher rates than same-week appointments.</p>
+<p><strong>Patient context.</strong> Age. Insurance type. Distance from clinic. Whether they have an active patient portal account. Portal login recency. Preferred language. Existing no-show patterns in the household (not just the patient). Care management enrollment. Chronic condition load. Active medications. Whether they have a primary care provider assigned.</p>
+<p><strong>Access and engagement signals.</strong> Previous reminder response history. Previous portal message response history. Phone number validity (bounced SMS count, disconnected-number flags). Email bounces. Whether they've ever logged into the portal. Whether they've ever confirmed an appointment electronically.</p>
+<p><strong>Social determinants, where available.</strong> Transportation support flags from care management. Documented housing instability. Income level (rare, usually coarse). ZIP code as a proxy (imperfect and loaded with fairness implications, but common).</p>
+<p><strong>Weather and environment (optional).</strong> Forecasted precipitation for the appointment day. Seasonal flu activity. Road construction near the clinic. These add a percentage point or two of lift and require an external data feed, so they're usually skipped in the first iteration.</p>
+<p>Here's the thing you learn after building a few of these: most of the win comes from the historical behavior features plus lead time. If you get those two feature families clean, you're already at 60-70% of the lift. Everything else adds marginal improvement. Don't let the temptation to engineer exotic features distract from getting the basics right.</p>
+<h3 id="establishing-a-patient-level-baseline">Establishing a Patient-Level Baseline</h3>
+<p>The anomaly detection framing requires a per-patient baseline. This is where the problem gets interesting, because baselines in healthcare are never as simple as &quot;the patient's average.&quot;</p>
+<p>A naive baseline is the patient's lifetime no-show rate: <code>prior_no_shows / prior_completed_or_no_show_appointments</code>. Simple. Interpretable. Leaks in several ways:</p>
+<ul>
+<li>
+<p><strong>Cold start.</strong> New patients have no history. What's their baseline? You can't call it zero (which would imply they always show). You can't call it the population mean (which might not apply). The standard fix is Bayesian smoothing: start with a prior distribution based on cohort features and update toward the patient's observed rate as you accumulate observations. A Beta distribution with a population-derived prior is the usual tool; you get a baseline for every patient including brand-new ones, and it converges to the patient-specific rate as history accumulates. In practice, you compute a population (or cohort-level) no-show rate and encode it as the prior parameters of a Beta distribution with an effective sample size of around 10 (meaning: <code>alpha_prior = population_rate * 10</code>, <code>beta_prior = (1 - population_rate) * 10</code>). Each new observation updates the posterior: a no-show adds 1 to alpha, a show adds 1 to beta, and the baseline estimate is <code>alpha / (alpha + beta)</code>. This converges to the patient-specific rate after roughly 8 to 12 observations, which is why we define <code>MIN_BASELINE_OBSERVATIONS = 8</code> as the threshold below which the baseline is still heavily influenced by the prior. Below that threshold the deviation calculation is unreliable, so we route on absolute risk only. The right value for this constant depends on visit frequency: for high-frequency specialties (dialysis, oncology), 8 observations accumulates in a few months; for routine primary care with annual visits, it takes years. Choose the constant based on your dominant patient population's visit cadence.</p>
+</li>
+<li>
+<p><strong>Non-stationarity.</strong> Last year's no-show rate may not reflect this year. The patient moved. Lost their job. Got a new chronic diagnosis and suddenly engagement went up. A rolling window (say, 12 months) gives you more recent behavior; time-decay weighting gives you even more recent behavior. Any real system uses one or the other.</p>
+</li>
+<li>
+<p><strong>Context confounds.</strong> &quot;The patient's no-show rate&quot; doesn't account for the fact that they only no-show when you schedule them at 8 a.m. on a Monday. If your baseline is an average across all contexts but your upcoming appointment is specifically the 8 a.m. Monday slot, the baseline and the appointment-specific prediction disagree in meaningful ways. The anomaly framing actually helps here: the model predicts risk for this specific context, and you compare it against the patient's overall baseline to get the anomaly signal.</p>
+</li>
+</ul>
+<p>A reasonable way to express &quot;is this appointment unusually risky for this patient?&quot; is to compute a deviation score:</p>
+<pre class="code code-plain"><code>deviation = model_risk_for_this_appointment - patient_baseline_rate
+</code></pre>
+<p>Values well above zero mean &quot;this looks worse than typical for this patient&quot; (something specific about this appointment is the problem). Values near zero mean &quot;this matches this patient's usual pattern.&quot; Values below zero mean &quot;this patient's baseline is high and this appointment is actually favorable.&quot; Operations teams can triage differently based on which zone a flagged appointment falls into.</p>
+<h3 id="what-kind-of-model-to-use">What Kind of Model to Use</h3>
+<p>For a simple recipe, you don't need anything fancy. Three options, in order of escalation:</p>
+<p><strong>Logistic regression.</strong> Strongly recommended as your first model. Fast to train, fast to serve, natively outputs a probability, and the coefficients are directly interpretable (&quot;a 30-day lead time adds this much to the log-odds of no-show&quot;). Interpretability matters here because the operations team will ask why someone was flagged, and a logistic regression can give them a real answer.</p>
+<p><strong>Gradient-boosted trees (XGBoost, LightGBM, CatBoost).</strong> The usual upgrade. Handles non-linearities and feature interactions that logistic regression misses. Typically lifts AUC by 0.03 to 0.05 over a well-tuned logistic regression. SHAP values give you explainability that is good enough for most operational contexts, though less clean than linear coefficients.</p>
+<p><strong>Isolation Forest or autoencoder for the anomaly signal.</strong> Complementary to the predictor, not a replacement. Trained on per-patient feature vectors to learn what a &quot;typical&quot; appointment for a given patient looks like. An appointment that scores as an outlier in that embedding is a flag to investigate even if the risk score isn't the highest on the list. You see this pattern in mature deployments; it's not essential for a first version.</p>
+<p>A practical choice for the baseline recipe: logistic regression for the risk score, plus a simple rule (&quot;is this appointment's risk more than X standard deviations above the patient's rolling average?&quot;) for the anomaly signal. You can graduate to the more sophisticated models once the feedback loop is established.</p>
+<h3 id="the-label-problem-a-version-youve-seen-before">The Label Problem (a Version You've Seen Before)</h3>
+<p>The label for this problem is &quot;did the patient no-show?&quot; which sounds unambiguous. It's less unambiguous than it looks.</p>
+<p><strong>Late arrivals.</strong> Is a patient who shows up thirty minutes late a no-show? Most scheduling systems code them as &quot;arrived late&quot; rather than no-show, but &quot;arrived late and was turned away because the provider was booked&quot; is often coded as a no-show even though the patient tried. Both cases matter for intervention.</p>
+<p><strong>Same-day cancellations.</strong> A cancellation called in at 7 a.m. for an 8 a.m. appointment is operationally indistinguishable from a no-show: the slot is not getting filled. Some systems code this as cancellation (because the patient called); some code it as no-show (because the lead time was insufficient to rebook). Both practices are common. Pick a convention and be consistent.</p>
+<p><strong>Reschedules.</strong> A patient who reschedules two days in advance is almost certainly not a no-show in any meaningful sense. A patient who reschedules two hours in advance is borderline. The reschedule timing matters, and the label schema should capture it.</p>
+<p><strong>No-show-then-walk-in.</strong> Some patients no-show to a scheduled appointment and show up as a walk-in the same day. Did they complete care? Yes. Did they no-show? Also yes. Does the model learn that this patient no-shows, or does it learn that this patient engages? Depends entirely on how you code the label. The cleanest handling is to code the scheduled-appointment outcome as no-show and carry the walk-in as a separate signal, then use whichever label your business cares about for training.</p>
+<p>Every team that has built this model has debated these questions for two weeks, landed on a working definition, documented it, and moved on. The specific answer matters less than having a clear, stable definition that everyone in the organization agrees on.</p>
+<h3 id="the-feedback-loop">The Feedback Loop</h3>
+<p>As with every anomaly detection recipe, the feedback loop is the difference between a system that stays good and one that decays.</p>
+<p>The decisions you make on the model's output are themselves a source of training data. If the model flags an appointment as high-risk and you intervene successfully (the patient shows up because you called them), that's a counterfactual problem: the label for that appointment is now &quot;showed up,&quot; but it would have been &quot;no-show&quot; without the intervention. Train on it naively and the model learns that high-risk appointments actually show up fine, and it will progressively downweight the features that got them flagged in the first place. This is the reminder system's selection bias problem and it will eat your model over time.</p>
+<p>Two standard mitigations. First, explicitly label interventions: for every appointment that was high-risk, record whether an intervention was made and what it was. Exclude intervened appointments from the straight &quot;predict show/no-show&quot; training data, or train a separate model on them that accounts for the intervention effect. Second, occasionally hold out a small fraction of high-risk appointments from the intervention (a &quot;no-intervention&quot; cohort for that risk band) so that you have unintervented outcome data to keep the model calibrated. The second approach is a controlled experiment, and it needs ethics and operational review because you're deliberately not intervening on patients the model thinks are at risk. In practice, most organizations do the first and skip the second, accepting some model drift as the price of not withholding reminders.</p>
+<p>The same discipline applies to patient baselines. If you update a patient's rolling no-show rate using outcomes from appointments where you intervened successfully, the baseline drifts downward toward the intervention-adjusted rate. Over months of operation, high-risk patients who consistently receive outreach will see their baselines collapse toward population averages. The deviation calculation stops firing for them, and the &quot;investigate&quot; queue loses the very signal it's supposed to surface: reliable patients with anomalously elevated risk for a specific appointment.</p>
+<p>The fix is the same exclusion you apply to the retraining data: only update the patient's rolling baseline when no intervention was applied. If the patient showed up after receiving a care coordinator call, record the outcome for label purposes but don't let it shift the baseline. Track intervened observations separately (an <code>intervened_observation_count</code> field on the baseline record) so you can analyze the intervention-adjusted rate if needed, but keep the baseline clean as a measure of what the patient does when left to their own devices.</p>
+<h3 id="fairness-concerns-which-are-real">Fairness Concerns, Which Are Real</h3>
+<p>No-show prediction has well-documented fairness pitfalls. The model's features correlate with race, income, housing stability, and transportation access, and those correlations are not coincidences. A model trained naively can end up systematically scoring patients of color, Medicaid patients, or patients in lower-income ZIP codes as higher-risk. If the operational response to a high-risk score is &quot;don't prioritize their reschedule,&quot; the system becomes a mechanism for further restricting access to care for the populations with the worst access to begin with. This is not hypothetical. It has happened. It's the main reason &quot;just predict no-shows and double-book them&quot; is the wrong framing.</p>
+<p>The right framing is that a high-risk score is a signal to <em>invest more in keeping the appointment</em>, not less. Extra reminders, transportation assistance, flexible scheduling, outreach from a care coordinator. With that framing, the model is helping patients who need help the most. The fairness concern doesn't disappear, but it shifts from &quot;is the model biased against group X?&quot; to &quot;does our intervention budget disproportionately flow toward or away from group X?&quot; Subgroup monitoring of intervention outcomes (not just model scores) is what you need to track, and it's a required part of the operational dashboard, not a nice-to-have.</p>
+<p>One more subtle point: some features are proxies for protected characteristics (ZIP code, language, insurance type). Including them makes the model more accurate and also potentially more discriminatory. Excluding them reduces accuracy without always removing the underlying disparity, because other features are correlated. The practical middle ground is to include the features, train the model, and then monitor subgroup performance on both predictions and downstream outcomes. If you see disparate performance, that's a signal to investigate the causal structure (is the model wrong, or is it accurately capturing an underlying access barrier that the organization should address?).</p>
+<hr />
+<h2 id="general-architecture-pattern">General Architecture Pattern</h2>
+<p>At a conceptual level, the pipeline has four stages plus a feedback loop. The stages are simple individually; the design work is in the feature computation infrastructure and the feedback integration.</p>
+<pre class="code code-plain"><code>┌───────────────── NIGHTLY SCORING PIPELINE ──────────────────┐
+│                                                             │
+│  [Tomorrow&#x27;s Schedule]                                      │
+│         │                                                   │
+│         ▼                                                   │
+│  [Feature Assembly]                                         │
+│   (patient history, appointment context, engagement         │
+│    signals, environmental data)                             │
+│         │                                                   │
+│         ▼                                                   │
+│  [Risk Scoring Model]                                       │
+│   (logistic regression / GBM; outputs P(no-show))           │
+│         │                                                   │
+│         ▼                                                   │
+│  [Patient Baseline + Deviation Calculation]                 │
+│   (compare risk to patient&#x27;s rolling baseline;              │
+│    flag anomalies)                                          │
+│         │                                                   │
+│         ▼                                                   │
+│  [Routing + Intervention Queue]                             │
+│   score ≥ high_threshold → outreach queue                   │
+│   flagged anomaly        → investigation queue              │
+│   low risk               → standard reminder only           │
+│         │                                                   │
+└─────────┼───────────────────────────────────────────────────┘
+          │
+┌─────────┼───────────────────────────────────────────────────┐
+│         ▼                                                   │
+│  [Intervention Execution]                                   │
+│   (reminder calls, transportation outreach, reschedule      │
+│    offers; tracked with intervention IDs)                   │
+│         │                                                   │
+│         ▼                                                   │
+│  [Outcome Capture]                                          │
+│   (appointment showed / no-show / late-cancel / rescheduled;│
+│    joined to intervention records)                          │
+│         │                                                   │
+│         ▼                                                   │
+│  [Labels + Retraining]                                      │
+│   (monthly refresh; subgroup performance monitoring;        │
+│    drift detection; threshold tuning)                       │
+│                                                             │
+└──────────────────── FEEDBACK LOOP ──────────────────────────┘
+</code></pre>
+<p><strong>Tomorrow's schedule.</strong> The trigger is a nightly job (or a streaming pipeline that scores appointments as they're booked; nightly is simpler and covers most needs). The job pulls all appointments scheduled within the next N days, where N is tuned to the operational team's planning horizon. Three days is common; some organizations do same-day-plus-one, others do up to a week.</p>
+<p><strong>Feature assembly.</strong> For each appointment in scope, assemble the feature vector. This is the slow part: it requires joins across the patient record, appointment history, engagement history, and sometimes external data. A feature store is the right abstraction here because the same features get computed at training time on historical data and at serving time on the current schedule. If training and serving feature code drift apart, you get subtle accuracy bugs that are painful to debug. Use a feature store.</p>
+<p><strong>Risk scoring.</strong> The model runs inference on the assembled feature vectors. Output is a probability for each appointment. Serialize the model version with the output so later analysis can tie predictions back to the specific model that made them.</p>
+<p><strong>Baseline and deviation.</strong> For each patient with enough history to have a baseline, compute the deviation between the appointment-specific risk and the patient's rolling baseline. Appointments where the deviation is large (either direction) get flagged. Two flags are useful: &quot;high absolute risk&quot; and &quot;high deviation from this patient's baseline.&quot; Either can drive intervention routing, and they capture different things.</p>
+<p><strong>Routing.</strong> Standard thresholded routing, similar to the duplicate claim detection pattern in Recipe 3.1. High-risk appointments go to a named intervention queue. Anomaly-flagged appointments go to a separate investigation queue. Everything else rides the default reminder path.</p>
+<p><strong>Intervention execution.</strong> Whatever the operations team does (phone outreach, care coordinator referral, transportation assistance, reschedule offer) is tracked by intervention type and timing. The record of &quot;what was done for this appointment&quot; is what closes the loop later.</p>
+<p><strong>Outcome capture.</strong> When the appointment date arrives, the actual outcome (showed, no-show, late-cancel, rescheduled, walk-in-later) is recorded. Joining the outcome to the original risk score and the intervention record is what produces the labels for the next retraining cycle.</p>
+<p><strong>Retraining.</strong> Monthly is a common cadence. A weekly retrain is overkill for a problem where patient behavior changes slowly; a quarterly retrain is too slow to catch schedule-pattern changes from things like seasonality or operational shifts. The retrain pipeline should include subgroup performance evaluation (by age, insurance type, language, race/ethnicity where available) before promotion.</p>
+<hr />
+<blockquote>
+<p><strong>The AWS build lives in a companion page.</strong> This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the <a href="chapter03.02-architecture.html">Architecture and Implementation companion</a>. The Python example is linked from there.</p>
+</blockquote>
+<h2 id="the-honest-take">The Honest Take</h2>
+<p>The feature engineering matters more than the model. You can train the fanciest gradient-boosted model in the world and it won't beat a well-tuned logistic regression on mediocre features. Conversely, if your features include a clean patient-level history with proper point-in-time joins, provider-pair history, engagement recency, and lead time, a basic logistic regression will get you most of the way there. Spend the first month on features. Spend the second month on the model. Most teams do it in the other order and then wonder why their sophisticated model is only marginally better than the old rule-based spreadsheet.</p>
+<p>The intervention is the product, not the model. An accurate prediction that nobody acts on is worth nothing. The operational workflow (who gets the call, who makes the call, what script they use, how they record the outcome) is what actually moves the no-show rate. Spend time with the outreach team. Watch them make calls. Time a full call, from dialing to documentation. Find out where the friction is. A model that produces 30 names a day the team can actually work through is worth ten times more than a model that produces 300 names they can't.</p>
+<p>The anomaly framing matters more than it looks like it should. If you go with pure prediction (rank by risk, intervene on the top), you miss the &quot;usually reliable patient who's about to no-show for context-specific reasons&quot; case. The reliable patient with an elevated risk score for a specific appointment is one of the highest-value interventions you'll find, and it costs nothing but a courtesy phone call. The pure prediction frame systematically underweights them because their absolute score isn't the highest. The deviation frame surfaces them. Use both, present both to the ops team, and let them prioritize.</p>
+<p>The thing that surprised me on the last project: the single most predictive feature turned out to be &quot;days since the patient last logged into the portal.&quot; Not lead time, not prior no-show rate, not age, not any of the features I expected. Patients who had logged into the portal in the last 14 days showed at dramatically higher rates than patients who hadn't. With hindsight it's obvious: portal login is a proxy for engagement with the healthcare relationship, and engagement is what drives appointment-keeping. But it wasn't obvious upfront. Building the feature took a day. The lift it produced doubled the model's usefulness. Moral of the story: the features you don't think of are probably the most predictive ones. Explore widely before committing to a feature set.</p>
+<p>The thing I'd do differently: start with the outcome capture and label pipeline, not the model. When I built one of these for the first time, I got the model working first and then discovered that the outcome events from the EHR took two weeks of engineering to pipe through reliably, during which we had no labels to train on and no way to measure whether our predictions were accurate. Now I always build the outcome-capture-and-label pipeline first, populate it with a dumb baseline model (one feature: prior no-show rate), and then iterate on the model once the loop is closing. That ordering makes the project feel slower for the first month but dramatically faster for the six months after.</p>
+<p>The trap to avoid: do not optimize the model to minimize no-shows if your operational response is to double-book. The downstream effect is that the patients you flag as high-risk get systematically worse service (double-booked provider running late, less attention during the visit) even when they do show up. This is a real pattern. It produces measurable outcome disparities. If your intervention policy is &quot;double-book when risk is high,&quot; the model is making things worse, not better, for the populations it flags most. The intervention side of the pipeline is not a separate concern from the model; they have to be designed together.</p>
+<hr />
+<h2 id="related-recipes">Related Recipes</h2>
+<ul>
+<li><strong>Recipe 3.1 (Duplicate Claim Detection):</strong> Shares the blocking-scoring-routing architecture, the feedback-loop pattern, and the baseline-for-thresholding approach. If you've already built 3.1, much of the operational infrastructure for this recipe is reusable.</li>
+<li><strong>Recipe 4.1 (Appointment Reminder Channel Optimization):</strong> The natural companion. This recipe identifies who to reach out to; 4.1 decides how to reach them. Best deployed together so the high-risk flags here drive the channel decisions there.</li>
+<li><strong>Recipe 4.5 (Adherence Intervention Targeting):</strong> Broader version of the same pattern applied to medication adherence rather than appointment-keeping. Shares feature-engineering approach, baseline computation, and intervention-effect measurement.</li>
+<li><strong>Recipe 6.3 (Patient Segmentation for Care Management):</strong> Uses similar features for a different purpose: cohort discovery rather than event prediction. A mature care management program typically runs both.</li>
+<li><strong>Recipe 7.4 (Readmission Risk Modeling):</strong> Structurally similar (prediction of a binary adverse event), but with much higher stakes and regulatory exposure. Treat this recipe as the warm-up; the patterns you develop here transfer directly but the governance overhead for readmission work is substantially heavier.</li>
+</ul>
+<hr />
+<h2 id="tags">Tags</h2>
+<p><code>anomaly-detection</code> · <code>no-show-prediction</code> · <code>patient-engagement</code> · <code>propensity-modeling</code> · <code>contextual-anomaly</code> · <code>sagemaker</code> · <code>feature-store</code> · <code>batch-transform</code> · <code>dynamodb</code> · <code>step-functions</code> · <code>pinpoint</code> · <code>glue</code> · <code>lambda</code> · <code>simple</code> · <code>mvp</code> · <code>hipaa</code> · <code>provider</code></p>
+<hr />
+<p><em>← <a href="chapter03.01-duplicate-claim-detection.html">Recipe 3.1: Duplicate Claim Detection</a> · <a href="chapter03-preface.html">Chapter 3 Preface</a> · <a href="chapter03.03-billing-code-anomalies.html">Next: Recipe 3.3 - Billing Code Anomalies →</a></em></p>
+
+      </article>
+      <footer class="page-footer">
+        <p>Healthcare AI/ML Cookbook &middot; generated by md-to-html</p>
+      </footer>
+    </main>
+  </div>
+  <script src="assets/vendor/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "neutral" }); }
+    var t = document.getElementById("nav-toggle");
+    if (t) { t.addEventListener("click", function () { document.body.classList.toggle("nav-open"); }); }
+  </script>
+</body>
+</html>
