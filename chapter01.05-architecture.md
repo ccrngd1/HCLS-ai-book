@@ -955,7 +955,15 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end claims automation architecture with AWS services
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Generative AI approaches for complex or ambiguous healthcare document extraction
 
---- 
+---
+
+## Estimated Implementation Time
+
+| Tier | Timeframe | What You Get |
+|------|-----------|--------------|
+| **Basic (proof of concept)** | 3-5 days | S3 bucket, Step Functions skeleton, Textract extraction, Nova Lite boundary detection and classification for a single document type (operative reports), basic DynamoDB storage. Enough to ingest a 10-page attachment, segment it, classify one document, and see structured output. No claim line matching yet. |
+| **Production-ready** | 4-6 weeks | Full multi-document classification taxonomy, claim line matching with Claude Sonnet, confidence gating, human review routing via A2I, dead letter queues, S3 Object Lock for retention, CloudWatch alarms, per-line support evidence surfacing, and integration with at least one claims workstation or adjudication system. |
+| **With variations** | 8-12 weeks | Add claim-value-based routing thresholds, Bedrock Data Automation evaluation path, structured workstation integration with examiner UI, multi-payer taxonomy tuning, and end-to-end regression testing against a representative corpus of real claims packages across surgical, therapy, and diagnostic categories. |
 
 ---
 

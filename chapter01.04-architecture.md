@@ -815,7 +815,17 @@ BDA makes sense if you want to minimize the pipeline you manage. This recipe tak
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing with generative AI for complex or ambiguous fields
 - [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical): Entity extraction and ICD-10 inference from clinical free text
 
---- 
+---
+
+## Estimated Implementation Time
+
+| Tier | Scope | Time |
+|------|-------|------|
+| Basic | Single-page-type pipeline (cover sheets only), Textract extraction with FORMS, Step Functions orchestration, DynamoDB storage, no LLM classification or clinical extraction, manual routing of non-cover-sheet pages | 3-5 weeks |
+| Production-ready | Full multi-page-type pipeline with Nova Lite classification, Sonnet clinical extraction, Comprehend Medical ICD-10 validation, confidence-based routing to human review, prompt versioning, regulatory deadline monitoring, concurrent submission handling, idempotency, full audit trail | 3-5 months |
+| With variations | Parallel Map state page processing, Bedrock Data Automation evaluation, provider portal pre-screening API, per-provider prompt specialization, image quality pre-filtering, multi-payer form variant support | 2-4 months beyond production-ready |
+
+---
 
 ---
 
