@@ -337,7 +337,6 @@ def detect_all_boundaries(
         result = detect_boundary_at_page_pair(page_n, page_n_plus_1, bedrock_client, model_id)
 
         status = "NEW DOCUMENT" if not result['same_document'] else "same"
-        # [EDITOR: Replaced em dash (—) separator with colon in f-string output.]
         # [EDITOR: review fix P1-5] Removed result['reasoning'] from print. Boundary reasoning
         # can echo clinical content from the page text (facility names, document titles, terms).
         # In Lambda, stdout writes to CloudWatch Logs. Log structural metadata only; omit
@@ -449,7 +448,6 @@ def classify_segment(
         'boundary_signals': segment['boundary_signals']
     }
 
-    # [EDITOR: Replaced em dash (—) separator with colon in f-string output.]
     # [EDITOR: review fix P1-5] Removed reasoning from print. Classification reasoning can
     # include document title text with facility name or patient identifiers. Log doc_type
     # and confidence only; omit reasoning to keep CloudWatch Logs PHI-free.
