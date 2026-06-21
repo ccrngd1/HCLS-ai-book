@@ -254,7 +254,7 @@ FUNCTION store_result(image_key, fields, flagged):
 | End-to-end latency | 1.5-3 seconds |
 | Field extraction accuracy | 95-99% for printed cards |
 | Confidence score (clean cards) | 95-99.5% per field |
-| Cost per card | ~$0.002 (Textract + Lambda + DynamoDB) |
+| Cost per card | ~$0.05 (Textract dominates; Lambda + DynamoDB negligible) |
 | Throughput | ~50 cards/second (Lambda concurrency limited) |
 
 **Where it struggles:** Cards photographed at steep angles, poor lighting, or heavy glare. Cracked or worn cards with damaged print. Cards from smaller regional payers with non-standard layouts (your FIELD_MAP will need expansion). And handwritten fields, especially copays added after the card was printed.
