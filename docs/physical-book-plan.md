@@ -1,7 +1,7 @@
 # Physical Book Plan & Main-Third Finalization
 
 Status: **DRAFT — pending selection sign-off**
-Last updated: 2026-06-18 (added section 2b: print cross-reference transform; section 6b runbook)
+Last updated: 2026-06-20 (added section 2c: Mermaid pre-render decision)
 
 ## 1. Vision
 
@@ -150,6 +150,21 @@ rm -rf /tmp/ralph-worktrees; git worktree prune; git branch | grep ralph/worker 
 - All per-task changes are git-committed and reversible (`ralph rollback <N>` or `git revert`).
 
 **Helpers (committed):** `check_findings.py` (guardrail), `gen_finding_tasks.py` (batch generator), `specs/ch02-r05-findings.md` (proven template).
+
+## 2c. Diagram rendering: Mermaid pre-render shared across outputs (added 2026-06-20)
+
+The book currently mixes **~150 Mermaid blocks** (rendered client-side by the bundled `mermaid.min.js` in the HTML build) and **~277 ASCII `text` diagrams**. Client-side rendering works for HTML but NOT for EPUB (unreliable JS in e-readers) or print PDF (static only).
+
+**Decision:** add a single **Mermaid pre-render step** to the build that scans `.md` files for ```mermaid blocks, renders each to an **SVG asset once**, and has all three outputs (HTML, EPUB, print PDF) embed the same image. This parallels how the HTML variant is generated today: one shared transform feeding multiple outputs.
+
+- **Tooling:** `@mermaid-js/mermaid-cli` (`mmdc`, official, Puppeteer/headless-Chromium) for fidelity, OR **Kroki** (self-hosted via Docker, or hosted) to avoid a local Chromium dependency. Both output SVG/PNG/PDF.
+- **Per medium:**
+  - HTML: keep client-side rendering as-is, or switch to the pre-rendered SVG for consistency/perf.
+  - EPUB: embed pre-rendered SVG/PNG (no client JS).
+  - Print PDF: embed pre-rendered SVG (vector, crisp at 6x9).
+- **Required regardless of the ASCII question:** the ~150 existing Mermaid diagrams render only in HTML today; they would be blank in EPUB/print without this step.
+- **Follow-on cleanup:** convert the ~277 ASCII `text` diagrams to Mermaid to unify rendering and dramatically improve print quality (the compact 4.9 pipeline is a trivial `graph TD`). Mechanical for most; do it incrementally.
+- **Sequencing:** build the pre-render step as part of Phase C (EPUB/print pipelines). It is a deterministic, re-runnable transform that never edits canonical files (writes image assets to the build output only).
 
 ## 7. Open decisions
 
