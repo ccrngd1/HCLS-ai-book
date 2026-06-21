@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 10.2: Voicemail Transcription and Classification ⭐
+# Open TODOs: Recipe 10.2: Voicemail Transcription and Classification ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (36 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

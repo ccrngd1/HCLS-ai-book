@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 7.11: Claim Denial and Prior-Auth Determination Prediction
+# Open TODOs: Recipe 7.11: Claim Denial and Prior-Auth Determination Prediction
 
 > Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

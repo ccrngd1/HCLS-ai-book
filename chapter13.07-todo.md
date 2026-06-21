@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 13.7: Disease-Gene-Drug Relationship Graph
+# Open TODOs: Recipe 13.7: Disease-Gene-Drug Relationship Graph
 
 > Auto-extracted 2026-06-18 from inline source comments (13 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

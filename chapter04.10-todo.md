@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 4.10: Dynamic Treatment Regime Recommendation ⭐⭐⭐⭐⭐
+# Open TODOs: Recipe 4.10: Dynamic Treatment Regime Recommendation ⭐⭐⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (34 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

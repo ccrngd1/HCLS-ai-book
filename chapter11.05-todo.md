@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 11.5: Insurance Benefits Navigator
+# Open TODOs: Recipe 11.5: Insurance Benefits Navigator
 
 > Auto-extracted 2026-06-18 from inline source comments (39 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

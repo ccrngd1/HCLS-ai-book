@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 11.9: Care Coordination Assistant
+# Open TODOs: Recipe 11.9: Care Coordination Assistant
 
 > Auto-extracted 2026-06-18 from inline source comments (35 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

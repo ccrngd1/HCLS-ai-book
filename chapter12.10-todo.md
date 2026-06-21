@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 12.10: Physiological Waveform Analysis
+# Open TODOs: Recipe 12.10: Physiological Waveform Analysis
 
 > Auto-extracted 2026-06-18 from inline source comments (2 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
+# Open TODOs: Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (17 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

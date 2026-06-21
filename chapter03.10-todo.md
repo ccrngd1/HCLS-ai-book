@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 3.10: Epidemic / Outbreak Detection ⭐
+# Open TODOs: Recipe 3.10: Epidemic / Outbreak Detection ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (15 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

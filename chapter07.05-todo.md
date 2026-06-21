@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 7.5: 30-Day Readmission Risk
+# Open TODOs: Recipe 7.5: 30-Day Readmission Risk
 
 > Auto-extracted 2026-06-18 from inline source comments (3 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

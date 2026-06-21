@@ -27,7 +27,7 @@ validation:
     architecture-correct fix, or (b) explicitly deferred with a one-line
     '[NEEDS HUMAN]' note in the todo file and a reason. The architecture
     companion and the python example remain mutually consistent. No clinical or
-    security regressions. Resolved items removed from chapter12.02-todo.md. No em dashes.
+    security regressions. Resolved items removed from chapter12.02-todo.md. No new em dashes are introduced into the recipe source files.
 ---
 
 

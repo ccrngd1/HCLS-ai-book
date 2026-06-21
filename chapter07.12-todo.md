@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 7.12: Cohort Matching and Case-Based Reasoning for Novel Claims
+# Open TODOs: Recipe 7.12: Cohort Matching and Case-Based Reasoning for Novel Claims
 
 > Auto-extracted 2026-06-18 from inline source comments (5 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

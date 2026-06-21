@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 2.10: Multi-Modal Clinical Reasoning
+# Open TODOs: Recipe 2.10: Multi-Modal Clinical Reasoning
 
 > Auto-extracted 2026-06-18 from inline source comments (10 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

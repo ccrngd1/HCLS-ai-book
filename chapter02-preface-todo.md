@@ -1,4 +1,4 @@
-# Open TODOs — chapter02-preface
+# Open TODOs: chapter02-preface
 
 > Auto-extracted 2026-06-18 (2 items).
 

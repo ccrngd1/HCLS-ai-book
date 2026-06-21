@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 12.6: Revenue Cycle Cash Flow Forecasting ⭐⭐⭐
+# Open TODOs: Recipe 12.6: Revenue Cycle Cash Flow Forecasting ⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (27 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

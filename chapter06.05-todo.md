@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 6.5: Provider Practice Pattern Analysis
+# Open TODOs: Recipe 6.5: Provider Practice Pattern Analysis
 
 > Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

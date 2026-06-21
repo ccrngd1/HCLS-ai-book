@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 12.3: ED Arrival Forecasting ⭐⭐
+# Open TODOs: Recipe 12.3: ED Arrival Forecasting ⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (20 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

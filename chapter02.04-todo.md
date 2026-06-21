@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 2.4: Prior Authorization Letter Generation
+# Open TODOs: Recipe 2.4: Prior Authorization Letter Generation
 
 > Auto-extracted 2026-06-18 from inline source comments (15 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

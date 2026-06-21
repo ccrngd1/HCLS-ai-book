@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 12.4: Lab Result Trend Analysis ⭐⭐⭐
+# Open TODOs: Recipe 12.4: Lab Result Trend Analysis ⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (23 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

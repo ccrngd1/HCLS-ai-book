@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 5.10: Deceased Patient Resolution and Record Reconciliation ⭐⭐⭐⭐
+# Open TODOs: Recipe 5.10: Deceased Patient Resolution and Record Reconciliation ⭐⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (33 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

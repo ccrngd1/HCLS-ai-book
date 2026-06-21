@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 9.6: Diabetic Retinopathy Screening
+# Open TODOs: Recipe 9.6: Diabetic Retinopathy Screening
 
 > Auto-extracted 2026-06-18 from inline source comments (3 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

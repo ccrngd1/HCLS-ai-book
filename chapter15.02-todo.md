@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 15.2: Notification Timing Optimization
+# Open TODOs: Recipe 15.2: Notification Timing Optimization
 
 > Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

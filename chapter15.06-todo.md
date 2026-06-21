@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 15.6: Glucose Control in ICU
+# Open TODOs: Recipe 15.6: Glucose Control in ICU
 
 > Auto-extracted 2026-06-18 from inline source comments (7 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 11.3: Prescription Refill Request Bot
+# Open TODOs: Recipe 11.3: Prescription Refill Request Bot
 
 > Auto-extracted 2026-06-18 from inline source comments (31 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

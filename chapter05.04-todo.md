@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 5.4: Insurance Eligibility Matching ⭐⭐⭐
+# Open TODOs: Recipe 5.4: Insurance Eligibility Matching ⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (44 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 5.7: Longitudinal Patient Matching Across Name Changes ⭐⭐⭐⭐
+# Open TODOs: Recipe 5.7: Longitudinal Patient Matching Across Name Changes ⭐⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (46 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 6.9: Social Determinant Phenotyping
+# Open TODOs: Recipe 6.9: Social Determinant Phenotyping
 
 > Auto-extracted 2026-06-18 from inline source comments (6 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 3.3: Billing Code Anomalies ⭐
+# Open TODOs: Recipe 3.3: Billing Code Anomalies ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (6 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

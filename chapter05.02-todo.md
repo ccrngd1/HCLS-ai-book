@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 5.2: Provider NPI Matching ⭐
+# Open TODOs: Recipe 5.2: Provider NPI Matching ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (41 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

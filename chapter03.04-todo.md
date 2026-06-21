@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 3.4: Medication Dispensing Anomalies ⭐
+# Open TODOs: Recipe 3.4: Medication Dispensing Anomalies ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (10 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

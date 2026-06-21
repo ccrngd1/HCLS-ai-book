@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 3.5: Lab Result Outlier Detection ⭐
+# Open TODOs: Recipe 3.5: Lab Result Outlier Detection ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (25 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

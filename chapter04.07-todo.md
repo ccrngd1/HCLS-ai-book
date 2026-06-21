@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 4.7: Care Management Program Enrollment ⭐⭐⭐
+# Open TODOs: Recipe 4.7: Care Management Program Enrollment ⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (33 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

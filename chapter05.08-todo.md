@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 5.8: Privacy-Preserving Record Linkage ⭐⭐⭐⭐
+# Open TODOs: Recipe 5.8: Privacy-Preserving Record Linkage ⭐⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (51 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 10.10: Multilingual Real-Time Medical Interpretation ⭐⭐⭐
+# Open TODOs: Recipe 10.10: Multilingual Real-Time Medical Interpretation ⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (42 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

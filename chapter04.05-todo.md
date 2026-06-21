@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 4.5: Medication Adherence Intervention Targeting ⭐⭐
+# Open TODOs: Recipe 4.5: Medication Adherence Intervention Targeting ⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (35 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

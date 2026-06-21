@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 11.1: FAQ Chatbot ⭐
+# Open TODOs: Recipe 11.1: FAQ Chatbot ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (22 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

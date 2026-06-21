@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 11.7: Chronic Disease Management Coach
+# Open TODOs: Recipe 11.7: Chronic Disease Management Coach
 
 > Auto-extracted 2026-06-18 from inline source comments (47 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

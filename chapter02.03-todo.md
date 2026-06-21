@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
+# Open TODOs: Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
 
 > Auto-extracted 2026-06-18 from inline source comments (7 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 12.8: Disease Progression Trajectory Modeling ⭐⭐⭐⭐
+# Open TODOs: Recipe 12.8: Disease Progression Trajectory Modeling ⭐⭐⭐⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (15 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 13.8: Medical Concept Normalization and Mapping
+# Open TODOs: Recipe 13.8: Medical Concept Normalization and Mapping
 
 > Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

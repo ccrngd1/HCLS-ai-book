@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 13.6: Care Gap Reasoning Engine
+# Open TODOs: Recipe 13.6: Care Gap Reasoning Engine
 
 > Auto-extracted 2026-06-18 from inline source comments (5 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 

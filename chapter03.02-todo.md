@@ -1,4 +1,4 @@
-# Open TODOs — Recipe 3.2: Patient No-Show Pattern Detection ⭐
+# Open TODOs: Recipe 3.2: Patient No-Show Pattern Detection ⭐
 
 > Auto-extracted 2026-06-18 from inline source comments (8 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 
