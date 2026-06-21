@@ -37,7 +37,7 @@ import boto3
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from botocore.config import Config  # [EDITOR: review fix P1-4] Added for retry configuration
+from botocore.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,6 @@ logger = logging.getLogger(__name__)
 # for throttling scenarios. max_attempts=3 covers transient spikes without
 # compounding latency excessively.
 # ---------------------------------------------------------------------------
-# [EDITOR: review fix P1-4] Added retry config. Bedrock ThrottlingException is
-# a certainty at 500K submissions/year with burst patterns, not an edge case.
-# Both Bedrock runtime and Comprehend Medical clients need this.
 BOTO3_RETRY_CONFIG = Config(
     retries={"max_attempts": 3, "mode": "adaptive"}
 )
@@ -252,8 +249,6 @@ def retrieve_textract_blocks(
     GetDocumentAnalysis is paginated; most multi-page documents produce multiple
     pages of results. This loops until NextToken is absent, collecting all blocks.
     """
-    # [EDITOR: Removed em dash from docstring. Original: "is paginated — most
-    # multi-page documents have multiple pages of results." Changed to semicolon.]
     textract = boto3.client("textract", region_name=region)
     all_blocks = []
     next_token = None
@@ -365,9 +360,7 @@ def classify_page(
 
     Returns a dict with page_type, confidence (0.0-1.0), and reasoning.
     """
-    # [EDITOR: Removed em dash from docstring. Original: "by default — it's the
-    # cheapest multimodal model". Changed to colon.]
-    bedrock = boto3.client("bedrock-runtime", region_name=region, config=BOTO3_RETRY_CONFIG)  # [EDITOR: review fix P1-4] Added retry config to prevent ThrottlingException failures
+    bedrock = boto3.client("bedrock-runtime", region_name=region, config=BOTO3_RETRY_CONFIG)
 
     # Build structural context to include alongside the page text.
     # This helps the model on pages where text alone is ambiguous.
@@ -410,8 +403,6 @@ def classify_page(
 
         # The model should return a JSON object. Strip any markdown code fences
         # in case the model wraps it; some models do this despite being told not to.
-        # [EDITOR: Removed em dash from inline comment. Original: "wraps it —
-        # some models do this". Changed to semicolon.]
         cleaned = response_text.strip()
         if cleaned.startswith("```"):
             cleaned = cleaned.split("```")[1]
@@ -443,9 +434,8 @@ def classify_page(
     except json.JSONDecodeError as e:
         # If JSON parsing fails, log it and return a low-confidence "other" result.
         # This routes the page to human review rather than crashing the pipeline.
-        # [EDITOR: review fix P1-5] Removed response_text[:200] from log message.
         # LLM output may contain PHI echoed from the input document. Log only
-        # structural metadata (response length, error type) — never log model output.
+        # structural metadata (response length, error type). Never log model output.
         logger.warning(
             f"Classification response was not valid JSON: {e}. "
             f"Response length: {len(response_text)} chars. "
@@ -597,8 +587,6 @@ def extract_cover_sheet(page_data: dict, block_map: dict, _model_id: str) -> dic
     Extract cover sheet fields using Textract key-value pairs.
     model_id is unused here; cover sheets don't need LLM reasoning.
     """
-    # [EDITOR: Removed em dash from docstring. Original: "unused here —
-    # cover sheets don't need LLM reasoning." Changed to semicolon.]
     raw_kvs = parse_key_value_pairs(page_data["blocks"], block_map)
     fields, flagged = normalize_cover_fields(raw_kvs)
 
@@ -635,7 +623,7 @@ def infer_icd10_codes(
     NOT code strings ("M17.11"). If the LLM extracted a raw code string, this will
     produce poor results. The LLM should always extract the clinical concept text.
     """
-    comprehend_medical = boto3.client("comprehendmedical", region_name=region, config=BOTO3_RETRY_CONFIG)  # [EDITOR: review fix P1-4] Added retry config; Comprehend Medical also throttles at volume
+    comprehend_medical = boto3.client("comprehendmedical", region_name=region, config=BOTO3_RETRY_CONFIG)
 
     # Comprehend Medical has a 20,000 character input limit.
     # Truncate if needed; the diagnosis text from LLM extraction is usually short.
@@ -649,8 +637,6 @@ def infer_icd10_codes(
     for entity in response.get("Entities", []):
         # Each entity may have multiple candidate ICD-10 codes.
         # Concepts are sorted by score descending; take the top match.
-        # [EDITOR: Removed em dash from comment. Original: "score descending —
-        # take the top match". Changed to semicolon.]
         icd10_concepts = entity.get("ICD10CMConcepts", [])
         if not icd10_concepts:
             continue
@@ -687,7 +673,7 @@ def extract_clinical_page(
 
     After LLM extraction, Comprehend Medical validates the ICD-10 codes.
     """
-    bedrock = boto3.client("bedrock-runtime", region_name=region, config=BOTO3_RETRY_CONFIG)  # [EDITOR: review fix P1-4] Added retry config for Bedrock throttling
+    bedrock = boto3.client("bedrock-runtime", region_name=region, config=BOTO3_RETRY_CONFIG)
     page_text = page_data["text"]
 
     if not page_text.strip():
@@ -728,8 +714,6 @@ def extract_clinical_page(
                 "temperature": 0,
             },
         )
-        # [EDITOR: Removed em dash from inline comment. Original:
-        # "More than classification — clinical notes are dense". Changed to semicolon.]
 
         response_text = response["output"]["message"]["content"][0]["text"]
 
@@ -744,10 +728,9 @@ def extract_clinical_page(
         llm_extraction = json.loads(cleaned)
 
     except json.JSONDecodeError as e:
-        # [EDITOR: review fix P1-5] Removed response_text[:200] from log message.
         # The first 200 chars of a clinical extraction response can contain patient
         # names, diagnoses, or other PHI echoed from the input. Log only structural
-        # metadata (response length, error type) — never log raw model output.
+        # metadata (response length, error type). Never log raw model output.
         logger.warning(
             f"Clinical extraction response was not valid JSON: {e}. "
             f"Response length: {len(response_text)} chars. "
@@ -968,9 +951,6 @@ def route_and_extract(
     extraction. A wrong classification followed by wrong extraction is worse
     than sending the page to review directly.
     """
-    # [EDITOR: Removed em dash from docstring. Original: "rather than extraction —
-    # a wrong classification followed by wrong extraction is worse". Restructured
-    # to two sentences.]
     confidence = classification["confidence"]
     page_type = classification["page_type"]
 
@@ -1205,8 +1185,6 @@ def store_prior_auth_record(
     This is a known boto3 limitation; you'll hit it the first time you try to
     store a record with confidence scores.
     """
-    # [EDITOR: Removed em dash from docstring. Original: "known boto3 limitation —
-    # you'll hit it the first time...". Changed to semicolon.]
     dynamodb = boto3.resource("dynamodb", region_name=region)
     table = dynamodb.Table(table_name)
 
@@ -1228,9 +1206,6 @@ def store_prior_auth_record(
         # This is the idempotency guard: S3 events and SNS both have at-least-once
         # delivery semantics, so the pipeline may be triggered more than once for
         # the same document.
-        # [EDITOR: Removed em dash from comment. Original: "idempotency guard —
-        # S3 events and SNS both have at-least-once delivery semantics". Changed
-        # to colon.]
         ConditionExpression="attribute_not_exists(document_key)",
     )
 
