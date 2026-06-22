@@ -12,11 +12,11 @@
 
 **Amazon DynamoDB for the cross-org MPI and the audit-log primary store.** Two tables: a cross-org MPI table keyed on `(local_patient_id)` with attributes for the cross-organizational identifier, the participating-organization links, the demographic snapshot at last match, the match-confidence-history; and an audit-log table keyed on `(query_id, event_seq)` with the full lifecycle of each query (inbound, normalized, evaluated, consent-checked, released-or-withheld, completed). DynamoDB's single-digit-millisecond reads support the latency budget for query-time match. Streams from both tables feed downstream consumers (longitudinal-record-assembler, audit-log replicator).
 
-**Amazon ElastiCache (Redis) for the blocking-index and consent-state cache.** Blocking indices are read on every query and are amenable to caching. The blocking-key-to-candidate-set map is loaded from DynamoDB at warm-up and refreshed incrementally as the MPI changes; the cache holds the most-frequently-queried blocks. Consent state is also read on every query, but consent reads must fall through to the system-of-record on miss (caching consent risks releasing data after revocation). Both caches use TLS in-transit and KMS at-rest encryption. 
+**Amazon ElastiCache (Redis) for the blocking-index and consent-state cache.** Blocking indices are read on every query and are amenable to caching. The blocking-key-to-candidate-set map is loaded from DynamoDB at warm-up and refreshed incrementally as the MPI changes; the cache holds the most-frequently-queried blocks. Consent state is also read on every query, but consent reads must fall through to the system-of-record on miss (caching consent risks releasing data after revocation). Both caches use TLS in-transit and KMS at-rest encryption. Consent-cache invalidation on revocation is synchronous: a consent-revocation EventBridge event triggers an invalidate-on-event Lambda that (a) deletes the cached consent state, (b) writes `consent_revoked_at` on the cross-org MPI for the affected patient, (c) emits `cross_facility_match_invalidated`. In-flight queries that have already read the cache but not yet released must re-check consent at release-and-audit against the system-of-record (not the cache), with a 500ms timeout, fail-closed on timeout. Propagation latency budget: 60 seconds from registry emit to release-path effect; CloudWatch alarms on P99 propagation latency > 60s. The fail-closed posture extends through the in-flight-query lifecycle, not just the initial cache-vs-system-of-record read.
 
 **Amazon SQS for the query queues.** Three queues: a high-priority queue for synchronous query-time matching (with a short visibility timeout and a strict latency budget), a standard queue for asynchronous linkage-submission processing (each new CCD or FHIR Bundle gets matched against the MPI to determine whether it is a new identity or an existing one), and a deferred-review queue for cases where the matcher's confidence falls in the review band. Separating the queues prevents linkage-submission load from delaying query-time matching.
 
-**AWS Lambda for the per-query and per-submission processing.** Lambda is the right substrate because each query is short-lived, mostly I/O-bound (DynamoDB reads plus the matcher computation), and benefits from on-demand scaling for the bursty pattern of clinical-workflow queries. Separate Lambdas per pipeline stage: `normalize-query`, `evaluate-match`, `apply-consent-and-sensitivity`, `release-and-audit`, `process-linkage-submission`. Each is in VPC with VPC endpoints for downstream services. Outbound queries to participating organizations or to HIE intermediaries go through NAT Gateway with an allow-list of known endpoints, with PrivateLink where the partner offers it.  
+**AWS Lambda for the per-query and per-submission processing.** Lambda is the right substrate because each query is short-lived, mostly I/O-bound (DynamoDB reads plus the matcher computation), and benefits from on-demand scaling for the bursty pattern of clinical-workflow queries. Separate Lambdas per pipeline stage: `normalize-query`, `evaluate-match`, `apply-consent-and-sensitivity`, `release-and-audit`, `process-linkage-submission`. Each is in VPC with VPC endpoints for downstream services. Outbound queries to participating organizations or to HIE intermediaries go through NAT Gateway with an allow-list of known endpoints, with PrivateLink where the partner offers it. At HIE-scale query volumes (typically a couple million queries per month or higher), evaluate the partner's or HIE intermediary's PrivateLink endpoint where available; the cost trade-off (PrivateLink hourly fee plus per-GB transfer vs NAT Gateway data-transfer) usually favors PrivateLink past that threshold.
 
 **Amazon API Gateway plus Lambda for the inbound query endpoint.** Other organizations and HIE intermediaries call the API to query for patients. API Gateway provides authentication via mutual TLS (the HIE participation agreement specifies certificate-based identity for queriers), request logging, request signing verification, and rate limiting per requester. The endpoint exposes both PIX/PDQ (for legacy v2 queries) and FHIR Patient `$match` (for FHIR-native queries) with shared backend logic.
 
@@ -26,15 +26,15 @@
 
 **AWS Glue for the batch reconciliation and analytics jobs.** Periodic MPI reconciliation across participating organizations runs as a Glue/Spark job, comparing the local MPI to the aggregated demographic snapshots from participating organizations and flagging discrepancies. The cohort-stratified match-quality job runs as a separate Glue job over the curated S3 zone. Glue Data Catalog tracks the schema across raw, curated, and derived zones; Athena queries the catalog for ad-hoc analytics.
 
-**Amazon Athena and AWS Glue Data Catalog for analytics.** Cohort-stratified match success rates, per-organization match-quality scorecards, consent-coverage analytics, per-purpose-of-use query volume, deferred-review-queue depth and aging, clinician-reported wrong-patient-retrieval rates. Athena queries the catalog over the curated and derived S3 zones; QuickSight on top of Athena provides dashboards for HIE operations, the data-governance committee, and the clinical-safety team.
+**Amazon Athena and AWS Glue Data Catalog for analytics.** Cohort-stratified match success rates, per-organization match-quality scorecards, consent-coverage analytics, per-purpose-of-use query volume, deferred-review-queue depth and aging, clinician-reported wrong-patient-retrieval rates. Athena queries the catalog over the curated and derived S3 zones; QuickSight on top of Athena provides dashboards for HIE operations, the data-governance committee, and the clinical-safety team. Lake Formation enforces column-level and row-level access controls across these zones: the raw query payloads (full demographics on every query, including queries that returned no match) are restricted to HIE operations and audit teams; the parsed match decisions are available to clinical-IT and the longitudinal-record assembler; the cohort-aggregated metrics are available to leadership and equity-monitoring committees. Direct Athena query paths use the same Lake Formation grants. Access is logged via CloudTrail data events on the catalog and underlying buckets. Same chapter pattern as recipes 5.2, 5.3, 5.4.
 
 **Amazon QuickSight for operational and quality dashboards.** Per-organization match success rate, per-cohort match success rate, query volume by purpose-of-use, consent-permission distribution, deferred-review-queue depth and aging, per-sensitivity-category withhold rate, downstream clinician-reported wrong-patient-retrieval cross-references.
 
-**AWS KMS, CloudTrail, CloudWatch.** Customer-managed keys for the S3 buckets, the DynamoDB tables, the ElastiCache cluster, the Lambda log groups. CloudTrail data events on the cross-org MPI table and the audit-log table. CloudWatch alarms on inbound query success rate, on per-organization error spikes (often the first signal of a partner-side outage), on deferred-review-queue depth, on cohort-stratified disparities, on consent-registry availability (this is a fail-closed dependency; if the consent registry is unreachable, queries cannot be released).
+**AWS KMS, CloudTrail, CloudWatch.** Customer-managed keys for the S3 buckets, the DynamoDB tables, the ElastiCache cluster, the Lambda log groups. CloudTrail data events on the cross-org MPI table and the audit-log table. CloudWatch alarms on inbound query success rate, on per-organization error spikes (often the first signal of a partner-side outage), on deferred-review-queue depth, on cohort-stratified disparities, on consent-registry availability (this is a fail-closed dependency; if the consent registry is unreachable, queries cannot be released). When emitting cohort dimensions on CloudWatch metrics, use bucketed non-reversible cohort labels (cohort_bucket = A, B, C, D, E, unknown) rather than raw demographic attributes; the cohort-label-to-attribute mapping lives in a separate access-controlled table loaded only at dashboard-render time. Same chapter pattern as recipes 4.4, 4.10, 5.1, 5.2, 5.3, 5.4.
 
 **AWS Secrets Manager for HIE and partner credentials.** Mutual-TLS certificates, signing keys, API keys for HIE intermediaries and direct-organization connections. Stored with KMS encryption at rest, IAM-controlled access, rotation support where the partner supports it.
 
-**AWS WAF and Shield for the inbound-query endpoint.** Cross-facility query endpoints are public-internet-reachable (or HIE-network-reachable) by definition, and they are attractive targets for enumeration attacks (an attacker submitting demographic guesses to discover whether a known person has records at the institution). WAF rules limit per-source-IP and per-authenticated-principal query rates; Shield protects against volumetric attacks. Per-requester rate limits in API Gateway are layered on top.
+**AWS WAF and Shield for the inbound-query endpoint.** Cross-facility query endpoints are public-internet-reachable (or HIE-network-reachable) by definition, and they are attractive targets for enumeration attacks (an attacker submitting demographic guesses to discover whether a known person has records at the institution). The API Gateway resource policy distinguishes between private API consumers (HIE-network-reachable via VPC endpoint) and public API consumers (federated identity-provider-authenticated). WAF rule groups enforce: rate limiting per source-IP and per Cognito principal, request-size limiting, and request-pattern analysis for enumeration-attack signatures (repeated queries with small demographic variations in short windows). Geo-restriction applies if the institution's HIE participation agreement constrains query origins. Shield protects against volumetric attacks. Per-requester rate limits in API Gateway are layered on top. Same chapter pattern as recipes 5.1, 5.2, 5.3, 5.4 Finding N1, with the additional enumeration-attack consideration specific to cross-facility queries.
 
 ### Architecture Diagram
 
@@ -134,15 +134,15 @@ flowchart LR
 |-------------|---------|
 | **AWS Services** | Amazon S3, Amazon DynamoDB, Amazon ElastiCache for Redis, Amazon SQS, AWS Lambda, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon API Gateway, Amazon QuickSight, AWS WAF, AWS Shield, AWS Secrets Manager, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
 | **External Services** | HIE participation agreement with one or more regional or state HIEs. TEFCA QHIN connection (direct or sub-participant) for national-network reach. Direct connections to specific partner organizations where the volume justifies bypassing the HIE intermediary. A consent-registry system-of-record (often HIE-provided, sometimes institutional, sometimes a separate vendor product). A longitudinal-record-assembler (institutional or HIE-provided) that consumes the cross-facility match output and presents the unified record to clinicians.  |
-| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem` / `PutItem` / `UpdateItem` / `Query` scoped to specific tables; `s3:GetObject` / `PutObject` scoped to specific bucket prefixes; `secretsmanager:GetSecretValue` scoped to specific HIE and partner credentials; `events:PutEvents` on the cross-facility-events bus; `sqs:SendMessage` / `ReceiveMessage` scoped to specific queues; `kms:Decrypt` on relevant CMKs. Glue jobs need scoped catalog and S3 permissions. The audit-log writer Lambda has append-only permissions on the audit-log table (no delete, no update on existing items) enforced through IAM condition keys plus DynamoDB resource-based policy. Never use `*` actions or `*` resources in production.  |
+| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem` / `PutItem` / `UpdateItem` / `Query` scoped to specific tables; `s3:GetObject` / `PutObject` scoped to specific bucket prefixes; `secretsmanager:GetSecretValue` scoped to specific HIE and partner credentials; `events:PutEvents` on the cross-facility-events bus; `sqs:SendMessage` / `ReceiveMessage` scoped to specific queues; `kms:Decrypt` on relevant CMKs. Scoped Resource ARN examples for the highest-stakes actions: `dynamodb:UpdateItem` on `arn:aws:dynamodb:<region>:<account>:table/cross-org-mpi`; `s3:PutObject` on `arn:aws:s3:::<env>-cross-facility-raw/audit/*`; `events:PutEvents` on `arn:aws:events:<region>:<account>:event-bus/cross-facility-events`; `secretsmanager:GetSecretValue` on `arn:aws:secretsmanager:<region>:<account>:secret:hie-partners/*`. Glue jobs need scoped catalog and S3 permissions. The audit-log writer Lambda has append-only permissions on the audit-log table (no delete, no update on existing items) enforced through IAM condition keys plus DynamoDB resource-based policy. Never use `*` actions or `*` resources in production.  |
 | **BAA and Trust Framework** | AWS BAA signed. The HIE has a BAA, and participation in the HIE is governed by a Data Use and Reciprocal Support Agreement (DURSA-style) or equivalent Common Agreement. Each direct-partner-organization connection has its own trading-partner agreement and BAA. TEFCA participation is governed by the Common Agreement and the QHIN-specific subordinate agreements.  |
 | **Encryption** | S3: SSE-KMS with bucket-level keys. DynamoDB: customer-managed KMS at rest. ElastiCache: in-transit encryption with TLS, at-rest encryption with KMS. Lambda log groups KMS-encrypted. Secrets Manager: KMS-encrypted secrets. EventBridge and SQS: server-side encryption. TLS 1.2 or higher for all in-transit traffic, including HIE and partner connections. Mutual TLS where the partner or HIE requires it. The audit-log archive bucket has Object Lock in Compliance mode. |
-| **VPC** | Production: Lambdas in VPC. Glue jobs in VPC connections. ElastiCache in VPC subnet groups. VPC endpoints for S3, DynamoDB, KMS, Secrets Manager, CloudWatch Logs, EventBridge, SQS, Step Functions, Glue, Athena, STS. NAT Gateway for HIE and partner-organization egress with an outbound HTTPS proxy and an allow-list of partner endpoints. PrivateLink endpoints for partners that offer them.  |
-| **CloudTrail** | Enabled with data events on the cross-org MPI table, the audit-log table, and on the audit S3 buckets. API Gateway and Lambda invocations logged. CloudTrail logs encrypted with KMS and retained per the regulatory floor.  |
+| **VPC** | Production: Lambdas in VPC. Glue jobs in VPC connections. ElastiCache in VPC subnet groups. VPC endpoints for S3, DynamoDB, KMS, Secrets Manager, CloudWatch Logs, EventBridge, SQS, Step Functions, Glue, Athena, STS. NAT Gateway for HIE and partner-organization egress with an outbound HTTPS proxy and an allow-list of partner endpoints. PrivateLink endpoints for partners that offer them. HIE egress and partner egress are configured as distinct outbound proxy rules with non-overlapping allow-lists scoped to compute roles; per-role rate limits below the partner's published rate limits; egress connections CloudWatch-logged for forensic auditing. Same chapter pattern as recipes 5.3, 5.4.  |
+| **CloudTrail** | Enabled with data events on the cross-org MPI table, the audit-log table, and on the audit S3 buckets. API Gateway and Lambda invocations logged. CloudTrail logs encrypted with KMS and retained for the longest of: 7 years (HIPAA records-retention minimum), the HIE's contractual retention, the state's medical-records-retention requirement, the 42 CFR Part 2 retention requirement (where Part 2 data is in scope), and any sensitive-category-specific retention. Audit logs live in a dedicated S3 bucket with Object Lock in Compliance mode for immutability and a lifecycle policy transitioning to S3 Glacier Deep Archive after 90 days. CloudTrail data events are forwarded to a dedicated audit AWS account in the institution's organization, isolating the audit substrate from the production data plane. The retention floor is enforced at the bucket-policy and Object-Lock-configuration level, not at application logic. |
 | **Consent Registry** | A consent-registry system-of-record that the consent-and-sensitivity filter consults on every release decision. The registry must be highly available (consent-check is on the critical path of every released response); the architecture treats consent-registry unavailability as a fail-closed condition (withhold release rather than release with stale consent state). Consent state changes propagate to the cross-facility match invalidation pipeline. |
 | **Sensitivity Filter Policy** | A policy table encoding the sensitivity-category rules: 42 CFR Part 2, state-specific behavioral health sharing rules, HIV / STI sharing restrictions where applicable, genetic-information rules, reproductive-health rules where legally restricted, and patient-flagged sensitive categories. Maintained by the institution's compliance and legal teams; versioned with deployment governance. |
 | **Sample Data** | Use synthetic patient data that exercises the full range of cross-facility match outcomes, including the cohort-specific patterns the matcher needs to handle. Synthea can generate synthetic patient populations with multi-organization encounter histories. The Sequoia Project and ONC have published patient-matching test datasets for benchmarking.  Never use real PHI in development environments. |
-| **Cost Estimate** | At a regional HIE serving fifty participating organizations and processing three million queries per month: AWS infrastructure (S3, DynamoDB, ElastiCache, SQS, Lambda, Step Functions, EventBridge, API Gateway, WAF, Athena, QuickSight, KMS combined) typically $4,000-12,000/month, dominated by DynamoDB (cross-org MPI plus audit log at this volume) and ElastiCache. HIE participation fees vary widely (anywhere from a few thousand to tens of thousands per month per institution) and are usually structured per-query, per-participant, or as a flat institutional fee. TEFCA QHIN fees are still settling.   |
+| **Cost Estimate** | At a regional HIE serving fifty participating organizations and processing three million queries per month: AWS infrastructure (S3, DynamoDB, ElastiCache, SQS, Lambda, Step Functions, EventBridge, API Gateway, WAF, Athena, QuickSight, KMS combined) typically $4,000-12,000/month, dominated by DynamoDB (cross-org MPI plus audit log at this volume) and ElastiCache. ElastiCache capacity sizing: at HIE scale (fifty participating organizations, populations totaling several million patients), the blocking-index cache is dominated by candidate-set cardinality per blocking key; a typical regional HIE benefits from cache.r6g.xlarge or larger with read replicas for availability and a volatile-lfu eviction policy. Warm-up loads the most-frequently-queried blocks from the prior period's CloudWatch query-rate metrics; subsequent updates flow through DynamoDB Streams. CloudWatch alarms on cache memory > 80% and on cache-miss rate exceeding the institutional threshold. HIE participation fees vary widely (anywhere from a few thousand to tens of thousands per month per institution) and are usually structured per-query, per-participant, or as a flat institutional fee. TEFCA QHIN fees are still settling.   |
 
 ### Ingredients
 
@@ -506,20 +506,18 @@ FUNCTION apply_consent_and_sensitivity(query):
             timeout_ms: 500
         )
     CATCH consent_registry_unavailable:
-        // Fail-closed. Audit the failure separately.
-        // TODO (TechWriter): Expert review A3 (HIGH). Set
-        // discoverability_permitted: FALSE on this branch. The
-        // fail-closed posture must extend to discoverability:
-        // when the registry is unreachable we cannot confirm
-        // that discoverability is permitted, so the response
-        // must mask as NO_MATCH (per the corrected check in
-        // Step 5A) rather than fall through to
-        // MATCHED_NOT_RELEASABLE.
+        // Fail-closed. When the consent registry is unreachable
+        // we cannot confirm consent AND we cannot confirm
+        // discoverability. The response must mask as NO_MATCH
+        // (not MATCHED_NOT_RELEASABLE) to avoid leaking
+        // fact-of-care. Same principle as fail-closed-on-release:
+        // if you cannot confirm permission, act as if it is denied.
         emit_metric("consent_registry_unavailable", 1)
         emit_alarm_if_repeated("consent_registry_outage", 5_in_60s)
         query.release_decision = {
             release: FALSE,
             reason: "consent_registry_unavailable",
+            discoverability_permitted: FALSE,
             should_retry: TRUE
         }
         RETURN query
@@ -548,32 +546,16 @@ FUNCTION apply_consent_and_sensitivity(query):
         // not-permitted, with a different reason code so the
         // patient-facing access report can show "consent
         // expired" rather than "consent denied."
-        // TODO (TechWriter): Expert review A3 (HIGH).
-        // Set discoverability_permitted on this branch (and
-        // the consent_registry_unavailable catch below) with
-        // a fail-closed default. The Honest Take's
-        // discoverability paragraph correctly diagnoses the
-        // canonical first-pass failure mode (a query that
-        // returns "matched but consent does not permit
-        // release" leaks the fact that the patient is in our
-        // system); the pseudocode currently sets
-        // discoverability_permitted only on the
-        // consent_does_not_permit branch, which means the
-        // consent-expired and registry-unavailable branches
-        // fall through to MATCHED_NOT_RELEASABLE in Step 5A
-        // and leak fact-of-care. Fix: set
-        // discoverability_permitted to
-        // consent_state.discoverability_permitted when the
-        // field is present and to FALSE otherwise; in Step 5A,
-        // mask as NO_MATCH unless discoverability_permitted is
-        // affirmatively TRUE. Add a paragraph to The
-        // Technology section naming the fail-closed-on-
-        // discoverability posture as the same principle as
-        // fail-closed-on-release.
+        // Discoverability defaults to FALSE (fail-closed) when
+        // the consent state does not affirmatively assert it.
         query.release_decision = {
             release: FALSE,
             reason: "consent_expired",
-            consent_state_summary: consent_state.summary
+            consent_state_summary: consent_state.summary,
+            discoverability_permitted:
+                consent_state.discoverability_permitted
+                IF consent_state.discoverability_permitted IS NOT NULL
+                ELSE FALSE
         }
         RETURN query
 
@@ -649,40 +631,38 @@ FUNCTION release_and_audit(query):
             }
         }
 
-    ELIF decision.discoverability_permitted == FALSE:
+    ELIF NOT (decision.discoverability_permitted == TRUE):
         // Cannot acknowledge the patient is in our system.
+        // Fail-closed: unless discoverability_permitted is
+        // affirmatively TRUE, mask as NO_MATCH. This catches
+        // consent-expired, consent-registry-unavailable, and
+        // any branch where discoverability_permitted is NULL
+        // or missing.
         response_payload = {match_status: "NO_MATCH"}
 
     ELSE:
         // Patient is in our system but consent does not permit
         // release. The framework-specific response indicates
-        // "found but not releasable."
-        // TODO (TechWriter): Expert review A3 (HIGH). Change
-        // the discoverability check above from
-        // "discoverability_permitted == FALSE" to
-        // "NOT (discoverability_permitted == TRUE)" so that
-        // missing or null fields fail closed (mask as
-        // NO_MATCH). Currently, the consent-expired and
-        // consent-registry-unavailable branches in Step 4 do
-        // not set discoverability_permitted, and the
-        // FALSE-equality check falls through to
-        // MATCHED_NOT_RELEASABLE, leaking fact-of-care.
+        // "found but not releasable." Only reaches here when
+        // discoverability_permitted is explicitly TRUE.
         response_payload = {
             match_status: "MATCHED_NOT_RELEASABLE",
             withhold_reason: decision.reason
         }
 
-    // Step 5B: TODO (TechWriter): Expert review A1 (HIGH).
-    // Wrap the audit-log write, the response transmission,
-    // the cache update, and the EventBridge emit in a
-    // TransactWriteItems plus an outbox row drained by a
-    // separate Lambda or DynamoDB Streams consumer so partial
-    // failures do not leave the audit log out of sync with
-    // the released response. Regulatory consequence here is
-    // sharp: the audit log is the legal record of what was
-    // exchanged; any divergence between what was sent and
-    // what the audit log claims was sent is a compliance
-    // incident. Same chapter pattern as 5.1, 5.2, 5.3, 5.4.
+    // Step 5B: Transactional consistency between audit-log,
+    // response transmission, cache update, and EventBridge emit.
+    // Use TransactWriteItems to write the audit record and an
+    // outbox row atomically; a separate Lambda (or DynamoDB
+    // Streams consumer) drains the outbox to transmit the
+    // response and emit the event. If the transaction fails,
+    // nothing is released and nothing is emitted. If the
+    // response transmission fails after the audit write, the
+    // outbox row is retried from the DLQ. This guarantees that
+    // the audit log never diverges from what was actually sent,
+    // which is a regulatory requirement: the audit log is the
+    // legal record of what was exchanged. Same chapter pattern
+    // as 5.1, 5.2, 5.3, 5.4.
 
     // Step 5C: write the audit record. Append-only.
     audit_record = {
@@ -971,7 +951,7 @@ FUNCTION invalidate_on_event(event):
 - **Stale cross-organizational identifier mappings.** A cross-org identifier issued by an HIE for a patient seen at multiple organizations becomes stale when one of the underlying organizations re-MRNs the patient (which happens during EHR migrations and during local MPI merges). The invalidation pipeline catches this for events that propagate to the cross-facility layer, but events that do not propagate (or that propagate with delay) leave the cross-org identifier pointing at a now-invalid local identifier. The mitigation is the periodic MPI reconciliation Glue job and a clinician-feedback channel for "the cross-facility data does not match the patient on screen."
 - **Enumeration attack surface.** A bad actor with a list of demographic guesses can submit many queries to discover whether specific known persons are in the responder's system. WAF and per-requester rate limits raise the cost; the audit log surfaces suspicious patterns. The mitigation is defense-in-depth, not perfection: rate limits, anomaly detection on query patterns, and an institutional policy that responds to suspected enumeration attempts with credential review and reporting.
 - **Disparity in upstream matcher quality.** When organization A queries organization B and organization B's matcher returns "match, confidence 0.95," organization A has to decide whether to trust that confidence. Organization B's calibration may differ from organization A's expectation. The mitigation is the minimum-acceptable-matcher-quality clauses in HIE participation agreements, periodic cross-organization match-quality benchmarking against shared gold sets, and treating the responder's confidence as one signal among several in the aggregating organization's own decision.
-- **Real-time queries during partner outages.** When a partner organization or HIE intermediary is down, queries to that partner time out. The aggregating layer cannot block; the response degrades to "we have data from these N partners, the others did not respond." The mitigation is the fail-soft pattern: complete the response with whatever was available, log the timeouts, and re-query the unavailable partners asynchronously with the clinician's longitudinal-record-assembler refreshing as responses arrive.
+- **Real-time queries during partner outages.** When a partner organization or HIE intermediary is down, queries to that partner time out. The aggregating layer cannot block; the response degrades to "we have data from these N partners, the others did not respond." The fail-soft pattern: per-partner timeout is typically 1.5-2 seconds within the realtime latency budget; retry policy is one retry within the deadline for transient 5xx, no retry for persistent failures. Late responses (responses that arrive after the initial response was delivered to the clinician) flow into the longitudinal-record-assembler via the `cross_facility_query_resolved` event with a `late_response: true` flag, and the clinician's view refreshes. Per-partner CloudWatch alarm threshold: 5xx rate > 5% over 5 minutes signals partner outage and triggers the operational escalation path. Same chapter pattern as recipe 5.4.
 
 - **Cohort-specific match disparities.** Patients with non-dominant-culture naming conventions, patients with name changes that did not propagate to all organizations, patients whose households cross multiple participating-organization service areas, all match worse on average. Cohort-stratified accuracy monitoring catches the disparities; per-cohort threshold tuning, expanded synonyms and prior-name handling, and partner-organization quality scorecards are the operational responses.
 - **Linkage-time matcher and query-time matcher drift.** If the linkage-time matcher (which builds the MPI) and the query-time matcher (which evaluates queries against the MPI) use different feature weights or thresholds, the query-time matcher can return inconsistent results across queries that should be equivalent. The mitigation is shared configuration: both matchers read from the same versioned configuration store, and any threshold or weight change deploys atomically to both.
@@ -986,11 +966,13 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Consent-registry selection and integration.** The consent registry is a major architectural dependency and is often outside the team's direct control (HIE-provided in many cases, third-party in some, institutional in others). Vet the registry for: data model completeness (does it support the consent dimensions the institution needs, including purpose-of-use granularity, organization-specific permissions, data-category granularity, and time-limited consent), availability (the registry has to be highly available because consent-check is on the critical path), audit access (can the institution see its own consent state for a patient when needed for an audit), revocation propagation (how fast does a consent revocation propagate to the cross-facility match layer), patient-access (the patient has a right to see and modify their consent state, and the registry has to support that workflow). Choose with the same diligence applied to a core EHR vendor.
 
+**Partner data-handling commitments.** The outbound-query call site is a trust boundary: data you submit to a partner (queried demographics) crosses your perimeter. The partner agreement should specify: (a) the partner will not retain queried demographics beyond a documented operational window (queries that returned no match should produce no persistent record on the partner side, only an audit log entry); (b) the partner will disclose all sub-processors that may handle PHI; (c) the partner will notify within a documented window of any data incident; (d) the institution retains the right to audit the partner's controls (typically annually); (e) the partner commits to minimum acceptable matcher quality (cohort-stratified accuracy thresholds that the quality scorecard tracks). Comment the trust boundary at the outbound-query call site in code so future maintainers understand the contractual posture that governs the data flowing out.
+
 **Sensitivity-filter policy authoring and governance.** The sensitivity filter encodes legal rules that vary by jurisdiction, by data category, and by patient-specific flags. The policy is authored by compliance and legal teams with input from clinicians and the institution's privacy officer. It is versioned with deployment governance: changes to the policy go through review, are tested against gold cases, and are deployed with an explicit version stamp that propagates into every audit record. Re-authoring is triggered by regulatory changes, by jurisdictional law changes (for example, post-Dobbs reproductive-health-information sharing constraints in some states), and by institutional policy updates.
 
-**Threshold calibration and approval governance.** The cross-facility match thresholds are calibrated against an institutional gold set that reflects the cross-organizational query patterns. Re-calibration runs annually or on detection of cohort-stratified disparity above the institutional threshold, whichever first. Re-calibration produces a candidate threshold set; institutional review (HIE-quality committee, compliance, clinical safety, equity-monitoring committee) reviews the confusion matrix and the cohort-disparity impact before promoting the candidate to production. Each match decision records the configuration version active at decision time. Change without governance is the failure mode that produces silent regressions in both accuracy and equity.
+**Threshold calibration and approval governance.** The cross-facility match thresholds are calibrated against an institutional gold set that reflects the cross-organizational query patterns. The thresholds (AUTO_ACCEPT_HIGH, AUTO_ACCEPT_MED, AUTO_REJECT, and per-feature weights) live in a versioned configuration table. Re-calibration runs annually or on detection of cohort-stratified disparity above 0.05, whichever comes first. Re-calibration produces a candidate threshold set; institutional review (HIE-quality committee, compliance, clinical safety, equity-monitoring committee) reviews the confusion matrix and the cohort-disparity impact before promoting the candidate to production. Each match decision records the configuration version and the threshold values active at decision time, supporting forensic reconstruction and regression analysis. Change without governance is the failure mode that produces silent regressions in both accuracy and equity. Same chapter pattern as recipes 5.1, 5.2, 5.3, 5.4.
 
-**Deferred-review tooling.** The matcher's review band is the operational layer where ambiguous cases get resolved. Reviewers (typically health information management staff with HIE-specific training) need a workflow tool that surfaces the query, the candidate(s), the score breakdown, the demographic context from the query and from each candidate, and the decision options (confirm-match-and-update-MPI, reject-as-different-person, escalate, request-additional-information-from-the-querying-organization). The tool emits the decision back into the matcher's training signal for periodic threshold re-calibration. Build the review tool with attention; the matcher's accuracy depends on it.
+**Deferred-review tooling.** The matcher's review band is the operational layer where ambiguous cases get resolved. Reviewers (typically health information management staff with HIE-specific training) need a workflow tool that surfaces the query, the candidate(s), the score breakdown, the demographic context from the query and from each candidate, and the decision options (confirm-match-and-update-MPI, reject-as-different-person, escalate, request-additional-information-from-the-querying-organization). The tool emits the decision back into the matcher's training signal for periodic threshold re-calibration. Every review decision records the reviewer's identity, the decision (confirm-match, reject, escalate, request-info), the reviewer's stated reason, the timestamp, the configuration version active at the time, and any reviewer-supplied additional context. The audit trail supports forensic reconstruction when a wrong match is later traced back to a reviewer decision, and it supports the periodic gold-set re-evaluation that catches systematic reviewer biases. Build the review tool with attention; the matcher's accuracy depends on it. Same chapter pattern as recipes 5.1, 5.3, 5.4.
 
 **Longitudinal record assembly.** The cross-facility matcher returns a match decision and a release-eligibility decision; the actual data assembly into a clinician-usable view is the longitudinal-record-assembler's job. The assembler consumes the cross-facility match output, applies provenance and survivorship rules, deduplicates clinical concepts (a problem listed at organization A and at organization B is the same problem, even if the codes differ), and presents the unified view. The assembler is a separate, sizeable subsystem; the recipe pipeline supplies the data substrate.
 
@@ -998,9 +980,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Patient access reports.** Patients have a right (under HIPAA, under TEFCA, under various state laws) to see who has queried about them, what was released, and to whom. The audit log is the source; the patient-access-report generator reads from the audit log and produces a patient-readable summary. This is downstream of the matcher but is a load-bearing compliance feature; do not defer it.
 
-**Initial backfill and onboarding.** Joining an HIE involves a substantial one-time backfill: every patient in the institution's MPI is matched against the HIE's existing population to establish cross-organizational identifiers. This is a Glue job that runs at scale, with attention to: (a) cohort-stratified accuracy monitoring during the backfill (the backfill is a one-time opportunity to surface cohort issues at scale); (b) suppression of routine event emission during the backfill (downstream consumers refresh from a single backfill_complete marker rather than millions of individual events); (c) governance approval at each stage (a backfill that produces a 5% lower match rate than expected may indicate a configuration issue rather than a population-difference issue, and the institutional governance committee has to bless the backfill output before it goes live). Plan onboarding as a project with its own timeline and its own risk register.
+**Initial backfill and onboarding.** Joining an HIE involves a substantial one-time backfill: every patient in the institution's MPI is matched against the HIE's existing population to establish cross-organizational identifiers. This is a Glue job that runs at scale, with attention to: (a) cohort-stratified accuracy monitoring during the backfill (the backfill is a one-time opportunity to surface cohort issues at scale); (b) suppression of routine event emission during the backfill (downstream consumers refresh from a single `backfill_complete` marker rather than millions of individual events); (c) governance approval at each stage (a backfill that produces a 5% lower match rate than expected may indicate a configuration issue rather than a population-difference issue, and the institutional governance committee has to bless the backfill output before it goes live); (d) idempotent re-run capability (the backfill may need multiple passes as threshold tuning progresses). Plan onboarding as a project with its own timeline and its own risk register. Same chapter pattern as recipes 5.1, 5.2, 5.3, 5.4 for backfill discipline.
 
-**Idempotency and retry semantics.** The pipeline must handle duplicate-event delivery and partner-side retries without producing duplicate audit records, duplicate releases, or inconsistent state. Use the query_id as the primary idempotency key for inbound queries. Use `(query_id, event_seq)` for the audit-log writes (event_seq sequences allow multiple lifecycle events on the same query without overwriting). Configure DLQs on every Lambda path; Step Functions Catch states route terminal failures to the DLQ so stuck workflows are visible.
+**Idempotency and retry semantics.** The pipeline must handle duplicate-event delivery and partner-side retries without producing duplicate audit records, duplicate releases, or inconsistent state. Recipe-specific idempotency keys: `normalize-query` at `query_id`; `evaluate-match` at `(query_id, matcher_config_version)`; `apply-consent-and-sensitivity` at `(query_id, consent_state_etag)`; `release-and-audit` at `(query_id, event_seq)`; `invalidate-on-event` at `(event_id)`. Each Lambda has a dedicated DLQ; Step Functions Catch states route terminal failures to the DLQ; CloudWatch alarms on DLQ depth surface stuck workflows within 15 minutes of accumulation. Same chapter pattern as recipes 5.3, 5.4.
 
 **Compliance and operational ownership.** Cross-facility matching sits at the intersection of clinical IT, compliance, HIE participation, privacy, and information security. Establish clear operational ownership: who tunes the thresholds, who reviews the cohort-disparity reports, who handles the partner-organization quality issues, who responds to consent-registry incidents, who owns the relationship with each partner. The pipeline works only when the operational ownership is clear and funded.
 
@@ -1012,7 +994,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **TEFCA QHIN exchange.** For institutions participating in TEFCA either directly as a sub-participant or through a Designated QHIN, extend the cross-facility matcher to handle QHIN-to-QHIN queries. The technical changes are small (QHIN exchange uses FHIR-based queries with the addition of QHIN-specific message envelopes and policy assertions), but the governance changes are larger (TEFCA Common Agreement obligations layer on top of the local HIE participation agreement). Recipe 5.9 covers the national-scale dimension in depth.
 
-**Patient-mediated identity resolution.** For patient-facing apps that authenticate via OAuth/OIDC against a known identity provider (the patient's portal account, a trusted aggregator like Apple Health Records, or a CMS-defined identity layer), use the patient's authenticated identity as a strong signal in the matcher. The patient-mediated identity supplements demographic matching: a query that arrives with both demographic data and a verified patient OAuth identity can match more confidently than either signal alone. The architecture extends the recipe with an identity-provider-verification step ahead of normalization.
+**Patient-mediated identity resolution.** For patient-facing apps that authenticate via OAuth/OIDC against a known identity provider (the patient's portal account, a trusted aggregator like Apple Health Records, or a CMS-defined identity layer), use the patient's authenticated identity as a strong signal in the matcher. The patient-mediated identity supplements demographic matching: a query that arrives with both demographic data and a verified patient OAuth identity can match more confidently than either signal alone. The architecture extends the recipe with an identity-provider-verification step ahead of normalization. Before accepting a patient-mediated identity as authoritative for matcher input, review the disclosure policy: the data flowing under the patient's authenticated identity to the third-party app may be governed by separate disclosure-and-consent frameworks (CMS Patient Access API rules, the 21st Century Cures Act information-blocking provisions, state-specific app-disclosure rules in some jurisdictions). The matcher's acceptance of the identity does not automatically authorize the downstream app's data egress.
 
 **Privacy-preserving cross-facility matching.** For partners that have not signed a BAA or for use cases where direct demographic exchange is not legally available, implement Bloom-filter-based or hash-based matching using the techniques in recipe 5.8. The privacy-preserving path produces match decisions without exchanging raw demographics; accuracy is lower than direct matching but the use case envelope is wider. Particularly relevant for some research and public-health use cases.
 
