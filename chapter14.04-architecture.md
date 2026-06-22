@@ -434,6 +434,22 @@ FUNCTION publish_schedule(schedule, schedule_type):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Running this for a real nursing unit requires closing several gaps that are intentionally outside cookbook scope:
+
+**Manual override reconciliation.** Charge nurses and nurse managers will override the optimizer's output constantly, especially in the first months. You need a feedback loop that records overrides, categorizes the reason (constraint the model missed, preference not captured, political decision), and feeds that back into constraint tuning. Without this, the model drifts from operational reality and staff stop trusting it within weeks.
+
+**Union and labor contract encoding.** Most unionized facilities have contract provisions that interact in non-obvious ways: seniority-based shift bidding, mandatory overtime rotation rules, contractual limits on float assignments, and grievance-triggering violations. These rules are rarely documented in machine-readable form. You will spend more time encoding labor contracts than writing solver code. Get your labor relations team involved early, and plan for contract renegotiation cycles that invalidate your constraint set.
+
+**Solver warm-start and timeout handling.** The real-time path has a hard latency budget (under 10 seconds). If the solver cannot find a feasible solution within the time limit, you need a graceful fallback: return the best solution found so far (even if suboptimal), or fall back to a greedy heuristic that simply picks the highest-scored available nurse. Never return "no solution" to a charge nurse at 5 AM; always return something actionable.
+
+**Shift swap and self-service integration.** Nurses trade shifts constantly. Your schedule database needs to handle peer-to-peer swap requests that bypass the optimizer entirely, validate that the swap doesn't violate hard constraints, and update the canonical schedule state. This is a separate workflow from optimization, but it writes to the same state store and must not create conflicts.
+
+**Audit and explainability for labor disputes.** When a nurse files a grievance claiming unfair shift distribution, you need to produce evidence that the algorithm treated them equitably. Log the objective function weights, the fairness metrics per nurse, and the constraint set active at the time of schedule generation. "The computer did it" is not a valid defense in an arbitration hearing.
+
+---
+
 ## Variations and Extensions
 
 **Multi-unit float pool optimization.** Extend the model to include float pool nurses who can be assigned to any unit based on qualifications. The solver decides both the unit assignment and the shift assignment simultaneously. This is particularly valuable for health systems with centralized staffing offices.
