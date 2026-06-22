@@ -9,7 +9,7 @@
 You'll need the AWS SDK for Python and a few image processing libraries:
 
 ```bash
-pip install boto3 numpy pillow
+pip install boto3 numpy pillow scipy
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
@@ -51,7 +51,7 @@ SLIDE_BUCKET = "pathology-slides"
 FEATURE_BUCKET = "pathology-features"
 RESULTS_TABLE = "pathology-analysis-results"
 METADATA_TABLE = "pathology-slide-metadata"
-ANALYSIS_QUEUE = "pathology-analysis-queue"
+ANALYSIS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/123456789012/pathology-analysis-queue"  # replace with your queue URL
 SAGEMAKER_MODEL_NAME = "pathology-feature-extractor"
 
 # Stain normalization reference values (Macenko method).
@@ -159,7 +159,7 @@ def ingest_slide(bucket: str, key: str) -> str:
 
     # Queue for analysis
     sqs_client.send_message(
-        QueueUrl=ANALYSIS_QUEUE,
+        QueueUrl=ANALYSIS_QUEUE_URL,
         MessageBody=json.dumps({
             "slide_id": slide_id,
             "s3_path": f"s3://{bucket}/{key}",
@@ -212,7 +212,6 @@ def detect_tissue(slide_id: str, thumbnail_bytes: bytes) -> tuple[np.ndarray, fl
     # Background glass (white/clear) has near-zero saturation.
     # This is more robust than simple grayscale thresholding because it
     # handles slides with varying brightness levels.
-    from PIL import ImageFilter
 
     hsv_image = image.convert("HSV")
     hsv_array = np.array(hsv_image)
@@ -535,21 +534,24 @@ def load_features_from_s3(slide_id: str, features_uri: str) -> np.ndarray:
     The output is a numpy array of shape [num_patches, FEATURE_DIM].
     Each row is the feature vector for one patch.
     """
-    # List all output files in the features directory
+    # List all output files in the features directory.
+    # Use a paginator because list_objects_v2 returns at most 1000 keys per call.
+    # A slide with 30,000+ patches may produce more than 1000 output files.
     prefix = f"features/{slide_id}/"
-    response = s3_client.list_objects_v2(Bucket=FEATURE_BUCKET, Prefix=prefix)
+    paginator = s3_client.get_paginator("list_objects_v2")
 
     all_features = []
-    for obj in response.get("Contents", []):
-        # Read each output file (SageMaker may split across multiple files)
-        body = s3_client.get_object(Bucket=FEATURE_BUCKET, Key=obj["Key"])["Body"]
-        content = body.read().decode("utf-8")
+    for page in paginator.paginate(Bucket=FEATURE_BUCKET, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            # Read each output file (SageMaker may split across multiple files)
+            body = s3_client.get_object(Bucket=FEATURE_BUCKET, Key=obj["Key"])["Body"]
+            content = body.read().decode("utf-8")
 
-        # Each line is a JSON array representing one feature vector
-        for line in content.strip().split("\n"):
-            if line:
-                feature_vector = json.loads(line)
-                all_features.append(feature_vector)
+            # Each line is a JSON array representing one feature vector
+            for line in content.strip().split("\n"):
+                if line:
+                    feature_vector = json.loads(line)
+                    all_features.append(feature_vector)
 
     features = np.array(all_features, dtype=np.float32)
     logger.info("Loaded features: shape %s", features.shape)
@@ -601,6 +603,7 @@ def attention_mil_aggregate(features: np.ndarray) -> tuple[dict, np.ndarray]:
     attention_weights = exp_attention / np.sum(exp_attention)
 
     # Weighted aggregation: slide-level representation
+    # 1D @ 2D in numpy: equivalent to np.dot(attention_weights, features), produces shape [FEATURE_DIM]
     slide_representation = attention_weights @ features  # [FEATURE_DIM]
 
     # Classification head: slide representation -> class probabilities
@@ -695,7 +698,11 @@ def store_results(
     confidence = prediction[predicted_class]
 
     # Extract just the ROI patches for the summary (full heatmap stored separately)
-    top_regions = [h for h in heatmap if h["is_roi"]]
+    # Convert float attention values to Decimal for DynamoDB compatibility
+    top_regions = [
+        {**h, "attention": Decimal(str(h["attention"]))}
+        for h in heatmap if h["is_roi"]
+    ]
 
     # Store the full heatmap as a separate S3 object (too large for DynamoDB item)
     heatmap_key = f"heatmaps/{slide_id}/attention-heatmap.json"
