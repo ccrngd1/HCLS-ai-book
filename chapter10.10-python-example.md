@@ -1850,6 +1850,11 @@ def synthesize_translated_audio(encounter_id,
                     "deployment_posture", "unknown"),
         })
 
+    # Translation delivered; return to idle so the next
+    # speech_start from either speaker does not trigger
+    # a spurious BARGE_IN event.
+    transition_to_state(encounter_id, "idle")
+
     return {
         "audio_stream":            synthesis,
         "end_to_end_latency_ms":   end_to_end_latency_ms,
@@ -1945,10 +1950,17 @@ def vad_event(encounter_id, speaker, event_type):
                 active_speaker=speaker)
     elif event_type == "speech_end":
         # Speaker finished; ASR path will finalize the
-        # transcript segment.
+        # transcript segment. Populate in_flight_translation
+        # so any barge-in during translation references a
+        # meaningful ID rather than None.
+        translation_id = str(uuid.uuid4())
         transition_to_state(
             encounter_id, "translating",
-            translating_for_speaker=speaker)
+            translating_for_speaker=speaker,
+            in_flight_translation={
+                "translation_id": translation_id,
+                "speaker": speaker,
+            })
     elif event_type == "silence":
         # Long-silence-driven idle reset is handled by the
         # caller; this branch records the silence event.
@@ -2168,6 +2180,12 @@ def execute_escalation(encounter_id, reason, segment,
         "last_escalation_reason":  reason,
         "last_escalation_at":      _now_iso(),
     })
+
+    # Audio now routes to the human interpreter; reset the
+    # conversational state machine so subsequent VAD events
+    # do not trigger spurious BARGE_IN against a stale
+    # in_flight_translation reference.
+    transition_to_state(encounter_id, "idle")
 
     audit_log({
         "event_type":      "HUMAN_ESCALATION_COMPLETE",

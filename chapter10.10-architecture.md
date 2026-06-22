@@ -176,9 +176,9 @@ flowchart LR
 | **AWS Services** | Amazon Transcribe and Transcribe Medical (streaming), Amazon Translate (with Custom Terminology and Active Custom Translation), Amazon Bedrock (with Guardrails), Amazon Polly (neural and generative voices, lexicons), Amazon Connect (for telephonic), Amazon Chime SDK (for in-person and telehealth), AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon S3, Amazon API Gateway, Amazon Cognito, AWS KMS, AWS Secrets Manager, Amazon EventBridge, Amazon CloudWatch, AWS CloudTrail, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena. Optionally Amazon QuickSight for dashboards and Amazon Kinesis Data Streams for low-latency audio streaming. |
 | **Validated Vendors per Language Pair** | Per-pair vendor selection with explicit medical-content quality evaluation. Top-volume pairs (English-Spanish, English-Mandarin, English-Vietnamese, English-Tagalog, English-Russian, English-Arabic, English-Korean, English-Haitian-Creole, English-Portuguese, English-French) typically use AWS native services (Transcribe, Translate, Polly) with custom terminology and lexicon overlays. Lower-resource pairs may require third-party vendors integrated via API; the institutional integration layer abstracts the vendor choice from the rest of the pipeline.  |
 | **External Inputs** | Curated medical-vocabulary lists per language for ASR custom-vocabulary configuration. Curated parallel medical corpora per language pair for MT Custom Terminology and Active Custom Translation. Pronunciation lexicons per language for Polly with institution-specific phonetic guidance. Per-pair quality evaluation sets (curated medical content with reference translations) for ongoing quality monitoring. Human-interpreter pool integration (institutional or vendor contract) for escalation. |
-| **IAM Permissions** | Per-Lambda least-privilege roles. The session-setup Lambda has DynamoDB write to the session table only. The audio-router Lambda has Transcribe streaming permissions, Translate permissions, Bedrock invoke-model permissions, Polly synthesize-speech permissions, and S3 write to the audio bucket. The faithfulness-and-verification Lambda has Bedrock invoke-model permissions and DynamoDB write to the audit table. The escalation Lambda has Connect and Chime SDK permissions for human-interpreter handoff plus Secrets Manager read for vendor credentials. The audit Lambda has DynamoDB write and EventBridge publish. Avoid wildcard actions and resources in production.  |
+| **IAM Permissions** | Per-Lambda least-privilege roles. The session-setup Lambda has DynamoDB write to the session table only. The audio-router Lambda has Transcribe streaming permissions, Translate permissions, Bedrock invoke-model permissions, Polly synthesize-speech permissions, and S3 write to the audio bucket. The faithfulness-and-verification Lambda has Bedrock invoke-model permissions and DynamoDB write to the audit table. The escalation Lambda has Connect and Chime SDK permissions for human-interpreter handoff plus Secrets Manager read for vendor credentials. The audit Lambda has DynamoDB write and EventBridge publish. Each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Step Functions state-machine ARN, or the production EventBridge rule ARN as appropriate, so that only the intended orchestration path can trigger each function. Avoid wildcard actions and resources in production.  |
 | **BAA and Compliance** | AWS BAA signed. Amazon Transcribe and Transcribe Medical, Translate, Bedrock (verify the specific models and regions covered), Polly, Connect, Chime SDK, Lambda, Step Functions, DynamoDB, S3, API Gateway, Cognito, KMS, Secrets Manager, EventBridge, CloudWatch Logs, CloudTrail, Kinesis Firehose, Glue, Athena are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference).  Voice samples are biometric data; biometric-data law (Illinois BIPA, Texas, Washington) applies in addition to HIPAA where the patient's jurisdiction triggers it. Federal language-access requirements (Title VI, Section 1557) apply to the broader language-access program; the technology deployment must support, not undermine, the institutional language-access policy. State-level qualified-interpreter requirements apply where they exist; the deployment should treat machine interpretation as supplemental to, not a replacement for, qualified human interpreters in the encounters that require them.  |
-| **Encryption** | Audio samples: SSE-KMS with customer-managed keys, retention bound to the consent terms (typically hours to days for QA, optionally longer with explicit consent for model improvement). Transcripts and translations: SSE-KMS with separate customer-managed keys, retention aligned with medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, biometric-data law retention requirements, state medical-records-retention rules, and institutional regulatory floor.  DynamoDB tables, Lambda environment variables, and Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all API calls; mTLS preferred for vendor API integrations. |
+| **Encryption** | Audio samples: SSE-KMS with customer-managed keys, retention bound to the consent terms (typically hours to days for QA, optionally longer with explicit consent for model improvement). Transcripts and translations: SSE-KMS with separate customer-managed keys, retention aligned with medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longest of: HIPAA's six-year minimum, state-specific medical-records-retention requirements, per-jurisdiction biometric-records retention (BIPA five-year, CUBI, Washington, GDPR Article 9 for EU patients), federal language-access compliance documentation retention per Title VI, Section 1557, and OCR enforcement period, state qualified-interpreter compliance documentation retention where applicable, per-vendor disclosure-accounting log retention, and the institutional regulatory floor. Disclosure-accounting logs (per-invocation records of each ASR, MT, and TTS vendor call constituting a third-party disclosure event) follow a separate retention regime aligned with the longest applicable biometric-data and language-access compliance period.  DynamoDB tables, Lambda environment variables, and Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all API calls; mTLS preferred for vendor API integrations. |
 | **VPC** | Production: Lambdas that call back-office APIs (institutional EHR, language-access platform, human-interpreter pool) run in VPC with controlled egress. VPC endpoints for S3, DynamoDB, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Transcribe, Translate, Bedrock, Polly, Lambda. Endpoint policies pin access to the specific resources the pipeline uses. |
 | **CloudTrail** | Enabled with data events on the audio bucket, the audit archive bucket, the DynamoDB tables, the Secrets Manager secrets, and the customer-managed KMS keys. Transcribe, Translate, Bedrock, and Polly invocations logged with metadata only (not full input/output content, to avoid persisting biometric and PHI content in CloudTrail). Lambda invocations logged. API Gateway access logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. |
 | **Sample Data** | Public medical-content evaluation sets per language pair where available (the institution typically curates its own from de-identified institutional encounter content with explicit consent and IRB review). Synthetic test conversations for end-to-end pipeline validation. Never use uncoded production patient audio in development.  |
@@ -336,7 +336,11 @@ ON encounter_initiated(clinician_id, patient_id,
         detail: {
             encounter_id: encounter_id,
             language_pair: pair_def.pair_id,
-            posture: posture
+            posture: posture,
+            // Per-event idempotency key so downstream
+            // consumers can deduplicate on retries.
+            idempotency_key:
+                encounter_id + ":setup"
         }
     }])
 
@@ -833,7 +837,12 @@ FUNCTION escalate_to_human(encounter_id, reason,
         detail: {
             encounter_id: encounter_id,
             reason: reason,
-            language_pair: state.language_pair
+            language_pair: state.language_pair,
+            // Per-event idempotency key: encounter plus
+            // the specific escalation event ID.
+            idempotency_key:
+                encounter_id + ":" +
+                segment.utterance_id + ":escalation"
         }
     }])
 
@@ -924,9 +933,19 @@ ON encounter_ended(encounter_id, end_reason):
         detail_type: "encounter_ended",
         detail: {
             encounter_id: encounter_id,
-            language_pair: state.language_pair
+            language_pair: state.language_pair,
+            // Per-event idempotency key.
+            idempotency_key:
+                encounter_id + ":ended"
         }
     }])
+
+    // Downstream consumers maintain a DynamoDB
+    // deduplication table keyed on idempotency_key
+    // with a TTL on each record (typically 24 hours).
+    // On receipt of any event, the consumer checks the
+    // deduplication table before processing; duplicate
+    // deliveries (retry, at-least-once) are discarded.
 
     encounter_table.update(
         encounter_id: encounter_id,
