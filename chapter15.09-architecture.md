@@ -356,6 +356,8 @@ Let's be direct about the gap between this architecture and clinical deployment:
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
 **Research References:**
+- Kumar, A., Zhou, A., Tucker, G., and Levine, S. "Conservative Q-Learning for Offline Reinforcement Learning." NeurIPS 2020.
+- Fujimoto, S., Meger, D., and Precup, D. "Off-Policy Deep Reinforcement Learning without Exploration." ICML 2019.
 
 **Clinical Context:**
 
