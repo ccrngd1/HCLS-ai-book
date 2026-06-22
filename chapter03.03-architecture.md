@@ -574,11 +574,11 @@ FUNCTION retrain_supervised_quarterly():
 
 ```json
 {
-  "case_id": "CASE-2026-05-000487",
+  "case_id": "CASE-2025-01-000487",
   "provider_id": "PRV-CANONICAL-0044721",
   "provider_display_name": "Internal Medicine Group, Dr. Example",
-  "period_start": "2026-05-01",
-  "period_end": "2026-05-31",
+  "period_start": "2025-01-01",
+  "period_end": "2025-01-31",
   "peer_group": ["internal-medicine", "metro-region-5", "group-practice"],
   "peer_group_size": 187,
   "signals": [
@@ -603,7 +603,7 @@ FUNCTION retrain_supervised_quarterly():
     {
       "type": "self_cusum",
       "feature": "em_avg_level",
-      "change_point": "2026-03-15",
+      "change_point": "2024-11-15",
       "pre_change_mean": 3.21,
       "post_change_mean": 4.08,
       "shift_magnitude": 0.87,
@@ -616,16 +616,16 @@ FUNCTION retrain_supervised_quarterly():
   "overall_severity": "high",
   "routing": "payment_integrity",
   "evidence_claims": [
-    "CLM-2026-05-881104",
-    "CLM-2026-05-881322",
-    "CLM-2026-05-881897",
-    "CLM-2026-05-882014",
-    "CLM-2026-05-882551"
+    "CLM-2025-01-881104",
+    "CLM-2025-01-881322",
+    "CLM-2025-01-881897",
+    "CLM-2025-01-882014",
+    "CLM-2025-01-882551"
   ],
-  "narrative_summary": "Provider's E&M level distribution shifted sharply in mid-March 2026 from centered on level 3 to centered on level 4. The shift persisted through May. Modifier 25 usage rate during the same period is 5.4 sigma above the peer group mean. Combined pattern is consistent with E&M upcoding; other explanations (change in patient mix, documentation improvement program, practice consolidation) should be investigated before any adjustment.",
+  "narrative_summary": "Provider's E&M level distribution shifted sharply in mid-November 2024 from centered on level 3 to centered on level 4. The shift persisted through January. Modifier 25 usage rate during the same period is 5.4 sigma above the peer group mean. Combined pattern is consistent with E&M upcoding; other explanations (change in patient mix, documentation improvement program, practice consolidation) should be investigated before any adjustment.",
   "status": "new",
   "assigned_analyst": null,
-  "created_at": "2026-06-01T03:22:14Z"
+  "created_at": "2025-02-01T03:22:14Z"
 }
 ```
 
@@ -633,11 +633,11 @@ FUNCTION retrain_supervised_quarterly():
 
 ```json
 {
-  "case_id": "CASE-2026-05-000591",
+  "case_id": "CASE-2025-01-000591",
   "provider_id": "PRV-CANONICAL-0062104",
   "provider_display_name": "Dermatology Solo Practice, Dr. Example",
-  "period_start": "2026-05-01",
-  "period_end": "2026-05-31",
+  "period_start": "2025-01-01",
+  "period_end": "2025-01-31",
   "peer_group": ["dermatology", "state-wide", "solo-practice"],
   "peer_group_size": 62,
   "signals": [
@@ -660,14 +660,14 @@ FUNCTION retrain_supervised_quarterly():
   "overall_severity": "medium",
   "routing": "clinical_review",
   "evidence_claims": [
-    "CLM-2026-05-844221",
-    "CLM-2026-05-844338",
-    "CLM-2026-05-844455"
+    "CLM-2025-01-844221",
+    "CLM-2025-01-844338",
+    "CLM-2025-01-844455"
   ],
   "narrative_summary": "Dermatology provider billing meaningful volumes of physical-therapy CPT codes (97110, 97112, 97140). Codes are not typically billed by dermatology practices. Could indicate aesthetic/laser services being miscoded, a legitimate ancillary service line, or billing error. Recommend clinical review before payment integrity escalation.",
   "status": "new",
   "assigned_analyst": null,
-  "created_at": "2026-06-01T03:22:31Z"
+  "created_at": "2025-02-01T03:22:31Z"
 }
 ```
 

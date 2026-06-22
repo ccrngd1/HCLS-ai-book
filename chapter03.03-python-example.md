@@ -45,6 +45,8 @@ import io
 import json
 import logging
 import math
+import os
+import time
 import uuid
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -56,7 +58,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from botocore.config import Config
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 from sklearn.ensemble import IsolationForest
 
 # Structured logging. In production, ship JSON-formatted records to CloudWatch
@@ -64,6 +66,7 @@ from sklearn.ensemble import IsolationForest
 # date range plus a patient population is re-identifying even without names),
 # so we log structural metadata only. Never log full claim bodies, patient
 # identifiers, or full feature vectors in regular application logs.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -97,14 +100,38 @@ LABELS_BUCKET = "my-billing-anomaly-labels"
 MODEL_ARTIFACTS_BUCKET = "my-billing-anomaly-model-artifacts"
 ATHENA_OUTPUT_LOCATION = "s3://my-athena-results/billing-anomaly/"
 ATHENA_DATABASE = "claims_warehouse"
+
+# Customer-managed KMS key ARN for all S3 writes. Signal payloads carry
+# provider IDs plus period ranges plus peer-group keys (re-identifying in
+# combination). Label archives carry disposition and exposure. Model
+# artifacts can be inverted to approximate training data characteristics.
+# All require customer-managed key encryption per the recipe's architecture.
+S3_KMS_KEY_ARN = "arn:aws:kms:us-east-1:123456789012:key/REPLACE-WITH-YOUR-KEY-ID"
+
 ANALYST_NOTIFICATION_TOPIC_ARN = (
     "arn:aws:sns:us-east-1:123456789012:payment-integrity-new-case"
 )
 EVENT_BUS_NAME = "payment-integrity-events"
 
-# Deploy-time guardrail: catch unreplaced example values.
-assert "123456789012" not in ANALYST_NOTIFICATION_TOPIC_ARN or __name__ != "__production__", \
-    "ANALYST_NOTIFICATION_TOPIC_ARN still uses the example AWS account ID. Replace before deploying."
+# Deploy-time guardrail: catch unreplaced example values. The check is gated
+# on the DEPLOYMENT_STAGE environment variable so it only fires in deployed
+# environments (where you MUST replace example account IDs before launch).
+# Using os.environ rather than assert avoids the issue where Python's -O flag
+# silently removes assert statements.
+def _check_config_replaced():
+    if os.environ.get("DEPLOYMENT_STAGE") in ("production", "staging"):
+        if "123456789012" in ANALYST_NOTIFICATION_TOPIC_ARN:
+            raise RuntimeError(
+                "ANALYST_NOTIFICATION_TOPIC_ARN still uses the example AWS account ID. "
+                "Replace before deploying."
+            )
+        if "REPLACE-WITH-YOUR-KEY-ID" in S3_KMS_KEY_ARN:
+            raise RuntimeError(
+                "S3_KMS_KEY_ARN still uses the placeholder value. "
+                "Replace with your customer-managed KMS key ARN before deploying."
+            )
+
+_check_config_replaced()
 
 # --- Scorer Version ---
 # Every anomaly signal, case record, and captured label records the scorer
@@ -184,11 +211,16 @@ CUSUM_TRACKED_FEATURES = [
 # much larger crosswalk including hospital, nursing facility, home, and
 # specialty E/M ranges. Level (1-5) is derived from the last digit for
 # the standard new/established ranges.
+#
+# Note: CPT 99201 (new patient, level 1) was deleted effective 2021-01-01
+# as part of the CMS/AMA E/M documentation overhaul. Current new-patient
+# codes are 99202-99205 (levels 2-5). Do not include 99201 in feature
+# vectors built from post-2020 claims data.
 EM_CODES = {
     # Office or outpatient, established patient (levels 1-5).
     "99211": 1, "99212": 2, "99213": 3, "99214": 4, "99215": 5,
-    # Office or outpatient, new patient (levels 1-5).
-    "99201": 1, "99202": 2, "99203": 3, "99204": 4, "99205": 5,
+    # Office or outpatient, new patient (levels 2-5; level 1 deleted 2021).
+    "99202": 2, "99203": 3, "99204": 4, "99205": 5,
 }
 
 # --- Time-based CPT Codes ---
@@ -223,12 +255,19 @@ def _to_decimal(value) -> Decimal:
     DynamoDB rejects float. Always pass Decimal. Quantizing to four decimal
     places keeps the storage format predictable without losing meaningful
     precision for probabilities, rates, or z-scores.
+
+    NaN and Inf are coerced to zero. This masks an upstream error (a feature
+    computation that produced NaN means missing data or division by zero).
+    In production, log a warning when this branch fires so the data
+    engineering team can trace the root cause. The zero-coercion keeps the
+    DynamoDB write from failing but loses the error signal.
     """
     if isinstance(value, Decimal):
         return value
     if value is None:
         return Decimal("0.0000")
     if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        logger.warning("decimal_coercion_masked_nan_or_inf", extra={"raw_value": str(value)})
         return Decimal("0.0000")
     return Decimal(str(value)).quantize(Decimal("0.0001"))
 
@@ -906,6 +945,7 @@ def _write_signal_payload(payload: dict) -> None:
         Body=json.dumps(_decimal_to_float(payload), default=str).encode("utf-8"),
         ContentType="application/json",
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=S3_KMS_KEY_ARN,
     )
 ```
 
@@ -1047,15 +1087,27 @@ def _query_prior_cases(provider_id: str, lookback_months: int) -> list:
     """
     Query the case-registry GSI on provider_id to find recent cases for
     this provider. Used to compute persistence across consecutive periods.
+
+    Uses Attr (not Key) for FilterExpression because period_start is not
+    part of the GSI key schema. Paginates to handle the (unlikely but
+    possible) scenario where a hot provider has enough historical cases
+    to exceed a 1 MB DynamoDB page before filtering.
     """
     cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_months * 31)).date().isoformat()
     table = dynamodb.Table(CASE_REGISTRY_TABLE)
-    response = table.query(
-        IndexName="provider_id_index",
-        KeyConditionExpression=Key("provider_id").eq(provider_id),
-        FilterExpression=Key("period_start").gte(cutoff),
-    )
-    return response.get("Items", [])
+    items = []
+    kwargs = {
+        "IndexName": "provider_id_index",
+        "KeyConditionExpression": Key("provider_id").eq(provider_id),
+        "FilterExpression": Attr("period_start").gte(cutoff),
+    }
+    while True:
+        response = table.query(**kwargs)
+        items.extend(response.get("Items", []))
+        if "LastEvaluatedKey" not in response:
+            break
+        kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+    return items
 
 def _count_consecutive_periods(prior_cases: list, ending_period: str) -> int:
     """
@@ -1123,11 +1175,21 @@ def _pull_evidence_claims(
 
     # Poll for completion. Real deployments drive this via Step Functions
     # so the polling is framework-managed; here we loop for illustration.
-    while True:
+    # Sleep between polls to avoid burning Athena API throttle budget, and
+    # cap iterations so a stuck query cannot spin indefinitely.
+    max_polls = 120
+    for _ in range(max_polls):
         state = athena.get_query_execution(QueryExecutionId=execution_id)
         status = state["QueryExecution"]["Status"]["State"]
         if status in ("SUCCEEDED", "FAILED", "CANCELLED"):
             break
+        time.sleep(1)
+    else:
+        logger.warning("athena_poll_timeout", extra={
+            "provider_id": provider_id,
+            "execution_id": execution_id,
+        })
+        return []
     if status != "SUCCEEDED":
         logger.warning("evidence_query_failed", extra={
             "provider_id": provider_id,
@@ -1277,15 +1339,17 @@ def _signal_for_dynamo(signal: dict) -> dict:
 def _notify_analysts(case: dict) -> None:
     """
     Publish a minimal notification to the payment integrity SNS topic.
-    The message carries the case id only; the analyst UI fetches the
-    full record by id so the notification channel never carries PHI.
+    The message carries the case id and routing tier only; the analyst UI
+    fetches the full record by id so the notification channel never
+    carries PHI or PHI-adjacent identifiers (provider IDs, exposure
+    dollars, signal details). SNS messages traverse infrastructure
+    (mobile push, email previews, Slack webhooks) that may not be
+    governed to the same standard as the case registry.
     """
     message = {
-        "case_id":     case["case_id"],
-        "provider_id": case["provider_id"],
-        "severity":    case["overall_severity"],
-        "routing":     case["routing"],
-        "created_at":  case["created_at"],
+        "case_id":      case["case_id"],
+        "routing_tier": case["routing"],
+        "severity_band": case["overall_severity"],
     }
     sns.publish(
         TopicArn=ANALYST_NOTIFICATION_TOPIC_ARN,
@@ -1293,7 +1357,7 @@ def _notify_analysts(case: dict) -> None:
         Subject=f"New {case['overall_severity']}-severity case: {case['case_id']}",
     )
 
-def _emit_metric(metric_name: str, value: int = 1, dimensions: dict = None) -> None:
+def _emit_metric(metric_name: str, value: float = 1, dimensions: dict = None) -> None:
     """
     Publish an operational metric to CloudWatch. Includes the scorer
     version as a standard dimension so regressions can be attributed to
@@ -1338,6 +1402,18 @@ def on_investigation_outcome(event: dict) -> None:
       case_id, disposition, notes, resolved_at, resolved_by,
       dollars_recovered, referred_to_siu (bool), provider_educated (bool)
     """
+    # Validate required fields before any side effect. A malformed event
+    # from the analyst tooling should fail loudly rather than propagating
+    # as a KeyError deep inside a DynamoDB update or S3 write.
+    required_fields = ("case_id", "disposition", "resolved_at", "resolved_by")
+    missing = [f for f in required_fields if f not in event or event[f] is None]
+    if missing:
+        logger.error("outcome_event_missing_fields", extra={
+            "missing": missing,
+            "event_keys": list(event.keys()),
+        })
+        return
+
     case_id = event["case_id"]
     table = dynamodb.Table(CASE_REGISTRY_TABLE)
 
@@ -1400,7 +1476,7 @@ def on_investigation_outcome(event: dict) -> None:
     })
     _emit_metric(
         "dollars_recovered",
-        value=int(event.get("dollars_recovered", 0.0)),
+        value=float(event.get("dollars_recovered", 0.0)),
         dimensions={"severity": case["overall_severity"]},
     )
     _emit_metric("outcome_by_severity", dimensions={
@@ -1449,6 +1525,7 @@ def _write_label_to_s3(training_row: dict, resolved_at: str) -> None:
         Body=json.dumps(training_row, default=str).encode("utf-8"),
         ContentType="application/json",
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=S3_KMS_KEY_ARN,
     )
 ```
 
@@ -1518,7 +1595,7 @@ if __name__ == "__main__":
     sample_claims = pd.DataFrame([
         # --- An internist who shifted E&M distribution upward ---
         {"provider_id": "PRV-0044721", "claim_id": f"CLM-A-{i:04d}",
-         "patient_id": f"PAT-A-{i % 40:03d}", "service_date": "2026-05-10",
+         "patient_id": f"PAT-A-{i % 40:03d}", "service_date": "2025-01-10",
          "procedure_code": "99214" if i < 60 else "99213",
          "modifiers": ["25"] if i % 3 == 0 else [],
          "billed_amount": 180.0, "units": 1, "place_of_service": "11",
@@ -1527,7 +1604,7 @@ if __name__ == "__main__":
     ] + [
         # --- A dermatology solo practice also billing PT codes (atypical) ---
         {"provider_id": "PRV-0062104", "claim_id": f"CLM-B-{i:04d}",
-         "patient_id": f"PAT-B-{i % 30:03d}", "service_date": "2026-05-14",
+         "patient_id": f"PAT-B-{i % 30:03d}", "service_date": "2025-01-14",
          "procedure_code": ["17110", "97110", "97112"][i % 3],
          "modifiers": ["59"] if i % 4 == 0 else [],
          "billed_amount": 220.0, "units": 1, "place_of_service": "11",
@@ -1547,8 +1624,8 @@ if __name__ == "__main__":
         claims_df=sample_claims,
         history_df=sample_history,
         provider_master_df=sample_provider_master,
-        period_start="2026-05-01",
-        period_end="2026-05-31",
+        period_start="2025-01-01",
+        period_end="2025-01-31",
     )
 
     print()
@@ -1644,6 +1721,7 @@ def retrain_isolation_forest_quarterly(history_window_months: int = 6) -> dict:
         Key=version_key,
         Body=buf.read(),
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=S3_KMS_KEY_ARN,
     )
 
     # 6. Update the 'current' pointer. In production, register in the
@@ -1654,6 +1732,7 @@ def retrain_isolation_forest_quarterly(history_window_months: int = 6) -> dict:
         Key="current/isolation_forest.joblib",
         CopySource={"Bucket": MODEL_ARTIFACTS_BUCKET, "Key": version_key},
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=S3_KMS_KEY_ARN,
     )
 
     return {"trained": True, "version_key": version_key, "rows": int(len(X))}
