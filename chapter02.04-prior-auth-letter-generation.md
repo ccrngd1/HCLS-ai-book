@@ -1,6 +1,6 @@
 # Recipe 2.4: Prior Authorization Letter Generation
 
-**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.10-0.30 per letter 
+**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$1.50-2.50 per letter (multi-call pipeline on Claude Sonnet)
 
 ---
 
@@ -71,6 +71,8 @@ The mitigation: never let the model generate clinical facts from its prior knowl
 **Payer-specific formatting.** Most payers accept letters in PDF format submitted through a portal. Some require specific fields in specific places. Some want structured JSON submitted via API (the HL7 DaVinci project is pushing toward this, and CMS-0057-F is accelerating it). Your generation pipeline has to produce the right output format for each payer, which means the architecture has to support multiple output modalities from a common content core.
 
 **Physician sign-off friction.** A generated letter is only valuable if the physician signs it. If the review workflow is cumbersome (print, read, sign, scan, upload), the time savings evaporate. The integration with clinical workflows matters as much as the letter quality.
+
+**Prompt injection from clinical content.** This is the one that security teams miss on first review. The clinical notes you feed into the model are not fully trusted input. Patient portal messages, OCR of faxed outside records, and external referral letters all originate from weakly controlled channels. An adversarial string embedded in a note field could attempt to override the model's grounding constraint (for example, instructing it to fabricate claims or cite nonexistent literature). The mitigation is layered: configure input-side prompt-attack filters (Bedrock Guardrails supports this), and treat EHR-sourced structured data (lab values, coded diagnoses) as a different trust tier from free-text narrative content. Structured data goes into the prompt with minimal transformation. Free-text content gets sanitized and filtered before it reaches the model. This is especially important because the downstream output is a legal document that goes to a payer under a physician's signature.
 
 ### Grounded Generation: The Architectural Answer
 
@@ -175,7 +177,7 @@ Finally: don't try to automate the whole thing. The physician signature is load-
 - **Recipe 2.3 (Clinical Documentation Improvement):** CDI suggestions improve the clinical documentation that this recipe depends on. Better notes produce better fact extraction and stronger PA letters.
 - **Recipe 2.7 (Literature Search and Evidence Synthesis):** The evidence retrieval in this recipe is a simplified form of the RAG pattern in 2.7. For complex PA cases where standard citations don't apply, the literature search pattern becomes relevant.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Similar synthesis architecture but higher-stakes output. The grounding patterns used here are essential there.
-- **Recipe 5.x (Entity Resolution):** Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation. 
+- **Recipe 5.4 (Insurance Eligibility Matching):** Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation. Getting the patient-to-payer identity match wrong means the letter targets the wrong plan or references the wrong member ID.
 
 ---
 

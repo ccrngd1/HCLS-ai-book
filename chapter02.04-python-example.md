@@ -34,6 +34,7 @@ One thing worth knowing upfront: there are two Bedrock service endpoints involve
 Everything that's configuration rather than logic lives here. The two knowledge base IDs, the model choice, and the S3 bucket names are the knobs you'll change most often between environments.
 
 ```python
+import hashlib
 import json
 import logging
 import time
@@ -155,8 +156,48 @@ def receive_pa_request(request: dict) -> str:
     Returns:
         The generated case_id (a UUID string).
     """
+    # Idempotency check: duplicate PA submissions happen (EHR retries on
+    # perceived timeout, user double-click, duplicate HL7 ADT events).
+    # Derive a deterministic fingerprint from the request's natural key
+    # and use a conditional write to prevent duplicate pipeline runs.
+    fingerprint_input = "|".join([
+        request["patient_id"],
+        request["payer_id"],
+        request["service_code"],
+        request["diagnosis_code"],
+        request.get("order_datetime", ""),
+    ])
+    fingerprint = hashlib.sha256(fingerprint_input.encode()).hexdigest()
+
+    fingerprint_table = dynamodb.Table("pa-request-fingerprints")
+    try:
+        fingerprint_table.put_item(
+            Item={
+                "fingerprint": fingerprint,
+                "case_id": "pending",  # placeholder until we have the real case_id
+                "created_at": datetime.datetime.now(timezone.utc).isoformat(),
+            },
+            ConditionExpression="attribute_not_exists(fingerprint)",
+        )
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
+        # This exact request already exists. Return the existing case_id.
+        existing = fingerprint_table.get_item(Key={"fingerprint": fingerprint})
+        existing_case_id = existing["Item"]["case_id"]
+        logger.info(
+            "Duplicate PA request detected (fingerprint=%s). Returning existing case_id=%s",
+            fingerprint[:12], existing_case_id,
+        )
+        return existing_case_id
+
     case_id = str(uuid.uuid4())
     now = datetime.datetime.now(timezone.utc)
+
+    # Update the fingerprint record with the real case_id
+    fingerprint_table.update_item(
+        Key={"fingerprint": fingerprint},
+        UpdateExpression="SET case_id = :cid",
+        ExpressionAttributeValues={":cid": case_id},
+    )
 
     # Expedited cases have tighter deadlines under most payer contracts
     # (24-48 hours vs. 72 hours for standard). CMS-0057-F tightens this
@@ -1273,11 +1314,11 @@ Run this end-to-end against synthetic inputs and you'll see the full pattern: po
 
 **Denial rate measurement.** The metric that matters is not "letter quality" (subjective) but payer approval rate. Track approval rate for AI-generated letters vs. hand-composed letters for the same service and payer combination. If generated letters get denied more, something is wrong with your criteria extraction, your fact mapping, or your prose. If they get approved at the same rate, you've saved time. If they get approved at a higher rate, your structured criteria mapping is outperforming unstructured human writing. All three outcomes happen, and you need the measurement to know which one you're in.
 
-**VPC, encryption, and audit.** This example makes API calls without VPC configuration. A production Lambda runs in private subnets with VPC endpoints for S3, Bedrock Runtime, Bedrock Agent Runtime (yes, both endpoints), DynamoDB, Step Functions, and CloudWatch Logs. S3 buckets use SSE-KMS with customer-managed keys. DynamoDB uses a CMK for encryption at rest. Every Bedrock invocation and every KB retrieval gets logged to CloudTrail with data events enabled, because an audit will eventually ask "what did the model see for case X?" and you need to answer that definitively. Key lifecycle policies and rotation belong in your security design from day one, not retrofitted.
+**VPC, encryption, and audit.** This example makes API calls without VPC configuration. A production Lambda runs in private subnets with VPC endpoints for S3, Bedrock Runtime, Bedrock Agent Runtime (yes, both endpoints), KMS, Textract, HealthLake, CloudWatch Logs, CloudWatch Monitoring, Secrets Manager, Step Functions, and DynamoDB. S3 buckets use SSE-KMS with customer-managed keys. DynamoDB uses a CMK for encryption at rest. If Bedrock model-invocation-logging is enabled (recommended for quality monitoring), the log destination must be KMS-encrypted and access-controlled equivalently to your primary PHI stores, since logged prompts contain extracted clinical facts. Every Bedrock invocation and every KB retrieval gets logged to CloudTrail with data events enabled, because an audit will eventually ask "what did the model see for case X?" and you need to answer that definitively. Key lifecycle policies and rotation belong in your security design from day one, not retrofitted.
 
 **Testing with synthetic cases.** There are no tests here. A production pipeline has: unit tests for validation logic (hallucination detection must be reliable), integration tests with synthetic patient cases covering your top 20 services by volume, regression tests ensuring known-good policies still produce correct criteria extractions after prompt changes, and load tests validating throughput against realistic burst patterns (mornings, end-of-clinic). Generate synthetic patient records using tools like Synthea so the test corpus never contains real PHI.
 
-**Cost monitoring.** At ~$0.10-0.30 per letter and a mid-sized practice processing 600 letters per week, you're looking at $60-180/week in direct model costs. Not huge, but enough to want visibility. Set CloudWatch billing alarms on Bedrock usage, track cost per case in the DynamoDB record, and watch for runaway loops (validation failing, triggering regeneration, triggering validation failing) that multiply the cost per case. One buggy prompt can 10x your costs overnight if you're not watching.
+**Cost monitoring.** At ~$1.50-2.50 per letter (22+ Bedrock calls for a typical 10-criterion PA) and a mid-sized practice processing 600 letters per week, you're looking at $900-1,500/week in direct model costs. Meaningful enough to want visibility. Set CloudWatch billing alarms on Bedrock usage, track cost per case in the DynamoDB record, and watch for runaway loops (validation failing, triggering regeneration, triggering validation failing) that multiply the cost per case. One buggy prompt can 10x your costs overnight if you're not watching.
 
 ---
 

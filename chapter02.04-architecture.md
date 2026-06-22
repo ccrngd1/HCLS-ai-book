@@ -16,7 +16,7 @@
 
 **AWS Lambda for orchestration.** The pipeline is a sequence of retrieval and generation steps, each of which is an API call. Lambda orchestrates these without managing servers. For a production deployment, you'll likely split the pipeline across multiple Lambda functions (one per logical stage) coordinated by Step Functions, which gives you better observability, retry logic, and failure handling.
 
-**AWS Step Functions for workflow orchestration.** Once you're past the proof-of-concept, a multi-step pipeline with external retrievals and human review deserves a proper state machine. Step Functions handles the choreography: run retrievals in parallel, wait for physician review, retry failed submissions, branch on payer type. The visual workflow also gives operations staff something concrete to look at when debugging a stuck case. 
+**AWS Step Functions for workflow orchestration.** Once you're past the proof-of-concept, a multi-step pipeline with external retrievals and human review deserves a proper state machine. Step Functions handles the choreography: run retrievals in parallel, wait for physician review, retry failed submissions, branch on payer type. The visual workflow also gives operations staff something concrete to look at when debugging a stuck case. For the physician-review wait specifically, use the `waitForTaskToken` integration pattern: the generation Lambda completes by emitting a task token bound to the case, and the physician review UI calls `SendTaskSuccess` with the signed letter (or `SendTaskFailure` if the physician rejects the draft). This avoids polling DynamoDB from within Step Functions (which adds state-transition cost at scale) and gives the workflow a clean wait-for-signal semantic. Task tokens can live up to one year, comfortably longer than any reasonable PA review SLA.
 
 **Amazon Textract for payer policy extraction.** Payer medical policies arrive as PDFs. Textract pulls the text and structure out of them so that Knowledge Bases can index the content. For well-formatted payer documents, Textract's form and table detection is sufficient. For older or scanned policies, you may need additional cleanup steps.
 
@@ -67,16 +67,16 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Bedrock, Bedrock Knowledge Bases, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon API Gateway, Amazon Textract, Amazon HealthLake (optional), Amazon CloudWatch |
-| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `bedrock:RetrieveAndGenerate`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `states:StartExecution`, `healthlake:SearchWithGet`, `textract:StartDocumentAnalysis`  |
+| **IAM Permissions** | `bedrock:InvokeModel` (scoped to model ARN), `bedrock:Retrieve` and `bedrock:RetrieveAndGenerate` (scoped to KB ARNs), `s3:GetObject` and `s3:PutObject` (scoped to bucket ARNs), `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` (scoped to table ARN), `states:StartExecution` (scoped to state machine ARN), `healthlake:SearchWithGet` (scoped to datastore ARN), `textract:StartDocumentAnalysis`, `kms:Decrypt` and `kms:GenerateDataKey` (scoped to CMK ARN) |
 | **BAA** | AWS BAA signed (required: letters contain PHI). Payer policy content is not PHI but clinical facts extracted from patient data are. |
 | **Bedrock Model Access** | Request access to Claude Sonnet (or equivalent capable model) in the Bedrock console. Letter generation benefits from a stronger model; do not use the smallest tier. |
 | **EHR Integration** | FHIR R4 access to clinical data (direct API or via HealthLake). SMART on FHIR for EHR-embedded workflows (Epic App Orchard, Cerner Code). |
 | **Payer Policy Ingestion** | Recurring process (scheduled Lambda or manual) to pull updated policies from each contracted payer's provider portal. Budget 2-4 hours per payer per quarter for policy maintenance. |
-| **Encryption** | S3: SSE-KMS with customer-managed keys; DynamoDB: encryption at rest with CMK; Bedrock: TLS in transit and encryption at rest; CloudWatch Logs: KMS encryption  |
-| **VPC** | Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, Step Functions  |
+| **Encryption** | S3: SSE-KMS with customer-managed keys; DynamoDB: encryption at rest with CMK; Bedrock: TLS in transit and encryption at rest; CloudWatch Logs: KMS encryption. If Bedrock model-invocation-logging is enabled for quality monitoring or drift analysis, the logged prompts contain PHI (extracted clinical facts, patient identifiers). The log destination bucket or CloudWatch log group must be KMS-encrypted with the same CMK, access-controlled equivalently, and subject to the same retention policy as primary PHI stores. Consider sampling invocation logs rather than logging every call. |
+| **VPC** | Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock (`bedrock-runtime`), Bedrock Agent Runtime (`bedrock-agent-runtime`), KMS, Textract, HealthLake, CloudWatch Logs, CloudWatch Monitoring, Secrets Manager, Step Functions, and DynamoDB. Cloud EHRs (Epic on Azure, athenaOne) require TLS-encrypted egress from your VPC to the EHR vendor's public FHIR endpoint with per-vendor credentials in Secrets Manager and strict egress security groups. On-premises EHRs require Direct Connect or Site-to-Site VPN with the FHIR gateway reachable via private IP only. In both cases PHI must never traverse the public internet unencrypted, and egress logs should be captured for audit. |
 | **CloudTrail** | Enabled with data events: log all Bedrock invocations, S3 object access, and HealthLake queries for HIPAA audit |
 | **Sample Data** | Synthetic patient cases matched to publicly available payer coverage policies. Never use real patient data in development. Synthea is a useful source of synthetic FHIR data. |
-| **Cost Estimate** | Bedrock generation (Claude Sonnet): ~$0.05-0.15 per letter depending on length. Knowledge Base retrieval: ~$0.002 per request. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes. End-to-end: ~$0.10-0.30 per generated letter.  |
+| **Cost Estimate** | The pipeline makes approximately 22+ Bedrock calls per case for a typical 10-criterion PA: 1 call for criteria extraction (Step 2), 10 calls for per-criterion fact extraction (Step 3), 10 calls for per-criterion mapping assessment (Step 4), and 1 call for letter generation (Step 6). At Claude Sonnet pricing, this totals roughly $1.50-2.50 per letter depending on clinical data volume and criterion count. Knowledge Base retrieval adds ~$0.02 across all queries. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes. |
 
 ### Ingredients
 
@@ -111,8 +111,30 @@ FUNCTION receive_pa_request(request):
     // request.provider_id:       the ordering physician
     // request.urgency:           standard or expedited (affects turnaround expectations)
     
+    // Idempotency check: duplicate PA submissions happen (EHR retries on perceived
+    // timeout, user double-click, duplicate HL7 ADT events). Derive a deterministic
+    // fingerprint from the request's natural key and use a conditional write to
+    // prevent duplicate pipeline executions.
+    fingerprint = hash(request.patient_id, request.payer_id, request.service_code,
+                       request.diagnosis_code, request.order_datetime)
+    
+    existing = conditional read from DynamoDB table "pa-request-fingerprints":
+        key = fingerprint
+    
+    IF existing is not None:
+        // A case already exists for this exact request. Return the existing case_id
+        // instead of starting a second pipeline run.
+        RETURN existing.case_id
+    
     // Create a new case record that will accumulate state through the pipeline
     case_id = generate UUID
+    
+    // Conditional write: only succeeds if fingerprint doesn't already exist.
+    // Prevents race conditions from near-simultaneous duplicate submissions.
+    write to DynamoDB table "pa-request-fingerprints" with condition attribute_not_exists(fingerprint):
+        fingerprint      = fingerprint
+        case_id          = case_id
+        created_at       = current UTC timestamp
     
     write to DynamoDB table "pa-cases":
         case_id          = case_id
@@ -191,7 +213,9 @@ FUNCTION retrieve_and_extract_criteria(payer_id, service_code, diagnosis_code):
     RETURN { criteria: criteria, policy_found: true, policy_source: policy_chunks }
 ```
 
-**Step 3: Retrieve patient clinical data and extract relevant facts.** Now you pull the patient's clinical information from the EHR (or from HealthLake if you're caching) and extract the specific facts that map to the criteria identified in Step 2. This is where you translate unstructured clinical data into discrete, verifiable facts. 
+**Step 3: Retrieve patient clinical data and extract relevant facts.** Now you pull the patient's clinical information from the EHR (or from HealthLake if you're caching) and extract the specific facts that map to the criteria identified in Step 2. This is where you translate unstructured clinical data into discrete, verifiable facts.
+
+A production note on HIPAA minimum necessary: the pseudocode below pulls two years of clinical data across six FHIR resource types plus unstructured notes, then sends that payload to the model in a loop (one call per criterion). That is broad. The HIPAA minimum necessary principle requires that you only access and disclose the minimum PHI needed for the purpose. A production implementation should scope the FHIR query by specialty-relevant resource categories and a shorter default window (12 months, extendable only if a specific criterion demands longer history), and should consider per-call redaction of identifiers the LLM does not need to see (patient name, MRN, DOB). The model needs clinical facts to compose the letter, not identifiers. Redact identifiers before sending to the model and substitute them back into the final letter from authoritative structured fields.
 
 ```pseudocode
 FUNCTION retrieve_patient_facts(patient_id, criteria, diagnosis_code):
@@ -476,6 +500,7 @@ FUNCTION validate_letter(letter, provenance, inputs):
         unverified_claims    = unverified_claims
         unverified_citations = unverified_citations
         letter_ready_at      = current UTC timestamp if status == "APPROVED_FOR_REVIEW"
+        retry_count          = increment if status == "REQUIRES_REGENERATION"
     
     IF status == "APPROVED_FOR_REVIEW":
         // Notify the physician's review queue
@@ -483,6 +508,24 @@ FUNCTION validate_letter(letter, provenance, inputs):
             case_id    = case.case_id
             urgency    = case.urgency
             deadline   = case.target_deadline
+    
+    IF status == "REQUIRES_REGENERATION":
+        // Retry semantics: don't loop indefinitely at the same temperature
+        // and prompt. Cap retries and vary strategy on each attempt.
+        retry_count = read current retry_count from DynamoDB for this case_id
+        
+        IF retry_count == 1:
+            // First retry: force temperature=0 for deterministic output
+            regenerate with temperature=0, same prompt
+        ELSE IF retry_count == 2:
+            // Second retry: add a negative-constraint prompt naming the
+            // previously-fabricated claims from unverified_claims
+            regenerate with explicit instruction: "Do NOT assert: {unverified_claims}"
+        ELSE IF retry_count >= 3:
+            // Exhausted retries. Escalate to human composition.
+            update status to "ESCALATED_TO_HUMAN"
+            emit metric "pa_letter_retries_exhausted" for operational alerting
+            notify practice staff that this case requires manual letter composition
     
     RETURN { status: status, validation_rate: validation_rate }
 ```
@@ -542,7 +585,7 @@ FUNCTION validate_letter(letter, provenance, inputs):
 | Physician acceptance rate without edits | 40-60% |
 | Physician acceptance rate with minor edits | 85-95% |
 | Payer approval rate, generated letters | Comparable to hand-composed (practice-dependent; budget time for measurement)  |
-| Cost per letter | $0.10-0.30 (tokens + retrieval)  |
+| Cost per letter | ~$1.50-2.50 (22+ model calls + retrieval for a typical 10-criterion PA on Claude Sonnet) |
 
 **Where it struggles:**
 
