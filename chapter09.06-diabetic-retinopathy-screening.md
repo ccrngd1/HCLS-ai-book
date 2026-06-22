@@ -62,7 +62,9 @@ This is a classic image classification problem, and deep learning has gotten rem
 
 **Regulatory requirements.** This is not a "nice to have" AI feature. In the US, autonomous diagnostic AI for diabetic retinopathy requires FDA clearance (De Novo or 510(k) pathway). The IDx-DR system (now Digital Diagnostics) was the first to receive FDA clearance for autonomous AI diagnosis in 2018. If you're building a screening system that makes referral decisions without physician oversight, you're in FDA territory. If you're building a "pre-screening" or "triage" tool where a physician still reviews, the regulatory path is different but still exists.
 
-### The General Architecture Pattern
+---
+
+## General Architecture Pattern
 
 ```text
 [Image Capture] → [Quality Assessment] → [Classification Model] → [Clinical Decision] → [Integration]
