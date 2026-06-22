@@ -16,7 +16,7 @@ pip install boto3 scikit-learn pandas numpy networkx python-louvain
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
-- `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `dynamodb:BatchGetItem` on the `resolved-entities`, `case-state`, and `suppression-registry` tables
+- `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `dynamodb:BatchGetItem` on the `resolved-entities` and `case-state` tables
 - `s3:GetObject` on the claims-lake, resolved-entities, and model-artifacts buckets, `s3:PutObject` on the case-outcomes and subgraph-artifacts buckets
 - `sagemaker-featurestore-runtime:GetRecord`, `sagemaker-featurestore-runtime:BatchGetRecord`, `sagemaker-featurestore-runtime:PutRecord` on the `provider-features` and `peer-group-baselines` feature groups
 - `events:PutEvents` on the `fwa-flags` and `fwa-workflow` buses
@@ -32,7 +32,7 @@ A few things worth knowing upfront:
 
 - **No real 837/835 or EDI parsing.** Parsing X12 837 professional/institutional claims, 835 remittance advice, and 270/271 eligibility transactions is a substantial engineering task and belongs in a maintained library (vendor toolkits from Edifecs, Availity, Change Healthcare, or open-source libraries like `pyx12`). This example starts from a claim dict in the shape produced by a normalizer. In production, a Lambda triggered by a Kinesis record or an S3 `ObjectCreated` event on the clearinghouse drop calls the parsing library and feeds the parsed claim into the normalization step.
 - **NetworkX instead of Neptune, for teaching only.** The main recipe runs the graph on Amazon Neptune with billions of nodes and edges. That does not fit in a teaching example you can run in a notebook. We use `networkx` in-process so the Louvain community detection and the referral-concentration queries are visible in a handful of lines. In production, every `graph.add_node`, `graph.add_edge`, and traversal call in this file maps to a Gremlin upsert or query against Neptune, usually wrapped in `gremlinpython`. The shape of the data and the queries is identical; only the runtime changes.
-- **DynamoDB table schemas.** `resolved-entities` is keyed on `canonical_id` (partition key only). `case-state` uses a composite key: `target_entity_id` (partition) and `case_id` (sort), with a GSI on `status` for the investigator queue. `suppression-registry` is keyed on `entity_id` (partition) and `rule_id` (sort) with TTL on `expires_at`. You create these once, up front; this file does not do that for you.
+- **DynamoDB table schemas.** `resolved-entities` is keyed on `canonical_id` (partition key only). `case-state` uses a composite key: `target_entity_id` (partition) and `case_id` (sort), with a GSI on `status` for the investigator queue. The main recipe also describes a `suppression-registry` table (keyed on `entity_id` partition and `rule_id` sort with TTL on `expires_at`); it is not exercised in this teaching example. You create these once, up front; this file does not do that for you.
 - **All numeric values must be Decimal going into DynamoDB.** DynamoDB rejects Python `float` for numeric attributes. A dollar exposure of `287450.00` becomes `Decimal("287450.00")` on the way in and back to float on the way out. The helper functions below handle this so you see the pattern. For a fraud pipeline the precision discipline matters: a dollar exposure stored as `287449.9999999` from float drift, compared against a `100000` high-severity cut, produces the correct routing today and might not tomorrow when the threshold moves.
 - **All example claim, provider, patient, and ownership data is synthetic.** NPIs, EINs, patient IDs, claim IDs, and entity IDs in the sample data are illustrative and do not refer to any real entities. CPT codes used (99213/99214/99215 for E&M, 80307 for drug testing, E1390 for oxygen concentrator DME) are real CPT/HCPCS identifiers. Use [CMS SynPUF](https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files) for synthetic Medicare claims, [Synthea](https://github.com/synthetichealth/synthea) for synthetic patient and provider data, and the public LEIE, SAM, and Open Payments downloads for reference data. Never use real PHI in a teaching example.
 - **Legal privilege is not modeled here.** In production, depending on the SIU's organizational structure, the case store and subgraph exports may live in an AWS account isolated from general analytics, with access controlled by general counsel. This example keeps everything in one notional account so the code is readable.
@@ -46,10 +46,10 @@ A few things worth knowing upfront:
 Everything that is configuration rather than logic lives here: thresholds, code maps, resource names, and lookup tables. These are the knobs that move most often between dev, test, and production, and between SIU playbook revisions. Keep them at the top of the file so a reviewer can see the levers without wading through function bodies.
 
 ```python
-import io
+import hashlib
+import hmac
 import json
 import logging
-import math
 import uuid
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
@@ -72,6 +72,13 @@ try:
     HAS_LOUVAIN = True
 except ImportError:
     HAS_LOUVAIN = False
+
+# Visible when running this file directly; Lambda configures its own handler
+# and this becomes a no-op there.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 # Structured logging. Ship JSON records to CloudWatch Logs Insights. Claim,
 # provider, and patient data is PHI-adjacent (an NPI plus a date range plus a
@@ -105,7 +112,12 @@ bedrock_runtime = boto3.client("bedrock-runtime", region_name=REGION, config=BOT
 # Fill in with your actual resource names. These are placeholders.
 RESOLVED_ENTITIES_TABLE = "resolved-entities"
 CASE_STATE_TABLE = "case-state"
-SUPPRESSION_REGISTRY_TABLE = "suppression-registry"
+# NOTE: The suppression-registry DynamoDB table (described in the main recipe)
+# is not exercised in this teaching example. The suppression workflow requires
+# the case management UI to capture suppression_requested and suppression_window
+# from the investigator at outcome-capture time, plus a per-flag pre-emit check
+# in the rules and statistical layers. Both are out of scope for the sketchpad
+# version; see the main recipe's Alert Fatigue subsection for the design.
 
 PROVIDER_FEATURES_FG = "provider-features"
 PEER_GROUP_BASELINES_FG = "peer-group-baselines"
@@ -115,6 +127,17 @@ RESOLVED_ENTITIES_BUCKET = "my-resolved-entities"
 MODEL_ARTIFACTS_BUCKET = "my-fwa-model-artifacts"
 CASE_OUTCOMES_BUCKET = "my-fwa-case-outcomes"
 SUBGRAPH_ARTIFACTS_BUCKET = "my-fwa-subgraph-exports"
+
+# Customer-managed KMS key ARN for the case-outcomes bucket. Separate key per
+# bucket so rotation and grants can be scoped independently. The labels-bucket
+# key gets stricter access policy than the general-claims-lake key because
+# labels carry adjudication outcomes subject to discovery in FCA proceedings.
+CASE_OUTCOMES_CMK_ARN = "arn:aws:kms:us-east-1:123456789012:key/YOUR-KEY-ID-HERE"
+
+# Stable salt for patient-ID hashing in graph nodes. In production, load this
+# from Secrets Manager at module init and rotate on a documented schedule
+# (annually or per SIU policy). A static placeholder here for teaching only.
+PATIENT_HASH_SALT = b"REPLACE-WITH-SECRETS-MANAGER-VALUE"
 
 FWA_FLAGS_BUS = "fwa-flags"
 FWA_WORKFLOW_BUS = "fwa-workflow"
@@ -185,6 +208,43 @@ def _to_decimal(value, precision="0.01"):
     if value is None:
         return None
     return Decimal(str(value)).quantize(Decimal(precision))
+
+def _floats_to_decimal(obj):
+    """Recursively convert Python floats in a dict/list tree to Decimal.
+
+    DynamoDB rejects Python float for numeric attributes; the resource-API
+    serializer raises TypeError at put time. Apply this to any structured
+    payload at the put-item boundary so flag dicts produced by sklearn or
+    by Python ratio math can be persisted without per-call-site coercion.
+    """
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    if isinstance(obj, dict):
+        return {k: _floats_to_decimal(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_floats_to_decimal(v) for v in obj]
+    return obj
+
+def _hash_patient_id(patient_id, salt=None):
+    """Stable HMAC-SHA256 hash for patient identifiers used as graph node IDs.
+
+    The FWA graph crosses provider, payment, and ownership data with patient
+    connections. An investigator (or a downstream system, or a subpoena
+    response) traversing the graph should see the structural relationship,
+    not a re-identifiable patient pointer. The hash is one-way for the
+    pipeline's purposes; a downstream system that needs to look up the
+    underlying patient (the case management UI surfacing the patient's full
+    record to an investigator with appropriate access) does the reverse
+    lookup through the patient master, not by reversing the hash.
+
+    The salt must be stable across runs so the same patient produces the same
+    node ID across batches; rotate on a long cadence (annually or per SIU
+    policy), not per-run.
+    """
+    if salt is None:
+        salt = PATIENT_HASH_SALT
+    return hmac.new(salt, patient_id.encode("utf-8"),
+                    hashlib.sha256).hexdigest()[:16]
 
 def _redact_for_logs(canonical_claim):
     """Produce a log-safe structural summary of a claim.
@@ -417,7 +477,7 @@ def refresh_graph(resolved_entities, claims_batch, ownership_edges=None):
         )
 
         if claim.get("patient_id"):
-            patient_node = f"PATIENT:{claim['patient_id']}"
+            patient_node = f"PATIENT:{_hash_patient_id(claim['patient_id'])}"
             graph.add_node(patient_node, node_type="patient")
             graph.add_edge(patient_node, claim_node, edge_type="patient_of",
                            service_date=claim["service_date"])
@@ -443,7 +503,17 @@ def refresh_graph(resolved_entities, claims_batch, ownership_edges=None):
     # common-ownership cascades (one LLC owning ten clinics that all refer
     # to the same DME supplier, for example).
     for edge in (ownership_edges or []):
-        graph.add_edge(edge["parent"], edge["child"], edge_type="owns",
+        parent_id = edge["parent"]
+        child_id = edge["child"]
+        # Create endpoint nodes with node_type="organization" so the
+        # OWNERSHIP_CASCADE detector in Step 6 can find them. In production,
+        # entity resolution (Step 2) writes organization nodes alongside
+        # providers; this branch is the teaching-example shortcut.
+        if parent_id not in graph:
+            graph.add_node(parent_id, node_type="organization")
+        if child_id not in graph:
+            graph.add_node(child_id, node_type="organization")
+        graph.add_edge(parent_id, child_id, edge_type="owns",
                        percentage=edge.get("percentage"))
 
     logger.info("graph refreshed", extra={
@@ -520,8 +590,12 @@ def run_rules_on_claim(canonical_claim, resolved_entities, patient_vital_status=
                 ),
             })
 
-    # Rule 3: LEIE exclusion. Any claim touching a LEIE-excluded provider
-    # gets the critical tier. (The exclusion flags were computed in Step 2.)
+    # Rule 3: Unresolved provider role. The actual LEIE/SAM exclusion check
+    # ran in Step 2 (resolve_providers returns exclusion_flags); the pipeline
+    # driver concatenates those into rule_flags. Here we surface the
+    # data-quality flag for any provider role that fell through entity
+    # resolution, which is worth investigating separately (missing from NPPES
+    # can indicate credential issues, practice closure, or data-entry errors).
     for role in ["rendering_provider_npi", "billing_provider_npi",
                  "referring_provider_npi", "facility_npi"]:
         npi = canonical_claim.get(role)
@@ -604,6 +678,13 @@ def _cusum(series, k, h):
     reference mean exceeds h standard deviations. None if no detection.
     Tracks when a provider's own rate started drifting upward (level-5 E&M
     rate creeping up, drug-test units per patient climbing, and so on).
+
+    NOTE: This teaching implementation uses the full series mean as the
+    reference value. Production CUSUM uses an explicit baseline window (e.g.,
+    the first half of the series) or a target mean from the SIU's process
+    spec. The full-series-mean approach is structurally less sensitive to
+    shifts because the shift itself pulls the reference up. See Recipe 3.3
+    for the billing-code-drift detection pattern with an explicit baseline.
     """
     mean = np.mean(series)
     std = np.std(series) or 1.0
@@ -864,6 +945,21 @@ def _determine_routing(severity, exposure):
         return {"queue": "priority", "notify": ["lead-investigator"]}
     return {"queue": "standard", "notify": []}
 
+def _derive_case_id(entity_id, rule_ids, window_key):
+    """Deterministic case_id so retries collapse to the same record.
+
+    window_key is a coarse bucket like 'year=2026/week=20'. It collapses
+    retries within a detection window to a single case while letting a
+    week-over-week recurrence open a new case.
+    """
+    key_material = "|".join([
+        entity_id,
+        ",".join(sorted(set(rule_ids))),
+        window_key,
+    ])
+    digest = hashlib.sha256(key_material.encode("utf-8")).hexdigest()
+    return f"CASE:{digest[:24]}"
+
 def aggregate_flags_to_cases(all_flags, claim_exposure_by_entity):
     """Group flags by target entity, compute case severity and exposure,
     and write case records to DynamoDB.
@@ -901,7 +997,23 @@ def aggregate_flags_to_cases(all_flags, claim_exposure_by_entity):
         exposure = claim_exposure_by_entity.get(entity_id, Decimal("0"))
         routing = _determine_routing(overall, exposure)
 
-        case_id = f"CASE:{uuid.uuid4()}"
+        # Deterministic case_id derived from entity, rules, and time window.
+        # On retry (Step Functions retries a transient DynamoDB throttle), the
+        # function produces the same case_id, and the ConditionExpression
+        # below catches the duplicate write. This is real retry idempotency,
+        # not the uuid-per-call pattern that silently creates duplicates.
+        window_key = datetime.now(timezone.utc).strftime("year=%Y/week=%V")
+        case_id = _derive_case_id(
+            entity_id=entity_id,
+            rule_ids=[f["rule_id"] for f in flags],
+            window_key=window_key,
+        )
+
+        # DynamoDB rejects Python float for numeric attributes; the
+        # resource-API serializer raises TypeError at put time. Coerce
+        # numeric fields to Decimal at the type boundary for nested payloads
+        # like evidence_summary (which contains z-scores, isolation scores,
+        # and referral concentrations from sklearn and Python ratio math).
         case_record = {
             "target_entity_id": entity_id,
             "case_id": case_id,
@@ -910,7 +1022,7 @@ def aggregate_flags_to_cases(all_flags, claim_exposure_by_entity):
             "exposure_amount": _to_decimal(exposure),
             "num_flags": len(flags),
             "flag_types": sorted(set(f["rule_id"] for f in flags)),
-            "evidence_summary": flags[:20],   # top-20 for the case viewer
+            "evidence_summary": _floats_to_decimal(flags[:20]),
             "routing_queue": routing["queue"],
             "created_at": datetime.now(timezone.utc).isoformat(),
             "case_bundle_s3_uri": (
@@ -918,14 +1030,20 @@ def aggregate_flags_to_cases(all_flags, claim_exposure_by_entity):
             ),
         }
 
-        # ConditionExpression prevents overwriting an existing case record
-        # when Step Functions retries a transient failure after the case was
-        # already written. Treat ConditionalCheckFailedException as success
-        # in production (the case is there, we do not need to write again).
-        table.put_item(
-            Item=case_record,
-            ConditionExpression="attribute_not_exists(case_id)",
-        )
+        # ConditionExpression with a deterministic case_id means retries
+        # hit the condition and fail closed. Catch the exception and treat
+        # as success: the case is already there from the first attempt.
+        try:
+            table.put_item(
+                Item=_floats_to_decimal(case_record),
+                ConditionExpression="attribute_not_exists(case_id)",
+            )
+        except table.meta.client.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                logger.info("case already exists; idempotent retry",
+                            extra={"case_id": case_id, "entity_id": entity_id})
+                continue
+            raise
         cases_written.append(case_record)
 
         # Publish to the flags EventBridge bus so the evidence-aggregator,
@@ -954,7 +1072,7 @@ def aggregate_flags_to_cases(all_flags, claim_exposure_by_entity):
                     "entity_id": entity_id,
                     "exposure": str(exposure),
                     "flag_types": case_record["flag_types"],
-                }, default=str),
+                }),
             )
 
     _emit_metric("CasesCreated", len(cases_written))
@@ -1081,12 +1199,23 @@ def capture_case_outcome(case_id, entity_id, outcome, recovery_amount=None, note
     if outcome not in valid_outcomes:
         raise ValueError(f"invalid outcome: {outcome}")
 
+    # Input validation: catch obvious bad inputs before any side effects.
+    if recovery_amount is not None and recovery_amount < 0:
+        raise ValueError(f"recovery_amount must be non-negative; got {recovery_amount}")
+    if not case_id or not case_id.startswith("CASE:"):
+        raise ValueError(f"case_id must be a CASE: prefixed identifier; got {case_id!r}")
+    if not entity_id:
+        raise ValueError("entity_id is required")
+
     table = dynamodb.Table(CASE_STATE_TABLE)
 
-    # Version attribute for optimistic locking. EventBridge delivers at
-    # least once, so the same outcome event may arrive multiple times.
-    # Increment the version atomically and fail-closed if the case no
-    # longer exists.
+    # Atomic write counter for audit. The version attribute increments on
+    # every outcome write so retroactive review can tell whether the outcome
+    # was overwritten and how many times. ConditionExpression ensures we never
+    # write to a case that has been deleted. EventBridge at-least-once
+    # delivery is fine here because outcome writes are terminal and
+    # idempotent; if a real concurrent-writer scenario emerges, switch to
+    # read-modify-write with a version check on the ConditionExpression.
     table.update_item(
         Key={"target_entity_id": entity_id, "case_id": case_id},
         UpdateExpression=(
@@ -1111,7 +1240,16 @@ def capture_case_outcome(case_id, entity_id, outcome, recovery_amount=None, note
     # the label back to the exact feature vector that was scored at case
     # creation. The label derivation is organization-specific; revisit the
     # mapping with SIU leadership quarterly.
-    label_key = f"labels/{case_id}.json"
+    # Date-partitioned key so Athena and Glue can prune at the partition level
+    # when reading labels for retraining; case_id uniqueness inside the
+    # partition is preserved by the deterministic case_id.
+    decision_dt = datetime.now(timezone.utc)
+    label_key = (
+        f"labels/year={decision_dt.year:04d}/"
+        f"month={decision_dt.month:02d}/"
+        f"day={decision_dt.day:02d}/"
+        f"{case_id.replace(':', '-')}.json"
+    )
     label_record = {
         "case_id": case_id,
         "entity_id": entity_id,
@@ -1119,13 +1257,14 @@ def capture_case_outcome(case_id, entity_id, outcome, recovery_amount=None, note
                                   "REFERRED_TO_REGULATOR"} else 0,
         "outcome_raw": outcome,
         "recovery_amount": str(_to_decimal(recovery_amount or 0)),
-        "labeled_at": datetime.now(timezone.utc).isoformat(),
+        "labeled_at": decision_dt.isoformat(),
     }
     s3_client.put_object(
         Bucket=CASE_OUTCOMES_BUCKET,
         Key=label_key,
         Body=json.dumps(label_record).encode("utf-8"),
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=CASE_OUTCOMES_CMK_ARN,
     )
 
     # Publish the outcome to the workflow bus. Consumers include the
@@ -1134,7 +1273,7 @@ def capture_case_outcome(case_id, entity_id, outcome, recovery_amount=None, note
     eventbridge.put_events(Entries=[{
         "Source": "fwa.workflow",
         "DetailType": "CaseClosed",
-        "Detail": json.dumps(label_record, default=str),
+        "Detail": json.dumps(label_record),
         "EventBusName": FWA_WORKFLOW_BUS,
     }])
 
