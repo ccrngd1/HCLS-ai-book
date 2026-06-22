@@ -97,7 +97,7 @@ The optimization runs periodically (weekly is the sweet spot for most clinics; m
 ## General Architecture Pattern
 
 ```text
-[Historical Data] → [Feature Engineering] → [Optimization Model] → [Simulation Validation] → [Template Output] → [Human Review] → [EHR Template Update]
+[Historical Data] → [Feature Engineering] → [Optimization Model] → [Simulation Validation] → [Template Output] → [Human Review] → [EHR Template Update] → [Post-Deployment Monitoring] → (feedback to Historical Data or Rollback)
 ```
 
 **Historical Data Collection.** Pull visit duration actuals (check-in to checkout), no-show rates, cancellation rates, and patient arrival patterns from your scheduling and EHR systems. You need at least 6 months of data per provider to capture seasonal patterns. Group by visit type, provider, day-of-week, and time-of-day.
@@ -113,6 +113,8 @@ Note: the simulation assumes provider behavior remains constant under the new te
 **Human Review.** Present the proposed template alongside the simulation results to the operations team and affected providers. Show the tradeoffs explicitly: "This template sees 2 more patients per day but increases average wait time by 3 minutes." Let humans make the final call.
 
 **EHR Integration.** Push the approved template into your scheduling system. Most EHRs support template APIs or bulk configuration. The integration is usually the least interesting technical piece but the most operationally painful one.
+
+**Post-Deployment Monitoring.** After go-live, compare actual throughput, wait times, and overtime against the simulation predictions for 1-2 weeks. Track the same metrics you simulated: patients seen per session, average wait, overtime probability, and provider idle time. If actual performance deviates beyond a defined threshold (for example, wait times 50% higher than predicted, or overtime probability doubling), alert the operations team and trigger a rollback to the previous template version. This monitoring loop closes the feedback cycle that simulation alone cannot: it catches the behavioral changes that providers make in response to a new template. Maybe providers speed up under tighter slots, or maybe they compensate by extending visits. You only learn this from real-world data. The monitoring period also builds organizational confidence. When stakeholders can see that the system self-corrects, they're more willing to approve the next optimization cycle.
 
 ---
 

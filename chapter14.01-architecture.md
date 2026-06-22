@@ -37,11 +37,16 @@ flowchart TD
     I --> J[QuickSight\nReview Dashboard]
     J -->|Approved| K[Lambda\nehr-template-push]
     K --> A
+    A -->|Actual Metrics| L[Lambda\npost-deploy-monitor]
+    L -->|Compare vs Expected| I
+    L -->|Threshold Breach| M[Rollback: Restore\nPrevious Template]
+    M --> K
 
     style B fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
     style I fill:#9ff,stroke:#333
     style SF fill:#f96,stroke:#333
+    style L fill:#9f9,stroke:#333
 ```
 
 ## Prerequisites
@@ -293,6 +298,71 @@ FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, si
         body = "A new template proposal is available. Review in the dashboard: {dashboard_url}"
     
     RETURN version
+```
+
+**Step 6: Post-deployment monitoring and automatic rollback.** After a template goes active, monitor actual clinic performance against the simulation predictions. Pull real throughput, wait times, and overtime data from the EHR for 1-2 weeks and compare against the `simulation_proposed` metrics stored in DynamoDB. If performance deviates beyond configured thresholds, automatically roll back to the previous template version. DynamoDB's version history makes rollback straightforward: query for the most recent item where `status = "active"` and `version < current_version`, flip its status back to "active," and mark the current template as "rolled_back."
+
+```pseudocode
+FUNCTION monitor_and_rollback(provider_id, monitoring_window_days = 14):
+    // Retrieve the active template and its expected performance
+    active_template = query DynamoDB table "template-store":
+        WHERE provider_id = provider_id AND status = "active"
+        ORDER BY version DESC, LIMIT 1
+    
+    expected = active_template.simulation_proposed
+    
+    // Pull actual performance from EHR data over the monitoring window
+    actual_data = extract_scheduling_data(
+        start_date = active_template.approved_at,
+        end_date   = active_template.approved_at + monitoring_window_days
+    )
+    
+    actual_metrics = {
+        mean_throughput: average(actual_data.patients_per_session),
+        mean_wait: average(actual_data.patient_wait_minutes),
+        overtime_prob: count(sessions_with_overtime) / total_sessions
+    }
+    
+    // Check deviation thresholds
+    wait_deviation = (actual_metrics.mean_wait - expected.mean_wait) / expected.mean_wait
+    overtime_deviation = actual_metrics.overtime_prob - expected.overtime_prob
+    
+    IF wait_deviation > 0.50 OR overtime_deviation > 0.10:
+        // Performance has deviated unacceptably. Roll back.
+        
+        // Find previous active version in DynamoDB
+        previous_version = query DynamoDB table "template-store":
+            WHERE provider_id = provider_id
+            AND version < active_template.version
+            AND status IN ("rolled_back_from", "previously_active")
+            ORDER BY version DESC, LIMIT 1
+        
+        // Swap statuses using a DynamoDB TransactWriteItems call
+        // to ensure atomicity (both updates succeed or neither does)
+        transact_write:
+            UPDATE active_template: SET status = "rolled_back",
+                                       rolled_back_at = current UTC timestamp,
+                                       rollback_reason = "wait_deviation={wait_deviation}, overtime_deviation={overtime_deviation}"
+            UPDATE previous_version: SET status = "active"
+        
+        // Push the previous template back to the EHR
+        push_template_to_ehr(provider_id, previous_version.template)
+        
+        // Alert operations
+        send notification:
+            to = operations_team_endpoint
+            subject = "Template rollback triggered"
+            body = "Review in the dashboard: {dashboard_url}"
+        
+        RETURN "rolled_back"
+    
+    ELSE:
+        // Performance within acceptable bounds. Mark monitoring complete.
+        UPDATE active_template in DynamoDB:
+            SET monitoring_status = "passed",
+                actual_metrics = actual_metrics
+        
+        RETURN "monitoring_passed"
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter14.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
