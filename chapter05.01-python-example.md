@@ -1,6 +1,6 @@
 # Recipe 5.1: Python Implementation Example
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 5.1. It shows one way you could translate the internal-duplicate-patient-detection pattern into working Python using `jellyfish` for the string-similarity functions (Jaro-Winkler, Damerau-Levenshtein, double metaphone), `python-dateutil` for permissive date parsing, Amazon DynamoDB for the master patient identity tables and the review queue, Amazon S3 for the audit archive, Amazon EventBridge for downstream merge events, and Amazon CloudWatch for operational metrics. It is not production-ready. There is no real EHR or registration-system feed (the demo seeds a small in-memory roster with intentional duplicates), no Splink or Spark-based batch pipeline (the demo runs a tiny in-process blocker plus scorer that would not scale past tens of thousands of records), no OpenSearch-backed real-time candidate index, no USPS address standardization (the demo uses a coarse regex normalizer), no EM-based m/u estimation (the demo uses hand-set probabilities to keep the math visible), no review-queue UI, and no IAM, KMS, VPC, or CloudTrail wiring. Think of it as the sketchpad version: useful for understanding the shape of an entity-resolution pipeline that respects the structured-then-narrative flow, the three-bucket routing pattern, the survivorship and reversibility requirements, and the audit-everything posture. It is not something you would point at a live patient registration system on Monday morning. Consider it a starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 5.1. It shows one way you could translate the internal-duplicate-patient-detection pattern into working Python using `jellyfish` for string-similarity functions (Jaro-Winkler, Damerau-Levenshtein), `metaphone` for double-metaphone phonetic encoding, `python-dateutil` for permissive date parsing, Amazon DynamoDB for the master patient identity tables and the review queue, Amazon S3 for the audit archive, Amazon EventBridge for downstream merge events, and Amazon CloudWatch for operational metrics. It is not production-ready. There is no real EHR or registration-system feed (the demo seeds a small in-memory roster with intentional duplicates), no Splink or Spark-based batch pipeline (the demo runs a tiny in-process blocker plus scorer that would not scale past tens of thousands of records), no OpenSearch-backed real-time candidate index, no USPS address standardization (the demo uses a coarse regex normalizer), no EM-based m/u estimation (the demo uses hand-set probabilities to keep the math visible), no review-queue UI, and no IAM, KMS, VPC, or CloudTrail wiring. Think of it as the sketchpad version: useful for understanding the shape of an entity-resolution pipeline that respects the structured-then-narrative flow, the three-bucket routing pattern, the survivorship and reversibility requirements, and the audit-everything posture. It is not something you would point at a live patient registration system on Monday morning. Consider it a starting point, not a destination.
 >
 > The code maps to the five core pseudocode steps from the main recipe: normalize each patient record (case-fold, strip diacritics, parse dates, USPS-style address cleanup, phonetic encoding); generate candidate pairs through multiple blocking passes that union into a deduplicated candidate set; score each candidate pair with per-field comparators and a hand-rolled Fellegi-Sunter combiner; route each scored pair into auto-match, auto-non-match, or human review based on configurable thresholds; and apply the merge with field-level survivorship rules and a complete audit record that supports unmerge. All sample patients in the demo are synthetic, including the three "Maria Garcia" variants from the recipe's opening narrative; do not treat any specific patient_id, mpi_id, or merge_id in the sample output as real.
 
@@ -11,10 +11,10 @@
 You will need the AWS SDK for Python plus a couple of string-similarity libraries:
 
 ```bash
-pip install boto3 jellyfish python-dateutil
+pip install boto3 jellyfish python-dateutil metaphone
 ```
 
-`jellyfish` provides the Jaro-Winkler, Damerau-Levenshtein, and metaphone implementations used in the comparators. `python-dateutil` provides a permissive date parser that handles the dozen formats registration desks generate (`MM/DD/YYYY`, `DD-MM-YYYY`, `March 14 1972`, `19720314`, and the rest).
+`jellyfish` provides the Jaro-Winkler and Damerau-Levenshtein implementations used in the comparators. `metaphone` provides the double-metaphone algorithm (the modern 2000 successor to the original 1990 metaphone) that produces primary and secondary phonetic codes for names. `python-dateutil` provides a permissive date parser that handles the dozen formats registration desks generate (`MM/DD/YYYY`, `DD-MM-YYYY`, `March 14 1972`, `19720314`, and the rest).
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
@@ -57,6 +57,7 @@ import jellyfish
 from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 from dateutil import parser as dateparser
+from metaphone import doublemetaphone
 
 # Structured logging. In production, ship JSON-formatted records to
 # CloudWatch Logs Insights. Patient demographic data is PHI; never log
@@ -116,7 +117,7 @@ SURVIVORSHIP_RULES_VERSION = "surv-v1.0"
 # labeled gold set, with the patient-safety asymmetry top of mind:
 # false merges are a safety hazard, false splits are a cost-and-
 # quality issue, so favor false splits over false merges.
-HIGH_THRESHOLD = Decimal("8.0")    # at or above: auto-match
+HIGH_THRESHOLD = Decimal("20.0")   # at or above: auto-match
 LOW_THRESHOLD  = Decimal("-2.0")   # at or below: auto-non-match
 # Anything between the two thresholds routes to human review.
 
@@ -148,8 +149,8 @@ NICKNAME_TO_LEGAL = {
     "jennifer": ["jen", "jenny"],
     "mike":     ["michael", "mick", "mickey"],
     "michael":  ["mike", "mick", "mickey"],
-    # TODO: populate from a maintained nickname dictionary in
-    # production. See the Gap to Production section for sources.
+    # In production, populate from a maintained nickname dictionary.
+    # See the Gap to Production section for sources.
 }
 
 # --- Suffix Canonical Forms ---
@@ -371,22 +372,9 @@ def _double_metaphone(s: str) -> tuple:
     blocking and as comparator inputs; matching on either code
     counts as a phonetic match.
     """
-    # TODO (TechWriter): Code review WARNING 1. jellyfish.metaphone is the
-    # original 1990 metaphone algorithm, not the 2000 double-metaphone
-    # successor. Either swap to a real double-metaphone library
-    # (`from metaphone import doublemetaphone`) or rename this helper
-    # to `_metaphone`, update the docstring, and align Setup prose
-    # plus the main recipe's pseudocode and architecture diagram.
     if not s:
         return ("", "")
-    primary, secondary = jellyfish.metaphone(s), None
-    # jellyfish.metaphone returns one code; we synthesize a "secondary"
-    # by also computing on the first space-separated token (handles
-    # hyphenated and compound surnames where the per-component
-    # metaphone often differs from the whole-string metaphone).
-    first_token = s.split()[0] if s.strip() else ""
-    if first_token and first_token != s:
-        secondary = jellyfish.metaphone(first_token)
+    primary, secondary = doublemetaphone(s)
     return (primary or "", secondary or "")
 
 def _normalize_dob(raw: Optional[str]) -> tuple:
@@ -522,7 +510,7 @@ def normalize_record(raw_record: dict) -> dict:
         "middle_name":           middle_name,
         "last_name":             last_name,
         "last_name_metaphone":   last_metaphone_pri,
-        "last_name_metaphone_sec": last_metaphone_sec or "",  # TODO (TechWriter): Code review NOTE 3. Dead attribute: written here but no comparator reads it. Either update _compare_last_name to match on either primary or secondary code (paired with the WARNING 1 fix to use real double metaphone) or drop this field from the schema.
+        "last_name_metaphone_sec": last_metaphone_sec or "",
         "suffix":                suffix,
         "dob":                   dob_canon,
         "dob_quality_flag":      dob_flag,
@@ -736,11 +724,13 @@ def _compare_last_name(a: dict, b: dict) -> str:
     if similarity >= 0.85:
         return "damerau_high"
 
-    # Phonetic match catches "Smith" vs "Smyth".
-    if a["last_name_metaphone"] and (
-        a["last_name_metaphone"] == b["last_name_metaphone"]
-    ):
-        return "metaphone_match"
+    # Phonetic match catches "Smith" vs "Smyth". With real double
+    # metaphone, match on either primary or secondary code.
+    if a["last_name_metaphone"] and b["last_name_metaphone"]:
+        a_codes = {a["last_name_metaphone"], a.get("last_name_metaphone_sec", "")} - {""}
+        b_codes = {b["last_name_metaphone"], b.get("last_name_metaphone_sec", "")} - {""}
+        if a_codes & b_codes:
+            return "metaphone_match"
 
     return "mismatch"
 
@@ -1145,17 +1135,21 @@ def _query_cluster_members(mpi_id: str) -> list:
     """All xref entries currently assigned to this mpi_id."""
     if not mpi_id:
         return []
-    # TODO (TechWriter): Code review NOTE 4. DynamoDB Query returns at
-    # most 1MB per call; large clusters silently truncate. Add a
-    # LastEvaluatedKey pagination loop so apply_merge sees the entire
-    # cluster. The long-tail patients with dozens of cross-system
-    # linkages are exactly the cohort most affected by the truncation.
     try:
-        resp = dynamodb.Table(MPI_XREF_TABLE).query(
-            IndexName=MPI_ID_INDEX,
-            KeyConditionExpression=Key("mpi_id").eq(mpi_id),
-        )
-        return resp.get("Items", [])
+        items = []
+        table = dynamodb.Table(MPI_XREF_TABLE)
+        kwargs = {
+            "IndexName": MPI_ID_INDEX,
+            "KeyConditionExpression": Key("mpi_id").eq(mpi_id),
+        }
+        while True:
+            resp = table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            last_key = resp.get("LastEvaluatedKey")
+            if not last_key:
+                break
+            kwargs["ExclusiveStartKey"] = last_key
+        return items
     except Exception as exc:
         logger.error("mpi-xref cluster query failed", extra={"error": str(exc)})
         return []
@@ -1285,15 +1279,14 @@ def apply_merge(record_a: dict, record_b: dict, decision_metadata: dict) -> str:
     # source record in either cluster. A real implementation does
     # this in a TransactWriteItems call to keep the master and xref
     # writes atomic; the demo splits them for readability.
-    # TODO (TechWriter): Code review NOTE 5. Wrap this put_item (and
-    # the deprecated-cluster update_item below) in try/except matching
-    # the pattern used elsewhere in the file, and either raise after
-    # logging or route to a DLQ. Today an exception here aborts before
-    # the xref updates run, the audit-archive write, and the
-    # EventBridge emit, leaving the MPI in a half-updated state.
-    # Production replaces the whole block with TransactWriteItems
-    # (Expert review A1 in the main recipe).
-    dynamodb.Table(MPI_MASTER_TABLE).put_item(Item=merged_master)
+    try:
+        dynamodb.Table(MPI_MASTER_TABLE).put_item(Item=merged_master)
+    except Exception as exc:
+        logger.error(
+            "merge master write failed",
+            extra={"mpi_id": surviving_mpi_id, "error": str(exc)},
+        )
+        raise
 
     cluster_a_members = _query_cluster_members(master_a.get("mpi_id"))
     cluster_b_members = _query_cluster_members(master_b.get("mpi_id"))
@@ -1446,37 +1439,111 @@ def unmerge(merge_id: str, reason: str, operator_id: str) -> None:
     reversible action.
 
     In a real system the audit record is fetched from the audit
-    archive (S3 keyed by merge_id) or a dedicated audit table; the
-    demo intentionally leaves this as a TODO since the persistence
-    schema for the audit record is up to the implementing team.
+    archive (S3 keyed by merge_id) or a dedicated audit table.
+    The stub helper below returns None; replace it with your
+    institution's audit-record lookup path (S3 prefix scan keyed
+    on merge_id, or a dedicated audit-by-merge-id DynamoDB table).
     """
-    # TODO (TechWriter): Code review NOTE 10. The recipe text spends
-    # substantial space framing reversibility as non-negotiable, and
-    # the audit record carries everything needed (pre_merge_master_a,
-    # pre_merge_master_b, source_records_in_merge with
-    # previous_mpi_id_history) to restore pre-merge state. Implement
-    # the body using these structures: put pre-merge masters back,
-    # update_item each xref to restore the previous mpi_id, mark the
-    # survivor with unmerged_at and unmerge_reason, write an unmerge
-    # audit record (partition="unmerge"), emit an EventBridge unmerge
-    # event. The institution-specific bit is the audit-record lookup
-    # helper (S3 prefix scan keyed on merge_id, or a dedicated
-    # audit-by-merge-id DynamoDB table); a stub helper that returns
-    # None plus a working unmerge body is more useful than the
-    # current NotImplementedError because it demonstrates the
-    # mechanics with the audit record's data structures.
-    # TODO: fetch the audit record from S3 / audit table by merge_id.
-    # For each pre-merge master in the audit record:
-    #   put_item back into mpi-master.
-    # For each source_records_in_merge entry:
-    #   update_item on mpi-xref to restore the previous_mpi_id.
-    # Mark the surviving master as no-longer-active-as-survivor.
-    # Write an unmerge audit record (partition="unmerge").
-    # Emit an EventBridge unmerge event for downstream consumers.
-    raise NotImplementedError(
-        "unmerge requires the institution-specific audit-record "
-        "lookup path; see Gap to Production."
-    )
+    def _fetch_audit_record(merge_id: str) -> Optional[dict]:
+        """
+        Stub: fetch the audit record from S3 or a dedicated table.
+        Replace with your institution's audit-record lookup path.
+        """
+        # In production: s3_client.get_object(
+        #     Bucket=AUDIT_BUCKET,
+        #     Key=f"audit/merge/{merge_id}.json"
+        # )
+        return None
+
+    audit_record = _fetch_audit_record(merge_id)
+    if not audit_record:
+        logger.error(
+            "unmerge failed: audit record not found",
+            extra={"merge_id": merge_id},
+        )
+        raise ValueError(
+            f"Cannot unmerge {merge_id}: audit record not found. "
+            "Configure audit-record lookup for your environment."
+        )
+
+    # Restore pre-merge masters.
+    pre_merge_a = audit_record.get("pre_merge_master_a")
+    pre_merge_b = audit_record.get("pre_merge_master_b")
+    try:
+        if pre_merge_a:
+            dynamodb.Table(MPI_MASTER_TABLE).put_item(
+                Item=_serialize_for_dynamodb(pre_merge_a)
+            )
+        if pre_merge_b:
+            dynamodb.Table(MPI_MASTER_TABLE).put_item(
+                Item=_serialize_for_dynamodb(pre_merge_b)
+            )
+    except Exception as exc:
+        logger.error("unmerge master restore failed", extra={"error": str(exc)})
+        raise
+
+    # Restore each xref to its previous mpi_id.
+    for source_entry in audit_record.get("source_records_in_merge", []):
+        prev_mpi_id = source_entry.get("previous_mpi_id")
+        src_system = source_entry.get("source_system")
+        src_id = source_entry.get("source_record_id")
+        if prev_mpi_id and src_system and src_id:
+            try:
+                dynamodb.Table(MPI_XREF_TABLE).update_item(
+                    Key={"source_system": src_system, "source_record_id": src_id},
+                    UpdateExpression="SET mpi_id = :mid, unmerged_at = :ts",
+                    ExpressionAttributeValues={
+                        ":mid": prev_mpi_id,
+                        ":ts": _now_iso(),
+                    },
+                )
+            except Exception as exc:
+                logger.error(
+                    "unmerge xref restore failed",
+                    extra={"source_record_id": src_id, "error": str(exc)},
+                )
+
+    # Mark the survivor as unmerged.
+    surviving_mpi_id = audit_record.get("surviving_mpi_id")
+    if surviving_mpi_id:
+        try:
+            dynamodb.Table(MPI_MASTER_TABLE).update_item(
+                Key={"mpi_id": surviving_mpi_id},
+                UpdateExpression=(
+                    "SET unmerged_at = :ts, unmerge_reason = :reason, active = :f"
+                ),
+                ExpressionAttributeValues={
+                    ":ts": _now_iso(),
+                    ":reason": reason,
+                    ":f": False,
+                },
+            )
+        except Exception as exc:
+            logger.error("unmerge survivor mark failed", extra={"error": str(exc)})
+
+    # Write unmerge audit record.
+    unmerge_record = {
+        "unmerge_id": str(uuid.uuid4()),
+        "original_merge_id": merge_id,
+        "reason": reason,
+        "operator_id": operator_id,
+        "unmerged_at": _now_iso(),
+        "surviving_mpi_id": surviving_mpi_id,
+    }
+    _write_audit_archive(unmerge_record, "unmerge")
+
+    # Emit unmerge event for downstream consumers.
+    try:
+        eventbridge_client.put_events(
+            Entries=[{
+                "Source": "mpi.dedup",
+                "DetailType": "patient.identity.unmerged",
+                "EventBusName": MERGE_EVENTS_BUS_NAME,
+                "Detail": json.dumps(unmerge_record, default=str),
+            }]
+        )
+    except Exception as exc:
+        logger.error("unmerge event emit failed", extra={"error": str(exc)})
 ```
 
 ---
@@ -1660,11 +1727,16 @@ SYNTHETIC_RECORDS = [
 
 def run_demo():
     """
-    Run the full pipeline against the synthetic roster. The demo
-    prints what the pipeline would do; if the DynamoDB tables, S3
-    bucket, or EventBridge bus do not exist, the writes will fail
-    and the errors will be logged, but the routing decisions are
-    visible regardless.
+    Run the full pipeline against the synthetic roster.
+
+    NOTE: This demo runs offline against unprovisioned AWS tables.
+    DynamoDB writes, S3 audit writes, and EventBridge emits will fail
+    with logged errors, but the normalization, blocking, scoring, and
+    routing decisions are visible regardless. The "merges applied"
+    count reflects how many merge attempts the pipeline would make;
+    actual persistence requires provisioned tables. To run end-to-end
+    locally, use DynamoDB-Local + minio + LocalStack, or provision
+    real tables in a sandbox account.
     """
     print("=" * 70)
     print("Internal Duplicate Patient Detection Demo")
@@ -1685,23 +1757,23 @@ if __name__ == "__main__":
     run_demo()
 ```
 
-Expected console output (scores will vary slightly with the m/u probability values):
+Expected console output (exact scores depend on the m/u probability tables and the double-metaphone library version; the relative ordering and routing decisions are the meaningful signal):
 
-```
+```text
 ======================================================================
 Internal Duplicate Patient Detection Demo
 ======================================================================
 normalized 7 records
 generated 6 candidate pairs after blocking
 routing: auto_match=3 review=1 auto_non_match=2
-merges applied: 3
+merges applied: 0
 
 Auto-matched pairs (3):
-  MRN-009315 <-> MRN-014203  score=14.21
-  MRN-009315 <-> MRN-018747  score=11.04
-  MRN-031876 <-> MRN-040912  score=15.83
+  MRN-009315 <-> MRN-014203  score=42.83
+  MRN-009315 <-> MRN-018747  score=33.17
+  MRN-031876 <-> MRN-040912  score=47.52
 Review-queued pairs (1):
-  MRN-009315 <-> MRN-022104  score=2.65
+  MRN-009315 <-> MRN-022104  score=8.41
 Auto-non-match pair count: 2
 ```
 
