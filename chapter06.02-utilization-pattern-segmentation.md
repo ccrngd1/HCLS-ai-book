@@ -151,7 +151,7 @@ This is the unsupervised learning paradox: there's no ground truth. You can't co
 
 The gold standard: present the segment profiles (without labels) to a population health medical director and ask "do these groups make clinical sense, and would you intervene differently for each one?" If the answer is yes, your segmentation is working.
 
-### The General Architecture Pattern
+## The General Architecture Pattern
 
 ```text
 [Claims/Encounter Data] → [Feature Engineering] → [Normalize] → [Reduce Dimensions] → [Cluster] → [Profile & Validate] → [Assign & Monitor]

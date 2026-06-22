@@ -218,7 +218,7 @@ def generate_synthetic_utilization_data(n_members: int = 5000) -> pd.DataFrame:
 
 ## Step 2: Feature Engineering and Scaling
 
-*The pseudocode calls this `prepare_features(utilization_df)`. Before clustering, we need to standardize the features so that high-magnitude columns (like total_allowed_12m in dollars) don't dominate the distance calculations over low-magnitude columns (like inpatient_admits which might be 0-3). StandardScaler centers each feature at mean=0 and scales to unit variance.*
+*The pseudocode calls this `prepare_features(utilization_df)`. Before clustering, we need to standardize the features so that high-magnitude columns (like total_allowed_12m in dollars) don't dominate the distance calculations over low-magnitude columns (like inpatient_admits which might be 0-3). StandardScaler centers each feature at mean=0 and scales to unit variance. With only 8 features, we skip the PCA step described in the main recipe. PCA becomes important when you have 20+ engineered features.*
 
 ```python
 def prepare_features(df: pd.DataFrame) -> tuple[np.ndarray, StandardScaler]:
@@ -254,6 +254,9 @@ def prepare_features(df: pd.DataFrame) -> tuple[np.ndarray, StandardScaler]:
         feature_matrix[col] = feature_matrix[col].clip(upper=cap)
 
     # Standardize: mean=0, std=1 for each feature.
+    # NOTE: The main recipe recommends log1p + robust scaling for production.
+    # We use StandardScaler with clipping here for simplicity; both approaches
+    # produce reasonable clusters on this synthetic data.
     scaler = StandardScaler()
     scaled = scaler.fit_transform(feature_matrix.values)
 
@@ -306,6 +309,10 @@ def cluster_members(scaled_features: np.ndarray) -> tuple[np.ndarray, np.ndarray
         random_state=RANDOM_SEED,
         n_init=10,        # Run 10 initializations, keep the best
         max_iter=300,     # Usually converges in 20-50 iterations
+        # In production, evaluate k=4 through k=10 and select based on
+        # silhouette + minimum cluster size (see main recipe Step 4).
+        # We fix k=5 here because the synthetic data was designed with
+        # 5 archetypes.
     )
 
     cluster_labels = kmeans.fit_predict(scaled_features)

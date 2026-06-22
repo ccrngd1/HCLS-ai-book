@@ -431,6 +431,22 @@ FUNCTION store_assignments(features, labels, profiles):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Running this against a real member population on a recurring schedule requires closing several gaps that are intentionally out of scope for a cookbook recipe. These are the ones that will bite you:
+
+**Drift detection and retraining triggers.** Cluster centroids shift over time as your population's utilization patterns change (new benefits, market entry, a pandemic). Without automated drift monitoring, your segments will silently become stale. In production, compare each month's centroids to the baseline using a distance metric (e.g., sum of centroid displacement). If drift exceeds a threshold, trigger a full re-clustering and alert the data science team to review the new segments before downstream systems consume them.
+
+**Segment stability monitoring.** Track the percentage of members who change segments between consecutive runs. If more than 15-20% of members migrate in a single month (outside open enrollment periods), something is wrong: a data pipeline issue, a population composition change, or a model that needs retraining. Set CloudWatch alarms on the migration rate metric.
+
+**Integration testing against downstream consumers.** Segment assignments feed care management platforms, outreach engines, and reporting dashboards. A schema change, a new segment label, or a segment that disappears between runs will break downstream systems. Build integration tests that validate: all expected segment IDs are present, no member is unassigned, segment sizes are within expected bounds, and the output format matches the contract with each consumer.
+
+**Retraining pipeline automation.** The monthly batch run should be an automated SageMaker Pipeline, not a notebook someone remembers to execute. Include automatic validation gates: if the silhouette score drops below 0.2, if any segment contains fewer than 1% of the population, or if the equity audit flags a demographic skew above threshold, the pipeline should halt and notify the team rather than publishing bad segments.
+
+**Audit trail and reproducibility.** Every run should log the exact model parameters, the input data snapshot (S3 path with version ID), the output segment assignments, and the validation metrics. When a clinician asks "why was this patient in the ED-Dependent segment last quarter?", you need to be able to reconstruct the exact model state and input features that produced that assignment. Store run metadata in a DynamoDB audit table with the run date as the partition key.
+
+---
+
 ## Variations and Extensions
 
 **Temporal trajectory clustering.** Instead of clustering on a single snapshot of 12-month utilization, cluster on the *trajectory* (how utilization changed over time). This finds "rising risk" patients (previously healthy, now escalating) vs. "recovering" patients (previously high-utilizer, now stabilizing). Requires time-series features or sequence clustering methods (like DTW + hierarchical clustering). More complex but clinically powerful because it distinguishes patients heading in different directions.
