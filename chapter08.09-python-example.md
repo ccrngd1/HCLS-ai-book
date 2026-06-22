@@ -741,13 +741,15 @@ def classify_with_sagemaker(formatted_input):
     """
     Call the SageMaker endpoint to classify the temporal relation between two entities.
 
+    The main recipe's architecture section discusses Comprehend Custom Classification
+    as one option. This example uses a SageMaker endpoint because temporal relation
+    classification requires sequence pair input with entity markers ([E1]...[/E1]),
+    which maps more naturally to a custom-hosted transformer model than to
+    Comprehend's document classification API. Both approaches are valid.
+
     The endpoint hosts a fine-tuned model (e.g., ClinicalBERT) trained on temporal
     relation annotated data. It accepts marked-up text and returns a relation
     label with confidence score.
-
-    In production, this is where the heavy lifting happens. The model has learned
-    from annotated clinical text which contextual cues indicate BEFORE vs. AFTER
-    vs. OVERLAP relationships.
     """
     payload = json.dumps({"text": formatted_input})
 
@@ -1006,6 +1008,7 @@ def generate_timeline(temporal_graph, preprocessed_note):
     # First pass: assign absolute timestamps where possible.
     # Events linked to resolved temporal expressions get precise timestamps.
     timestamps = {}  # node_id -> datetime
+    directly_anchored = set()  # node_ids that got timestamps from resolved expressions
 
     # Temporal expressions that resolved to ISO dates already have timestamps.
     for node_id, node in nodes.items():
@@ -1014,6 +1017,7 @@ def generate_timeline(temporal_graph, preprocessed_note):
             if normalized and "T" in str(normalized):
                 try:
                     timestamps[node_id] = datetime.datetime.fromisoformat(normalized)
+                    directly_anchored.add(node_id)
                 except (ValueError, TypeError):
                     pass
 
@@ -1022,12 +1026,15 @@ def generate_timeline(temporal_graph, preprocessed_note):
         if edge["relation"] in ("OVERLAP", "CONTAINS") and edge["to"] in timestamps:
             if edge["from"] not in timestamps:
                 timestamps[edge["from"]] = timestamps[edge["to"]]
+                directly_anchored.add(edge["from"])
         if edge["relation"] in ("OVERLAP", "CONTAINS") and edge["from"] in timestamps:
             if edge["to"] not in timestamps:
                 timestamps[edge["to"]] = timestamps[edge["from"]]
+                directly_anchored.add(edge["to"])
 
     # Second pass: infer timestamps for unanchored events using BEFORE/AFTER ordering.
-    # Simple heuristic: if A BEFORE B and B has a timestamp, A gets timestamp - 1 day.
+    # Simple heuristic: if A BEFORE B and B has a timestamp, A gets timestamp - 12 hours.
+    # These get marked INFERRED (not ABSOLUTE) because the timestamp is approximate.
     for edge in sorted(edges, key=lambda e: e["confidence"], reverse=True):
         if edge["relation"] == "BEFORE" and edge["to"] in timestamps:
             if edge["from"] not in timestamps:
@@ -1043,12 +1050,19 @@ def generate_timeline(temporal_graph, preprocessed_note):
             continue
 
         ts = timestamps.get(node_id)
+        if ts and node_id in directly_anchored:
+            ts_type = "ABSOLUTE"
+        elif ts:
+            ts_type = "INFERRED"
+        else:
+            ts_type = "RELATIVE_ONLY"
+
         timeline.append({
             "event_id": node_id,
             "event_text": node["text"],
             "event_type": node.get("type", "UNKNOWN"),
             "timestamp": ts.isoformat() if ts else None,
-            "timestamp_type": "ABSOLUTE" if ts and node_id in timestamps else "RELATIVE_ONLY",
+            "timestamp_type": ts_type,
             "confidence": node.get("confidence", 0),
         })
 
@@ -1060,6 +1074,7 @@ def generate_timeline(temporal_graph, preprocessed_note):
 
     # Compute summary statistics.
     anchored_count = sum(1 for e in timeline if e["timestamp_type"] == "ABSOLUTE")
+    inferred_count = sum(1 for e in timeline if e["timestamp_type"] == "INFERRED")
 
     result = {
         "patient_id": preprocessed_note["metadata"]["patient_id"],
@@ -1068,7 +1083,7 @@ def generate_timeline(temporal_graph, preprocessed_note):
         "timeline": timeline,
         "event_count": len(timeline),
         "anchored_count": anchored_count,
-        "inferred_count": len(timeline) - anchored_count,
+        "inferred_count": inferred_count,
         "temporal_relations": [
             {
                 "from": e["from"],
