@@ -183,9 +183,9 @@ PAYER_DISPLAY_NAME              = "Acme Health Plan"
 # the final response generation.
 #
 # If your region requires cross-region inference, use the
-# inference profile ID. TODO: verify the exact model IDs
-# available in your region and account; Bedrock model
-# availability evolves over time.
+# inference profile ID. The model IDs below are illustrative;
+# verify exact model IDs available in your region and account
+# at build time since Bedrock model availability evolves.
 INTENT_CLASSIFICATION_MODEL_ID  = "anthropic.claude-3-5-haiku-20241022-v1:0"
 ORCHESTRATION_MODEL_ID          = "anthropic.claude-3-5-sonnet-20241022-v2:0"
 
@@ -1090,17 +1090,14 @@ def _handle_benefits_message(session_id: str,
 
     if (REQUIRE_AUTHENTICATED_FOR_MEMBER_SPECIFIC
             and not session.get("verified_member_id")):
-        # Authenticated members are required for member-specific
-        # questions. Unauthenticated members can still ask
-        # general questions; the intent-classification step
-        # handles that pathway.
-        # TODO (N1): This block is a no-op. The actual gating
-        # happens in _classify_and_route via the
-        # MEMBER_SPECIFIC_INTENTS check against
-        # verified_member_id. Either delete this block or
-        # convert it into an explicit early-return guard so
-        # readers do not see a dead conditional.
-        pass
+        # Unauthenticated members cannot use member-specific
+        # tools. General questions still work; routing happens
+        # in _classify_and_route via MEMBER_SPECIFIC_INTENTS.
+        # This guard logs the unauthenticated access attempt
+        # for audit purposes but does not block here because
+        # the intent-classification step downstream will
+        # restrict which tool surfaces are available.
+        _put_metric("UnauthenticatedSessionAccess", 1, {})
 
     if (session.get("verified_member_id")
             and not session.get("context_loaded")):
@@ -1892,17 +1889,25 @@ def _handle_claim_explanation(session_id: str,
     claim = matches[0]
 
     # Step 6B: translate CARC/RARC for adjustments.
-    # TODO (N6): Wrap each carc_rarc_translation_tool call in
-    # _audit_tool_call so that the tool-call ledger captures the
-    # per-adjustment translation calls alongside claim_lookup.
-    # The recipe's sample audit record explicitly shows
-    # carc_rarc_translation in tool_calls_summary; the demo
-    # currently omits it.
     code_translations = []
     for adj in claim.get("adjustments", []):
+        start = datetime.now(timezone.utc)
         translation = carc_rarc_translation_tool(
             carc_code=adj.get("carc_code"),
             rarc_codes=adj.get("rarc_codes", []))
+        latency = int(
+            (datetime.now(timezone.utc) - start)
+            .total_seconds() * 1000)
+        _audit_tool_call(
+            session_id=session_id,
+            tool="carc_rarc_translation",
+            arguments={
+                "carc_code": adj.get("carc_code"),
+                "rarc_codes": adj.get("rarc_codes", []),
+            },
+            result_summary={"translated": bool(translation)},
+            latency_ms=latency,
+            outcome="success")
         code_translations.append(translation)
 
     # Step 6C: compose patient-friendly explanation.
@@ -2521,27 +2526,60 @@ def _screen_output(session_id: str,
         citations = [c for c in citations
                       if c not in inconsistent]
 
-    # TODO (TechWriter): Code review W2 (WARNING). Add a
-    # regulatory-disclosure-presence verifier here that
-    # recomputes applicable disclosures via
-    # _applicable_disclosures and checks each required
-    # disclosure's phrasing is present in response_text;
-    # missing-disclosure case returns
-    # action="augment_with_disclosures" with the missing
-    # phrasings appended. Today the disclosures are added
-    # inline in each handler before screening, which is a
-    # weaker guarantee than a screening-stage verifier.
+    # Step 8D: Regulatory-disclosure-presence verification.
+    # Recompute applicable disclosures and verify each required
+    # phrasing is present in the response text.
+    session = _session_state(session_id)
+    applicable = _applicable_disclosures(
+        intent={"category": session.get("current_intent")},
+        plan={"plan_type": session.get("plan_type"),
+              "line_of_business": session.get("line_of_business")},
+        extra_context={"member_state": session.get("member_state")})
+    missing_disclosures = [
+        d for d in applicable
+        if d.get("phrasing", "").lower()
+        not in response_text.lower()
+    ]
+    if missing_disclosures:
+        # Append missing disclosures rather than blocking.
+        disclosure_text = " ".join(
+            d["phrasing"] for d in missing_disclosures
+            if d.get("phrasing"))
+        if disclosure_text:
+            response_text = (response_text.rstrip()
+                             + "\n\n" + disclosure_text)
+            _put_metric("DisclosureAugmented", 1, {
+                "intent": session.get("current_intent", "unknown"),
+            })
 
-    # TODO (TechWriter): Code review W3 (WARNING). Add a
-    # persona-and-tone check here corresponding to pseudocode
-    # Step 8F. Detect distress signals in the recent user
-    # message (financial distress, behavioral-health content,
-    # denial vocabulary) plus procedural tone in the response;
-    # return action="regenerate_with_persona_correction" with
-    # empathetic-tone guidance when the two coincide. Even a
-    # keyword-based heuristic in the demo demonstrates the
-    # pattern; production uses an LLM-as-judge evaluator with
-    # structured-output schema validation.
+    # Step 8E: Persona-and-tone check for distress contexts.
+    # Detect distress signals in the recent user message
+    # (financial distress, behavioral-health content, denial
+    # vocabulary) and procedural tone in the response.
+    distress_keywords = [
+        "can't afford", "cannot afford", "no money",
+        "financial hardship", "struggling to pay",
+        "scared", "anxious", "depressed", "suicidal",
+    ]
+    user_msg_lower = (session.get("last_user_message") or "").lower()
+    has_distress = any(kw in user_msg_lower
+                       for kw in distress_keywords)
+    if has_distress:
+        _put_metric("DistressDetectedInScreening", 1, {})
+        # In production, an LLM-as-judge evaluator checks
+        # whether the response has empathetic tone. Here we
+        # prepend a softening preamble if the response starts
+        # with procedural language.
+        procedural_starts = [
+            "the claim", "your claim", "according to",
+            "the plan document", "per the",
+        ]
+        if any(response_text.lower().startswith(ps)
+               for ps in procedural_starts):
+            response_text = (
+                "I understand this is stressful, and I want to "
+                "help you work through it. "
+            ) + response_text
 
     return {
         "action":         "deliver",
@@ -3311,18 +3349,10 @@ class MockTable:
     def query(self, KeyConditionExpression,
               ScanIndexForward=True, Limit=None,
               IndexName=None):
-        # TODO (TechWriter): Code review W1 (WARNING). The
-        # KeyConditionExpression's _values tuple is
-        # (Key("session_id"), session_id_string); index [0] is
-        # the Key attribute object, not the string, so every
-        # range-query against conversation_metadata,
-        # tool-call-ledger, and decision-record tables silently
-        # returns an empty list. Fix: change the index to [1],
-        # or replace the private-attribute access with an
-        # explicit query_by_session_id(session_id, ...) helper
-        # that does not depend on boto3 internals. Carry-forward
-        # bug from 11.01 N2 through 11.02-11.04.
-        sid = list(KeyConditionExpression._values)[0]
+        # Extract the session ID from the key condition.
+        # The _values tuple is (Key("session_id"), session_id_string);
+        # index [1] is the actual string value we want to match against.
+        sid = list(KeyConditionExpression._values)[1]
         items = list(self.range_items.get(sid, []))
         items.sort(
             key=lambda i: i.get(
