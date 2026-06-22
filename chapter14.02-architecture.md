@@ -47,11 +47,14 @@ flowchart TD
 | **AWS Services** | AWS Lambda, Amazon SageMaker, Amazon DynamoDB, AWS Step Functions, Amazon S3 |
 | **IAM Permissions** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:BatchWriteItem`, `dynamodb:GetItem`, `states:StartExecution` |
 | **BAA** | AWS BAA signed. Patient demographics, conditions, and provider assignments are PHI. |
-| **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest with KMS CMK. All data in transit over TLS. |
+| **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest with KMS CMK (not the AWS-managed default key). The assignments table stores patient_complexity and rationale fields that reference clinical conditions, making it PHI-adjacent data requiring explicit key management. All data in transit over TLS. |
 | **VPC** | SageMaker Processing and Lambda in VPC with no internet access. VPC endpoints for DynamoDB (gateway), S3 (gateway), CloudWatch Logs (interface), and STS (interface). Security groups allow outbound HTTPS (443) to VPC endpoint prefix lists only. |
+| **IAM Scoping** | Access to the DynamoDB assignments table must be restricted to the panel management team's IAM roles. Use resource-based conditions (e.g., `dynamodb:LeadingKeys` condition key) to limit which roles can read or write assignment records. The Lambda execution role gets `dynamodb:PutItem` and `dynamodb:BatchWriteItem`; the review dashboard role gets `dynamodb:GetItem` and `dynamodb:Query`. No role gets `dynamodb:*`. |
 | **CloudTrail** | Enabled for all API calls. Audit trail for assignment changes and approvals. |
 | **Sample Data** | Synthetic patient and provider data. Never use real PHI in development. |
 | **Cost Estimate** | SageMaker Processing: ~$0.50-2 per batch run (ml.m5.large, under 1 min). Lambda + DynamoDB + S3: negligible for typical volumes. Monthly total: $30-150 depending on frequency. |
+
+**Review Dashboard Access Control.** The review dashboard (where the panel management team approves or overrides assignments) must sit behind authentication. Use Amazon Cognito user pools or federate with your enterprise SSO (SAML/OIDC). Role-based access should be scoped to the user's department or practice: a panel manager in the Family Medicine department should only see assignments for Family Medicine providers, not the entire organization. Implement this with Cognito custom claims or attribute-based access control that filters DynamoDB queries by practice ID.
 
 ### Ingredients
 
@@ -250,6 +253,22 @@ For a typical batch of 7 patients assigned across 4 providers (3 accepting):
 - Very large problems (5,000+ patients, 200+ providers) may need solver tuning or decomposition
 - Infeasible problems (more patients than total available capacity) require graceful handling, not crashes
 - Highly constrained problems (many closed panels, strict language requirements) may produce suboptimal assignments because feasibility dominates optimality
+
+---
+
+## Why This Isn't Production-Ready
+
+This architecture gives you a working end-to-end pipeline, but several gaps exist between "it runs" and "it runs reliably at scale in a healthcare setting."
+
+**No retry logic or dead-letter handling.** If the EHR write-back fails (network timeout, rate limit, maintenance window), the assignment stays in "approved" status forever. A production system needs exponential backoff on write-back attempts and a dead-letter queue (SQS) for records that fail repeatedly. An operator dashboard should surface stuck records.
+
+**No incremental cache invalidation.** The incremental assignment path relies on cached provider capacity counts. This architecture doesn't define when or how that cache gets invalidated. If a provider's panel count changes (patient leaves the practice, batch optimizer runs, provider changes FTE), stale cache data leads to over-assignment. You need DynamoDB Streams or EventBridge rules to invalidate provider scores when underlying data changes.
+
+**No automated weight-tuning feedback loop.** The scoring weights are configured once and stay static. In production, you want a feedback loop: track override rates by assignment type, identify which factors the panel management team consistently disagrees with, and surface weight adjustment recommendations. If 40% of "high-complexity patient to NP" assignments get overridden, the complexity weight needs recalibration.
+
+**No graceful degradation for infeasible problems.** If there are more patients than total available capacity (all providers at their max), the solver returns "infeasible" and the pipeline stops. A production system should detect this case early, assign as many patients as possible (relax the "exactly one provider" constraint to "at most one"), and route the remainder to a manual queue with clear messaging about why they couldn't be auto-assigned.
+
+**No assignment conflict detection.** If two batch runs overlap (rare but possible during busy periods), they could propose conflicting assignments for the same patient. The DynamoDB write should use conditional expressions (`attribute_not_exists(pk) OR status = :rejected`) to prevent duplicate active proposals.
 
 ---
 
