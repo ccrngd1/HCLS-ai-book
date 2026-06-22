@@ -10,6 +10,8 @@
 
 **Amazon SageMaker for clustering and case-mix modeling.** SageMaker provides the ML infrastructure for both the case-mix adjustment models (regression) and the clustering algorithms. SageMaker Processing jobs handle the feature engineering and adjustment calculations at scale. The built-in K-Means algorithm works for straightforward segmentation; for GMM or hierarchical approaches, bring your own scikit-learn container. SageMaker also provides model versioning and experiment tracking, which matters when you're iterating on feature sets and adjustment methodologies.
 
+Note that patient-level PHI is loaded into SageMaker Processing ephemeral storage during case-mix model training (the regression models require patient-level features like HCC scores and demographics). This data exists only for the duration of the Processing job and is automatically deleted when the job completes, but it means your SageMaker Processing configuration must enforce volume encryption (`VolumeKmsKeyId`) and VPC mode with no internet access. Apply the minimum panel size filter (30-50 patients depending on specialty) before model training, not just before clustering. This prevents small-panel provider features from encoding individual patient characteristics into the adjustment model's training set.
+
 **Amazon Redshift for data aggregation.** Provider profiling requires joining claims, encounters, orders, prescriptions, and outcomes data across millions of records, then aggregating to the provider level. Redshift handles this analytical workload efficiently. The columnar storage is well-suited to the wide, aggregation-heavy queries that provider profiling demands.
 
 For quarterly batch workloads, consider Redshift Serverless (pay-per-query) instead of a provisioned cluster. A quarterly aggregation run processing 10M claims records might consume 30-60 RPU-hours (~$11-22 per run). If your organization already has a provisioned Redshift cluster for other analytics workloads, use it. If this pipeline is the only Redshift consumer, Serverless or even Athena over S3 Parquet files may be more cost-effective for the aggregation step.
@@ -23,6 +25,18 @@ For quarterly batch workloads, consider Redshift Serverless (pay-per-query) inst
 QuickSight requires a VPC connection to reach Redshift in a private subnet: configure a network interface in the same private subnet as Redshift, with the Redshift security group allowing inbound on port 5439 from the QuickSight network interface's security group. QuickSight Enterprise edition is required for VPC connectivity.
 
 Dashboards should prominently display the analysis period ("Based on data from April 2025 through March 2026, refreshed quarterly"). Include a "last updated" timestamp on every dashboard page and send email notifications to providers when new results are available.
+
+**Tiered access control model.** Provider profiling data is sensitive enough to warrant role-based access that goes beyond simple authentication. Implement four tiers:
+
+1. **Individual providers** see only their own report: their cluster assignment, their O/E ratios, and aggregate (not individually identified) peer comparisons within their cluster and specialty. QuickSight row-level security (RLS) filters on provider_id matched against the authenticated user's identity.
+
+2. **Medical directors** see specialty-level dashboards with individual provider identifiers. This requires peer review privilege coverage in most states. Consult legal counsel before enabling this tier; the specific protections vary by jurisdiction and by whether your organization's peer review committee has formally designated the analysis as peer review activity. RLS grants access to all provider_ids within the director's specialty scope.
+
+3. **Analytics team** sees de-identified data for model development and validation. Provider identifiers are replaced with opaque tokens. This tier accesses S3 data lake objects directly (not QuickSight) with a separate IAM role that cannot reach the identifiable results prefix.
+
+4. **Small-specialty suppression:** For specialties with fewer than 5 providers in a cluster, suppress individual-level comparisons entirely. When a cluster contains only 2-3 providers, showing "your cluster peers average X" effectively identifies those peers. The reporting layer checks cluster size and falls back to specialty-wide comparisons when the cluster is too small.
+
+Implement this with a QuickSight permissions dataset that maps authenticated user identity (federated via SAML or IAM Identity Center) to the list of provider_ids that user may view. Update the permissions dataset as part of the quarterly pipeline run (Step Functions includes a step that regenerates it from the provider roster and organizational hierarchy). Row-level security rules reference this dataset, and QuickSight enforces filtering at query time before results reach the user.
 
 **AWS Step Functions for pipeline orchestration.** The quarterly analysis run involves multiple sequential and parallel steps: data extraction, aggregation, adjustment, clustering, validation, and report generation. Step Functions coordinates this workflow with error handling, retry logic, and audit logging.
 
@@ -56,13 +70,78 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon Redshift, Amazon S3, AWS Glue, Amazon QuickSight, AWS Step Functions, AWS KMS |
-| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `sagemaker:CreateTrainingJob` (with condition key restricting VPC and instance types), `redshift:GetClusterCredentials` (scoped to specific `dbuser:provider_profiling_etl`), `s3:GetObject` and `s3:PutObject` (scoped to `arn:aws:s3:::your-bucket/provider-profiling/*`), `glue:StartJobRun`, `quicksight:CreateDashboard`, `states:StartExecution`, `kms:Decrypt` and `kms:GenerateDataKey` (scoped to pipeline CMK ARN) |
+| **IAM Permissions** | Least-privilege with explicit resource scoping (see below) |
 | **BAA** | Required. Provider practice data linked to patient panels contains PHI. |
 | **Encryption** | S3: SSE-KMS with customer-managed key; Redshift: encrypted cluster with KMS CMK; SageMaker: volume encryption and inter-container encryption; QuickSight: TLS in transit |
 | **VPC** | Production: Redshift in private subnet, SageMaker jobs in VPC mode with VPC endpoints for S3 and SageMaker API (endpoint policies restricting to specific buckets and APIs), Glue connections through VPC, QuickSight VPC connection for Redshift access |
 | **CloudTrail** | Enabled for all service API calls. Provider profiling data is sensitive; full audit trail required. |
 | **Data Sources** | Claims data warehouse, EHR encounter/order data, provider roster with specialty assignments, quality measure results |
 | **Cost Estimate** | Redshift Serverless: ~$11-22/quarterly run (30-60 RPU-hours). SageMaker Processing: ~$0.05/hour (ml.m5.large) for quarterly runs. S3 + Glue: negligible. QuickSight: $18/user/month (Enterprise). Total for 500-provider system: ~$200-400/quarter for compute, plus QuickSight licensing. |
+
+#### IAM Least-Privilege Policy Examples
+
+The pipeline execution role needs narrowly scoped permissions. Here are the key policy statements with explicit resource ARNs and condition keys:
+
+**SageMaker Training and Processing (restrict to PHI-approved VPC and instance types):**
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "sagemaker:CreateTrainingJob",
+    "sagemaker:CreateProcessingJob"
+  ],
+  "Resource": "arn:aws:sagemaker:us-east-1:111122223333:training-job/provider-profiling-*",
+  "Condition": {
+    "StringEquals": {
+      "sagemaker:VpcSecurityGroupIds": ["sg-0abc1234phi56789"]
+    },
+    "StringLike": {
+      "sagemaker:InstanceTypes": ["ml.m5.*"]
+    },
+    "Bool": {
+      "sagemaker:VolumeKmsKey": "true"
+    }
+  }
+}
+```
+
+The `sagemaker:VpcSecurityGroupIds` condition key ensures every training and processing job runs inside the PHI-designated security group. This prevents accidental launches outside the controlled VPC environment where patient-level data is handled.
+
+**Redshift credentials (scoped to a specific database user with limited schema grants):**
+
+```json
+{
+  "Effect": "Allow",
+  "Action": "redshift:GetClusterCredentials",
+  "Resource": [
+    "arn:aws:redshift:us-east-1:111122223333:dbuser:provider-cluster/provider_profiling_etl",
+    "arn:aws:redshift:us-east-1:111122223333:dbname:provider-cluster/analytics"
+  ]
+}
+```
+
+The `provider_profiling_etl` database user should have schema-level grants only on the provider profiling tables (`GRANT SELECT ON SCHEMA provider_profiling TO provider_profiling_etl`). It should not have access to the broader data warehouse schemas containing raw patient records.
+
+**S3 access (scoped to specific prefixes):**
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["s3:GetObject", "s3:PutObject"],
+  "Resource": "arn:aws:s3:::your-phi-bucket/provider-profiling/*"
+}
+```
+
+**KMS (scoped to the pipeline-specific CMK):**
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["kms:Decrypt", "kms:GenerateDataKey"],
+  "Resource": "arn:aws:kms:us-east-1:111122223333:key/12345678-abcd-1234-efgh-123456789012"
+}
+```
 
 ### Ingredients
 
