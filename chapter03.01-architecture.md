@@ -342,8 +342,9 @@ FUNCTION score_pair(incoming, candidate):
 HIGH_THRESHOLD = 0.90    // above this: treat as duplicate, auto-suspend
 LOW_THRESHOLD  = 0.55    // below this: pass through to adjudication
 
-FUNCTION route_claim(incoming, scored_pairs):
+FUNCTION route_claim(incoming, scored_pairs, match_type):
     // scored_pairs is a list of { candidate, score, components } sorted by score desc.
+    // match_type is "exact", "fuzzy", or "none" from find_candidates.
 
     IF scored_pairs is empty:
         // No candidates found. Pass through.
@@ -351,6 +352,26 @@ FUNCTION route_claim(incoming, scored_pairs):
         RETURN { action: "auto_accept", reason: "no_candidates" }
 
     top_match = scored_pairs[0]
+
+    // Exact-match fast path: content_hash collision means byte-identical key fields.
+    // Score will be 1.0 by construction, but we short-circuit explicitly so the
+    // audit trail distinguishes "exact duplicate" from "high fuzzy score."
+    IF match_type == "exact":
+        write_suspension_record({
+            incoming_claim_id: incoming.claim_id,
+            matched_claim_id: top_match.candidate.claim_id,
+            score: 1.0,
+            components: top_match.components,
+            decided_at: now(),
+            model_version: CURRENT_MODEL_VERSION,
+            action: "auto_suspend",
+            match_type: "exact"
+        })
+        emit_metric("auto_suspended_exact", 1)
+        RETURN { action: "auto_suspend",
+                 reason: "exact_duplicate",
+                 matched_claim_id: top_match.candidate.claim_id,
+                 score: 1.0 }
 
     IF top_match.score >= HIGH_THRESHOLD:
         // Auto-suspend as duplicate. Write a reason record so the denial can be explained.
@@ -627,6 +648,8 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Cross-payer duplicate detection via hashing.** The same beneficiary can file the same claim with two different insurers (Medicare + Medicaid, or a primary commercial plan + a secondary). Privacy-preserving record linkage using cryptographic hashing of patient identifiers lets you detect these across payer boundaries without sharing raw PHI. Specific patterns like Bloom filter-based linkage are well-developed in the academic literature; adapting them to the 837 context is a meaningful project but the economics can be substantial for plans with heavy coordination-of-benefits traffic.
 
 **LLM-assisted review triage.** For the review-queue band, an LLM can produce a plain-language summary of why each candidate pair is suspicious: "Both claims are for the same patient on the same date, with CPT 99213 and 99214 respectively. CPT 99214 is a higher-level code; the first claim may have been upcoded and resubmitted, or this may be a legitimate addendum." The examiner reads the summary in seconds, which is faster than reading the two raw claims. Feed the LLM the structured fields, not raw text; the goal is triage aid, not autonomous decision. Stay on tight guardrails and keep the LLM's output in an explanation field, not a verdict field.
+
+**SIU hand-off for coordinated fraud patterns.** When the detector identifies patterns consistent with coordinated fraud (many duplicates from a single provider, unusual submission timing, identical claims across multiple beneficiaries), the appropriate escalation is a hand-off to the payer's Special Investigations Unit (SIU), not a standard prospective denial. The SIU workflow is distinct: it involves case aggregation across claims, provider-level analysis, and potentially regulatory reporting. Build this as a separate routing path in EventBridge. The detector publishes a "pattern_alert" event when configurable thresholds are crossed (for example, more than N auto-suspensions from the same billing NPI within a rolling window). The SIU team consumes that event in their own tooling. Keep the boundary clean: the duplicate detection system identifies individual duplicate pairs and flags provider-level anomalies. The SIU decides whether to open an investigation.
 
 ---
 
