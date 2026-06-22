@@ -208,42 +208,81 @@ def extract_problems(sections: list[dict]) -> list[dict]:
             continue
 
         # Comprehend Medical has a 20,000 character limit per request.
-        # Most clinical note sections are well under this, but we truncate
-        # just in case. In production, you'd chunk long sections.
-        text = section["text"][:20000]
+        # Discharge summaries and operative notes can exceed this.
+        # Chunk at sentence boundaries to preserve negation scope.
+        text = section["text"]
+        chunks = _chunk_text(text, max_chars=20000)
 
-        if not text.strip():
-            continue
-
-        # Call DetectEntitiesV2. This returns all medical entity types:
-        # MEDICAL_CONDITION, MEDICATION, ANATOMY, TEST_TREATMENT_PROCEDURE, etc.
-        # We only care about MEDICAL_CONDITION for problem list extraction.
-        response = comprehend_medical.detect_entities_v2(Text=text)
-
-        for entity in response.get("Entities", []):
-            if entity["Category"] != "MEDICAL_CONDITION":
+        for chunk_offset, chunk_text in chunks:
+            if not chunk_text.strip():
                 continue
 
-            # Build our problem record with everything we need downstream.
-            problem = {
-                "text": entity["Text"],
-                "confidence": entity["Score"],
-                "begin_offset": entity["BeginOffset"] + section["start_offset"],
-                "end_offset": entity["EndOffset"] + section["start_offset"],
-                "section": section["category"],
-                "traits": entity.get("Traits", []),
-                "attributes": entity.get("Attributes", []),
-                # entity_type helps distinguish DIAGNOSIS vs SIGN vs SYMPTOM
-                "entity_type": next(
-                    (t["Name"] for t in entity.get("Traits", [])
-                     if t["Name"] in ("DIAGNOSIS", "SIGN", "SYMPTOM")),
-                    "DIAGNOSIS"  # default if no type trait present
-                )
-            }
-            all_problems.append(problem)
+            # Call DetectEntitiesV2. This returns all medical entity types:
+            # MEDICAL_CONDITION, MEDICATION, ANATOMY, TEST_TREATMENT_PROCEDURE, etc.
+            # We only care about MEDICAL_CONDITION for problem list extraction.
+            response = comprehend_medical.detect_entities_v2(Text=chunk_text)
+
+            for entity in response.get("Entities", []):
+                if entity["Category"] != "MEDICAL_CONDITION":
+                    continue
+
+                # Build our problem record with everything we need downstream.
+                # Offset correction: add both section start and chunk offset.
+                problem = {
+                    "text": entity["Text"],
+                    "confidence": entity["Score"],
+                    "begin_offset": entity["BeginOffset"] + section["start_offset"] + chunk_offset,
+                    "end_offset": entity["EndOffset"] + section["start_offset"] + chunk_offset,
+                    "section": section["category"],
+                    "traits": entity.get("Traits", []),
+                    "attributes": entity.get("Attributes", []),
+                    # entity_type helps distinguish DIAGNOSIS vs SIGN vs SYMPTOM
+                    "entity_type": next(
+                        (t["Name"] for t in entity.get("Traits", [])
+                         if t["Name"] in ("DIAGNOSIS", "SIGN", "SYMPTOM")),
+                        "DIAGNOSIS"  # default if no type trait present
+                    )
+                }
+                all_problems.append(problem)
 
     logger.info("Extracted %d MEDICAL_CONDITION entities", len(all_problems))
     return all_problems
+
+
+def _chunk_text(text: str, max_chars: int = 20000) -> list[tuple[int, str]]:
+    """
+    Split text into chunks that respect the Comprehend Medical character limit.
+
+    Chunks at sentence boundaries (period followed by space or newline) to avoid
+    splitting mid-sentence, which would break negation scope. Returns a list of
+    (offset, chunk_text) tuples so callers can correct entity offsets.
+    """
+    if len(text) <= max_chars:
+        return [(0, text)]
+
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + max_chars
+        if end >= len(text):
+            chunks.append((start, text[start:]))
+            break
+
+        # Find the last sentence boundary before the limit.
+        # Look for ". " or ".\n" working backwards from the cut point.
+        boundary = text.rfind(". ", start, end)
+        if boundary == -1:
+            boundary = text.rfind(".\n", start, end)
+        if boundary == -1 or boundary <= start:
+            # No sentence boundary found; fall back to cutting at max_chars.
+            boundary = end
+        else:
+            boundary += 2  # include the period and space
+
+        chunks.append((start, text[start:boundary]))
+        start = boundary
+
+    return chunks
 ```
 
 ---
@@ -462,20 +501,27 @@ def reconcile_problems(
 
     # 1. Find problems active in notes but missing from the problem list.
     for problem in active_extracted:
-        top_snomed = problem["snomed"][0]["Code"]
-        if top_snomed not in current_codes:
-            recommendations.append({
-                "type": "ADD_CANDIDATE",
-                "problem_text": problem["text"],
-                "snomed": problem["snomed"][0],
-                "icd10": problem["icd10"][0] if problem["icd10"] else None,
-                "confidence": problem["confidence"],
-                "source_note": note_id,
-                "rationale": (
-                    f"Mentioned as active in {problem['section']} section "
-                    f"but not on current problem list"
-                )
-            })
+        # Check all top-3 SNOMED candidates, not just top-1.
+        # The same condition can normalize to different codes depending on context.
+        # Checking only the top candidate produces false ADD_CANDIDATE recommendations
+        # for problems already on the list under a different synonym code.
+        extracted_codes = {c["Code"] for c in problem["snomed"]}
+        if extracted_codes & current_codes:
+            # At least one candidate matches an existing problem. Skip.
+            continue
+
+        recommendations.append({
+            "type": "ADD_CANDIDATE",
+            "problem_text": problem["text"],
+            "snomed": problem["snomed"][0],
+            "icd10": problem["icd10"][0] if problem["icd10"] else None,
+            "confidence": problem["confidence"],
+            "source_note": note_id,
+            "rationale": (
+                f"Mentioned as active in {problem['section']} section "
+                f"but not on current problem list"
+            )
+        })
 
     # 2. Find problems on the list that notes suggest are resolved.
     resolved_codes = {
@@ -526,7 +572,8 @@ def _get_current_problem_list(patient_id: str) -> list[dict]:
 *The pseudocode calls this `store_results(patient_id, extracted_problems, recommendations, note_id)`. We write full extraction results to S3 for audit and reprocessing, and write actionable recommendations to DynamoDB for clinician review workflows.*
 
 ```python
-import uuid
+import hashlib
+
 
 def store_results(
     patient_id: str,
@@ -540,6 +587,10 @@ def store_results(
     Two destinations:
     - S3: Full extraction record for audit trail and reprocessing
     - DynamoDB: Actionable recommendations for clinician review queue
+
+    Recommendation IDs are deterministic (derived from note_id + snomed_code + type)
+    so reprocessing the same note produces the same IDs. Conditional writes prevent
+    duplicates, making the pipeline idempotent.
     """
     timestamp = datetime.datetime.now(timezone.utc).isoformat()
 
@@ -565,22 +616,41 @@ def store_results(
     logger.info("Stored extraction results to s3://%s/%s", RESULTS_BUCKET, s3_key)
 
     # Write recommendations to DynamoDB for clinician review.
+    # Deterministic IDs + conditional writes = idempotent reprocessing.
     if recommendations:
         rec_table = dynamodb.Table(RECOMMENDATIONS_TABLE)
         for rec in recommendations:
-            rec_table.put_item(Item={
-                "patient_id": patient_id,
-                "recommendation_id": str(uuid.uuid4()),
-                "type": rec["type"],
-                "problem_text": rec["problem_text"],
-                "snomed_code": rec["snomed"]["Code"],
-                "icd10_code": rec.get("icd10", {}).get("Code", "N/A") if rec.get("icd10") else "N/A",
-                "confidence": Decimal(str(round(rec.get("confidence", 0.0), 3))),
-                "source_note": note_id,
-                "rationale": rec["rationale"],
-                "status": "PENDING_REVIEW",
-                "created_at": timestamp
-            })
+            # Deterministic ID: same note + same code + same type always
+            # produces the same recommendation_id. This prevents duplicates
+            # when a note is reprocessed (e.g., after a pipeline bug fix).
+            snomed_code = rec["snomed"]["Code"] if rec.get("snomed") else "NONE"
+            rec_id = hashlib.sha256(
+                f"{note_id}:{snomed_code}:{rec['type']}".encode()
+            ).hexdigest()[:32]
+
+            try:
+                rec_table.put_item(
+                    Item={
+                        "patient_id": patient_id,
+                        "recommendation_id": rec_id,
+                        "type": rec["type"],
+                        "problem_text": rec["problem_text"],
+                        "snomed_code": snomed_code,
+                        "icd10_code": rec.get("icd10", {}).get("Code", "N/A") if rec.get("icd10") else "N/A",
+                        "confidence": Decimal(str(round(rec.get("confidence", 0.0), 3))),
+                        "source_note": note_id,
+                        "rationale": rec["rationale"],
+                        "status": "PENDING_REVIEW",
+                        "created_at": timestamp
+                    },
+                    # Conditional write: only insert if this recommendation doesn't
+                    # already exist. Prevents duplicates on reprocessing.
+                    ConditionExpression="attribute_not_exists(recommendation_id)"
+                )
+            except rec_table.meta.client.exceptions.ConditionalCheckFailedException:
+                # Already exists from a previous run. That's fine, skip it.
+                logger.debug("Recommendation %s already exists, skipping", rec_id)
+
         logger.info("Stored %d recommendations to DynamoDB", len(recommendations))
 
     return results_record
@@ -728,11 +798,11 @@ This example works. Point it at a real Comprehend Medical endpoint with a clinic
 
 **Section detection robustness.** The regex-based section detection here works for cleanly formatted notes. Real clinical notes are messy: inconsistent casing, missing colons, headers embedded mid-paragraph, numbered lists that look like headers. Production systems use ML-based section detectors trained on diverse note formats, or at minimum a much more comprehensive pattern library.
 
-**Comprehend Medical API limits.** DetectEntitiesV2 accepts up to 20,000 UTF-8 characters per call. Discharge summaries and operative notes routinely exceed this. Production systems chunk long notes at section boundaries and reassemble results with corrected offsets. The chunking strategy matters: splitting mid-sentence can break negation scope.
+**Comprehend Medical API limits.** This example now chunks text at sentence boundaries when sections exceed 20,000 characters. The chunking logic handles the common case, but production systems need more robust sentence boundary detection (the simple ". " heuristic fails on abbreviations like "Dr. Smith" or "i.e. renal failure"). Consider using a proper sentence tokenizer (like spaCy's sentencizer) and adding overlap between chunks to avoid losing context at boundaries.
 
 **Testing.** There are no tests here. Production needs unit tests for section detection (with diverse note formats), integration tests against Comprehend Medical with known test notes, assertion classification tests with manually annotated examples covering negation edge cases, and end-to-end tests that verify the full pipeline produces expected recommendations. Use synthetic notes only. Never put real patient text in your test fixtures.
 
-**Reconciliation complexity.** The reconciliation logic here does simple code matching. Real reconciliation needs SNOMED hierarchy traversal (is "Type 2 diabetes mellitus" a parent of "Type 2 diabetes mellitus with diabetic nephropathy"?), fuzzy concept matching for cases where the extracted text doesn't normalize perfectly, and deduplication logic for when the same problem appears in multiple notes with slightly different wording.
+**Reconciliation complexity.** This example now checks all top-3 SNOMED candidates (not just top-1) to reduce false ADD_CANDIDATE recommendations. But real reconciliation also needs SNOMED hierarchy traversal (is "Type 2 diabetes mellitus" a parent of "Type 2 diabetes mellitus with diabetic nephropathy"?), which requires access to SNOMED relationship tables or an ontology service. It also needs fuzzy concept matching for cases where the extracted text doesn't normalize perfectly, and deduplication logic for when the same problem appears in multiple notes with slightly different wording.
 
 ---
 
