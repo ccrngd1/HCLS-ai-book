@@ -1,6 +1,6 @@
 # Recipe 1.7: Prescription Label OCR 🔶
 
-**Complexity:** Simple · **Phase:** Phase 2 · **Estimated Cost:** ~$0.08 per label
+**Complexity:** Simple · **Phase:** Phase 2 · **Estimated Cost:** ~$0.08-$0.10 per label
 
 ---
 

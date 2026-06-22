@@ -59,6 +59,10 @@ SIG_CODES = {
     "qod":    "every other day",
     "qw":     "once weekly",
     "biw":    "twice weekly",
+    "q2w":    "every 2 weeks",
+    "qam":    "every morning",
+    "qpm":    "every evening",
+    "qm":     "once monthly",
 
     # --- Route codes ---
     # These tell you how to administer the medication.
@@ -74,6 +78,10 @@ SIG_CODES = {
     "im":     "intramuscularly",
     "iv":     "intravenously",
     "op":     "in the affected eye",
+    "opth":   "in the eye",
+    "od":     "in the right eye",
+    "os":     "in the left eye",
+    "ou":     "in both eyes",
     "au":     "in both ears",
     "ad":     "in the right ear",
     "as":     "in the left ear",
@@ -103,6 +111,18 @@ SIG_CODES = {
     "pch":    "patch",
     "inhlr":  "inhaler",
     "neb":    "nebulizer",
+
+    # --- Clinical context codes ---
+    # Miscellaneous abbreviations commonly seen in directions fields.
+    "nte":    "not to exceed",
+    "daw":    "dispense as written",
+    "c":      "with",
+    "s":      "without",
+    "x":      "for",
+    "d":      "day",
+    "wk":     "week",
+    "wks":    "weeks",
+    "mo":     "month",
 }
 
 # RXNORM_CONFIDENCE_THRESHOLD: minimum Comprehend Medical confidence score
@@ -434,32 +454,42 @@ def decode_sig(raw_sig: str) -> str:
 *The pseudocode calls this `map_to_rxnorm(drug_name, dosage)`. It passes the medication text through Comprehend Medical's `DetectEntitiesV2` API to identify MEDICATION entities and return the corresponding RxNorm concept IDs.*
 
 ```python
-def map_to_rxnorm(drug_name: str, dosage: str) -> list:
+def map_to_rxnorm(normalized_fields: dict) -> list:
     """
     Use Comprehend Medical to detect medication entities and map them to
     RxNorm concept IDs.
 
     DetectEntitiesV2 is trained on clinical and pharmaceutical text. When you
-    pass it "Lisinopril 10mg", it identifies the MEDICATION entity, pulls out
-    dosage as an attribute, and returns RxNorm concept IDs for the detected
-    medication. Those concept IDs are what downstream systems (formulary matchers,
-    interaction checkers, FHIR resources) need for interoperability.
+    pass it the full label text, it identifies MEDICATION entities, pulls out
+    attributes like dosage and route, and returns RxNorm concept IDs for the
+    detected medications. Passing full label context (not just drug name and
+    dosage) gives the model surrounding clinical information (route, frequency,
+    prescriber context) that helps disambiguate similar drug names and confirm
+    the correct dosage form.
 
     Args:
-        drug_name: The drug name extracted from the label (e.g., "Amoxicillin")
-        dosage:    The dosage extracted from the label (e.g., "500mg")
+        normalized_fields: The output of normalize_rx_fields. All field values
+                           are concatenated to form the input text for the NLP model.
 
     Returns:
         A list of RxNorm concept dicts, sorted by confidence descending.
-        Each dict contains: detected_text, rxnorm_id, description, confidence.
+        Each dict contains: detected_text, rxnorm_id, description, concept_type, confidence.
         Returns an empty list if no MEDICATION entities are found above the threshold.
     """
-    if not drug_name:
+    if not normalized_fields:
         return []
 
-    # Combine drug name and dosage into one string. More context generally
-    # improves entity detection accuracy for Comprehend Medical.
-    medication_text = f"{drug_name} {dosage}".strip()
+    # Assemble full label text from all normalized field values.
+    # More context improves entity detection accuracy for Comprehend Medical.
+    # A typical label produces 300-500 characters here.
+    parts = []
+    for field_name, data in normalized_fields.items():
+        if data.get("value"):
+            parts.append(data["value"])
+    medication_text = " ".join(parts)
+
+    if not medication_text.strip():
+        return []
 
     response = comprehend_medical_client.detect_entities_v2(
         Text=medication_text
@@ -479,9 +509,10 @@ def map_to_rxnorm(drug_name: str, dosage: str) -> list:
         for concept in entity.get("RxNormConcepts", []):
             if concept.get("Score", 0.0) >= RXNORM_CONFIDENCE_THRESHOLD:
                 rxnorm_mappings.append({
-                    "detected_text": entity.get("Text", ""),  # what the model read
-                    "rxnorm_id":     concept.get("Code", ""), # standard RxNorm concept ID
-                    "description":   concept.get("Description", ""), # e.g., "amoxicillin 500 MG Oral Capsule"
+                    "detected_text": entity.get("Text", ""),       # what the model read
+                    "rxnorm_id":     concept.get("Code", ""),      # standard RxNorm concept ID
+                    "description":   concept.get("Description", ""),# e.g., "amoxicillin 500 MG Oral Capsule"
+                    "concept_type":  concept.get("Type", ""),      # TTY: "SCD", "IN", "SBD", etc.
                     "confidence":    round(concept.get("Score", 0.0), 3),
                 })
 
@@ -672,6 +703,7 @@ def store_medication_record(
             "detected_text": m["detected_text"],
             "rxnorm_id":     m["rxnorm_id"],
             "description":   m["description"],
+            "concept_type":  m["concept_type"],
             "confidence":    Decimal(str(m["confidence"])),
         }
         for m in rxnorm_mappings
@@ -778,15 +810,15 @@ def process_label(bucket: str, key: str) -> dict:
     print(f"  Decoded: {directions_decoded}")
 
     # Step 5: Map drug name and dosage to RxNorm via Comprehend Medical.
+    # Passes full normalized label text for better entity context.
     # Returns ranked RxNorm concept candidates with confidence scores.
     print("Step 5: Mapping to RxNorm via Comprehend Medical")
-    drug_name = normalized.get("drug_name", {}).get("value", "")
-    dosage = normalized.get("dosage", {}).get("value", "")
-    rxnorm_mappings = map_to_rxnorm(drug_name, dosage)
+    rxnorm_mappings = map_to_rxnorm(normalized)
     print(f"  Found {len(rxnorm_mappings)} RxNorm concept(s) above confidence threshold")
     if rxnorm_mappings:
         best = rxnorm_mappings[0]
-        print(f"  Best match: {best['description']} (RxNorm: {best['rxnorm_id']}, confidence: {best['confidence']})")
+        print(f"  Best match: {best['description']} (RxNorm: {best['rxnorm_id']}, "
+              f"type: {best['concept_type']}, confidence: {best['confidence']})")
 
     # Step 6: Validate the NDC format and compute refill coverage metrics.
     print("Step 6: Validating NDC and computing refill metrics")
@@ -849,9 +881,9 @@ This example works. Run it against a real label image and it will return a struc
 
 **Idempotency.** S3 delivers event notifications at least once. If the same label triggers two Lambda invocations, this code will write two records with the same `image_key`, overwriting the first. Add a DynamoDB `ConditionExpression` to the `put_item` call that checks for key non-existence: `attribute_not_exists(image_key)`. That turns a silent overwrite into an explicit check.
 
-**SIG codebook coverage.** The 60-odd abbreviations in `SIG_CODES` cover the most common tokens you'll encounter. They do not cover everything. Real pharmacy labels will contain tokens that aren't here: less common Latin abbreviations, pharmacy-specific shorthand, and combinations you haven't seen. Build logging around unrecognized tokens in the directions field from day one. Capture them, review them regularly, and expand the codebook. Without that feedback loop, you'll never know which SIG tokens are passing through as-is instead of being decoded.
+**SIG codebook coverage.** The abbreviations in `SIG_CODES` cover the most common tokens you'll encounter. They do not cover everything. Real pharmacy labels will contain tokens that aren't here: less common Latin abbreviations, pharmacy-specific shorthand, and combinations you haven't seen. A production codebook needs 150+ entries to cover the long tail of ophthalmic, dermatological, and compound pharmacy directions. Build logging around unrecognized tokens in the directions field from day one. Capture them, review them regularly, and expand the codebook. Without that feedback loop, you'll never know which SIG tokens are passing through as-is instead of being decoded.
 
-**RxNorm concept selection.** `map_to_rxnorm` returns all concept candidates above the confidence threshold, sorted by confidence descending. For many downstream use cases you actually want a single concept, not a list. Decide whether you need the most specific concept (matches strength and dose form exactly, used for formulary tier matching) or the ingredient-level concept (generalizes across package types, used for drug interaction checking). That choice is use-case specific and belongs in your consuming system, not buried in a generic sort.
+**RxNorm concept selection.** `map_to_rxnorm` returns all concept candidates above the confidence threshold, sorted by confidence descending, including the concept type (TTY). For many downstream use cases you actually want a single concept, not a list. The `concept_type` field tells you what level of specificity each concept represents: IN (ingredient, e.g., "amoxicillin"), SCD (clinical drug, e.g., "amoxicillin 500 MG Oral Capsule"), or SBD (branded drug, e.g., "Amoxil 500 MG Oral Capsule"). For clinical decision support (drug interaction checking), filter to IN-level concepts. For formulary matching, prefer SCD or SBD. That choice is use-case specific and belongs in your consuming system, not buried in a generic sort.
 
 **NDC validation goes further than format.** A 10-digit string in the right format is a well-formed NDC. Whether it corresponds to a real FDA-registered drug product requires a lookup against the FDA NDC database. The NDC dataset is available as a bulk download. For medication reconciliation programs, consider refreshing it monthly and validating extracted NDCs against a local copy. This catches OCR errors that happen to produce valid-looking but non-existent NDC codes.
 
