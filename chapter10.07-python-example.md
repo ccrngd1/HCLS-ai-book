@@ -967,6 +967,29 @@ def check_voiceprint_enrollment(clinician_id):
     """
     return clinician_id in CLINICIAN_VOICEPRINT_REGISTRY
 
+
+def _lookup_voiceprint_consent_version(clinician_id):
+    """
+    Return the version identifier of the biometric-data consent
+    the clinician signed at voiceprint enrollment. Returns None
+    if the clinician has not enrolled.
+    """
+    if clinician_id in CLINICIAN_VOICEPRINT_REGISTRY:
+        return "bipa-consent-v2.1"
+    return None
+
+
+def _lookup_biometric_jurisdiction(room_id):
+    """
+    Determine the biometric-data jurisdiction from the room's
+    physical location. The clinic's state determines which
+    biometric-data law applies (BIPA in Illinois, CUBI in
+    Texas, RCW 19.375 in Washington, or none).
+    """
+    # In production, room_id maps to a clinic site which maps
+    # to a state. The demo returns a fixed jurisdiction.
+    return "IL"
+
 def encounter_start(encounter_id, patient_id, clinician_id,
                      clinician_specialty, clinic_jurisdiction,
                      visit_type, room_id,
@@ -1083,6 +1106,10 @@ def encounter_start(encounter_id, patient_id, clinician_id,
         "canonical_transcript_ref": None,
         "healthscribe_note_draft_ref": None,
         "clinician_voiceprint_enrolled": voiceprint_enrolled,
+        "clinician_voiceprint_consent_version":
+            _lookup_voiceprint_consent_version(clinician_id),
+        "clinician_jurisdiction_for_biometric_compliance":
+            _lookup_biometric_jurisdiction(room_id),
         "avg_audio_quality_snr":   Decimal("0.0"),
         "avg_streaming_asr_confidence": Decimal("0.0"),
         "avg_batch_asr_confidence":     Decimal("0.0"),
@@ -1568,11 +1595,20 @@ def run_faithfulness_check(session_context, rendered_note,
     Verify that every claim in the rendered note has a
     transcript citation or an EHR-source citation, score the
     rendered content for citation grounding, and detect
-    contradictions or out-of-scope additions. Production runs
-    this as a cascade of cheaper rule-based checks (citation
-    presence, named-entity contradiction) followed by an
-    LLM-judge pass for the harder cases. The demo collapses
-    to a single LLM call.
+    contradictions or out-of-scope additions.
+
+    Production runs three layers:
+      Layer 1: citation grounding verification, schema
+        validation, exam-finding-fabrication detection
+        (blocks on failure).
+      Layer 2: LLM-judge faithfulness scoring, clinical-
+        rule-based contradiction detection (warns or blocks
+        depending on behavioral-health profile).
+      Layer 3: offline sampling review stratified by
+        specialty, room, audio-quality band, and language.
+
+    The demo collapses to a single LLM call that
+    approximates the combined scoring.
     """
     session_id = session_context["session_id"]
     encounter_id = session_context["encounter_id"]
@@ -1960,7 +1996,13 @@ def extract_structured_fields(session_context,
             item["clinician_confirmed"] = False
 
     # Step 5C: persist all extractions for clinician
-    # confirmation.
+    # confirmation. In production, the PHI-bearing
+    # extractions (with context_snippets) are written to
+    # a draft-extractions archive in S3 with KMS
+    # encryption, and only a reference and counts are
+    # stored in the note-state DynamoDB table. The demo
+    # stores them directly in the mock state for
+    # simplicity.
     structured_extractions = {
         "medications":              coded_medications,
         "conditions":               coded_conditions,
@@ -2513,6 +2555,11 @@ def audit_archive_and_telemetry(session_context,
         "device_type":            state.get("device_type"),
         "voiceprint_enrolled":
             state.get("clinician_voiceprint_enrolled"),
+        "voiceprint_consent_version":
+            state.get("clinician_voiceprint_consent_version"),
+        "biometric_jurisdiction":
+            state.get(
+                "clinician_jurisdiction_for_biometric_compliance"),
         "audio_archive_ref":      state.get("audio_archive_ref"),
         "canonical_transcript_ref":
             state.get("canonical_transcript_ref"),
