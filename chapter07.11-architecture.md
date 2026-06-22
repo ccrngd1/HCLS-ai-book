@@ -18,7 +18,7 @@
 
 **AWS Lambda for the worklist engine.** Reads predictions from DynamoDB, applies business rules (risk threshold, dollar amount filters), and routes flagged claims to the appropriate review queue. Generates human-readable explanations from SHAP values by mapping feature names to business descriptions.
 
-**Amazon CloudWatch for model monitoring.** Tracks prediction distributions, accuracy metrics (comparing predictions to actual outcomes as they arrive), and operational metrics (how many claims are flagged, how many are reviewed, how many were actually denied).
+**Amazon CloudWatch for model monitoring.** Tracks prediction distributions, accuracy metrics (comparing predictions to actual outcomes as they arrive), and operational metrics (how many claims are flagged, how many are reviewed, how many were actually denied). Additionally, CloudWatch alarms monitor fairness metrics from the weekly SageMaker Clarify bias detection job. Alarms fire when any subgroup's precision or recall (across patient_age_group, coverage_type, place_of_service, and procedure_category) diverges more than 10 percentage points from the population average. These alarms route to the ML team and compliance officer for immediate investigation.
 
 ## Architecture Diagram
 
@@ -51,10 +51,16 @@ flowchart TD
 
     Q[Adjudication Results] -->|Feedback| C
 
+    R[EventBridge\nWeekly Schedule] -->|Trigger| S[SageMaker Clarify\nBias Detection Job]
+    K -->|Predictions + Outcomes| S
+    S -->|DPD/DI Metrics| T[CloudWatch\nFairness Alarms]
+    T -->|Alert >10pp divergence| U[Compliance Review]
+
     style G fill:#ff9,stroke:#333
     style I fill:#ff9,stroke:#333
     style J fill:#ff9,stroke:#333
     style K fill:#9ff,stroke:#333
+    style S fill:#f9f,stroke:#333
 ```
 
 ## Prerequisites
@@ -80,7 +86,7 @@ flowchart TD
 | **Amazon DynamoDB** | Store predictions with SHAP explanations for real-time lookup by claim ID and risk-based querying |
 | **Amazon EventBridge** | Orchestrate nightly batch scoring, weekly retraining, and drift-triggered retraining |
 | **AWS Lambda** | Worklist engine: apply business rules to predictions, route flagged claims to review queues, generate human-readable explanations |
-| **Amazon CloudWatch** | Monitor prediction distributions, model accuracy vs. actual outcomes, and pipeline health metrics |
+| **Amazon CloudWatch** | Monitor prediction distributions, model accuracy vs. actual outcomes, fairness metric alarms (subgroup divergence >10pp), and pipeline health metrics |
 | **AWS KMS** | Manage encryption keys for all data stores containing PHI |
 
 ## Pseudocode Walkthrough
@@ -503,6 +509,26 @@ FUNCTION generate_worklists(predictions_table):
 - Policy changes that haven't yet generated enough denied claims for the model to learn from
 - Claims with novel diagnosis-procedure combinations never seen in training
 - Multi-line claims where denial is driven by interactions between line items
+
+---
+
+## Why This Isn't Production-Ready
+
+This architecture gives you a working denial prediction pipeline, but a production deployment serving your billing team daily needs to close several gaps.
+
+**Model governance and versioning.** You need a model registry (SageMaker Model Registry) that tracks every trained model version, its evaluation metrics, who approved it for deployment, and a rollback path. When the weekly retrain produces a model that performs worse than the current production model (it happens: data quality issues, label leakage from a bad ETL run), you need automated guardrails that block deployment and alert the team. Define promotion criteria: a new model must beat the current production model on PR-AUC by at least 0.5 points on the holdout set, and must pass fairness checks, before it's eligible for deployment.
+
+**A/B testing framework.** You cannot know whether a new model version actually improves operational outcomes (fewer denials, higher clean claim rate) without measuring it against the incumbent. Deploy new models to a percentage of traffic (start with 10% of claims) and compare denial rates and coder override rates between model versions over a 2-4 week evaluation window. SageMaker endpoint production variants support this natively with traffic splitting.
+
+**Integration testing with the billing system.** The real-time scoring endpoint sits in the critical path of claim submission. If it returns malformed responses, times out under load, or returns predictions outside the [0, 1] range, your billing workflow breaks. Build an integration test suite that exercises the endpoint with known claims (golden test set) after every deployment. Verify response schema, latency under load (simulate peak billing hours), and graceful degradation (the fail-open behavior where claims proceed without scoring if the endpoint is unavailable).
+
+**Disaster recovery and failover for the scoring endpoint.** SageMaker endpoints run in a single region by default. If that region has an outage during billing hours, you lose real-time scoring. Options: multi-AZ endpoint deployment (automatic with SageMaker), cross-region failover (deploy a standby endpoint in a secondary region and use Route 53 health checks to switch), or the simpler approach of accepting graceful degradation (fall back to batch scoring when the real-time endpoint is unavailable and catch up overnight).
+
+**Counterfactual data pipeline.** The feedback loop problem discussed in the main recipe requires infrastructure to capture pre-correction feature snapshots, tag claims with intervention status, and implement the chosen retraining strategy (exclude corrected claims, use pseudo-labels, or validate against pre-correction features). This is a separate data pipeline that hooks into the billing system's edit workflow, not just the adjudication feed.
+
+**Fairness monitoring pipeline.** The weekly SageMaker Clarify job needs its own pipeline: pull predictions and outcomes joined with demographic attributes, compute DPD and DI metrics per subgroup, publish to CloudWatch, and generate the quarterly compliance report. This pipeline must handle missing demographic data gracefully (not all claims have patient age or coverage type populated) and must never expose individual patient demographics to the ML team without aggregation.
+
+**Load testing and auto-scaling.** Mid-size health systems submit claims in bursts (Monday mornings, end-of-month pushes, year-end catch-up). Your endpoint needs auto-scaling policies that handle 5-10x traffic spikes without latency degradation. Load test with realistic claim volumes and measure P99 latency under sustained load.
 
 ---
 
