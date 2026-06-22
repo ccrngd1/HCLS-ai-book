@@ -127,3 +127,11 @@ Here's what will surprise you when you actually build this:
 
 ---
 
+## Tags
+
+`computer-vision` · `dermatology` · `image-classification` · `triage` · `skin-cancer` · `cnn` · `bias-fairness` · `fda` · `samd` · `transfer-learning`
+
+---
+
+*← [Recipe 9.3: Wound Photography Measurement](chapter09.03-wound-photography-measurement) · [Chapter 9 Index](chapter09-preface) · [Next: Recipe 9.5: Chest X-Ray Triage →](chapter09.05-chest-xray-triage)*
+

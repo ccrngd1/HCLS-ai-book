@@ -324,6 +324,24 @@ FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Deploying this in a clinical environment requires closing several gaps that are intentionally outside the scope of a cookbook recipe:
+
+**Model bias validation before go-live.** You cannot deploy without stratified performance evaluation across Fitzpatrick skin types I-VI. The training data skew toward lighter skin is well-documented, and a model that performs 15% worse on darker skin tones is clinically unacceptable for a general deployment. Acquire validation sets that represent your patient population, measure sensitivity and specificity per skin type, and establish minimum performance thresholds per subgroup before any patient-facing use.
+
+**Regulatory classification.** Even for triage (not diagnosis), the FDA's guidance on Clinical Decision Support software applies. If your system's output materially influences clinical routing without independent clinician validation of the AI's reasoning, it likely qualifies as a medical device under the SaMD framework. Document your intended use precisely, establish that a qualified dermatologist reviews every case regardless of AI output, and engage regulatory counsel before deployment.
+
+**Outcome feedback loop.** The architecture stores `dermatologist_dx` and `status` fields but doesn't define how they get populated or how model performance is tracked over time. In production, you need a closed-loop system: the dermatologist's final diagnosis feeds back to the triage record, model accuracy is computed on a rolling basis, and performance degradation triggers automatic alerts. Without this, you have no way to detect model drift or confirm the system is actually helping.
+
+**Threshold governance.** The confidence thresholds that determine triage routing (urgent vs. suspicious vs. benign) have direct clinical impact. These cannot be set once and forgotten. Establish a clinical governance committee that reviews threshold performance quarterly, examines false-negative cases, and adjusts based on evolving patient volume and model behavior. Document every threshold change with clinical justification.
+
+**Failover and graceful degradation.** If the SageMaker endpoint is unavailable (maintenance, capacity issues, region outage), the system must fail safely. Cases should route to a manual triage queue with appropriate alerting, not silently drop. Define SLAs for endpoint availability and implement health checks that route to fallback workflows when the model is unreachable.
+
+**Audit trail for regulatory compliance.** Every prediction, confidence score, saliency map, and routing decision must be immutably logged with timestamps for potential regulatory review. CloudTrail covers API calls, but you also need application-level audit logs that capture the full decision context: input image hash, preprocessing steps applied, model version, threshold values used, and final routing outcome.
+
+---
+
 ## Variations and Extensions
 
 **Teledermatology integration.** Instead of just prioritizing a queue, embed the triage system into a store-and-forward teledermatology workflow. The patient submits photos through a portal, the AI triages, and the dermatologist reviews asynchronously with the AI's assessment as context (not as a binding recommendation). This extends access to patients in dermatology deserts without requiring synchronous video visits. For store-and-forward workflows where immediate response isn't required, consider SageMaker Async Inference. It handles burst loads without maintaining always-on GPU instances and costs significantly less for intermittent workloads.
