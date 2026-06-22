@@ -1247,16 +1247,19 @@ def persist_and_propagate(inquiry: dict, match_outcome: dict) -> dict:
     previous_status = ((previous or {}).get("match_outcome") or {}).get("status")
     previous_member_id = ((previous or {}).get("match_outcome") or {}).get("matched_member_id")
 
-    # TODO (TechWriter): Expert review A1 (HIGH). Wrap the
-    # DynamoDB write, the cache write, the S3 audit write, and
-    # the EventBridge emit in a TransactWriteItems plus an
-    # outbox row drained by a separate Lambda or DynamoDB
-    # Streams consumer so partial failures cannot leave the
-    # eligibility store out of sync with downstream consumers.
-    # Same chapter pattern as 5.1 / 5.2 / 5.3 Finding A1; the
-    # consequence here is sharper because the eligibility
-    # outcome directly drives revenue cycle, charity-care, and
-    # patient financial responsibility.
+    # Production note: wrap the DynamoDB write, cache write, S3
+    # audit write, and EventBridge emit in a transactional-outbox
+    # pattern. A DynamoDB TransactWriteItems call atomically writes
+    # the match-outcome item AND an outbox row; a DynamoDB Streams
+    # consumer drains the outbox (S3 archive, Redis cache set,
+    # EventBridge emit). Partial failures leave the outbox row for
+    # a reconciler to retry. This prevents the eligibility store
+    # from going out of sync with downstream consumers. The
+    # regulatory consequence is sharp: a stale or missing
+    # eligibility record directly drives claim denials (revenue
+    # cycle), wrongful charity-care denial, and incorrect
+    # patient financial responsibility collection.
+    # See the architecture companion for the full specification.
 
     # 5B: write the current match outcome.
     cache_ttl = _derive_cache_ttl(service_date)
