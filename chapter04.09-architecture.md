@@ -264,14 +264,31 @@ FUNCTION aggregate_plan_inputs(patient_id, request_context):
         // returns: { polst, advance_directive, acp_conversations,
         //            stated_preferences, comfort_focused_flag,
         //            decision_maker, last_updated }
-        // TODO (TechWriter): Expert review A5 (MEDIUM). Compute a
-        // goals_of_care_quality_flag here ("high", "medium", "low",
-        // "sparse") so the clinician-facing narrative can disclose
-        // how confident the goals-of-care alignment was. Trigger a
-        // structured ACP conversation action when the flag is low or
-        // sparse. Add cohort-stratified GoC-quality monitoring to
-        // the equity dashboard so systematically lower data quality
-        // in some cohorts is itself surfaced as a fairness signal.
+
+    // Goals-of-care quality assessment. The downstream goal-derivation
+    // and narrative layers need to know how much confidence to place
+    // in the GoC alignment. A "sparse" flag means the plan should
+    // surface a structured ACP conversation as a priority action.
+    plan_input_record.goc_quality_flag = compute_goc_quality(
+        plan_input_record.goals_of_care)
+        // Scoring:
+        //   "high"   - POLST on file AND updated within 12 months
+        //              AND at least one structured ACP conversation
+        //              within 24 months
+        //   "medium" - advance directive on file OR stated preferences
+        //              captured via portal, but no recent ACP
+        //              conversation or POLST is stale (>24 months)
+        //   "low"    - only portal preference questionnaire, no
+        //              formal ACP documentation, last update >12 months
+        //   "sparse" - no structured GoC data at all, or all sources
+        //              older than 36 months
+        // The clinician-facing narrative discloses the flag:
+        //   "Goals-of-care alignment confidence: [flag]. [reason]."
+        // When flag is "low" or "sparse", the goal-derivation layer
+        // injects a priority action: "structured ACP conversation"
+        // with the social worker or PCP as owner.
+    plan_input_record.goc_quality_reason = explain_goc_quality(
+        plan_input_record.goals_of_care, plan_input_record.goc_quality_flag)
 
     // Step 1E: social determinants and functional status.
     plan_input_record.sdoh = fetch_sdoh_assessment(patient_id)
@@ -490,27 +507,47 @@ FUNCTION assemble_and_reconcile_actions(goal_set, plan_input_record):
     // lowest-priority-weight actions until the burden is feasible).
     cumulative_burden = sum_of_burden(retained_actions)
     burden_threshold = compute_burden_threshold(plan_input_record)
-        // patient-specific: a function of functional status, cognitive
-        // status, social support, and stated preferences. The
-        // threshold for Linda is lower than the threshold for a
-        // 45-year-old with the same conditions and full social
-        // support.
-        // TODO (TechWriter): Expert review A1 (HIGH). The threshold
-        // derivation policy and the compress_for_burden decision
-        // policy are referenced but undefined. Specify the
-        // threshold formula (baseline minus penalties for functional
-        // deficits, cognitive impairment, social support tier, SDOH
-        // burdens; floor for comfort-focused patients) and the
-        // compression-decision policy (which goal classes are
-        // protected from compression; how patient-stated-preference
-        // goals interact with quality-program-incentivized goals).
-        // Reference the Cumulative Complexity Model and the
-        // Treatment Burden Questionnaire as calibration anchors.
-        // The Honest Take warns that naive burden scoring
-        // systematically deprioritizes the wrong actions for the
-        // patients with the least support; the architecture should
-        // not leave the threshold and compression logic
-        // implementation-defined.
+        // Patient-specific threshold derivation. The baseline is
+        // DEFAULT_BURDEN_THRESHOLD (12.0 action-burden-points). Penalties
+        // reduce it for patients whose capacity is constrained:
+        //
+        //   threshold = baseline
+        //     - functional_penalty(adl_score, iadl_score)
+        //         // ADL < 4/6: -2; IADL < 5/8: -1.5
+        //     - cognitive_penalty(cognitive_status)
+        //         // mild impairment: -1; moderate: -3; severe: floor
+        //     - social_support_penalty(social_support_tier)
+        //         // tier "isolated": -2; "limited": -1; "adequate": 0
+        //     - sdoh_penalty(transportation, food_security, housing)
+        //         // each unmet need: -0.5 (cumulative)
+        //     - comfort_focused_floor(goals_of_care)
+        //         // if comfort_focused_flag: threshold = min(threshold, 6.0)
+        //
+        // The floor is 4.0 (minimum two to three very-low-burden actions).
+        //
+        // Calibration anchors: the Treatment Burden Questionnaire (TBQ)
+        // and the Cumulative Complexity Model (May, Montori, Mair 2009)
+        // inform the penalty magnitudes. Validate per institution by
+        // correlating computed burden with patient-reported experience
+        // (PREMs) in the first 90 days of operation.
+        //
+        // Compression-decision policy (compress_for_burden):
+        //   1. Protected goal classes are never compressed:
+        //      - patient-stated-preference goals (provenance = goals_of_care)
+        //      - safety-critical goals (e.g., medication safety, fall prevention)
+        //   2. Compression order (first dropped/deferred):
+        //      a. Preventive screening goals (lowest clinical urgency)
+        //      b. Quality-program-only goals with no patient preference link
+        //      c. Lower-priority condition-guideline goals
+        //   3. When quality-program-incentivized goals conflict with
+        //      patient-stated-preference goals under compression, the
+        //      patient's preference wins. Document the compression
+        //      decision so the operations team can explain quality-measure
+        //      shortfalls attributable to patient choice.
+        //   4. Compression logs every dropped/deferred action with the
+        //      reason, the goal class, and the patient's threshold at
+        //      the time of generation. The clinician-facing narrative
+        //      surfaces the top three compression decisions explicitly.
     IF cumulative_burden > burden_threshold:
         compression_decisions = compress_for_burden(
             retained_actions, goal_set, target_burden = burden_threshold)
@@ -574,16 +611,35 @@ FUNCTION finalize_plan(goal_set, retained_actions, reconciliation_record,
     // Actions failing this check are not silently accepted; they
     // are surfaced to the care team as to-be-assigned items in the
     // clinician-facing narrative.
-    // TODO (TechWriter): Expert review A7 (MEDIUM). Plan finalization
-    // verifies the fallback chain exists, but architecture is silent
-    // on fallback execution: when an in-flight action transitions to
-    // failed, who fires the fallback (auto for screening
-    // substitutions, clinician-review-gated for medication
-    // substitutions, scheduler-initiated for appointments), how the
-    // fallback interacts with plan-revision triggers (Finding A3),
-    // and what the patient-facing narrative says when a fallback
-    // fires. Add a fallback_dispatcher Lambda and specify the
-    // per-action-class firing policy.
+    //
+    // Fallback execution architecture. When an in-flight action
+    // transitions to "failed" (via feedback in Step 6), the
+    // fallback_dispatcher Lambda fires:
+    //   - Auto-fire fallbacks (no clinician gate): screening
+    //     substitutions (e.g., FIT test if colonoscopy declined),
+    //     channel substitutions (e.g., telehealth if in-person
+    //     declined), appointment rescheduling.
+    //   - Clinician-review-gated fallbacks: medication substitutions,
+    //     program-enrollment alternatives, deprescribing escalations.
+    //     These emit a plan-action-record status "fallback_pending_review"
+    //     and surface in the clinician plan-review attention list.
+    //   - Scheduler-initiated fallbacks: appointment-capacity
+    //     fallbacks that wait for the scheduling system to confirm
+    //     the substitute slot before firing.
+    //
+    // Fallback interaction with plan-revision triggers (Finding A3):
+    //   When a fallback fires, the feedback loop evaluates whether
+    //   the fallback itself is sufficient or whether the failure
+    //   pattern (primary + fallback both failed, or the failure
+    //   implies a broader plan concern) should trigger a full plan
+    //   revision via EventBridge.
+    //
+    // Patient-facing narrative on fallback: the activation-dispatcher
+    //   sends an updated patient notification when a fallback fires
+    //   and succeeds (e.g., "Your colonoscopy scheduling did not work
+    //   out; we are sending you a home stool test kit instead").
+    //   Failed fallbacks do not produce patient-facing output until
+    //   the care team reviews.
     to_be_assigned = []
     final_actions = []
     FOR each action in retained_actions:
@@ -805,19 +861,35 @@ FUNCTION activate_plan(plan_id, activation_payload):
     // treatment relationship to plan.patient_id; validate that
     // approved_action_ids is a subset of plan.final_actions; reject
     // attempts to approve actions not in the structured plan.
-    // TODO (TechWriter): Expert review S1 (HIGH). The comment above
-    // describes the identity-boundary checks but the pseudocode that
-    // follows performs neither. activate_plan and record_feedback
-    // are the most security-sensitive write paths in Chapter 4
-    // (clinical-record-equivalent PHI; downstream dispatch to
-    // e-prescribing, scheduling, and program-registry systems).
-    // Specify in pseudocode: clinician treatment-relationship check,
-    // approved_action_ids subset check against final_actions,
-    // plan_id consistency check, log + emit metric on each
-    // violation, reject mismatches. Add an analogous check in
-    // record_feedback (target_action_id belongs to plan; source is
-    // consistent with feedback_kind; idempotency on the deterministic
-    // event key). Mirror 4.4-4.8 chapter pattern.
+    //
+    // Security enforcement (pseudocode):
+    IF NOT has_treatment_relationship(activation_payload.approving_clinician_id,
+                                       plan.patient_id):
+        emit_metric("PlanActivation/IdentityViolation",
+                     { violation_type: "no_treatment_relationship",
+                       clinician_id:   activation_payload.approving_clinician_id,
+                       patient_id:     plan.patient_id })
+        logger.warn("Activation rejected: clinician lacks treatment relationship",
+                     clinician = activation_payload.approving_clinician_id,
+                     patient   = plan.patient_id)
+        RAISE AuthorizationError("Clinician does not have treatment relationship to patient")
+
+    valid_action_ids = set(a.action_id FOR a IN plan.final_actions)
+    requested_ids    = set(activation_payload.approved_action_ids)
+    invalid_ids      = requested_ids - valid_action_ids
+    IF len(invalid_ids) > 0:
+        emit_metric("PlanActivation/SubsetViolation",
+                     { invalid_count: len(invalid_ids),
+                       plan_id:       plan_id })
+        logger.warn("Activation rejected: action_ids not in plan",
+                     invalid = invalid_ids, plan_id = plan_id)
+        RAISE ValidationError("approved_action_ids contains actions not in this plan")
+
+    IF activation_payload.plan_id != plan.plan_id:
+        emit_metric("PlanActivation/ConsistencyViolation",
+                     { payload_plan_id: activation_payload.plan_id,
+                       actual_plan_id:  plan.plan_id })
+        RAISE ValidationError("plan_id mismatch between payload and resolved plan")
 
     activation_record = {
         activation_id:           new UUID,
@@ -837,22 +909,29 @@ FUNCTION activate_plan(plan_id, activation_payload):
     // actions go to the program registry, patient-facing reminder
     // actions go to the channel-appropriate sender, care-manager
     // outreach actions are queued in the care-management system.
-    // TODO (TechWriter): Expert review A4 (HIGH). Activation-
-    // dispatch propagation status is not persisted. The pseudocode
-    // marks plan-action-records status="active" immediately after
-    // dispatch, which assumes successful propagation everywhere.
-    // Architect the asynchronous status pipeline: initial state
-    // "pending_dispatch"; per-integration success/failure responses
-    // update to "active", "active_partial", or "dispatch_failed";
-    // SLA-driven retry for stuck dispatches; failed dispatches
-    // surface to care team and feed the plan-revision evaluator
-    // (Finding A3). The patient-facing narrative renders only after
-    // activation reaches a stable state so the system never makes
-    // promises it cannot verify. Add per-integration cohort-
-    // stratified dispatch-success dashboards. Mirror 4.4-4.7's
-    // optimistic-counter-without-reconciliation pattern; the same
-    // architectural primitive applies (close the loop with the
-    // operational system before claiming the action is live).
+    //
+    // Asynchronous activation-dispatch status pipeline:
+    //   Initial state: "pending_dispatch" (written to plan-action-records
+    //   before dispatch begins).
+    //   Per-integration success callback updates to "active".
+    //   Per-integration partial-success updates to "active_partial"
+    //   (e.g., appointment scheduled but transport not yet confirmed).
+    //   Per-integration failure updates to "dispatch_failed" with a
+    //   failure_reason and retry_eligible flag.
+    //   SLA-driven retry: a scheduled EventBridge rule (every 15 min)
+    //   scans for "pending_dispatch" records older than SLA (30 min)
+    //   and retries up to MAX_DISPATCH_RETRIES (3). After exhaustion,
+    //   state moves to "dispatch_failed" and surfaces in the care-team
+    //   attention list.
+    //   Failed dispatches feed the plan-revision evaluator: persistent
+    //   dispatch failures for critical actions (medications, urgent
+    //   appointments) trigger a plan-revision check.
+    //   The patient-facing narrative renders only after the activation
+    //   reaches a stable state ("active" or "active_partial") so the
+    //   system never makes promises it cannot verify.
+    //   Per-integration dispatch-success dashboards in QuickSight,
+    //   sliced by cohort axis, surface systemic integration failures
+    //   that correlate with patient demographics.
     FOR each action_id in activation_payload.approved_action_ids:
         action = find_action(plan, action_id)
         edit = activation_payload.clinician_edits[action_id] or null
@@ -865,12 +944,14 @@ FUNCTION activate_plan(plan_id, activation_payload):
             plan_id:               plan_id,
             action_id:             action_id,
             effective_action:      effective_action,
-            status:                "active",
+            status:                "pending_dispatch",
             owner_role:            effective_action.owner_role,
             due_at:                compute_due_at(effective_action),
             success_criteria:      effective_action.success_criteria,
             fallback_chain:        effective_action.fallback_chain,
-            activated_at:          current UTC timestamp
+            activated_at:          current UTC timestamp,
+            dispatch_attempts:     1,
+            last_dispatch_at:      current UTC timestamp
         })
 
     DynamoDB.UpdateItem("plan-records", plan_id, updates = {
@@ -895,8 +976,43 @@ FUNCTION record_feedback(plan_id, feedback_payload):
     //   - target_action_id (if action-level)
     //   - feedback_data (kind-specific payload)
     //   - source (clinician, patient, system, integrated_device)
+
+    // Identity and consistency checks (mirrors activate_plan S1 pattern):
+    plan = DynamoDB.GetItem("plan-records", plan_id)
+    IF plan == null:
+        emit_metric("PlanFeedback/PlanNotFound", { plan_id: plan_id })
+        RAISE ValidationError("plan_id not found")
+
+    IF feedback_payload.target_action_id != null:
+        valid_action_ids = set(a.action_id FOR a IN plan.final_actions)
+        IF feedback_payload.target_action_id NOT IN valid_action_ids:
+            emit_metric("PlanFeedback/ActionIdViolation",
+                         { action_id: feedback_payload.target_action_id,
+                           plan_id:   plan_id })
+            RAISE ValidationError("target_action_id not in this plan")
+
+    // Source-kind consistency: system-sourced feedback must be
+    // action_completed or action_failed; patient-sourced must be
+    // patient_reported or outcome_observed.
+    IF NOT is_source_kind_consistent(feedback_payload.source,
+                                      feedback_payload.feedback_kind):
+        emit_metric("PlanFeedback/SourceKindMismatch",
+                     { source: feedback_payload.source,
+                       kind:   feedback_payload.feedback_kind })
+        RAISE ValidationError("source inconsistent with feedback_kind")
+
+    // Idempotency: compute deterministic event key from the feedback
+    // payload. If the key already exists in plan-feedback-records,
+    // return success without re-processing (replayed events are no-ops).
+    event_key = hash(plan_id, feedback_payload.feedback_kind,
+                      feedback_payload.target_action_id,
+                      feedback_payload.feedback_data.event_date)
+    IF feedback_already_recorded(event_key):
+        RETURN { status: "duplicate", feedback_id: existing_id }
+
     feedback_record = {
         feedback_id:    new UUID,
+        event_key:      event_key,
         plan_id:        plan_id,
         feedback_kind:  feedback_payload.feedback_kind,
         target_action_id: feedback_payload.target_action_id,
@@ -904,7 +1020,8 @@ FUNCTION record_feedback(plan_id, feedback_payload):
         source:         feedback_payload.source,
         recorded_at:    current UTC timestamp
     }
-    DynamoDB.PutItem("plan-feedback-records", feedback_record)
+    DynamoDB.PutItem("plan-feedback-records", feedback_record,
+                      condition = "attribute_not_exists(event_key)")
 
     // Update the action status if action-level feedback.
     IF feedback_payload.target_action_id != null:
@@ -914,20 +1031,52 @@ FUNCTION record_feedback(plan_id, feedback_payload):
 
     // Determine if the feedback should trigger a plan revision.
     revision_signal = evaluate_feedback_for_revision(plan_id, feedback_record)
-    // TODO (TechWriter): Expert review A3 (HIGH). The trigger
-    // calibration policy is undefined. Specify in pseudocode:
-    // always-trigger events (adverse_event, hospitalization,
-    // new_diagnosis); threshold-trigger events (outcome thresholds
-    // catalog-defined per pair, with per-cohort severity tuning);
-    // persistent-failure triggers (action failure beyond the
-    // catalog-defined fallback window); suppress-trigger events
-    // (within-normal-variation). Add idempotency on the feedback
-    // event's deterministic key so replayed events do not re-fire
-    // revisions. Add cohort-stratified trigger-rate monitoring as
-    // part of the equity instrumentation. The Honest Take names
-    // both failure modes (too-sensitive churn versus too-insensitive
-    // staleness); architecture must specify the framework so the
-    // calibration is operational tuning, not implementation guesswork.
+        // Trigger-calibration policy:
+        //
+        // ALWAYS-TRIGGER events (fire revision immediately):
+        //   - adverse_event (any severity)
+        //   - hospitalization (any cause)
+        //   - new_diagnosis (any)
+        //   - patient_reported "wants_plan_change"
+        //
+        // THRESHOLD-TRIGGER events (fire only when catalog-defined
+        // thresholds are exceeded AND the signal persists):
+        //   - weight gain: >3 lbs in 3 days for CHF patients
+        //     (per-cohort: geriatric patients threshold is 2 lbs)
+        //   - A1c rise: > 0.5 above target at next measurement
+        //   - new medication: only if drug class is in the
+        //     watch list (anticoagulants, insulin, opioids, etc.)
+        //   - outcome regression: metric worsens for 2+ consecutive
+        //     measurement windows (catalog-defined per goal)
+        //
+        // PERSISTENT-FAILURE triggers (fire after fallback exhaustion):
+        //   - action_failed beyond the catalog-defined fallback window
+        //     (typically: primary fails + one fallback fails = trigger)
+        //   - dispatch_failed for >48 hours on a critical action
+        //
+        // SUPPRESS-TRIGGER events (do not fire revision):
+        //   - within-normal-variation fluctuations (catalog-defined
+        //     per metric, per cohort)
+        //   - duplicate feedback events (idempotency check on the
+        //     deterministic key: hash(plan_id, feedback_kind,
+        //     target_action_id, feedback_data.event_date))
+        //
+        // Per-cohort severity tuning: older patients (age >= 75) and
+        // patients with frailty index > 0.25 use more sensitive
+        // thresholds because the underlying instability is higher
+        // and earlier intervention has greater impact.
+        //
+        // Idempotency: feedback events carry a deterministic key
+        // (hash of plan_id + feedback_kind + target_action_id +
+        // event_date). Replayed events with the same key are
+        // deduplicated and do not re-fire revisions.
+        //
+        // Cohort-stratified trigger-rate monitoring: the equity
+        // dashboard tracks trigger rates per cohort axis per month.
+        // A cohort with significantly higher trigger rates may
+        // indicate over-ambitious plans; significantly lower rates
+        // may indicate under-sensitive thresholds or disengagement.
+        // Both warrant committee review.
     IF revision_signal.should_revise:
         EventBridge.PutEvents([{
             source:      "care-plan",
@@ -973,22 +1122,44 @@ FUNCTION run_periodic_plan_review(run_date):
                                                     SURVEILLANCE_WINDOW_DAYS)
     FOR each axis, metric in quality_metrics:
         IF metric.disparity >= COHORT_DISPARITY_ALERT_THRESHOLD:
-            // TODO (TechWriter): Expert review A2 (HIGH).
-            // COHORT_DISPARITY_ALERT_THRESHOLD and the equity-
-            // metric definitions are referenced but undefined.
-            // Specify per-axis-per-metric thresholds (plan ambition
-            // disparity, plan complexity disparity, action assignment
-            // disparity, outcome trajectory disparity), the
-            // operationalization of each metric (median ratio of
-            // priority-weight sum, action count, self-management
-            // share, outcome improvement, worst-cohort versus best-
-            // cohort), the chronic-suppression-as-fairness-signal
-            // pattern (when MIN_COHORT_SAMPLE is not met across a
-            // surveillance window, escalate as an equity signal in
-            // its own right), and the per-axis override mechanism
-            // (the equity-review committee documents threshold
-            // overrides per (axis, metric) at deployment). Reference
-            // Obermeyer 2019 and Recipe 4.8 Finding A4.
+            // Equity-metric definitions and per-axis thresholds:
+            //
+            // Metrics (operationalized as worst-cohort / best-cohort ratio):
+            //   plan_ambition_disparity:
+            //     median(priority_weight_sum) across cohorts; ratio < 0.80
+            //     triggers alert (plans for some cohorts aim lower)
+            //   plan_complexity_disparity:
+            //     median(action_count) across cohorts; ratio > 1.30 OR < 0.70
+            //     triggers alert (some cohorts get more/fewer actions)
+            //   action_assignment_disparity:
+            //     share of self_management_actions / total_actions; ratio
+            //     difference > 0.15 triggers alert (some cohorts pushed
+            //     toward self-management while others get clinician-led)
+            //   outcome_trajectory_disparity:
+            //     median(outcome_improvement_slope) across cohorts; ratio
+            //     < 0.75 triggers alert (plans for some cohorts produce
+            //     worse outcomes)
+            //
+            // Cohort axes: race_ethnicity, age_bracket, language,
+            //   dual_eligible_status, rurality, SDOH_composite_score
+            //
+            // Chronic-suppression-as-fairness-signal: when a cohort's
+            //   sample size (MIN_COHORT_SAMPLE = 30) is not met across
+            //   the surveillance window, escalate as an equity signal in
+            //   its own right (the cohort is too small or too invisible
+            //   for the system to evaluate).
+            //
+            // Per-axis override mechanism: the equity-review committee
+            //   documents threshold overrides per (axis, metric) at
+            //   deployment, with justification and review cadence.
+            //   Overrides are versioned in DynamoDB with effective dates.
+            //
+            // Reference: Obermeyer et al. 2019 demonstrated that cost-
+            //   based proxy metrics in healthcare algorithms systematically
+            //   disadvantage Black patients. Plan-ambition parity must
+            //   measure clinical goals directly, not proxy metrics like
+            //   historical utilization or cost. Recipe 4.8 Finding A4
+            //   applies the same principle to treatment recommendations.
             DynamoDB.PutItem("surveillance-alerts", {
                 alert_id:           new UUID,
                 alert_type:         "plan_cohort_disparity",
@@ -998,6 +1169,62 @@ FUNCTION run_periodic_plan_review(run_date):
                 review_status:      "pending"
             })
 ```
+
+---
+
+#### Cross-Cutting Architectural Concerns
+
+The pseudocode above covers the per-stage logic. Several cross-cutting concerns apply across all stages and deserve first-class architectural treatment rather than per-stage footnotes.
+
+**Opaque, non-reversible identifiers.** All record identifiers (plan_id, narrative_id, plan_action_record_id, feedback_id, plan_input_id) must be opaque UUIDs (v4) or HMAC-SHA256 over the composite key with a per-environment secret. Never construct identifiers from concatenated patient_id, plan_version, or condition data. Composite-string-based identifiers leak PHI in URLs, logs, CloudTrail events, Step Functions execution histories, and downstream event payloads. A URL like `plan-2026-04-22-pat-007842-v07` reveals the patient, the date, and the plan version to anyone who sees the URL in a browser history, a Slack message, or a log line. Use `plan_id = uuid4()` or `plan_id = hmac_sha256(env_secret, patient_id + plan_version + timestamp)` so identifiers are meaningless without access to the resolution table. This pattern mirrors the identifier discipline in Recipes 4.4 through 4.8. Note: The Expected Results section below uses human-readable composite IDs for pedagogical clarity; production implementations must use opaque identifiers.
+
+**DLQ coverage on all Lambda paths.** Every Lambda in the pipeline must route failures to a per-stage SQS dead-letter queue keyed on `(plan_id, stage_name)`:
+
+- Step Functions task failures: the Catch block routes to a per-stage DLQ with the full task input and error context. The DLQ consumer emits a CloudWatch metric and a structured alert.
+- Kinesis-to-state-machine-worker Lambda: configures an OnFailure destination pointing to a DLQ. Failed events are retried per the Kinesis retry policy before landing in the DLQ.
+- Narrative-generation Bedrock failures: route to a degraded-state response that returns the templated narrative rather than a partial or empty plan. The validator-fallback path handles this; if both Bedrock and the templated fallback fail (infrastructure failure), the plan finalization path must fail loudly and produce no plan rather than a partial plan.
+- Plan finalization: the critical invariant is that a partial plan (goals without actions, actions without owners, narratives without validator pass) never persists to the plan-records table. If any stage fails terminally after retries, the entire plan-generation attempt is rolled back to "generation_failed" status and surfaced in the operational dashboard.
+
+**Channel-credential posture.** Patient-facing delivery through Pinpoint uses multiple channel integrations, each with its own credential lifecycle:
+
+- Portal API credentials: stored in AWS Secrets Manager with automatic rotation (30-day cycle). The Lambda that calls the portal API fetches the current secret at invocation; the rotation Lambda updates the secret and validates connectivity before marking the new version current.
+- Mailing-vendor SFTP keys: stored in Secrets Manager with manual rotation (90-day cycle, driven by the vendor's key-rotation policy). Rotation triggers a connectivity check against the vendor's SFTP endpoint.
+- SMS short-code provisioning: the short code is provisioned through Pinpoint with carrier-level approval. Provisioning is a one-time process per short code; the credential is the Pinpoint application ID plus the origination identity, not a rotating secret.
+- Language-specific template approval: patient-facing narrative templates in non-English languages require carrier-level template approval for SMS delivery. Maintain a per-language template registry in DynamoDB with approval status and effective dates. New templates go through the carrier approval workflow before the activation-dispatcher sends them.
+
+Reference the channel-integration patterns from Recipes 4.1 and 4.2 for the channel-preference resolution and delivery-confirmation loops.
+
+**Consent-data-flow pattern.** The plan uses goals-of-care preferences, SDOH data, functional and cognitive status, family-caregiver involvement, and longitudinal engagement signals. Each data category carries a consent posture:
+
+- Explicit consent capture: at enrollment (or plan opt-in), the patient consents to data categories used in plan generation. Consent is captured in the patient-profile table with a structured consent record: `{ consent_id, patient_id, data_categories[], consent_version, captured_at, captured_via, expires_at }`.
+- Consent versioning: when the institution updates the consent language or adds data categories, a new consent version is created. Patients on prior versions are prompted to re-consent at next interaction; plans generated under prior consent versions note the version in the plan-input record for audit.
+- Consent-revocation handling: a patient who revokes consent for a data category triggers a plan-revision check. The revision regenerates the plan without the revoked data category; the affected goals and actions are re-evaluated. Revocation is immediate (next plan interaction), not retroactive (prior plans are not rewritten, but the revocation is noted in the audit trail).
+- Audit trail of consent state at generation time: the plan-input record freezes the consent state at plan generation. The field `plan_input_record.consent_snapshot` records which data categories were consented at the moment of aggregation. This makes it possible to reconstruct whether a specific plan used data the patient later revoked.
+
+Mirror the consent language from Recipes 4.5 through 4.8 where applicable; the consent-data-flow primitives are shared across the chapter.
+
+**Trigger-calibration operational pattern.** Beyond the per-event trigger policy specified in Step 6, the trigger system requires operational tuning:
+
+- Per-trigger sensitivity calibration: acute hospitalization always triggers revision. Weight gain only triggers if it exceeds the threshold AND persists for the catalog-defined window (3 days for CHF). New medication only triggers if the drug class is in the watch list (maintained in the action-templates catalog).
+- Per-cohort tuning: older patients (75+) and patients with elevated frailty scores use more sensitive thresholds because underlying instability is higher and earlier intervention has greater impact. The per-cohort tuning table is maintained in DynamoDB alongside the trigger catalog.
+- Monthly trigger-rate review at the cohort level: the equity dashboard surfaces trigger rates per cohort axis. Persistently high trigger rates in a cohort may indicate over-ambitious plans that consistently fail; persistently low rates may indicate disengagement or under-sensitive thresholds. Both warrant clinical committee review.
+- Trigger-rate alerting: CloudWatch alarms fire when a cohort's trigger rate deviates from the population mean by more than 2 standard deviations, sustained for 7 days.
+
+**Multi-language as a first-class architectural concern.** Non-English-preferring cohorts are exactly the cohorts the equity instrumentation should be most sensitive to, so multi-language support is not a variation but an architectural requirement for equitable plan delivery:
+
+- Per-language validator dispatch: the validator selects language-specific reading-level scoring algorithms. English uses Flesch-Kincaid. Spanish uses Flesch-Huerta-Macuso for general text and INFLESZ for medical text. Other languages use syllable-based algorithms calibrated per language.
+- Per-language prohibited-language catalog: each supported language maintains its own catalog of prohibited patterns (recommendation language, prognostic claims, ungrounded clinical assertions) reviewed by in-language clinical content reviewers.
+- Per-language required-content templates: the templated-narrative fallback has per-language variants so the fallback is a clean, scannable, language-appropriate presentation rather than machine-translated English.
+- Per-language template approval for channel delivery: SMS and email templates in non-English languages go through the same carrier and compliance approval as English templates (see channel-credential posture above).
+- Cross-references: Recipe 4.2's reading-level pattern provides the per-language scoring infrastructure; Recipe 4.1's language-as-channel-attribute pattern provides the language-preference resolution.
+
+**Clinical-content version transitions.** Goal templates and action templates are versioned artifacts with effective dates, and the plan generation pipeline must handle version transitions cleanly:
+
+- Version freezing at generation time: the plan-input record freezes the effective template versions at plan generation. The field `source_template_version` on each goal and action records which template version was active when the plan was generated. Subsequent template updates do not retroactively change existing plans.
+- Distinguishing patient-state changes from template-content changes in plan revision: when a plan is revised, the revision logic computes a per-element diff. Elements that changed because of patient-state evolution (new lab result, new diagnosis) are distinguished from elements that changed because the underlying template was updated. The clinician-facing narrative surfaces both change types explicitly.
+- Retired template handling for active plans: when a template is retired (status moves from "active" to "retired"), active plans that reference it are not immediately revised. The retired template remains readable (immutable archive) but is not used for new plan generation. Plans referencing retired templates are flagged for review at the next scheduled review cycle; the clinician-facing narrative notes "this goal/action references a template that has been superseded."
+- Parallel evaluation for significant content changes: before a major template update goes live, a shadow Step Functions pipeline runs the new templates against a held-out patient cohort (using the same plan-input records from recent plans) and produces a diff surface for the clinical-content review committee. The committee reviews the diff before promoting the new template version.
+- Scale considerations: a mature content library may contain 50 to 200 goal templates and 200 to 1000 action templates with cohort overrides. Coordinated promotion (updating multiple related templates simultaneously) uses a promotion batch with a single effective date and a single parallel-evaluation run. The promotion path is version-controlled in a content-management DynamoDB table with batch-level approval status.
 
 ---
 
@@ -1323,7 +1550,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 ## Variations and Extensions
 
-**Multi-language patient-facing narratives.** The patient-facing narrative is generated in the patient's preferred language. Beyond simple machine translation, the variation includes: language-specific reading-level scoring, cultural-context overrides for goal framing (e.g., family-decision-making centrality for some cultures), idiomatic localization, and language-specific approved-claim language. The catalog supports per-language template variants. The validator applies language-specific reading-level checks. Plan for in-language clinical content review for the languages you support; machine translation alone is not sufficient for clinical content. 
+**Multi-language patient-facing narratives.** The patient-facing narrative is generated in the patient's preferred language. The architectural requirements for multi-language support are specified in the Cross-Cutting Architectural Concerns section above (per-language validator dispatch, per-language prohibited-language catalog, per-language required-content templates, per-language template approval for channel delivery). Beyond those structural requirements, the operational variation includes: cultural-context overrides for goal framing (e.g., family-decision-making centrality for some cultures), idiomatic localization that goes beyond translation, and community health worker involvement for languages where the patient population benefits from in-person plan walkthrough. Plan for in-language clinical content review for every language you support; machine translation alone is not sufficient for clinical content that drives patient behavior.
 
 **Caregiver-facing narrative.** When a patient has a designated family caregiver with consent to access the plan, a third audience-specific narrative addresses the caregiver directly: what they should watch for, when to escalate, what specific support they can provide, and what is not their responsibility (an explicit boundary statement). The caregiver narrative respects the patient's privacy preferences (some patients consent to plan sharing without sharing every detail). The validator extends to a caregiver-audience layer with caregiver-specific prohibited-language patterns.
 
