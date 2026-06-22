@@ -251,8 +251,8 @@ Final thought: this is one of the highest-leverage applications of medical AI I'
 - **Recipe 2.6 (Clinical Note Summarization):** Grounded generation over an in-chart corpus. The retrieval layer is smaller and more focused, but the generation patterns are similar.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Sits on a continuum with 2.7. Decision support adds patient-specific reasoning and moves toward recommendations; literature search stays descriptive. The regulatory and liability posture differs; the retrieval and synthesis architecture overlap substantially.
 - **Recipe 2.10 (Multi-Modal Clinical Reasoning):** Extends decision support into multi-modal inputs. The literature RAG pipeline from this recipe can serve as the evidence layer for a multi-modal reasoning system.
-- **Recipe 13.x (Knowledge Graphs):** Knowledge-graph representations of medical entities and relationships can augment RAG retrieval: graph-based retrieval finds papers connected by entity relationships, not just semantic similarity. Hybrid graph-plus-vector retrieval is a promising direction for medical RAG. 
-- **Recipe 8.x (Biomedical NER):** Traditional NER pipelines produce the entity extraction that drives retrieval filters in this recipe. The two pipelines share infrastructure. 
+- **Recipe 13.9 (Literature-Derived Knowledge Graph):** Knowledge-graph representations of medical entities and relationships can augment RAG retrieval: graph-based retrieval finds papers connected by entity relationships, not just semantic similarity. Hybrid graph-plus-vector retrieval is a promising direction for medical RAG.
+- **Recipe 8.4 (Medication Extraction and Normalization):** Traditional NER pipelines produce the entity extraction that drives retrieval filters in this recipe. The two pipelines share infrastructure.
 
 ---
 
