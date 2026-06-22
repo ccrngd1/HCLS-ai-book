@@ -12,7 +12,7 @@ You'll need the AWS SDK for Python and a few supporting libraries:
 pip install boto3 requests
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs permissions for Neptune (`neptune-db:*` scoped to your cluster), S3 (`s3:GetObject` on the formulary bucket), and ElastiCache network access from your VPC.
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs permissions for Neptune (query Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:connect`; loader Lambda adds `neptune-db:WriteDataViaQuery`; both scoped to your cluster ARN), S3 (`s3:GetObject` on the formulary bucket), and ElastiCache network access from your VPC.
 
 Neptune doesn't use IAM for query authentication by default (it uses VPC-level network isolation), but if you've enabled IAM auth on your cluster, you'll need to sign requests with SigV4. This example assumes VPC network access without IAM auth for simplicity.
 
@@ -440,7 +440,9 @@ import json
 import redis
 
 # Create a Redis client. This connects to your ElastiCache cluster.
-# In production, use connection pooling and handle connection failures.
+# In production: enable ssl=True for TLS in-transit (required), and
+# authenticate via Redis AUTH token or IAM-based access control.
+# This example omits both for local development simplicity.
 redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 def get_alternatives_cached(drug_id: str, plan_id: str) -> list:
@@ -697,9 +699,9 @@ This example demonstrates the shape of the solution. Here's what separates it fr
 
 **IAM authentication for Neptune.** This example uses plain HTTPS without request signing. If your Neptune cluster has IAM authentication enabled (recommended for production), you need to sign every request with AWS SigV4. The `boto3` library can generate SigV4 signatures, or use the `amazon-neptune-sigv4-signer` utility.
 
-**VPC and network configuration.** Neptune requires VPC deployment. Your Lambda functions need to be in the same VPC with security groups that allow outbound traffic to Neptune's port (8182) and Redis's port (6379). You also need VPC endpoints for S3 and CloudWatch Logs so Lambda can reach those services without a NAT gateway.
+**VPC and network configuration.** Neptune requires VPC deployment. Deploy your Lambda functions in private subnets with security groups that allow outbound TCP to the Neptune security group on port 8182 and to the Redis security group on port 6379. Required VPC endpoints: S3 (gateway endpoint), CloudWatch Logs (interface endpoint), and STS (interface endpoint, required for IAM auth request signing). If the loader Lambda needs internet access for RxNorm API calls, route through a NAT gateway rather than placing Lambda in a public subnet.
 
-**Redis connection pooling.** The `redis.Redis()` client in this example creates a single connection. Under concurrent Lambda invocations, you'll exhaust Redis connection limits quickly. Use `redis.ConnectionPool` with appropriate max_connections settings, or use ElastiCache Serverless which handles connection management for you.
+**Redis connection pooling and security.** The `redis.Redis()` client in this example creates a single connection without TLS or authentication. In production: (1) Enable `ssl=True` for TLS in-transit (required for HIPAA). (2) Authenticate via Redis AUTH token (stored in Secrets Manager) or IAM-based access control (ElastiCache for Redis 7.0+). (3) Use `redis.ConnectionPool` with appropriate max_connections settings, or use ElastiCache Serverless which handles connection management for you. Also consider cache key design: if your `plan_id` is member-specific, cache keys create an access pattern log of medication inquiries per member, which may constitute PHI. Use plan-type identifiers in cache keys where possible.
 
 **Monitoring and alerting.** No metrics here. A production system tracks: query latency (p50, p95, p99), cache hit rate, Neptune query count, graph load duration, and error rates. Set alarms on cache hit rate dropping below 80% (indicates a cache key mismatch or TTL issue) and on query latency exceeding 100ms (indicates Neptune is undersized or queries need optimization).
 
