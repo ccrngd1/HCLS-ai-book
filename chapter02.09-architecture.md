@@ -1256,7 +1256,7 @@ Shipping clinical decision support that synthesizes recommendations is a multi-y
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): Search for "retrieval augmented generation," "clinical decision support," and "HealthLake"
 
 **Regulatory Guidance:**
-- [FDA Clinical Decision Support Software Guidance (September 2022)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software): FDA's current position on CDS software exemption criteria
+- [FDA Clinical Decision Support Software Guidance (January 2026)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software): FDA's current position on CDS software exemption criteria, including clarifications on automation bias and transparency
 - [21st Century Cures Act Section 3060](https://www.congress.gov/bill/114th-congress/house-bill/34): Legislative basis for the CDS exemption
 - [FDA Digital Health Software Precertification (Pre-Cert) Program](https://www.fda.gov/medical-devices/digital-health-center-excellence/digital-health-software-precertification-pre-cert-program): Pilot program for digital health software oversight
 

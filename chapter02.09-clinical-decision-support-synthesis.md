@@ -105,7 +105,7 @@ The practical pattern is a structured output (JSON) with: overall assessment, ra
 
 ### The FDA CDS Rule: Where This Becomes a Medical Device
 
-The 21st Century Cures Act, signed in 2016, included language carving out certain clinical decision support software from FDA medical-device oversight. The FDA's subsequent guidance (finalized September 2022) interprets this exception narrowly. A CDS system is exempt from medical-device regulation if and only if it meets all four of the following criteria:
+The 21st Century Cures Act, signed in 2016, included language carving out certain clinical decision support software from FDA medical-device oversight. The FDA's revised final guidance (January 2026, superseding the earlier September 2022 version) interprets this exception narrowly and includes clarifications relevant to AI-based CDS. A CDS system is exempt from medical-device regulation if and only if it meets all four of the following criteria:
 
 1. The software is not intended to acquire, process, or analyze a medical image or signal from an in vitro diagnostic device or pattern from a signal acquisition system.
 2. The software is intended for the purpose of displaying, analyzing, or printing medical information about a patient or other medical information (such as peer-reviewed clinical studies and clinical practice guidelines).
@@ -121,7 +121,7 @@ Concretely, for the architecture you're building:
 - The UI has to invite clinician judgment, not bypass it. Single-click acceptance with the reasoning hidden is a regulatory risk.
 - Documentation of how the system was built, validated, and updated needs to be comprehensive enough to produce for FDA on request. If your posture is "we're exempt," you should be able to demonstrate that posture on demand.
 
-Interpretations of the rule are still evolving. Generative AI in CDS is new enough that FDA has not issued generative-AI-specific guidance as of this writing.  The conservative posture, and the one most legal teams are recommending, is: build for exemption, but build as though you might have to defend the exemption in a regulatory conversation. That means rigorous documentation, explicit source traceability, and clinician-facing UIs that foreground reasoning.
+Interpretations of the rule are still evolving. The January 2026 revised CDS guidance includes clarifications on automation bias and transparency expectations that are directly relevant to generative AI systems, though it does not constitute generative-AI-specific regulation. The conservative posture, and the one most legal teams are recommending, is: build for exemption, but build as though you might have to defend the exemption in a regulatory conversation. That means rigorous documentation, explicit source traceability, and clinician-facing UIs that foreground reasoning.
 
 This is a sufficiently big topic that it has its own recipe-adjacent considerations. For a deeper treatment, FDA's guidance document is reasonably readable ([linked below](#additional-resources)). Get your regulatory affairs team involved from day one. Do not build the thing and then ask whether it's a medical device.
 
