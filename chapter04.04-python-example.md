@@ -874,12 +874,17 @@ def allocate_capacity(
 
     # Build a flat list of (member, program, priority) candidates and
     # join in the cohort features the equity floors check.
+    # Pre-cache cohort features per member to avoid redundant DynamoDB
+    # reads when a member appears across multiple programs, and to ensure
+    # consistent cohort assignments within a single run.
+    unique_members = list({r["member_id"] for r in ranked_rows})
+    cohort_cache = {m: _lookup_cohort_features(m) for m in unique_members}
+
     candidates = []
     for r in ranked_rows:
-        cohort = _lookup_cohort_features(r["member_id"])
         candidates.append({
             **r,
-            "cohort_features": cohort,
+            "cohort_features": cohort_cache[r["member_id"]],
         })
     candidates.sort(key=lambda x: x["priority"], reverse=True)
 
@@ -1052,8 +1057,21 @@ def _make_tracking_id(run_date: str, member_id: str, program_id: str) -> str:
     Stable tracking_id used to join allocations to outreach to
     engagement events. Stable across retries so duplicate processing
     converges to the same recommendation-log row.
+
+    IMPORTANT: the tracking_id is opaque and non-reversible. It flows on
+    outbound channels (email open-tracking pixels, SMS click-through links,
+    vendor outreach platform handoffs) and inbound engagement events.
+    Member identity is reattached only inside systems with read access to
+    the recommendation log. Plain-text member_ids embedded in URLs and SMS
+    payloads are PHI leakage even when the surrounding context looks
+    innocuous (tracking pixel domains, vendor analytics paths, CloudWatch
+    logs at INFO level).
     """
-    return f"wellness-{run_date}-{member_id}-{program_id}"
+    import hashlib
+    import os
+    composite = f"{run_date}:{member_id}:{program_id}"
+    secret = os.environ.get("TRACKING_ID_HMAC_SECRET", "local-dev-only")
+    return hashlib.sha256((secret + composite).encode()).hexdigest()[:32]
 ```
 
 ---
@@ -1096,14 +1114,40 @@ def enforce_outreach_caps(
 
         profile = _from_decimal(response.get("Item") or {})
 
-        # ---- Wellness consent check ----
-        # In jurisdictions or plan policies that require explicit
-        # consent for wellness outreach, the member must have an
-        # active consent flag. Members can also opt out per program;
-        # check that too.
-        if not profile.get("wellness_consent_active", False):
-            deferred.append({"row": row, "reason": "no_active_wellness_consent"})
+        # ---- Multi-dimensional consent verification ----
+        # Wellness consent is not a single boolean. Each dimension that
+        # fails produces its own deferral reason so dashboards surface
+        # exactly what's missing and the member-services team can act.
+
+        consent = profile.get("consent", {})
+
+        # (a) ADA voluntary-participation
+        if not consent.get("ada_voluntary_participation", False):
+            deferred.append({"row": row, "reason": "ada_voluntary_participation_not_confirmed"})
             continue
+
+        # (b) GINA authorization: only checked when the program uses
+        # family-history features in its eligibility criteria.
+        program_meta = next((p for p in SAMPLE_PROGRAMS if p["program_id"] == program_id), {})
+        if program_meta.get("eligibility_criteria", {}).get("uses_family_history", False):
+            if not consent.get("gina_authorization", False):
+                deferred.append({"row": row, "reason": "gina_authorization_required"})
+                continue
+
+        # (c) Program-specific consent (keyed on program_id)
+        program_consents = consent.get("program_consents", [])
+        if program_id not in program_consents:
+            deferred.append({"row": row, "reason": "program_specific_consent_missing"})
+            continue
+
+        # (d) Channel-specific consent
+        channel_consents = consent.get("channel_consents", [])
+        intended_channel = profile.get("preferred_channel", "email")
+        if intended_channel not in channel_consents:
+            deferred.append({"row": row, "reason": "channel_consent_missing"})
+            continue
+
+        # Program-level opt-out (explicit "don't recommend this to me")
         opt_outs = profile.get("opt_outs", {}).get("programs", [])
         if program_id in opt_outs:
             deferred.append({"row": row, "reason": "member_opted_out_of_program"})
@@ -1481,7 +1525,7 @@ def process_engagement_event(event: dict) -> None:
                         "program_outreach_opened" | "program_enrolled" |
                         "program_session_attended" | "program_completed" |
                         "program_dropped_out" | "pcp_override",
-        "tracking_id":  "wellness-<run_date>-<member_id>-<program_id>",
+        "tracking_id":  "<opaque HMAC, e.g. a3f8c91e7b2d04561f9c8e3a7b204d56>",
         "member_id":    "...",
         "program_id":   "...",
         "timestamp":    ISO 8601,
@@ -1902,7 +1946,13 @@ if __name__ == "__main__":
             "engagement_history_quartile":     "q2",
             "sdoh_cohort":                     "low_food_security",
             "age_band":                        "55-64",
-            "wellness_consent_active":         True,
+            "consent": {
+                "ada_voluntary_participation": True,
+                "gina_authorization":          True,
+                "program_consents":            ["prog-dpp", "prog-weight", "prog-stress"],
+                "channel_consents":            ["email", "sms"],
+            },
+            "preferred_channel":               "email",
             "outreach_recent_wellness_count":  Decimal("0"),
             "outreach_recent_total_count":     Decimal("0"),
             "opt_outs":                        {"programs": []},
@@ -1913,7 +1963,13 @@ if __name__ == "__main__":
             "engagement_history_quartile":     "q1",
             "sdoh_cohort":                     None,
             "age_band":                        "45-54",
-            "wellness_consent_active":         True,
+            "consent": {
+                "ada_voluntary_participation": True,
+                "gina_authorization":          False,
+                "program_consents":            ["prog-smoking", "prog-stress", "prog-sleep"],
+                "channel_consents":            ["email"],
+            },
+            "preferred_channel":               "email",
             "outreach_recent_wellness_count":  Decimal("0"),
             "outreach_recent_total_count":     Decimal("0"),
             "opt_outs":                        {"programs": []},
