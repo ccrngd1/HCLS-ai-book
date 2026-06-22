@@ -301,6 +301,22 @@ The 1.5-3 second figure represents Lambda processing time (DICOM parse, metrics 
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Taking it to a real radiology department requires closing several gaps that are intentionally outside the scope of a cookbook recipe:
+
+**Dead letter queue and retry handling.** S3 event notifications to Lambda are asynchronous and at-least-once. If the quality assessment Lambda fails (SageMaker endpoint timeout, transient network error, uncaught exception), the event retries and eventually drops. A lost event means a DICOM image bypasses quality assessment entirely. Configure an SQS dead letter queue on the Lambda and alarm on queue depth. In a clinical imaging pipeline, silent failures mean unassessed images reaching radiologists with no audit trail.
+
+**Per-device threshold calibration.** The hardcoded thresholds in the pseudocode (sharpness > 0.5, exposure between 0.3 and 0.9) will not generalize across imaging devices. A GE Revolution CT produces different baseline noise than a Siemens SOMATOM. An older computed radiography unit has fundamentally different sharpness characteristics than a new digital radiography detector. Production requires a calibration workflow: run shadow mode per device for 2-4 weeks, collect radiologist agreement data, and set thresholds that achieve target sensitivity and specificity per modality/manufacturer pair. Store thresholds in a configuration service (DynamoDB or Parameter Store), not in code.
+
+**Model drift monitoring.** Image characteristics change over time: new equipment installations, firmware upgrades, protocol changes, seasonal patient population shifts (flu season brings sicker patients with worse positioning compliance). Without monitoring model performance against radiologist ground truth on an ongoing basis, accuracy silently degrades. Implement a SageMaker Model Monitor schedule that compares model predictions against downstream radiologist accept/reject decisions weekly.
+
+**DICOM conformance and edge cases.** Real-world DICOM streams contain corrupted files, incomplete transfers, non-standard private tags, compressed transfer syntaxes your parser may not support, and multi-frame objects (fluoroscopy, ultrasound cine loops) that need different handling than single-frame images. The Lambda needs graceful degradation: log the parse failure, pass the image through without assessment (fail-open), and alert on parse failure rates exceeding a threshold.
+
+**Audit trail completeness.** HIPAA requires accounting of disclosures, and quality assessment decisions that influence patient care (retake recommendations) are arguably part of the medical record. Every assessment result needs to be stored immutably with the study metadata, retrievable by patient or study for compliance audits. The DynamoDB table in the pseudocode stores results, but production needs retention policies, point-in-time recovery, and integration with your institution's audit infrastructure.
+
+---
+
 ## Variations and Extensions
 
 **Edge deployment for real-time feedback.** Instead of routing images to the cloud for assessment, deploy a lightweight model (quantized, optimized for inference) directly on hardware at the modality or DICOM router. This gets latency under 500ms and enables immediate feedback on the modality console. AWS IoT Greengrass or a SageMaker Edge deployment can manage model updates to edge devices. The tradeoff: you lose the scalability of cloud inference and need to manage edge hardware.
