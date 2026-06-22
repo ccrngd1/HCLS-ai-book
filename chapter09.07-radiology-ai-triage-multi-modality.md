@@ -117,3 +117,12 @@ The thing that surprised me most: radiologists actually like these systems when 
 - **Recipe 12.10 (Physiological Waveform Analysis):** Similar real-time inference pattern applied to continuous monitoring data
 
 ---
+
+## Tags
+
+`computer-vision` · `radiology` · `triage` · `multi-modality` · `dicom` · `sagemaker` · `healthimaging` · `fda` · `critical-findings` · `worklist` · `cnn` · `deep-learning` · `pacs` · `hipaa`
+
+---
+
+| [← 9.6: Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening) | [Chapter 9 Index](chapter09-preface) | [9.8: Pathology Slide Analysis →](chapter09.08-pathology-slide-analysis) |
+|:---|:---:|---:|

@@ -342,6 +342,24 @@ FUNCTION update_worklist_and_notify(triage_result):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the pattern. Deploying multi-modality radiology AI triage into a clinical environment requires closing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will bite you:
+
+**Model validation and FDA clearance.** Every model running inference on patient data in a clinical workflow needs FDA 510(k) clearance (or De Novo if novel). Each clinical indication (ICH detection, PE detection, pneumothorax detection) is typically a separate submission. The architecture above assumes you have cleared models. If you're training your own, add 12-18 months and $500K-$2M per indication for the regulatory pathway. Most health systems buy FDA-cleared models from vendors (Aidoc, Viz.ai, RapidAI) rather than building and clearing their own.
+
+**Graceful degradation and failover.** The pipeline above has no explicit handling for partial failures. What happens when the ICH model endpoint is unavailable but the PE model works fine? A production system needs per-model circuit breakers, fallback behavior (study remains at routine priority with a "triage incomplete" flag), and monitoring that distinguishes "no findings" from "triage failed." The Step Functions error handling mentioned in "Why These Services" is a start, but you also need alerting when failure rates exceed thresholds and a manual review queue for studies that failed triage.
+
+**Model drift monitoring.** Radiology AI models degrade over time as scanner hardware changes, protocols evolve, and patient populations shift. A production deployment needs ongoing performance monitoring: track sensitivity and false positive rates weekly against a ground-truth sample (radiologist final reads). Alert when performance drops below the FDA-cleared operating point. This requires a feedback loop from final radiology reports back to the AI system, which is a substantial integration effort with the RIS/PACS.
+
+**Audit trail completeness.** The `log_audit_event` call in the pseudocode captures the triage decision, but FDA and accreditation requirements go deeper. You need full traceability: which exact model version (including weights checksum) processed which study, what preprocessing version was applied, what the raw model output was before thresholding, and who acknowledged the alert. If a patient has an adverse outcome and the AI was involved in prioritization, you need to reconstruct exactly what happened months or years later.
+
+**Multi-site configuration management.** Each hospital site has different scanners, different DICOM metadata conventions, different PACS vendors, and different clinical priorities. The routing logic, confidence thresholds, and PACS integration all need per-site configuration. Managing these configurations across 10-50 sites without introducing errors requires a proper configuration management system with version control, validation, and rollback capability.
+
+**Worklist integration testing.** The HL7/DICOM worklist update is the riskiest integration point. If the priority update message is malformed, it can corrupt the worklist for the entire department. Production deployments need a staging environment with a test PACS that mirrors the production system, end-to-end integration tests that run before every deployment, and a kill switch that can disable AI priority updates instantly if something goes wrong. Budget 2-4 weeks of integration testing per PACS vendor, per site.
+
+---
+
 ## Variations and Extensions
 
 **Quantitative reporting.** Beyond binary detection, add measurement capabilities: hemorrhage volume estimation, PE clot burden scoring, pneumothorax percentage. These quantitative outputs help radiologists prioritize within the "urgent" category and provide structured data for downstream clinical decision-making.
