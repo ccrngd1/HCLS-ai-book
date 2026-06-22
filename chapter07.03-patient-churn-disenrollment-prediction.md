@@ -86,6 +86,8 @@ The churn prediction pipeline has four logical stages:
 
 The feedback loop is critical. Track which interventions were attempted, which members were retained, and feed that outcome data back into the next training cycle. Without this loop, you can't measure whether your model (or your interventions) are actually working.
 
+**Model Monitoring.** Churn models degrade. Population composition shifts around open enrollment. New competitors enter markets. Benefit designs change annually. You need a monitoring process that compares predictions against ground truth on a rolling basis: take the scores you generated 90 days ago, join them against actual disenrollment outcomes, and compute rolling AUC-PR and calibration error (ECE). Publish these metrics on a monthly cadence. When AUC-PR drops below a threshold (0.40 is a reasonable floor for most health plan populations) or calibration error exceeds 0.10, trigger a retraining job. Pay special attention to the months surrounding open enrollment, when the population composition shifts most dramatically and models trained on mid-year data can become unreliable.
+
 ---
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.03-architecture). The Python example is linked from there.

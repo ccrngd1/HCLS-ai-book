@@ -323,6 +323,73 @@ FUNCTION store_and_serve(results, scoring_date):
     // Downstream rules route to appropriate intervention queues.
 ```
 
+**Step 6: Model monitoring.** Models degrade. Population composition shifts around open enrollment. Benefit designs change annually. New competitors enter markets. If you don't monitor prediction quality against ground truth, you'll deploy a model that slowly becomes useless and not notice until retention numbers drop months later. This step runs monthly on a schedule offset from scoring (you need time for outcomes to materialize before you can evaluate predictions). It is especially important around open enrollment periods when the population composition shifts most dramatically.
+
+```pseudocode
+FUNCTION monitor_model_performance(scoring_date_to_evaluate):
+    // Look back at predictions from 90 days ago and compare against actual outcomes.
+    // Why 90 days? That's the prediction horizon: we predicted "will this member
+    // churn within 90 days?" Now we know whether they actually did.
+    
+    evaluation_date = scoring_date_to_evaluate
+    prediction_date = evaluation_date - 90 days
+    
+    // Load predictions we made 90 days ago.
+    historical_predictions = load from S3:
+        s3://churn-scoring-results/scores/date={prediction_date}/members.parquet
+    
+    // Load actual outcomes: who actually disenrolled between then and now?
+    actual_outcomes = query eligibility system:
+        for each member in historical_predictions:
+            label = 1 if member disenrolled between prediction_date and evaluation_date
+            label = 0 otherwise
+    
+    // Join predictions to actuals on member_id.
+    evaluation_set = join historical_predictions with actual_outcomes on member_id
+    
+    // Compute rolling AUC-PR (precision-recall area under curve).
+    // AUC-PR is the right metric for imbalanced problems: it tells you how well
+    // the model distinguishes churners from non-churners in the minority class.
+    auc_pr = compute AUC-PR(evaluation_set.churn_probability, evaluation_set.actual_label)
+    
+    // Compute Expected Calibration Error (ECE).
+    // ECE measures how well calibrated the probabilities are: when the model says
+    // "60% chance of churn," do roughly 60% of those members actually churn?
+    // Bin predictions into 10 equal-width bins, compare predicted vs. actual rate.
+    ece = compute ECE(evaluation_set.churn_probability, evaluation_set.actual_label, bins=10)
+    
+    // Publish metrics to CloudWatch for dashboarding and alarming.
+    publish to CloudWatch namespace "ChurnModel/Performance":
+        metric "AUC-PR" = auc_pr, dimensions = { model_version, evaluation_month }
+        metric "ECE"    = ece,    dimensions = { model_version, evaluation_month }
+        metric "ActualChurnRate" = mean(evaluation_set.actual_label)
+        metric "PredictedChurnRate" = mean(evaluation_set.churn_probability)
+    
+    // Check retraining triggers.
+    // AUC-PR below 0.40 means the model is barely better than random for the
+    // minority class. ECE above 0.10 means calibration has drifted enough that
+    // tier thresholds are producing the wrong volume of outreach.
+    IF auc_pr < 0.40 OR ece > 0.10:
+        trigger retraining pipeline via EventBridge:
+            detail_type = "ChurnModelRetrainingRequired"
+            detail = {
+                reason: auc_pr < 0.40 ? "AUC-PR degraded" : "Calibration drift",
+                auc_pr: auc_pr,
+                ece: ece,
+                evaluation_date: evaluation_date,
+                prediction_date: prediction_date
+            }
+        // The retraining pipeline recomputes features with recent data,
+        // trains a new model version, validates on a held-out set, and
+        // promotes only if the new model outperforms the current one.
+    
+    // Log the evaluation for audit purposes.
+    write evaluation summary to S3:
+        s3://churn-scoring-results/monitoring/date={evaluation_date}/eval.json
+    
+    RETURN { auc_pr, ece, retrain_triggered: (auc_pr < 0.40 OR ece > 0.10) }
+```
+
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ## Expected Results
@@ -361,6 +428,28 @@ FUNCTION store_and_serve(results, scoring_date):
 | Monthly cost (100K members) | $50-100 |
 
 **Where it struggles:** New members with less than 6 months tenure (cold start). Members who churn due to employer decisions (group-level switches, not individual choice). Sudden life events (relocation, job loss) with no prior behavioral signal. Markets with aggressive competitor pricing where the decision is purely financial.
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the churn prediction pipeline end-to-end. Deploying this to a real health plan's retention program requires closing several gaps. These are the ones that will catch you:
+
+**Model monitoring and retraining automation.** Step 6 defines the monitoring logic, but a production system needs the full operational wrapper: automated monthly ground-truth joins, CloudWatch dashboards with historical trend lines, PagerDuty alerts when metrics breach thresholds, and a retraining pipeline that validates the new model against the current one before promotion. Without this, your model degrades silently after every open enrollment period.
+
+**Fairness audits across demographic groups.** Churn models can encode structural inequities. Members in underserved zip codes may have worse network adequacy, higher churn, and therefore higher risk scores. If your retention team then focuses outreach on members who are already well-served (because they're cheaper to retain), you've built a system that amplifies existing disparities. Monitor prediction distributions and intervention allocation rates across race, ethnicity, language, zip code, and plan type. Document findings in a model card. CMS and state regulators are increasingly scrutinizing algorithmic decision-making in health plans.
+
+**Retraining pipeline with champion/challenger testing.** When monitoring triggers a retrain, you don't just swap models. You train a challenger model on recent data, validate it against the current champion on a holdout set, run both in parallel for a scoring cycle (scoring the same members with both models), compare outcomes, and promote the challenger only if it demonstrably outperforms. SageMaker Model Registry and deployment policies support this pattern, but the governance process (who approves promotion, what metrics constitute "better") requires human decisions.
+
+**Integration testing with intervention systems.** The pipeline writes to DynamoDB and publishes to EventBridge. Downstream systems (care management platforms, call center applications, member portals) consume those outputs. Integration testing must verify the full path: a high-risk score produces a DynamoDB entry that the call center app can read, an EventBridge event that the routing rules match, and a work item in the retention team's queue. A broken integration means scores are computed but never acted on.
+
+**Intervention feedback capture.** The architecture routes members to interventions, but it doesn't specify how intervention outcomes flow back into the system. Did the outreach call happen? Did the member answer? Did they express intent to stay? Did the network team actually fix the adequacy gap? This feedback is both the signal for model improvement and the evidence for ROI calculations. Build the feedback capture from day one; retrofitting it after launch is painful because the retention team has already established workflows without it.
+
+**Cold-start handling for new members.** Members with less than six months of tenure have insufficient behavioral history for reliable scoring. A production system either excludes them from scoring entirely (and routes them through a separate onboarding-quality program) or uses a dedicated early-tenure model trained on features available at enrollment: plan selection patterns, demographics, initial engagement velocity in the first 30-60 days. Scoring new members with the general model produces unreliable probabilities that waste intervention capacity.
+
+**Seasonality-aware threshold management.** The fixed probability thresholds (0.60 for high, 0.35 for medium) work during steady-state periods. Around open enrollment, the entire population's risk shifts upward (everyone is reconsidering their options), and fixed thresholds produce an unmanageable volume of "high-risk" members. Production systems either adjust thresholds seasonally (higher during enrollment periods) or switch to relative ranking (top N members regardless of absolute probability).
+
+**Dead letter queues and poison-message handling.** The EventBridge events that trigger interventions, the DynamoDB writes, the Glue feature assembly jobs: each can fail for transient or permanent reasons. Configure DLQs on every async path, alarm on queue depth, and build runbooks for replaying failed messages. A silently lost high-risk event means a member who should have received outreach doesn't get it.
 
 ---
 

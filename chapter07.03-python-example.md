@@ -708,6 +708,146 @@ def publish_high_risk_events(results_df: pd.DataFrame, scoring_date: str) -> int
 
 ---
 
+## Step 8: Model Monitoring (Monthly Ground-Truth Evaluation)
+
+*The architecture companion's Step 6 defines model monitoring: comparing predictions from 90 days ago against actual disenrollment outcomes, computing rolling AUC-PR and ECE, and triggering retraining when performance degrades. This step runs monthly on a separate schedule from scoring. It is especially critical around open enrollment periods when population composition shifts.*
+
+```python
+from sklearn.metrics import average_precision_score
+
+# Create CloudWatch client for publishing monitoring metrics.
+cloudwatch_client = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
+
+def compute_ece(probabilities: np.ndarray, actuals: np.ndarray, n_bins: int = 10) -> float:
+    """
+    Compute Expected Calibration Error (ECE).
+
+    ECE measures how well-calibrated the model's probabilities are. When the
+    model predicts 0.7, do roughly 70% of those members actually churn?
+    Poor calibration means your tier thresholds produce the wrong outreach volume.
+
+    Args:
+        probabilities: Predicted churn probabilities.
+        actuals: Binary ground truth (1 = churned, 0 = stayed).
+        n_bins: Number of equal-width bins for calibration measurement.
+
+    Returns:
+        ECE value (lower is better; 0.0 = perfectly calibrated).
+    """
+    bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
+    ece = 0.0
+
+    for i in range(n_bins):
+        mask = (probabilities >= bin_edges[i]) & (probabilities < bin_edges[i + 1])
+        if mask.sum() == 0:
+            continue
+        bin_confidence = probabilities[mask].mean()
+        bin_accuracy = actuals[mask].mean()
+        bin_weight = mask.sum() / len(probabilities)
+        ece += bin_weight * abs(bin_confidence - bin_accuracy)
+
+    return ece
+
+
+def monitor_model_performance(prediction_date: str, evaluation_date: str) -> dict:
+    """
+    Evaluate model performance by joining 90-day-old predictions against outcomes.
+
+    This runs monthly. It loads the scores generated on prediction_date, joins
+    them against actual disenrollment outcomes as of evaluation_date, computes
+    AUC-PR and ECE, publishes to CloudWatch, and triggers retraining if needed.
+
+    In production, the prediction_date would be dynamically computed as
+    evaluation_date minus 90 days. The ground truth comes from the eligibility
+    system (who actually disenrolled between those dates).
+
+    Args:
+        prediction_date: ISO date of the scoring run to evaluate (e.g., "2026-03-01").
+        evaluation_date: ISO date when outcomes are measured (e.g., "2026-06-01").
+
+    Returns:
+        Dict with auc_pr, ece, and whether retraining was triggered.
+    """
+    # Load historical predictions from S3.
+    # In production, read the Parquet file from the scoring output path.
+    predictions_key = f"{PREDICTIONS_PREFIX}scoring_date={prediction_date}/members.parquet"
+    logger.info("Loading predictions from s3://%s/%s", ML_BUCKET, predictions_key)
+
+    # Simulated: in a real system you'd read from S3 and join eligibility data.
+    # Here we generate a synthetic evaluation set for demonstration.
+    np.random.seed(99)
+    n_eval = 5000
+    predicted_probs = np.random.beta(2, 5, n_eval)  # skewed toward low risk
+    # Simulate outcomes correlated with predictions (imperfect model).
+    actual_outcomes = (np.random.random(n_eval) < predicted_probs * 1.2).astype(int)
+
+    # Compute AUC-PR.
+    auc_pr = average_precision_score(actual_outcomes, predicted_probs)
+
+    # Compute ECE.
+    ece = compute_ece(predicted_probs, actual_outcomes)
+
+    actual_churn_rate = actual_outcomes.mean()
+    predicted_churn_rate = predicted_probs.mean()
+
+    logger.info("Model performance: AUC-PR=%.3f, ECE=%.3f", auc_pr, ece)
+    logger.info("Actual churn rate: %.3f, Predicted mean: %.3f",
+                actual_churn_rate, predicted_churn_rate)
+
+    # Publish metrics to CloudWatch.
+    cloudwatch_client.put_metric_data(
+        Namespace="ChurnModel/Performance",
+        MetricData=[
+            {
+                "MetricName": "AUC-PR",
+                "Value": auc_pr,
+                "Unit": "None",
+                "Dimensions": [{"Name": "EvaluationMonth", "Value": evaluation_date[:7]}],
+            },
+            {
+                "MetricName": "ECE",
+                "Value": ece,
+                "Unit": "None",
+                "Dimensions": [{"Name": "EvaluationMonth", "Value": evaluation_date[:7]}],
+            },
+            {
+                "MetricName": "ActualChurnRate",
+                "Value": actual_churn_rate,
+                "Unit": "None",
+                "Dimensions": [{"Name": "EvaluationMonth", "Value": evaluation_date[:7]}],
+            },
+        ],
+    )
+
+    # Check retraining triggers.
+    retrain_triggered = auc_pr < 0.40 or ece > 0.10
+
+    if retrain_triggered:
+        reason = "AUC-PR degraded" if auc_pr < 0.40 else "Calibration drift"
+        logger.warning("Retraining triggered: %s (AUC-PR=%.3f, ECE=%.3f)",
+                       reason, auc_pr, ece)
+
+        # Publish retraining event to EventBridge.
+        events_client.put_events(Entries=[{
+            "Source": "churn-prediction-pipeline",
+            "DetailType": "ChurnModelRetrainingRequired",
+            "Detail": json.dumps({
+                "reason": reason,
+                "auc_pr": round(auc_pr, 4),
+                "ece": round(ece, 4),
+                "evaluation_date": evaluation_date,
+                "prediction_date": prediction_date,
+            }),
+            "EventBusName": "default",
+        }])
+    else:
+        logger.info("Model performance within acceptable bounds. No retraining needed.")
+
+    return {"auc_pr": auc_pr, "ece": ece, "retrain_triggered": retrain_triggered}
+```
+
+---
+
 ## Putting It All Together
 
 Here's the full pipeline assembled into a single function. In production, this would be orchestrated by Step Functions with each step as a separate Lambda or Glue job. Here we run it sequentially for clarity.
@@ -720,8 +860,9 @@ def run_churn_prediction_pipeline():
     In a real deployment:
     - Step 1 (feature assembly) is a Glue job pulling from 6+ source systems
     - Step 2 (training) runs quarterly or when model performance degrades
-    - Steps 3-6 (scoring, tiers, storage, events) run weekly via Step Functions
-    - EventBridge schedules the weekly run
+    - Steps 3-7 (scoring, tiers, storage, events) run weekly via Step Functions
+    - Step 8 (monitoring) runs monthly on a separate schedule
+    - EventBridge schedules both the weekly and monthly runs
 
     This function combines everything for demonstration purposes.
     """
@@ -774,6 +915,19 @@ def run_churn_prediction_pipeline():
     logger.info("Step 7: Publishing high-risk events...")
     publish_high_risk_events(results_df, scoring_date)
 
+    # Step 8: Model monitoring (runs monthly on a separate schedule in production).
+    # Here we demonstrate it inline. In production, this is a separate Step Functions
+    # execution triggered monthly by EventBridge Scheduler, evaluating predictions
+    # from 90 days prior against actual outcomes.
+    logger.info("Step 8: Running model monitoring...")
+    prediction_date_90d_ago = (
+        datetime.datetime.now(timezone.utc) - datetime.timedelta(days=90)
+    ).strftime("%Y-%m-%d")
+    monitoring_results = monitor_model_performance(prediction_date_90d_ago, scoring_date)
+    logger.info("  AUC-PR: %.3f, ECE: %.3f, Retrain triggered: %s",
+                monitoring_results["auc_pr"], monitoring_results["ece"],
+                monitoring_results["retrain_triggered"])
+
     # Print summary.
     logger.info("=== Pipeline Complete ===")
     logger.info("Total members scored: %d", len(results_df))
@@ -809,7 +963,7 @@ This example works. Run it locally and it will generate synthetic data, train a 
 
 **Input validation.** This code trusts its inputs completely. A production system validates that source data is fresh (not stale from a failed upstream job), checks for unexpected nulls or distributions that suggest data quality issues, and rejects scoring runs where feature coverage drops below a threshold.
 
-**Model monitoring.** Models degrade over time as member behavior shifts. SageMaker Model Monitor can detect data drift (feature distributions changing) and prediction drift (score distributions shifting). When drift exceeds thresholds, trigger a retraining job. Without monitoring, you'll deploy a model that slowly becomes useless and not know until retention numbers drop.
+**Model monitoring.** Step 8 demonstrates the core monitoring loop: ground-truth join, AUC-PR and ECE computation, CloudWatch publishing, and retraining triggers. A production system adds SageMaker Model Monitor for real-time data drift detection (feature distributions changing between training and inference), alerting dashboards with historical trend lines, and a promotion gate that validates new model versions against the current champion before swapping. The monthly cadence shown here should be supplemented with continuous drift detection on the scoring input distributions.
 
 **Calibration.** This example skips probability calibration entirely. In production, you must calibrate the model's raw probabilities using isotonic regression or Platt scaling on a held-out calibration set. Without calibration, a predicted "0.7" might actually correspond to 40% churn, making your tier thresholds meaningless.
 
