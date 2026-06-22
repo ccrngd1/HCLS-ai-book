@@ -997,6 +997,311 @@ FUNCTION close_conversation_and_archive(session_id,
 
 ---
 
+### Cross-Cutting Architectural Commitments
+
+The following commitments are not optional hardening for a future phase. They are architectural primitives that must be designed-in from the first iteration. The recipe's pseudocode assumes them; production deployments that omit them carry unacceptable clinical, regulatory, and operational risk.
+
+#### Clinical-Protocol-Corpus-as-Code Lifecycle
+
+The protocol corpus is the bot's clinical authority. Treat it as production code with a full software-lifecycle discipline.
+
+**Versioning.** Each protocol carries a semantic version (MAJOR.MINOR.PATCH). MAJOR increments when care-level mappings or decision-point logic changes. MINOR increments for clarification or new special-population overlays. PATCH increments for typo or formatting corrections.
+
+**Testing.** Each protocol version is validated against a held-out corpus of triage cases before promotion. The held-out cases cover typical presentations, atypical presentations, edge-case presentations, and previously-observed failure modes. Sandbox testing runs the new protocol version through the full pipeline (protocol-selection, questioning, rule-computation, recommendation-composition, output-screening) against the held-out set and compares outcomes to the prior version.
+
+**Staged rollout.** New protocol versions deploy through a per-protocol canary: 5% of conversations matching the protocol's symptom-category route to the new version; the remainder route to the current version. Per-protocol canary metrics (over-triage rate, under-triage rate, escalation rate, citation-coverage rate) are compared; rollback triggers automatically on regression.
+
+**Ownership.** Each protocol is owned jointly by the medical director, the nurse-line clinical leadership, compliance, and the regulatory team. The medical director's sign-off is the launch gate for any protocol version.
+
+**Audit trail.** Every triage-decision record stamps the protocol_id and protocol_version active at the time of the recommendation. The protocol-version-registry DynamoDB table maps each protocol_id to its version history with effective dates.
+
+**Review cadence.** Annual review of each protocol by clinical leadership plus ad-hoc review when clinical evidence or outcome-correlation data indicates a revision is warranted.
+
+**Parallel governance assets.** The same versioning, testing, staged-rollout, ownership, audit-trail, and review-cadence discipline applies to:
+- The clinical-decision-rule library (HEART, Wells, Centor, Ottawa, etc.)
+- The emergency-screening corpus (keyword vocabulary plus classifier training data)
+- The FDA-strategy artifact
+- The conservative-bias-default policy
+- The mandatory-reporting-routing policy
+
+Each of these assets carries its own semantic version, its own held-out test set, its own canary discipline, and its own clinical-leadership sign-off.
+
+#### Working-Store vs. Archive-Store Data Discipline
+
+The DynamoDB tables on the real-time hot path hold structural references and metadata. Full-content records route to S3 archives.
+
+**Hot path (DynamoDB):** conversation-state (active session metadata), conversation-metadata (turn-level structural data for the active session), tool-call-ledger (tool invocation metadata including tool name, version, latency, outcome code), triage-decision-record-journal (structured recommendation record with protocol_id, protocol_version, care_level, rule_results, citation references), protocol-version-registry (version-to-effective-date mappings), outcome-correlation-pending (pending correlation records).
+
+**Archive path (S3 with Object Lock):** Full protocol-content text used at recommendation time, full clinical-decision-rule input/output detail, full chart-context detail, full conversation transcript, full tool-call argument and response payloads. Each class is encrypted with a per-class KMS key for blast-radius containment.
+
+**Retention floors.** Per-record-class retention is the longest of:
+- HIPAA's six-year minimum for PHI
+- State-specific medical-record retention rules (typically 7-10+ years for adult records; pediatric records often retained until age of majority plus the state's adult retention period, sometimes producing 25+ year retention windows)
+- FDA SaMD post-market obligations where applicable
+- Per-channel retention obligations (TCPA/10DLC for SMS; voice-channel recording retention rules)
+- The institutional regulatory floor
+
+The retention-floor calculation is per-record-class: audit-archive, triage-decision-record-journal, protocol-version-stamp-registry, conversation-log, tool-call-ledger, and outcome-correlation-pending may each have different floors. The S3 lifecycle policy for each class reflects its specific floor.
+
+**Sensitive-disclosure surface.** Mandatory-reporting-relevant disclosures (child abuse, elder abuse, intimate-partner violence, psychiatric crisis) route to a separately-governed storage surface with restricted access limited to designated mandatory-reporter clinical staff plus compliance plus legal. Access to this surface is audited separately from the general conversation archive.
+
+#### Per-Cohort Monitoring with Launch-Gate Discipline
+
+Per-cohort monitoring is not a dashboard exercise. It is a launch-gate: each cohort meets threshold before the bot goes live for that cohort.
+
+**Single-axis cohorts:** per-language, per-channel, per-pediatric-vs-adult, per-age-cohort, per-sex, per-presenting-symptom-category, per-chart-context-completeness, per-recommended-care-level.
+
+**Two-axis cohorts:** per-language-by-channel, per-pediatric-vs-adult-by-presenting-symptom, per-presenting-symptom-by-recommended-care-level.
+
+**Three-axis cohort:** per-language-by-pediatric-vs-adult-by-presenting-symptom-category.
+
+**Per-cohort threshold metrics:**
+- Resolution rate
+- Escalation rate
+- Over-triage rate (separate threshold)
+- Under-triage rate (separate, patient-safety-acute threshold)
+- Citation-coverage rate
+- Regulatory-disclaimer-presence rate
+- Conservative-bias-compliance rate
+- Intent-classification accuracy
+- Emergency-screening sensitivity per emergency category
+- Outcome-correlation accuracy at 72-hour and 30-day windows
+- Time-to-recommendation by acuity
+- Handoff-with-context-completeness rate
+- Plan-document retrieval accuracy and protocol-version-correctness rate
+- Equity-disparity flags by sex, race, age, and language with statistical-significance flags
+- Sustained-utilization rate
+- Patient-satisfaction score
+
+**Launch-gate discipline:** Institution-wide-average is informational only. Each cohort must independently meet its threshold before serving live patients in that cohort. Cohorts that do not meet threshold either do not launch or route 100% to nurse-line escalation until threshold is met.
+
+#### Continuous-Emergency-Screening as Separately-Validated Pipeline
+
+The emergency-screening pipeline is the patient-safety floor. It runs on every utterance. It is validated separately from the rest of the conversational pipeline.
+
+**Held-out corpus.** Clinical leadership curates a held-out emergency-case corpus covering each emergency category: cardiac, neurological (stroke, seizure), respiratory, hemorrhagic, anaphylaxis, overdose, trauma, psychiatric (suicidal ideation, active self-harm), pediatric-specific (febrile infant, lethargic infant, suspected meningitis, suspected non-accidental trauma), and obstetric (placental abruption, eclampsia, cord prolapse).
+
+**Per-category sensitivity targets.** Each emergency category has a documented sensitivity target set by clinical leadership. The false-negative rate for each category is the launch-gate metric.
+
+**Per-cohort screening accuracy.** Emergency-screening accuracy is reviewed per cohort (per-language, per-age-cohort, per-channel). Sensitivity degradation in any cohort triggers immediate investigation and deployment hold.
+
+**Version stamping.** Each conversation's audit record stamps the emergency-screening classifier version active for that conversation. Classifier updates go through the same canary discipline as protocol versions.
+
+#### Faithfulness-Check Stage
+
+Between Bedrock generation and response delivery, an independent faithfulness verifier runs structured validation on the composed response.
+
+**Verification targets:**
+- Every recommendation traces to a cited protocol decision point
+- Every clinical-rule score traces to a tool-call result
+- Emergency instructions are present for high-acuity recommendations
+- Red-flag-symptom lists are present for low-acuity recommendations
+- Conservative-bias-default handling is present where multiple acuity levels were plausible
+- Citations are present wherever a recommendation is made
+- Regulatory disclaimers are present per the institution's regulatory positioning
+
+**Implementation.** An independent verifier model (smaller, cheaper, configured for structured-output schema validation) evaluates the response against the above targets. Rule-based contradiction detection and omission detection supplement the model-based check. On failure: regenerate with corrective guidance (up to a configurable attempt budget), then fall back to a safe-default response template that routes the patient to nurse-line escalation rather than delivering an unverified recommendation.
+
+**Per-cohort faithfulness-failure rate** is a launch-gate metric. Cohorts exceeding the threshold do not serve live patients.
+
+#### Prompt-Injection Defense as Architectural Primitive
+
+Patient-facing chat surfaces are adversarial by default. The triage bot's prompt-injection defense is not a filter; it is an architectural layer.
+
+**Delimited-input framing.** User input is wrapped in explicit delimiters in the system prompt, clearly separated from instruction content.
+
+**Tool-Lambda enforcement.** Every tool-Lambda validates that the patient_id argument matches the verified session's patient_id. Cross-patient data access via manipulated tool arguments is rejected at the Lambda level, not the prompt level.
+
+**Per-language jailbreak-test corpus.** The security team maintains a jailbreak-test corpus including triage-specific injection cases: attempts to manipulate emergency_screen to suppress alerts, attempts to manipulate clinical_rule_compute to lower scores, attempts to manipulate protocol_select to route to the wrong protocol, attempts to manipulate recommendation_compose to downgrade care level.
+
+**Bedrock Guardrails configuration.** Denied topics specific to diagnosis, treatment recommendation, and drug prescription. Content filtering configured per the institution's regulatory positioning.
+
+**Audit logging.** Cross-check outcomes (injection detected, blocked, logged) are written to the tool-call-ledger for security review.
+
+#### Disaster Recovery Topology
+
+Per-stage failover policy with documented behavior for each dependency outage:
+
+| Dependency Outage | Failover Behavior |
+|-------------------|-------------------|
+| Bedrock LLM | Degraded-mode response template; direct nurse-line routing for all active conversations |
+| Bedrock Knowledge Bases | Cached-recent-retrieval from DynamoDB where available; nurse-line escalation for new conversations |
+| Bedrock Agents | Fallback to direct Lambda orchestration without Agents abstraction |
+| Bedrock Guardrails | Stricter system-prompt scope enforcement; no Guardrails-bypass permitted |
+| OpenSearch Serverless | Cached-recent-retrieval fallback; nurse-line escalation for protocol lookups that miss cache |
+| DynamoDB | Conservative session-state recreation from the last-archived checkpoint; new conversations route to nurse line |
+| S3 (protocol corpus) | Graceful read-failure; Kinesis-buffered audit continues; nurse-line routing for all new conversations |
+| EHR / chart-context system | Conservative no-context fallback (bot proceeds without chart context, applies higher conservative-bias floor) |
+| Clinical-decision-rule tool | Conservative no-rule fallback (bot applies protocol recommendation only, with elevated acuity floor) |
+| Emergency-screening classifier | Conservative default: elevate acuity for any ambiguous input; nurse-line routing threshold lowered |
+| Nurse-line system | Channel fallback: voice through Connect, transfer to backup nurse line; SMS notification to on-call nurse supervisor |
+| Connect (voice/SMS) | Channel fallback to web/app chat only; degraded-mode notice on IVR |
+
+**Failover-detection thresholds** are per-dependency with CloudWatch alarms. **Failover-back triggers** require dependency health confirmed for a configurable stability window before resuming normal routing. **Quarterly testing cadence** exercises each failover path in a non-production environment with synthetic traffic. **Cross-region failover** for Bedrock and the institutional integrations is documented and tested annually.
+
+#### Multi-Language Deployment as Day-One Architectural Primitive
+
+Multi-language support is not a phase-two feature. The architecture assumes validated multi-language assets from the first production release.
+
+**Validated protocol translations.** No ad-hoc machine translation for clinical triage content. Each protocol-language combination is translated by a qualified medical translator, reviewed by a native-speaker clinician, and signed off by clinical leadership. The translation carries its own version number tied to the source protocol version.
+
+**Validated regulatory-disclaimer translations.** Per-language disclaimer phrasings reviewed by compliance and regulatory counsel for each language.
+
+**Validated emergency-instruction translations.** Per-language emergency instructions reviewed by clinical leadership.
+
+**Validated red-flag-symptom lists.** Per-language symptom lists reviewed by clinical leadership.
+
+**Per-language persona and tone calibration.** Cultural and linguistic norms for conversational tone vary; the bot's persona is calibrated per language by native-speaker UX review.
+
+**Per-language asset versioning.** Each translation asset carries a version number. The triage-decision-record stamps the language-asset version active at recommendation time.
+
+**Per-language launch-gate.** Each language goes live only when its per-cohort metrics meet threshold. Languages that do not meet threshold route to nurse-line escalation with language-preference flagged.
+
+#### Outcome-Correlation Pipeline as Architectural Primitive
+
+The bot's clinical performance is measured against actual subsequent care utilization. This is not a reporting exercise; it feeds the protocol-revision loop.
+
+**Data integration.** Subsequent encounter records from the institution's ED, urgent care, primary care, and hospital admissions systems, plus claims data where available for cross-institution utilization, are correlated with triage-decision records.
+
+**Correlation windows.** 72-hour window for acute-acuity validation (did a patient told to go to the ED actually go?). 30-day window for lower-acuity validation (did a patient told to see primary care actually see primary care, and what was the outcome?).
+
+**Per-protocol metrics.** Over-triage rate (patient sent to higher acuity than needed) and under-triage rate (patient sent to lower acuity than needed, with subsequent higher-acuity encounter) calculated per protocol.
+
+**Protocol-revision feedback loop.** Protocols with bottom-quartile outcome-correlation scores are flagged for clinical-leadership review. Sustained underperformance triggers protocol revision.
+
+**Clinical-quality-review cadence.** Monthly review by the medical director, data science, nurse-line operations, and compliance.
+
+**Operational ownership.** Jointly held by the medical director, data science, nurse-line operations, and compliance.
+
+#### Per-Event Idempotency Keys for the EventBridge Triage-Lifecycle Bus
+
+Every event on the triage-lifecycle EventBridge bus carries an idempotency key to support exactly-once downstream processing.
+
+| Event | Idempotency Key |
+|-------|-----------------|
+| `conversation_started` | `(session_id, "started")` |
+| `protocol_selected` | `(session_id, protocol_event_id, "selected")` |
+| `emergency_screened` | `(session_id, screen_event_id, "screened")` |
+| `recommendation_computed` | `(decision_id, "computed")` |
+| `recommendation_delivered` | `(decision_id, "delivered")` |
+| `escalation_triggered` | `(session_id, escalation_event_id, "escalated")` |
+| `outcome_correlation_completed` | `(decision_id, "correlated")` |
+| `conversation_closed` | `(session_id, "closed")` |
+
+Downstream consumers maintain a deduplication store (DynamoDB conditional writes or equivalent) keyed on these idempotency keys with a TTL sized to the maximum EventBridge retry window.
+
+#### Tool-Surface Contract Management
+
+Each tool in the Bedrock Agents action-group surface is a versioned contract.
+
+**Per-tool versioned schemas.** Each tool's OpenAPI schema carries a semantic version. The version increments on any input or output schema change.
+
+**Deprecation policy.** Deprecated tool versions remain available for a documented sunset window (minimum one protocol-review-cycle). New conversations route to the current version; in-flight conversations complete on the version they started with.
+
+**Backward-compatibility discipline.** Additive-only changes are MINOR version increments. Breaking changes (removed fields, changed semantics) are MAJOR version increments requiring the staged-rollout discipline.
+
+**Change-management ownership.** Tool-surface changes are jointly owned by engineering, the medical director, and compliance. Clinical-facing tools (protocol_retrieve, clinical_rule_compute, emergency_screen, recommendation_compose) require medical-director sign-off on schema changes.
+
+**Per-tool audit stamp.** The session-close audit_record includes active-version stamps for every tool invoked during the conversation: chart_context_lookup_tool, intent_classify_tool, emergency_screen_tool, protocol_select_tool, protocol_retrieve_tool, clinical_rule_compute_tool, recommendation_compose_tool, nurse_line_escalate_tool, telehealth_book_tool, urgent_care_locate_tool.
+
+**Per-tool canary deployment.** Tool updates deploy through traffic-shift canary with per-tool success-rate and latency monitoring.
+
+#### Deployment Pattern
+
+**Bedrock inference profile.** Prompt-and-model versioning with rollback-on-regression. The system prompt, the intent-classification prompt, each per-handler response prompt, the persona-and-tone-evaluator prompt, the redaction taxonomy, the per-language consent-disclosure assets, the Bedrock Guardrails policy, the knowledge-base corpus snapshot, each protocol-corpus version, the clinical-decision-rule library version, the emergency-screening classifier version, the FDA-strategy artifact version, the conservative-bias-policy version, the mandatory-reporting-policy version, the per-state regulatory configuration version, and the tool-surface schemas are all in version control with commit-SHA-tied builds.
+
+**Held-out evaluation set.** Representative triage cases covering atypical-presentation, multi-symptom, pediatric, special-population, multilingual, prompt-injection, faithfulness, and emergency-presentation scenarios. The evaluation set is owned by clinical leadership and refreshed quarterly.
+
+**Per-cohort canary deployment.** New versions deploy to a percentage of traffic per cohort. Per-cohort metrics are compared between canary and baseline. Regression in any cohort triggers automatic rollback.
+
+**Version stamping.** Every triage-decision record and every conversation-audit record includes the commit SHA or version identifier for each component active at the time of the recommendation.
+
+#### IAM Resource-Based Policy and Defense-in-Depth
+
+**Resource-based policies.** Each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Bedrock Agents action-group ARN, or the production EventBridge rule ARN as appropriate. No Lambda is invocable from arbitrary principals.
+
+**Defense-in-depth event-payload validation.** Each tool-Lambda validates the event payload structure at the start of execution, independent of the API Gateway or Bedrock Agents contract. Malformed payloads are rejected and logged.
+
+**Patient_id cross-check.** Tool-Lambdas that access patient data validate that the patient_id in the tool-call arguments matches the patient_id in the verified session context. Mismatches are rejected, logged, and alerted.
+
+**Per-endpoint WAF rate-limit policy.** Rate limits are tuned for triage patterns: legitimate fast-typing-in-distress patterns (short inter-message intervals from authenticated patients) are accommodated; abuse patterns (high volume from unauthenticated sources, repeated identical payloads, known injection patterns) are blocked.
+
+#### Nurse-Line CTI-and-Ticketing Integration
+
+The nurse-line handoff is not a fire-and-forget event. It is a first-class integration with the nurse-line's CTI (Computer-Telephony Integration) and ticketing system.
+
+**Handoff payload schema.** The handoff includes: full conversation transcript, selected protocol and version, protocol answer set, clinical-rule results, computed recommendation and rationale, chart-context summary, special-population flags, emergency-screening results, patient-preferred language, and channel context.
+
+**Agent-side display configuration.** Where the conversation context appears in the nurse's screen, how the protocol-and-version-stamp surfaces visually, and how the rule-results render are configured with nurse-line-operations input.
+
+**Escalation SLAs.** Separate SLAs for emergency-flagged escalations (immediate pickup target) versus non-emergency-flagged escalations (standard queue).
+
+**Quarterly tabletop drill.** The escalation pathway is exercised quarterly with synthetic patients covering high-acuity emergency handoffs, ambiguous-protocol handoffs, and mandatory-reporting-trigger handoffs.
+
+**Launch gate.** Nurse-line operations signs off on the agent-side display and the handoff payload before the bot goes live.
+
+#### Compensation Operations for Disputed Recommendations
+
+When a recommendation is disputed (by the patient, by a subsequent clinician, or by a quality-review process), the institution needs tooling to investigate and resolve.
+
+**View-conversation-history tool.** Retrieve the full conversation, tool calls, and decision record for a specific session.
+
+**Reproduce-recommendation-with-active-versions tool.** Re-run the recommendation pipeline with the original version stamps (protocol version, rule version, classifier version, prompt version) to verify reproducibility.
+
+**Confirm-or-correct-recommendation tool.** Clinical reviewer confirms the recommendation was correct per protocol, or documents a correction with rationale.
+
+**Compensation-event lifecycle.** EventBridge events for `recommendation_disputed`, `recommendation_confirmed`, and `recommendation_corrected` feed the clinical-quality-review pipeline.
+
+**Audit-trail preservation.** The original recommendation, the dispute, and the resolution are all preserved in the audit archive with immutable timestamps.
+
+**Integration points.** The compensation workflow integrates with the medical-director's clinical-quality-review feed (for protocol improvement), and with the malpractice-insurer-notification pipeline where applicable.
+
+#### Audit-Log and Decision-Record Retention Reconciliation
+
+The retention floor for each record class is the longest applicable requirement. The reconciliation is explicit, documented, and reviewed by compliance.
+
+| Record Class | Retention Drivers | Typical Floor |
+|--------------|-------------------|---------------|
+| Audit archive (conversation logs) | HIPAA 6-year minimum; state medical-record retention (7-10+ years adult; pediatric until majority plus adult period); FDA SaMD post-market where applicable | 10-25+ years depending on state and pediatric status |
+| Triage-decision-record journal | Same as audit archive, plus potential litigation-hold requirements | 10-25+ years |
+| Protocol-version-stamp registry | Must span the full retention window of any decision record that references a protocol version | Same as decision-record floor |
+| Tool-call ledger | Same as audit archive | 10-25+ years |
+| Outcome-correlation-pending | Active until correlation completes; then archived with the decision record | Follows decision-record floor |
+| Voice-channel recordings | TCPA/10DLC compliance; state voice-recording retention rules | Varies by state; typically 5-10 years |
+| SMS transcripts | TCPA/10DLC compliance | Varies by state |
+
+S3 lifecycle policies, Object Lock retention periods, and DynamoDB TTL settings are configured per-class to match these floors.
+
+#### Per-Channel Authentication and Encryption
+
+Each channel has distinct authentication, encryption, and compliance posture.
+
+**Web chat widget (institution app embed).** Authenticated via the institution's app session (OAuth2/OIDC). TLS 1.2+ in transit. BAA coverage under the institution's app vendor BAA, which must explicitly cover the embedded chat surface. Session-token TTL tied to the app session.
+
+**SMS via Connect.** Authenticated via phone-number-to-patient-id mapping with identity verification at session start. TLS in transit to Connect. TCPA/10DLC compliance for outbound messages. BAA coverage under the Connect BAA.
+
+**Voice via Connect plus Lex.** Authenticated via IVR identity verification (date of birth, member ID, or similar). TLS in transit. Voice-recording retention per state rules. BAA coverage under the Connect BAA.
+
+**Access-control scope.** Each channel's access-control scope is limited to the authenticated patient's data. Cross-patient access is architecturally impossible regardless of channel.
+
+**Audit-record propagation.** The per-channel authentication context (method, assurance level, timestamp) is propagated into the conversation audit record for downstream compliance review.
+
+#### Accessibility Conformance
+
+The patient-facing chat surfaces conform to WCAG 2.1 AA with triage-specific considerations.
+
+**Standard conformance.** ARIA labeling, keyboard navigation, screen-reader announcements for new messages, high-contrast mode, font scaling, alternative input methods (including the voice channel).
+
+**Triage-specific adaptations.** Patients in distress may have reduced cognitive bandwidth. Sentence length and reading level adapt to the urgency context: high-acuity recommendations use short, direct sentences; low-acuity recommendations use conversational tone. Simplified language modes are available on request.
+
+**Per-channel accessibility.** Voice channel for patients who cannot use text. Screen-reader-optimized chat widget for vision-impaired patients. High-contrast and large-font modes for low-vision patients.
+
+**Ownership.** Accessibility conformance is owned by the accessibility program manager with quarterly audit.
+
+**Launch-gate.** Accessibility conformance testing (automated plus manual screen-reader testing) is a launch-gate criterion.
+
+---
+
 ### Expected Results
 
 **Sample conversation (illustrative, abbreviated):**
