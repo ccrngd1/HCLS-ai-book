@@ -2579,11 +2579,13 @@ def process_adherence_event(event: dict) -> None:
             profile_table.update_item(
                 Key={"patient_id": patient_id},
                 UpdateExpression="ADD outreach_recent_30d_count :neg",
-                ExpressionAttributeValues={":neg": Decimal("-1")},
+                ExpressionAttributeValues={
+                    ":neg": Decimal("-1"),
+                    ":zero": Decimal("0"),
+                },
                 # Only decrement if the counter is positive; never go
                 # below zero (would suggest a bug elsewhere).
                 ConditionExpression="outreach_recent_30d_count > :zero",
-                ExpressionAttributeNames={},
             )
         except Exception as exc:
             logger.warning(

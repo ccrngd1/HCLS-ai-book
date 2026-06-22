@@ -30,7 +30,9 @@
 2. Outreach message tailoring (same pattern as 4.4). The structured intervention assignment goes in, the personalized message comes out, the message goes through a clinical-claims validator before send.
 3. Pharmacist pre-call brief generation. A structured prompt produces a one-page brief: the patient's regimen, the suspected barrier, prior fill pattern, suggested talking points, contraindications. The pharmacist reads it before the call.
 
-Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models. 
+Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models. Select models covered under your organization's BAA; the eligible-model list evolves, so verify the specific model IDs (e.g., Claude Haiku, Nova Lite) at the time of build.
+
+**AWS Secrets Manager for vendor and partner credentials.** All vendor and partner integrations (manufacturer copay-card portals, foundation-grant programs, partner pharmacy APIs for med-sync, vendor pharmacist services, the channel-optimizer's downstream SMS gateway) credential through AWS Secrets Manager with KMS encryption and a per-environment rotation policy. Plain-text vendor API keys in Lambda environment variables are not acceptable. Cross-account access for vendor or partner integrations uses scoped IAM roles with a vendor-specific external ID. Rotation schedules: 90 days for partner-pharmacy API keys, 30 days for manufacturer portal credentials (whose APIs tend to enforce shorter key lifetimes), and on-demand rotation for any credential involved in a security event.
 
 **AWS Lambda for per-stage glue logic.** The barrier classifier (rule-based stage), the priority combiner, the allocator, the orchestrator, the engagement-attribution worker, and the contact-cap enforcer all run as Lambdas. Same scale considerations as 4.4; the allocator can stay under the 250 MB layer ceiling for greedy allocation, and graduates to a containerized Lambda for LP-based allocation (Recipe 14.x).
 
@@ -136,10 +138,10 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker (Training, Batch Transform, Feature Store), Amazon DynamoDB, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon SES, Amazon Pinpoint or contracted SMS provider, Amazon Connect (optional, for in-house pharmacist contact center), Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Per-Lambda least-privilege: `sagemaker:CreateTransformJob` and `sagemaker:DescribeTransformJob` scoped to specific model ARNs; `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables; `bedrock:InvokeModel` on specific foundation-model ARNs; `s3:GetObject` / `PutObject` scoped to feature, claims, and recommendation buckets; `kinesis:PutRecord` on the engagement stream; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities; `connect:*` scoped to the pharmacist-queue contact flow only. Never `*`.  |
+| **IAM Permissions** | Per-Lambda least-privilege with scoped Resource ARNs. Examples: `sagemaker:CreateTransformJob` on `arn:aws:sagemaker:{region}:{account}:transform-job/adherence-*`; `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` on `arn:aws:dynamodb:{region}:{account}:table/patient-profile` (and per-table for intervention-catalog, recommendation-log, barrier-classifications, engagement-events); `bedrock:InvokeModel` on `arn:aws:bedrock:{region}::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0`; `s3:GetObject` / `PutObject` scoped to specific bucket ARNs per stage; `kinesis:PutRecord` on `arn:aws:kinesis:{region}:{account}:stream/engagement-stream`; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities; `connect:StartOutboundContact` scoped to the pharmacist-queue contact flow ARN only. Never `Resource: *`. Each Lambda function gets its own execution role with only the actions and resources that function needs. |
 | **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker (Training, Batch Transform, Feature Store), DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, SES, Pinpoint, Connect (when configured for HIPAA workloads), KMS are on the HIPAA Eligible Services list.  |
 | **Encryption** | DynamoDB: customer-managed KMS at rest. S3: SSE-KMS with bucket-level keys (especially the pharmacy-claims bucket; raw fill data is highly sensitive). Kinesis and Firehose: server-side encryption. SageMaker training and inference: VPC-only, with KMS keys for model artifacts and Feature Store offline storage. Lambda log groups KMS-encrypted. The recommendation log contains (patient_id, intervention_id, medication_class, barrier) tuples that are highly inferential; treat as PHI from day one. |
-| **VPC** | Production: Lambdas in VPC. SageMaker training, Batch Transform, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), EventBridge (`events`), Glue, Athena, STS, SES, Pinpoint, Connect.  NAT Gateway only for external services without VPC endpoints (e.g., a manufacturer copay-card vendor portal); restrict egress with security groups.  PBM claims feeds typically arrive via SFTP over a Direct Connect tunnel or PrivateLink connection rather than over the public internet. VPC Flow Logs enabled. |
+| **VPC** | Production: Lambdas in VPC. SageMaker training, Batch Transform, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock Runtime (interface), Kinesis (interface), Firehose (interface), KMS (interface), CloudWatch Logs (interface), SageMaker API (control plane: `api.sagemaker`, interface), SageMaker Runtime (inference: `runtime.sagemaker`, interface), SageMaker Feature Store Runtime (online store PutRecord/GetRecord: `featurestore-runtime.sagemaker`, interface), Step Functions (`states`, interface), EventBridge (`events`, interface), Glue (interface), Athena (interface), STS (interface), SES (interface), Pinpoint (interface), Connect (interface). Egress posture: no `0.0.0.0/0` egress from any Lambda subnet. NAT Gateway egress is restricted by security group to specific IP ranges or hostnames only for external services without VPC endpoints (manufacturer copay-card vendor portal, partner pharmacy API endpoints, foundation-grant program endpoints). All other outbound traffic must go through VPC endpoints. PBM claims feeds typically arrive via SFTP over a Direct Connect tunnel or PrivateLink connection rather than over the public internet. VPC Flow Logs enabled. |
 | **CloudTrail** | Enabled with data events on the patient-profile table, intervention-catalog table, recommendation-log table, barrier-classifications table, and engagement-events table. Data events on the S3 buckets containing pharmacy claims, per-patient feature snapshots, and recommendation outputs. |
 | **Equity Governance** | Document the allocator's policy weights (need vs. barrier-fit vs. engagement vs. uplift vs. cost-effectiveness trade-off), the equity floors (capacity reserved for cohorts with documented adherence disparities), and the cohort-monitoring thresholds before launch. Cross-functional review committee (medical director, pharmacist lead, equity lead, data science, vendor management) signs off on the policy and reviews quarterly. Star-Ratings-driven targeting decisions go through this committee, not just the analytics team. |
 | **Sample Data** | A starter set of synthetic patients with realistic medication regimens (Synthea can generate prescribing patterns; supplement with synthetic fill events at varying adherence levels). A small intervention catalog (3-5 interventions: text reminders, pharmacist consult, copay-card navigation, med-sync, regimen-simplification PCP referral). Synthetic engagement labels for engagement-prediction training. For uplift training, a randomized pilot is the gold standard; in development, simulated treatment-effect data lets you validate the modeling pipeline before running real members through it. |
@@ -348,10 +350,46 @@ FUNCTION classify_barriers(target_set, features, run_date):
                 // { predicted_barrier, confidence, rationale,
                 //   alternative_barriers, uncertainty_notes }
 
-            // Validate the LLM output: barrier must be in allowed taxonomy,
-            // rationale must reference observed data points (not invent).
-            validate_barrier_review(llm_parsed, observed_data = features)
-                // 
+            // Validate the LLM output: four-layer validation.
+            //   Layer 1: Schema and taxonomy check. predicted_barrier must
+            //            be in the allowed six-category taxonomy; confidence
+            //            must be numeric in [0, 1]; alternative_barriers must
+            //            be a valid list.
+            //   Layer 2: Rationale length and structure. Rationale must be
+            //            30-500 characters, must contain at least one
+            //            data-point reference, and must follow
+            //            (observation -> inference -> conclusion) structure.
+            //   Layer 3: Rationale cites observable data points whose values
+            //            match observed_data within tolerance. For each cited
+            //            data point in the rationale, verify the value exists
+            //            in the feature set and falls within a defined
+            //            tolerance band of the serialized value. This is the
+            //            meaningful, non-trivial layer: a naive substring
+            //            match between rationale text and serialized data
+            //            produces both false positives and false negatives.
+            //            Production uses structured extraction of cited
+            //            values followed by numeric-tolerance comparison.
+            //   Layer 4: Prohibited content check. Rationale must not
+            //            contain PHI (patient names, MRNs, dates of birth),
+            //            prescriber names, or medication-specific dosages
+            //            that could identify the patient outside the
+            //            clinical context.
+            //
+            //   Failure handling: if validation fails at any layer, the LLM
+            //   second opinion is dropped from the blended classification
+            //   (it does not influence the final ranked barriers). The
+            //   failure is logged with (layer, reason, llm_output_hash) for
+            //   prompt-engineering review. The case is flagged for the
+            //   pharmacist-review queue with the LLM output included for
+            //   diagnostic purposes only (not as a decision input).
+            validated = validate_barrier_review(llm_parsed, observed_data = features)
+            IF NOT validated.passed:
+                log_validation_failure(validated.layer, validated.reason,
+                                        patient_id, therapeutic_class)
+                flag_for_pharmacist_review(patient_id, therapeutic_class,
+                                            blended, llm_parsed,
+                                            reason = "llm_validation_failed:" + validated.layer)
+                llm_parsed = null   // drop LLM from blended result
 
             // Flag for human review if LLM disagrees with blended top-1
             // by a material margin and the case is high-stakes.
@@ -404,7 +442,34 @@ FUNCTION build_candidate_triples(target_set, intervention_catalog, run_date):
                member.preferred_language NOT IN intervention.supported_languages:
                 CONTINUE
 
-            // 
+            // Per-intervention consent check. Adherence outreach consent
+            // is multi-dimensional; three regulatory frameworks apply:
+            //   (1) State boards of pharmacy regulate pharmacy-affiliated
+            //       reminders state-by-state with rules on disclosure
+            //       requirements, frequency caps, and approved-claims content.
+            //   (2) TCPA governs SMS and automated-voice outreach unless
+            //       the contact qualifies as treatment-related under HHS
+            //       guidance.
+            //   (3) HIPAA marketing rules at 45 CFR 164.501 may apply to
+            //       manufacturer-funded interventions and to cost-assistance
+            //       navigation if the plan's facilitation is classified as
+            //       marketing.
+            //
+            // Each intervention in the catalog carries consent metadata:
+            //   consent_classification: "treatment_related" | "marketing"
+            //   tcpa_scope:            "exempt_treatment" | "requires_prior_express_consent"
+            //   state_applicability:   list of states where the intervention is approved
+            //   funding_source:        "plan" | "manufacturer" | "foundation"
+            //
+            // Do not collapse to a single `outreach_consent` boolean.
+            // Engage privacy officer and pharmacy compliance lead on the
+            // consent model for each intervention type before launch.
+            IF NOT member_consent_applies_to(
+                    member.consent_records,
+                    intervention.consent_classification,
+                    intervention.tcpa_scope,
+                    member.state):
+                CONTINUE
 
             IF intervention.cooldown_days > 0:
                 IF member.last_intervention_of_type(intervention.type)
@@ -588,6 +653,15 @@ FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
     patient_high_touch_count   = {}    // high-touch (pharmacist, care manager) per patient
     patient_contact_count_30d  = {}    // existing 30-day contact count from profile
 
+    // Pre-cache cohort features for all unique patients in the candidate
+    // set. The equity-floor check runs per (patient, intervention), so
+    // without this cache a patient with N candidate triples would trigger
+    // N identical lookups. Build the cache once before the allocation walk.
+    unique_patient_ids = distinct(candidates_sorted, "patient_id")
+    patient_cohort_cache = {}
+    FOR pid in unique_patient_ids:
+        patient_cohort_cache[pid] = lookup_cohort_features(pid)
+
     allocated = []
     FOR candidate in candidates_sorted:
         member = lookup_member(candidate.patient_id)
@@ -606,9 +680,18 @@ FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
             IF patient_high_touch_count.get(candidate.patient_id, 0) >= policy.max_high_touch_per_patient_per_run:
                 CONTINUE
 
-        // Per-patient contact-frequency cap (rolling 30-day).
-        existing_contacts = member.outreach_recent_30d_count
-            // 
+        // Per-patient contact-frequency cap (rolling 30-day window).
+        // Implementation: DynamoDB TTL on per-contact rows. Each time a
+        // patient-facing contact is generated, a row is written to a
+        // `patient-contacts` table with TTL = now + 30 days. The count
+        // query is a simple Query on patient_id where TTL > now. This
+        // avoids the forward-only increment problem where a counter grows
+        // without decay and becomes a lifetime filter after a few months.
+        // Alternative: daily-bucket aggregation (count contacts per day,
+        // sum the last 30 buckets) or a scheduled decay Lambda that
+        // decrements stale entries. The TTL approach is simplest and
+        // leverages DynamoDB's built-in expiration.
+        existing_contacts = count_recent_contacts(member.patient_id, window_days=30)
         new_contacts_this_run = patient_contact_count_30d.get(candidate.patient_id, 0)
         IF intervention.generates_patient_contact AND
            (existing_contacts + new_contacts_this_run) >= policy.max_contacts_per_patient_30d:
@@ -620,8 +703,11 @@ FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
             CONTINUE
 
         // Equity floor: prefer to use a floor slot if applicable.
-        cohort_features = lookup_cohort_features(candidate.patient_id)
-            // 
+        // NOTE: cohort_features are cached per unique patient_id before
+        // the allocation walk (see below) so this lookup is O(1) per
+        // candidate rather than a repeated DynamoDB call per
+        // (patient, intervention) combination.
+        cohort_features = patient_cohort_cache[candidate.patient_id]
         applicable_floors = applicable_floor_cohorts(cohort_features,
                                                       policy.equity_floors[candidate.intervention_id])
         used_floor = null
@@ -651,14 +737,56 @@ FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
             policy_version:    policy.policy_version
         })
 
-    // Second pass to fill any unfilled equity floors.
-    // 
+    // Second pass to fill any unfilled equity floors. The floor's
+    // reserved slots come from global capacity that the primary pass may
+    // have over-allocated to non-cohort candidates. The second pass:
+    //   1. Re-walks prioritized candidates filtered to the floor cohort.
+    //   2. Re-applies per-patient caps and cross-intervention exclusions.
+    //   3. Bypasses the global capacity cap (these slots are reserved).
+    //   4. Stops when the floor is filled or no eligible candidates remain.
+    //
+    // Trade-off: reserving floor slots up front (reducing global capacity
+    // before the primary pass starts) guarantees floors are filled but may
+    // waste capacity if the cohort has fewer eligible candidates than the
+    // floor size. The second-pass approach accepts that floors may be
+    // unfilled in under-subscribed cohorts and surfaces that on the cohort
+    // dashboard. Document the choice in the policy version notes.
     FOR intervention_id, floor_remaining_per_cohort in equity_remaining:
         FOR floor_cohort, floor_remaining in floor_remaining_per_cohort:
-            IF floor_remaining > 0:
-                top_up_from_cohort(allocated, intervention_id, floor_cohort,
-                                   floor_remaining, prioritized,
-                                   patient_intervention_count, patient_high_touch_count)
+            IF floor_remaining <= 0:
+                CONTINUE
+            // Filter prioritized candidates to this cohort, this intervention,
+            // excluding any already allocated in the primary pass.
+            cohort_candidates = [c for c in prioritized
+                                  WHERE c.intervention_id == intervention_id
+                                  AND patient_cohort_cache[c.patient_id] matches floor_cohort
+                                  AND c NOT IN allocated]
+            cohort_candidates = sort cohort_candidates by priority DESC
+            FOR candidate in cohort_candidates:
+                IF floor_remaining <= 0:
+                    BREAK
+                // Re-apply per-patient caps (same logic as primary pass).
+                IF patient_intervention_count.get(candidate.patient_id, 0) >= policy.max_interventions_per_patient_per_run:
+                    CONTINUE
+                intervention = lookup_intervention(candidate.intervention_id)
+                IF intervention.is_high_touch AND
+                   patient_high_touch_count.get(candidate.patient_id, 0) >= policy.max_high_touch_per_patient_per_run:
+                    CONTINUE
+                // Re-apply cross-intervention exclusions.
+                IF already_allocated_conflicting(allocated, candidate):
+                    CONTINUE
+                // Allocate. Do NOT check global capacity_remaining; the
+                // floor slots are reserved outside the global pool.
+                floor_remaining -= 1
+                patient_intervention_count[candidate.patient_id] += 1
+                IF intervention.is_high_touch:
+                    patient_high_touch_count[candidate.patient_id] += 1
+                allocated.append({
+                    ...candidate fields...,
+                    allocation_reason: "equity_floor_second_pass:" + floor_cohort,
+                    run_date:          run_date,
+                    policy_version:    policy.policy_version
+                })
 
     DynamoDB.BatchWriteItem("recommendation-log", allocated)
 
@@ -764,8 +892,31 @@ FUNCTION orchestrate_interventions(allocated, run_date, policy):
                     })
 
             CASE "regimen_simplification":
-                // Requires prescriber action. Flag to PCP via care-team
-                // inbox with a structured talking-point briefing.
+                // Requires prescriber action. Unlike a text reminder
+                // (parallel-track safe) or a pharmacist consult (sorts
+                // itself out at the consult), this intervention requires
+                // the prescriber to act, and any simultaneous patient-
+                // facing message creates a backfire pattern.
+                //
+                // The intervention catalog carries a `pcp_review_policy`
+                // field with values:
+                //   "none"                          - no hold needed
+                //   "notify_parallel"               - PCP notified, patient messaged same day
+                //   "review_required_24h"           - patient message held 24h for PCP endorsement
+                //   "review_required_72h_then_hold" - patient message held 72h; if no PCP
+                //                                    response, the outreach is held indefinitely
+                //
+                // regimen_simplification defaults to "review_required_72h_then_hold".
+                // High-stakes therapeutic classes (anticoagulants,
+                // anti-rejection medications, oral chemotherapy,
+                // antiretrovirals, insulin during dose adjustment) override
+                // the per-intervention default via a
+                // `medication_class_review_policy` lookup that forces
+                // "review_required_72h_then_hold" regardless of the
+                // intervention's default.
+                pcp_review_policy = resolve_pcp_review_policy(
+                    intervention, medication.therapeutic_class)
+
                 pcp_briefing = Bedrock.InvokeModel(
                     model_id = PCP_BRIEFING_MODEL_ID,
                     body     = build_pcp_prompt(de_identified_context, member, medication)
@@ -775,9 +926,30 @@ FUNCTION orchestrate_interventions(allocated, run_date, policy):
                     briefing    = pcp_briefing.parsed,
                     source      = "adherence-recommender",
                     suggested_action = "consider regimen simplification (combination pill, once-daily, blister pack)",
-                    tracking_id = build_tracking_id(row, run_date)
+                    tracking_id = build_tracking_id(row, run_date),
+                    review_policy = pcp_review_policy
                 )
-                // 
+
+                // Schedule the patient-facing message conditional on PCP
+                // endorsement when the policy requires review.
+                IF pcp_review_policy in ["review_required_24h",
+                                          "review_required_72h_then_hold"]:
+                    // Patient message is held in a pending state.
+                    // An `pcp_endorsed` event from the care-team inbox
+                    // triggers release of the patient-facing outreach.
+                    // If no endorsement arrives within the hold window,
+                    // the outreach stays held and the case surfaces on
+                    // the operations dashboard.
+                    ScheduleConditionalOutreach(
+                        tracking_id   = build_tracking_id(row, run_date),
+                        trigger_event = "pcp_endorsed",
+                        hold_hours    = extract_hold_hours(pcp_review_policy),
+                        fallback      = "hold_indefinitely"
+                    )
+                ELSE:
+                    // "notify_parallel" or "none": patient outreach goes
+                    // immediately or no patient outreach needed.
+                    PASS
 
         // Update contact-frequency counter optimistically when patient
         // contact is generated. Reconcile in the engagement-attribution
@@ -879,6 +1051,40 @@ FUNCTION process_adherence_event(event):
         })
         flag_for_clinical_review(event)
 
+    // Outreach failure reconciliation. Without this, members with flaky
+    // channels accumulate phantom contact-cap consumption and get
+    // systematically excluded from future allocations. The asymmetry
+    // compounds: members with reliable channels stay at the cap floor,
+    // members with flaky channels silently drift past the cap and lose
+    // access to the program.
+    IF event.event_type in ["intervention_outreach_failed",
+                             "intervention_outreach_bounced"]:
+        decrement_contact_count(event.patient_id, window_days = 30)
+        // Conditional decrement: only if count > 0, to avoid negative
+        // counts from race conditions or duplicate events.
+
+    // Intervention completion: trigger chain continuation if the
+    // intervention catalog defines a successor intervention.
+    IF event.event_type == "intervention_completed":
+        successor = lookup_intervention_chain_successor(rec.intervention_id)
+        IF successor is not null:
+            enqueue_chained_intervention(event.patient_id,
+                                          rec.therapeutic_class,
+                                          successor,
+                                          predecessor_tracking_id = rec.tracking_id)
+
+    // Stale-pending sweep (runs on a scheduled EventBridge trigger,
+    // not per-event, but documented here for completeness):
+    // Query the recommendation-log for tracking_ids with status =
+    // "dispatched" and no engagement-stream activity within 24 hours.
+    // These represent a vendor-side processing failure or a dropped
+    // handoff. For each stale entry: decrement the contact-cap counter,
+    // mark the recommendation as "stale_pending", and surface on the
+    // operations dashboard. A silently-dropped pharmacy_fill_observed
+    // event leaves the uplift training data wrong and the dashboards
+    // misleading with no observable symptom until a quarterly evaluation
+    // regresses.
+
     // Cohort-sliced metrics for the equity dashboard.
     emit_metric("adherence_engagement",
                 value = 1,
@@ -902,7 +1108,7 @@ FUNCTION process_adherence_event(event):
 
 ```json
 {
-  "tracking_id": "adherence-2026-05-04-pat-000482-statins-cost-assist-001",
+  "tracking_id": "7f2a91c3-e8d4-4b1a-9c5f-3a8b6d2e1f04",
   "run_date": "2026-05-04",
   "patient_id": "pat-000482",
   "therapeutic_class": "statins",
@@ -944,7 +1150,7 @@ FUNCTION process_adherence_event(event):
 
 ```json
 {
-  "tracking_id": "adherence-2026-05-04-pat-000915-ras-reminder-002",
+  "tracking_id": "a3c1d9e7-4f28-4a6b-8e1c-5b9f0d2a7c3e",
   "tailored": {
     "subject_line": "Quick reminder about your blood-pressure medication",
     "opening_line": "Hi James, just a quick check in.",
@@ -962,7 +1168,7 @@ FUNCTION process_adherence_event(event):
 
 ```json
 {
-  "tracking_id": "adherence-2026-05-04-pat-000482-statins-pharmacist-003",
+  "tracking_id": "b8e4f2a1-6c39-4d7e-a5b0-9f1c3e8d2a7b",
   "patient_summary": "58F, T2DM, HTN, dyslipidemia. Statin on board: atorvastatin 40mg.",
   "adherence_picture": {
     "trailing_365_pdc": 0.64,
@@ -1030,7 +1236,7 @@ FUNCTION process_adherence_event(event):
 
 **Where it struggles:**
 
-- **Patients with fragmented pharmacy data.** Multi-pharmacy patients, members who use cash-pay or discount-card programs, members who recently switched plans: the recommender's view of their adherence is incomplete. The `data_quality_flag` exposes this, but downstream consumers (and your operations team) need to actually gate on it. A confident "non-adherent" label on a patient with `cash_pay_partial` data quality is a confidently wrong label.
+- **Patients with fragmented pharmacy data.** Multi-pharmacy patients, members who use cash-pay or discount-card programs, members who recently switched plans: the recommender's view of their adherence is incomplete. The `data_quality_flag` exposes this, but downstream consumers (and your operations team) need to actually gate on it. A confident "non-adherent" label on a patient with `cash_pay_partial` data quality is a confidently wrong label. Explicit gating: the barrier classifier should cap confidence on non-`complete` cases (Step 2's blended output for patients with `data_quality_flag` != `complete` gets a confidence ceiling of 0.50); the allocator should route low-quality cases to verification-first interventions (pharmacist consult to confirm adherence status before lower-touch outreach) or downweight them in the priority combiner; and the LLM-tailored patient-facing messages should acknowledge uncertainty rather than confidently asserting non-adherence ("we noticed we haven't seen a recent fill" rather than "you haven't been taking your medication").
 - **Specialty pharmacy interactions.** Many specialty medications (infusion therapies, biologics) have completely different fill cadences and clinical workflows than retail meds. The carry-forward PDC math doesn't apply cleanly. Most plans treat specialty as a separate adherence program with its own intervention catalog and its own measurement methodology; don't try to shoehorn specialty into the retail/mail-order pipeline.
 - **Newly prescribed medications.** A medication first prescribed 60 days ago has at most one or two fills of history. The PDC numbers are noisy, the engagement features for the patient-medication pair don't exist, and the uplift model has high uncertainty. The right behavior for new prescriptions is a "primary adherence" pathway: did the patient fill at all? That's a different intervention set (cost-assistance navigation, education on the new medication, pharmacist outreach to confirm side-effect tolerance) and a different measurement. Treat the first 60 to 90 days as a primary-adherence regime, not as PDC-driven targeting.
 - **Therapeutic substitution patterns.** A patient who switches from atorvastatin to rosuvastatin (often driven by a formulary change) looks like an adherence interruption to an NDC-level computation. Class-level computation handles the obvious case, but cross-class substitutions (a switch from a statin plus PCSK9 to bempedoic acid) require clinical knowledge to map correctly. The class definitions need a clinical pharmacist to review.
@@ -1064,7 +1270,21 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Privacy in the recommendation log and barrier classifications.** The barrier-classifications table joins (patient_id, therapeutic_class, barrier) and is *highly* inferential. A row indicating "patient has a cost barrier on diabetes medication" is sensitive in ways that go beyond clinical PHI: it implies socioeconomic distress. The recommendation log similarly joins patient to specific medications and intervention types in ways that could reveal disease state and financial status. Apply tight controls: customer-managed KMS, CloudTrail data events, narrow IAM read scopes, defined retention (90 to 180 days for individually-attributed records; longer retention only after de-identification), and explicit deletion jobs with alarming.
 
-**Idempotency and retry semantics.** Same pattern as 4.4. Each stage's outputs are addressed by (run_date, intervention_id, patient_id, therapeutic_class) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.
+**Idempotency and retry semantics.** Same pattern as 4.4. Each stage's outputs are addressed by (run_date, intervention_id, patient_id, therapeutic_class) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ. Per-stage idempotency keys: (run_date, patient_id, therapeutic_class, intervention_id) for the Step 5/6/7 chain; (run_date, patient_id, therapeutic_class) for barrier classifications; (event_id, derived from tracking_id + event_type + timestamp) for engagement events with conditional-write semantics.
+
+**DLQ coverage on all Lambda paths.** The architecture diagram does not show DLQs but production needs them at three boundaries: (a) Step Functions to Lambda tasks: a Catch clause on each Lambda task pointing to an SQS failure queue keyed on (run_date, stage, failure_reason); (b) Kinesis to attribution Lambda: configure an OnFailure destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth; (c) SageMaker Batch Transform job failures: SageMaker does not surface failures via DLQ natively; wire the Step Functions Catch to handle TransformJob failed states explicitly and route to the failure queue with the job name, failure reason, and run context. A silently-dropped pharmacy_fill_observed event leaves the uplift training data wrong and the dashboards misleading, with no observable symptom until a quarterly evaluation regresses.
+
+**SageMaker training-job trigger and model-promotion path.** The architecture diagram shows "Periodic retrain" without an explicit trigger or promotion path. Production: use an EventBridge scheduled rule (weekly or monthly) or a CloudWatch metric threshold (e.g., barrier-classifier confidence drift below a threshold) to trigger a SageMaker Training Job via Step Functions. Promotion path: training job outputs a candidate model to the SageMaker Model Registry; a canary run scores a held-out evaluation set and compares metrics against the production model; if the candidate meets the threshold, it is promoted to the "Production" stage in the Model Registry and referenced by the next Batch Transform run. Same pattern flagged in Recipe 4.4.
+
+**Star Ratings ethics and equity floors.** The documented temptation is to over-target the 75-79 PDC band because of the threshold effect on Star Ratings. The production deployment needs an explicit governance decision: how much of the allocator's capacity is reserved for the high-clinical-need / low-PDC cohort (PDC 0.30-0.50 on Star-Ratings-tracked classes), regardless of Star Ratings impact, and how is that policy reviewed? Without an explicit floor, the optimization quietly drifts toward the financially attractive band and the clinically attractive band gets under-served. Architect the floor as a first-class equity floor in the allocator: a `clinical_need_high_pdc_low` cohort definition with reserved capacity across pharmacist-consult and cost-assistance interventions. Show where the Star Ratings cycle plugs into the architecture: (1) the need-score model takes "months remaining in measurement year" as a feature; (2) the priority-combiner weights adjust as a function of (PDC band, months-remaining); (3) a per-patient `days_to_recover` gate prevents the optimization from spending capacity on patients whose PDC is mathematically unrecoverable in the remaining measurement-year window. The cross-functional review committee owns the floor-size and weight decisions; document them in the policy version notes. Reference Recipe 14.x for the LP-based version that optimizes the floor sizes directly.
+
+**Global contact-cap reconciliation across recipes.** The patient-profile table currently has separate counters per recipe (`outreach_recent_wellness_count` from Recipe 4.4; `outreach_recent_30d_count` here). Production: define a single `outreach_recent_total_30d_count` that all recipes update, plus per-recipe sub-counters for cohort attribution. Policy: at most N total contacts per 30 days, of which at most M are high-touch, with priority-based eviction when caps would be exceeded. The shared-counter design is owned by Recipe 4.1 and consumed by 4.2, 4.4, 4.5, 4.6, and 4.7; no recipe should introduce a private counter without participating in the shared scheme. Reference the cross-recipe orchestration discussed in Recipe 4.4's variations.
+
+**Outreach-message validator governance.** The validator's production shape is four layers: (1) schema and taxonomy check (intervention type, required fields, output format); (2) required disclosures and identifications (plan-sponsored identification where required by state rules, pharmacy-name attribution if pharmacy-affiliated); (3) prohibited-claims regex/blocklist (no unapproved clinical claims, no language that could be construed as medical advice without required context); (4) approved-claims-only check against a per-medication approved-claims artifact (especially for manufacturer-funded interventions whose content is contractually constrained). Add a `funding_source` catalog field for manufacturer-funded reminders, with manufacturer-funded interventions binding to the manufacturer's approved-claims artifact rather than the plan's general list. Failure handling: schema/length failures fall back to `intervention.default_template`; clinical-claim or prohibited-claims failures defer the outreach with reason `validator_failed:<reason>` and flag for human review. Specify a separate `validate_pharmacist_brief` validator with different concerns (clinical accuracy, no fabricated context, contraindications referenced are genuine, no instructions outside pharmacist licensure). Reference Recipe 4.4's parallel governance discussion.
+
+**SDOH-cohort PHI boundary.** The recommendation log's `cohort_features` attribute carries labels like `low_food_security` and `moderate_food_security` that are PHI-equivalent and should follow the minimum-necessary principle. Engagement events should carry only the cohort axes the equity dashboard actually consumes, with narrower IAM scope than for general engagement data. A new cohort axis added "for future use" is a privacy expansion that needs review. The 4.5-specific concern is that the recommendation log here joins (patient, therapeutic_class, barrier) with cohort labels; in a small geographic cohort, that join is reidentifying. Apply the same minimum-necessary controls flagged in Recipe 4.4.
+
+**Opaque tracking identifiers.** The pseudocode builds tracking_ids as string concatenation for readability. Production must replace with an opaque, non-reversible identifier (UUID or HMAC-SHA256 over the composite with a per-environment secret). Plain-text patient_ids and therapeutic_classes embedded in tracking IDs (carried in email open-tracking pixels, SMS click-through links, vendor outreach platform handoffs) are PHI leakage. Therapeutic_class in the tracking_id is particularly sensitive: "statins" implies cardiovascular disease, "ras" implies hypertension, "oral-diabetes" is unambiguous. Treat the tracking_id PHI exposure as one tier higher than the equivalent in Recipe 4.4 (where program_id was less clinically inferential). Update the Expected Results sample tracking_ids to show opaque UUIDs in the production column.
 
 **Cohort fairness review process.** Same pattern as 4.4. Quarterly review with cross-functional committee; specific findings produce action items with owners. For adherence specifically, watch for: barrier-distribution disparities by language and SDOH cohort (a classifier that under-predicts cost barriers in a specific cohort is encoding bias from training-label distribution); engagement-rate disparities by intervention type within the same cohort; PDC change disparities post-intervention. Each axis is its own monitoring dashboard.
 
