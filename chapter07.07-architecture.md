@@ -8,9 +8,11 @@
 
 ### Why These Services
 
-**Amazon SageMaker for model training and hosting.** SageMaker provides the full ML lifecycle: notebook environments for exploration, managed training jobs for scale, model registry for versioning, and real-time endpoints for inference. For LOS prediction specifically, SageMaker's built-in XGBoost algorithm handles the structured tabular data well, and the batch transform feature handles the daily re-scoring of all current inpatients efficiently.
+**Amazon SageMaker for model training and hosting.** SageMaker provides the full ML lifecycle: notebook environments for exploration, managed training jobs for scale, model registry for versioning, and real-time endpoints for inference. For LOS prediction specifically, SageMaker's built-in XGBoost algorithm handles the structured tabular data well, and the batch transform feature handles the daily re-scoring of all current inpatients efficiently. Model artifacts stored in S3 should be encrypted with a dedicated KMS key (not the default S3 key), and access to Model Registry actions (CreateModel, CreateEndpoint, UpdateEndpointWeightsAndCapacities) should be restricted to the deployment pipeline role only. Use the Model Registry's PendingManualApproval status to gate model promotion: no model goes to a production endpoint without an explicit approval step from the ML engineering team.
 
 **Amazon SageMaker Feature Store for feature management.** The feature store is how you avoid training-serving skew. Define your feature groups (admission features, daily clinical features, social features), compute them once, and both training and inference see the same values. The offline store feeds training; the online store feeds real-time inference.
+
+**Multi-model endpoint strategy.** Since LOS prediction trains separate models per service line, you face a deployment choice. Separate endpoints (one per service line) give you independent scaling and isolation, but cost scales linearly: 6 service lines means 6 always-on endpoints at ~$100/month each ($600/month total). SageMaker Multi-Model Endpoints let you host all service-line models behind a single endpoint. The tradeoff is a model-loading overhead of roughly 50ms on the first invocation after a model is evicted from memory (cold start), plus ~10-20ms on subsequent warm invocations. For LOS prediction, where latency tolerance is measured in seconds (this isn't real-time clinical decision support), the cold-start penalty is acceptable and the cost savings are substantial (single endpoint at ~$100-150/month instead of $600+). Use separate endpoints only if you need independent scaling per service line or strict fault isolation between departments.
 
 **AWS HealthLake for FHIR-based clinical data.** HealthLake provides a FHIR-compliant data store that can ingest ADT (admit/discharge/transfer) events, lab results, medications, and other clinical data in a standardized format. This gives you a clean, queryable source for feature engineering without building custom EHR integrations from scratch.
 
@@ -52,7 +54,7 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, SageMaker Feature Store, AWS HealthLake, AWS Lambda, Amazon DynamoDB, Amazon QuickSight, Amazon SNS, Amazon S3 |
-| **IAM Permissions** | `sagemaker:*` (scoped to project resources), `healthlake:*`, `dynamodb:PutItem/GetItem/Query`, `s3:GetObject/PutObject`, `lambda:InvokeFunction`, `sns:Publish` |
+| **IAM Permissions** | Least-privilege, role-per-component: **Training role**: `sagemaker:CreateTrainingJob`, `sagemaker:CreateHyperParameterTuningJob`, `s3:GetObject` (training data prefix), `s3:PutObject` (model artifact prefix), `sagemaker:AddTags`. **Inference role**: `sagemaker:InvokeEndpoint`, `sagemaker-featurestore:GetRecord`, `dynamodb:PutItem` (prediction table), `sns:Publish` (alert topic ARN). **Feature engineering role**: `healthlake:SearchWithGet`, `healthlake:ReadResource`, `sagemaker-featurestore:PutRecord`, `s3:GetObject` (raw data prefix). **Deployment pipeline role**: `sagemaker:CreateModel`, `sagemaker:CreateEndpoint`, `sagemaker:UpdateEndpoint`, `sagemaker:CreateEndpointConfig`, `sagemaker:UpdateModelPackage` (for approval gate). **Lambda trigger role**: `healthlake:SearchWithGet`, `sagemaker-featurestore:PutRecord`, `sagemaker:InvokeEndpoint`, `lambda:InvokeFunction`. All roles scoped to specific resource ARNs, not wildcards. |
 | **BAA** | Required. All services handle PHI (patient demographics, diagnoses, clinical data). |
 | **Encryption** | S3: SSE-KMS for training data and model artifacts. DynamoDB: encryption at rest (default). HealthLake: KMS encryption. SageMaker: KMS for training volumes and endpoints. All transit over TLS. |
 | **VPC** | SageMaker training and endpoints in VPC. Lambda event triggers in VPC. VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), SageMaker API (interface), CloudWatch Logs (interface), SNS (interface), and HealthLake (interface). This eliminates NAT Gateway dependency for AWS service calls. |
@@ -397,6 +399,24 @@ FUNCTION daily_batch_refresh():
 - Patients who develop unexpected complications mid-stay (prediction accuracy drops until the complication is reflected in features)
 - Psychiatric holds and behavioral health patients (LOS driven by legal/capacity factors, not clinical trajectory)
 - Patients awaiting specific procedures with unpredictable scheduling (e.g., OR availability)
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above give you the shape of the solution. Here's what's missing before you'd trust it with real bed management decisions:
+
+**No model governance workflow.** Production needs a formal model approval pipeline: automated evaluation against a holdout set, comparison to the currently deployed model, bias/fairness checks across demographic strata, and a human sign-off gate before any model reaches a live endpoint. The Model Registry's PendingManualApproval status is a starting point, but you also need documented acceptance criteria and a rollback procedure if a new model underperforms in production.
+
+**No integration testing against the EHR feed.** The pipeline assumes clean FHIR data from HealthLake. Real EHR feeds have schema variations, missing fields, delayed events, and duplicate messages. You need integration tests that simulate malformed ADT events, out-of-order lab results, and HealthLake API throttling. Without them, the first production hiccup becomes a silent accuracy degradation.
+
+**No error handling or dead-letter paths.** Every Lambda invocation, every Feature Store write, every endpoint call can fail. Production needs: retries with exponential backoff, dead-letter queues for failed predictions, alerting when prediction coverage drops below a threshold (e.g., "only 80% of inpatients have a current prediction"), and graceful degradation when the endpoint is unavailable (fall back to DRG geometric mean as the default prediction).
+
+**No social-feature coverage.** The pseudocode shows clinical and admission features but omits the social/disposition features that drive the hardest-to-predict stays. Integrating social work assessments, disposition status, prior authorization timelines, and housing instability flags requires NLP extraction from unstructured notes or dedicated structured data capture workflows. Without these, the model systematically underpredicts for patients with social barriers to discharge.
+
+**No A/B testing or shadow-mode deployment.** Before replacing the current discharge planning workflow, run the model in shadow mode: generate predictions alongside existing processes, compare outcomes, and measure whether earlier predictions actually change operational decisions. Deploying directly without this validation risks eroding clinician trust if the model's errors are visible before its successes are.
+
+**No automated retraining trigger.** The monitoring function detects drift, but nothing automatically kicks off a retraining pipeline when performance degrades. Production needs a closed loop: drift detected, retraining triggered, new model evaluated, approval gate, deployment. Manual retraining doesn't scale when you're maintaining separate models per service line.
 
 ---
 

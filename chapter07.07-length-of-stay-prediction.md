@@ -92,6 +92,24 @@ Several approaches work for LOS prediction, each with tradeoffs:
 
 **Accuracy expectations are unrealistic.** Clinicians expect the model to be right. But LOS has inherent irreducible uncertainty. Even a perfect model can't predict that a patient will fall on day 3 and fracture their hip. Setting expectations around confidence intervals rather than point predictions is essential for adoption.
 
+### Fairness and Equity Considerations
+
+LOS predictions drive resource allocation. When the model says "this patient will stay 7 days," discharge planning starts working on placement earlier, bed management reserves capacity, and nursing staffing adjusts accordingly. That means prediction errors aren't symmetric in their impact: systematically overpredicting LOS for one demographic group means that group gets more resources and attention. Systematically underpredicting means they get less.
+
+Here's where it gets uncomfortable: insurance type is one of the strongest predictors of actual LOS. Medicaid patients stay longer on average, not because they're sicker (though comorbidity burden is often higher), but because post-acute placement is harder to arrange, prior authorizations take longer, and social barriers to discharge are more prevalent. If your model uses insurance type as a feature, it will learn this pattern. It will predict longer stays for Medicaid patients. And that prediction will be statistically correct.
+
+But insurance type is a proxy for race, income, and social vulnerability. A model that allocates fewer discharge planning resources to commercially insured patients (because it predicts shorter stays) and more to Medicaid patients might seem equitable on the surface. But a model that systematically overpredicts LOS for Medicaid patients could also lead to premature deprioritization: "the model says they'll be here 8 more days, no rush on that SNF referral." The downstream effects depend entirely on how operational teams use the predictions.
+
+What to do about it:
+
+**Evaluate accuracy stratified by demographics.** Don't just report overall MAE. Report MAE by race, insurance type, primary language, and age bracket. If the model is significantly less accurate for one group, that group is being underserved by the predictions.
+
+**Monitor for disparate impact in resource allocation.** Track whether patients in different demographic groups receive the same intensity of discharge planning effort relative to their predicted LOS. If the model's predictions systematically delay intervention for vulnerable populations, the operational workflow needs adjustment, not just the model.
+
+**Consider excluding insurance type as a direct feature.** The information it carries about social barriers can be captured through more specific features (social work consult ordered, disposition challenges documented, prior authorization pending) that describe the actual mechanism rather than the demographic proxy.
+
+**Document your fairness evaluation in the model card.** Every model version should include stratified performance metrics so that reviewers can assess whether accuracy improvements in one subgroup came at the cost of another.
+
 ### The General Architecture Pattern
 
 ```text
