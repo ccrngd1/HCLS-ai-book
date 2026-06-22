@@ -375,6 +375,20 @@ FUNCTION detect_population_shift(current_distribution, previous_distribution, th
 
 ---
 
+## Why This Isn't Production-Ready
+
+**Cluster stability monitoring.** The pseudocode runs clustering once and trusts the output. Production needs a stability check between consecutive runs: if more than 15-20% of patients shift clusters between quarters without an obvious environmental cause (open enrollment, policy change), something is wrong with your features or data quality. You need automated drift detection that compares cluster centroids and membership distributions across runs and alerts before downstream systems consume bad assignments.
+
+**Payer contract change propagation.** When a major payer changes reimbursement terms (or your organization renegotiates rates), the historical payment patterns that drove clustering no longer predict future risk. Production pipelines need a mechanism to detect contract changes, flag affected clusters, and trigger re-clustering with updated rate assumptions rather than waiting for the next scheduled quarterly run.
+
+**PHI minimization in cluster outputs.** The pseudocode stores cluster assignments alongside patient identifiers. In production, cluster-level analytics (dashboards, reports, trend analysis) should use de-identified or aggregated data wherever possible. Only the operational layer (financial counseling workflows, patient outreach) should resolve back to PHI, and that resolution should be logged and access-controlled separately from the analytical outputs.
+
+**Graceful handling of small clusters.** K-Means can produce clusters with very few members, especially at higher k values or with skewed populations. A cluster of 12 patients is not statistically meaningful for financial planning and creates re-identification risk. Production needs minimum-size thresholds: clusters below the threshold get merged into the nearest neighbor or flagged for manual review rather than surfaced to downstream consumers.
+
+**Integration with revenue cycle systems.** The pseudocode produces cluster labels in S3. Real value comes from pushing those labels into your revenue cycle, scheduling, and patient access systems so that front-desk staff see financial risk context during registration. That integration layer (APIs, HL7/FHIR messaging, EHR embedding) is a significant engineering effort not addressed here.
+
+---
+
 ## Variations and Extensions
 
 **Temporal risk trajectories.** Instead of a single point-in-time clustering, track how patients move between clusters over time. A patient migrating from Cluster 0 (stable commercial) to Cluster 1 (HDHP payment-challenged) is an early warning signal. Build transition matrices showing the probability of moving between clusters quarter-over-quarter. This turns a static segmentation into a dynamic early warning system.
