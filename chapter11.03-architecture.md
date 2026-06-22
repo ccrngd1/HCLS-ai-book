@@ -190,7 +190,7 @@ flowchart LR
 | **AWS Services** | Amazon Bedrock (with Agents, Knowledge Bases, Guardrails, and a foundation model selected for tool-use plus an embedding model for the institutional corpus), AWS Lambda, Amazon API Gateway, AWS WAF, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon Comprehend Medical (for medication entity extraction). Optionally: AWS HealthLake (for FHIR-native chart context), Amazon Connect (for live-agent handoff and voice-channel hosting), Amazon QuickSight (for dashboards). |
 | **External Inputs** | EHR with FHIR API access. The bot's tools wrap the institution's MedicationRequest, Observation (lab), Patient, AllergyIntolerance, and Condition resources. The institution's clinical-decision-support layer, accessible through CDS Hooks where available or through a vendor-specific interaction-screening API otherwise. The institution's e-prescribing setup (typically Surescripts-routed). The institution's pharmacy directory and the patient's preferred-pharmacy mappings. The institution's refill protocol, formally documented and converted to code by the engineering team in collaboration with clinical leadership. The protocol covers per-medication-class auto-approval rules, monitoring requirements, dosing rules, prescriber-authority rules, controlled-substance handling, and exceptions. Standing-order documentation from the medical leadership delegating refill authority to the bot under defined conditions. The institution's medication-information corpus (curated from a clinical reference like RxNorm or FDB, or licensed from a vendor like Lexicomp or First Databank). The institution's controlled-substance schedule mapping per medication. Validation set of representative refill conversations covering the institution's medication catalog.  |
 | **IAM Permissions** | Per-Lambda least-privilege roles. The protocol-evaluate Lambda has read-only access to the patient's chart context and the protocol artifact; it has no e-prescribing permission. The e-prescribe Lambda has the specific permission to invoke the e-prescribing platform; it does not have permission to read the patient's full chart. Separation of concerns by Lambda role limits the blast radius of any single Lambda's compromise. The medication-list-lookup Lambda has read-only access to MedicationRequest. The lab-reconciliation Lambda has read-only access to Observation. The clinical-routing Lambda has permission to write to the appropriate clinical inbox in the EHR. Resource-based policies on each Lambda pin the invoking principal to the production agent or API Gateway stage ARN. |
-| **BAA and Compliance** | AWS BAA signed. Verify Amazon Bedrock (with the specific models and the Agents service in scope), Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Comprehend Medical, and HealthLake (where used) are HIPAA-eligible at build time. EHR vendor agreement: confirm the institution's data-use agreement permits the bot's read-and-write integration with MedicationRequest. E-prescribing platform agreement: confirm the platform supports automated submissions under the prescriber's delegation. Surescripts conformance for any e-prescribing transactions. Audit retention policy reviewed by the privacy officer and the medical-records team. The refill-event journal retention floor is the longest of HIPAA's six-year minimum, the state-specific medical-records retention rules, the state-specific PDMP and pharmacy-record retention rules where applicable, and the institutional regulatory floor.  |
+| **BAA and Compliance** | AWS BAA signed. Verify Amazon Bedrock (with the specific models and the Agents service in scope), Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Comprehend Medical, and HealthLake (where used) are HIPAA-eligible at build time. EHR vendor agreement: confirm the institution's data-use agreement permits the bot's read-and-write integration with MedicationRequest. E-prescribing platform agreement: confirm the platform supports automated submissions under the prescriber's delegation. Surescripts conformance for any e-prescribing transactions. Audit retention policy reviewed by the privacy officer and the medical-records team. The refill-event journal retention floor is the longest of HIPAA's six-year minimum, state-specific medical-records retention rules, state-specific PDMP retention rules where applicable for any controlled-substance-related records, state-specific pharmacy-record retention rules where applicable, state-specific consumer-privacy-law retention rules where applicable (CCPA/CPRA, VCDPA, CPA, and similar), per-channel retention obligations (TCPA/10DLC for SMS), and the institutional regulatory floor. The audit-archive and tool-call-ledger may have different retention floors than the refill-event journal; reconcile per-record-class retention at design time. |
 | **Encryption** | Source-document bucket: SSE-KMS with customer-managed keys, versioning enabled. Audit-archive and refill-event-journal buckets: SSE-KMS with customer-managed keys, Object Lock in compliance mode for the retention window, lifecycle to S3 Glacier Deep Archive after 90 days. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all integrations with the EHR, the CDS layer, the e-prescribing platform, and the pharmacy. The vector store under Knowledge Bases encrypted with customer-managed KMS keys. Different KMS key per data class for blast-radius containment (conversation-state vs refill-event-journal vs audit-archive). |
 | **VPC** | Production: tool Lambdas that call the EHR, CDS layer, and e-prescribing platform run in VPC with controlled egress. PrivateLink to the EHR or CDS endpoints where supported; tightly-scoped NAT path with allow-list otherwise. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, HealthLake (where used), and Comprehend Medical so the back-office Lambdas do not need public-internet egress for AWS-internal calls. Endpoint policies pin access to the specific resources the bot uses. The patient-facing edge (API Gateway, WAF) is public by design; the EHR and e-prescribing traffic is private. |
 | **CloudTrail** | Enabled with data events on the audit-archive S3 bucket, the refill-event-journal S3 bucket, the source-document S3 bucket, the DynamoDB conversation, tool-call, and co-signature tables, the Secrets Manager secrets, and the customer-managed KMS keys. Bedrock and Bedrock Agents invocations logged with metadata. Lambda invocations logged. API Gateway access logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longest of HIPAA's six-year minimum, state medical-records retention rules, and the institutional regulatory floor. |
@@ -573,6 +573,10 @@ FUNCTION evaluate_protocol(session_id):
         })
 
     // Step 5C: protocol evaluation.
+    // The protocol_evaluate_tool consults the
+    // per-medication-class protocol version, the
+    // per-prescriber delegation version, and
+    // the per-state PDMP configuration.
     protocol_result = protocol_evaluate_tool.invoke({
         patient_id: session.verified_patient_id,
         medication: medication,
@@ -593,7 +597,16 @@ FUNCTION evaluate_protocol(session_id):
             patient_stated_context:
                 session.patient_stated_context
         },
-        protocol_version: ACTIVE_PROTOCOL_VERSION
+        protocol_version: ACTIVE_PROTOCOL_VERSION,
+        medication_class_protocol_version:
+            get_medication_class_protocol_version(
+                medication.class),
+        delegation_version:
+            get_prescriber_delegation_version(
+                medication.prescribing_provider_id),
+        pdmp_state_config_version:
+            get_pdmp_state_config_version(
+                session.patient_state)
     })
 
     audit_tool_call(
@@ -702,14 +715,44 @@ FUNCTION execute_disposition(session_id):
             medication_id: medication.id,
             protocol_version:
                 decision.protocol_version,
+            medication_class_protocol_version:
+                decision.medication_class_protocol_version,
+            delegation_version:
+                decision.delegation_version,
             rules_fired: decision.rules_fired,
             data_consulted: decision.data_consulted,
+            sla_tier:
+                get_cosign_sla_tier(
+                    medication.class,
+                    decision.disposition),
             sla_deadline:
                 now() + COSIGN_SLA_HOURS_AS_DELTA,
+            escalation_policy:
+                get_escalation_policy(
+                    medication.prescribing_provider_id,
+                    medication.class),
             session_id: session_id
         })
 
         // Step 6D: write the refill-event journal.
+        // The journal carries only structural fields.
+        // Free-text context (data_consulted details,
+        // rules_fired details, patient_stated_context)
+        // routes to the per-conversation archive
+        // surface with the appropriate KMS key class.
+        data_consulted_archive_ref =
+            archive_to_s3(
+                prefix: session_id + "/data_consulted",
+                content: decision.data_consulted)
+        rules_fired_archive_ref =
+            archive_to_s3(
+                prefix: session_id + "/rules_fired",
+                content: decision.rules_fired)
+        patient_context_archive_ref =
+            archive_to_s3(
+                prefix: session_id + "/patient_context",
+                content: session.patient_stated_context)
+
         refill_event_journal.write({
             event_type: "refill_auto_approved",
             event_id: generate_event_id(),
@@ -725,9 +768,20 @@ FUNCTION execute_disposition(session_id):
                 medication.prescribing_provider_id,
             protocol_version:
                 decision.protocol_version,
-            rules_fired: decision.rules_fired,
-            data_consulted_summary:
-                decision.data_consulted,
+            medication_class_protocol_version:
+                decision.medication_class_protocol_version,
+            delegation_version:
+                decision.delegation_version,
+            pdmp_state_config_version:
+                decision.pdmp_state_config_version,
+            rules_fired_summary:
+                extract_rule_ids(decision.rules_fired),
+            data_consulted_archive_ref:
+                data_consulted_archive_ref,
+            rules_fired_archive_ref:
+                rules_fired_archive_ref,
+            patient_stated_context_archive_ref:
+                patient_context_archive_ref,
             session_id: session_id,
             initiated_at: now()
         })
@@ -1202,6 +1256,22 @@ FUNCTION close_conversation_and_archive(session_id, reason):
         active_kb_version_at_session: state.kb_version,
         active_protocol_version_at_session:
             state.protocol_version,
+        active_medication_class_protocol_version_at_session:
+            state.medication_class_protocol_version,
+        active_delegation_version_at_session:
+            state.delegation_version,
+        active_pdmp_state_config_version_at_session:
+            state.pdmp_state_config_version,
+        active_e_prescribe_tool_version:
+            state.e_prescribe_tool_version,
+        active_protocol_evaluate_tool_version:
+            state.protocol_evaluate_tool_version,
+        active_medication_resolution_tool_version:
+            state.medication_resolution_tool_version,
+        active_lab_reconciliation_tool_version:
+            state.lab_reconciliation_tool_version,
+        active_interaction_screening_tool_version:
+            state.interaction_screening_tool_version,
         cohort_axes: {
             language: state.language,
             channel: state.channel,
@@ -1410,6 +1480,12 @@ Bot:     Got it. I'll connect you to the scheduling
   "active_prompt_version_at_session": "refill-bot-v3.1",
   "active_agent_version_at_session": "refill-agent-v2.4",
   "active_protocol_version_at_session": "refill-protocol-v4.2",
+  "active_medication_class_protocol_version_at_session": "biguanide-protocol-v2.1.0",
+  "active_delegation_version_at_session": "delegation-dr-chen-v3",
+  "active_pdmp_state_config_version_at_session": "pdmp-CA-v1.4",
+  "active_e_prescribe_tool_version": "e-prescribe-tool-v1.3.0",
+  "active_protocol_evaluate_tool_version": "protocol-eval-tool-v2.0.1",
+  "active_medication_resolution_tool_version": "med-resolve-tool-v1.2.0",
   "cohort_axes": {
     "language": "en-US",
     "channel": "patient_portal_embed",
@@ -1460,9 +1536,25 @@ Bot:     Got it. I'll connect you to the scheduling
 
 The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.
 
-**Refill protocol formalization as a pre-deployment program.** The most valuable engineering work for a refill bot is done before the engineering work starts: formalizing the practice's refill protocol. Each medication class needs a clear auto-approval criterion, a clear monitoring requirement, a clear dosing rule, a clear prescriber-authority rule, and clear exception handling. The formalization is a clinical-leadership project, supported by the engineering team. Skipping the formalization and shipping the bot on top of an informal protocol produces a bot that auto-approves things that should not have been auto-approved, which is worse than not having a bot.
+**Refill protocol formalization as a pre-deployment program.** The most valuable engineering work for a refill bot is done before the engineering work starts: formalizing the practice's refill protocol. Each medication class needs a clear auto-approval criterion, a clear monitoring requirement, a clear dosing rule, a clear prescriber-authority rule, and clear exception handling. The formalization is a clinical-leadership project, supported by the engineering team. Skipping the formalization and shipping the bot on top of an informal protocol produces a bot that auto-approves things that should not have been auto-approved, which is worse than not having a bot. The protocol is a versioned governance artifact with the following lifecycle discipline:
 
-**Prescriber-delegation governance.** The bot operates under a delegation arrangement from the prescriber, formalized as a standing order or as a protocol-driven medical-staff bylaw. The delegation has scope (which medication classes, which patient categories, which conditions) and a co-signature SLA (within how many hours the prescriber must review the auto-approved refill). The delegation is reviewed by the medical staff committee, signed by the prescribers, and renewed annually. Without explicit delegation, the bot has no clinical authority.
+- Per-medication-class protocol versions using semantic versioning (major/minor/patch). A major bump means the auto-approval criteria or the controlled-substance handling changed; a minor bump means monitoring thresholds or dosing rules refined; a patch means editorial or phrasing updates.
+- Sandbox testing against held-out refill conversations with per-medication-class regression evaluation before any version promotion.
+- Staged rollout with per-medication-class canary: route a small fraction of conversations through the new protocol version, monitor per-cohort metrics, promote or rollback.
+- Rollback-on-regression discipline: if auto-approval rate, routing rate, or prescriber-flagged-co-signature rate materially shifts after promotion, the canary rollback fires automatically.
+- Named ownership: the medical-staff committee owns protocol content, the protocol governance committee owns versioning cadence, the privacy officer signs off on any change that touches data-access scope.
+- Protocol-version-stamping on every refill-event-journal record (extended to per-medication-class and per-rule stamping via rule-IDs matching the institutional protocol document).
+- Per-protocol-rule auditability with rule-IDs that match the institutional protocol document line items.
+- Per-state PDMP and controlled-substance regulatory configuration as a versioned asset, with state-specific rules pinned to a configuration version.
+
+**Prescriber-delegation governance.** The bot operates under a delegation arrangement from the prescriber, formalized as a standing order or as a protocol-driven medical-staff bylaw. The delegation has scope (which medication classes, which patient categories, which conditions) and a co-signature SLA (within how many hours the prescriber must review the auto-approved refill). The delegation is reviewed by the medical staff committee, signed by the prescribers, and renewed annually. The architectural commitment includes:
+
+- Per-prescriber delegation scope: medication classes, patient categories, conditions explicitly enumerated per prescriber.
+- Annual-renewal cadence with administrative-disable for lapsed delegations.
+- Per-delegation-version-stamping on every refill action (the audit record and refill-event-journal record both carry the active delegation version).
+- Co-signature SLA monitoring per prescriber with escalation policy.
+- Per-prescriber co-signature backlog as an operational metric (a prescriber falling behind on co-signatures is a capacity signal).
+- Prescriber-flagged-co-signature retrospective review: when a prescriber flags a co-signed refill for review, the flag feeds a structured failure-mode-labeling workflow owned by clinical leadership.
 
 **Co-signature workflow operationalization.** The auto-approved refills queue for prescriber co-signature. The queue has SLA monitoring, escalation, and reporting. Prescribers complete co-signature in their normal workflow (a queue in the EHR's inbox or a dedicated review interface). When the prescriber flags a co-signature for retrospective review, the flag feeds the protocol-improvement loop. Build the workflow with a clear ownership and a clear measurement: percentage of auto-approvals co-signed within SLA, percentage flagged, percentage of flags resulting in protocol updates.
 
@@ -1474,17 +1566,106 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Patient-rights workflow for refill conversations and refill records.** Conversation logs are PHI by association. Refill events are clinical records. Patients have rights to access both. The institution has retention obligations that vary by state and by record class. Build the workflow: how a patient requests their refill conversation history and their refill records, how the requests are authenticated, how the data is produced, how deletion requests interact with retention obligations.
 
-**Per-cohort accuracy and equity monitoring with launch gates.** Auto-approval rate, time-to-completion, and patient-feedback distribution all vary by cohort. Per-language, per-channel, per-age-cohort, per-medication-class. Build the monitoring as a launch gate: each cohort must meet the threshold before the cohort goes live. A cohort with materially lower auto-approval rate (after controlling for protocol-relevant clinical factors) signals an equity issue that aggregate metrics hide.
+**Per-cohort accuracy and equity monitoring with launch gates.** Auto-approval rate, time-to-completion, and patient-feedback distribution all vary by cohort. The monitoring is a launch-gate discipline, not a post-launch dashboard. Cohort axes include:
+
+- Single-axis cohorts: per-language, per-channel, per-region, per-assurance-level, per-intent, per-medication-class.
+- Two-axis cohorts: per-language-by-channel, per-language-by-medication-class, per-medication-class-by-channel, per-assurance-level-by-channel.
+- Three-axis cohort: per-language-by-channel-by-medication-class for multilingual-multi-class deployments.
+
+Per-cohort threshold metrics include: auto-approval rate per medication class, routing rate per disposition, time-to-completion per disposition, identity-verification-success rate, mis-resolved-medication rate (recipe-distinct safety-acute metric: atenolol-vs-albuterol-class misresolution has therapeutic consequences a wrong scheduling action does not), lab-reconciliation-failure rate (recipe-distinct: per-cohort outside-lab reconciliation gaps may correlate with care-network coverage), prescriber-flagged-co-signature rate (recipe-distinct clinical-safety signal), routing-disposition-mix-disparity, tool-call-failure rate per tool, handoff rate per intent, sustained-utilization rate, and patient-feedback distribution.
+
+Per-cohort minimum sample sizes for statistical reliability with alternate sampling for long-tail cohorts (rare medication classes, low-volume languages). The launch gate is cohort-level, not institution-wide-average: each cohort must meet its threshold before going live. Institution-wide-average metrics are informational only. A cohort-disabled-feature workflow exists for cohorts that fail the gate, with clinical-leadership and patient-experience remediation tracking.
 
 **Voice-channel deployment for accessibility.** Building the voice channel on top of the same refill logic makes the bot accessible to patients without smartphones, without high-speed internet, or with disabilities that make text input difficult. The architectural extension is the ASR/TTS layer (recipe 10.5 patterns) plus voice-specific design (slower pacing, explicit confirmations, voice-friendly phrasings of medication names).
 
-**Disaster-recovery and degraded-mode operation.** When upstream dependencies fail (Bedrock outage, EHR unreachable, e-prescribing platform down), the bot must degrade gracefully. The minimum behavior is "we are having trouble right now, please call the office at the number." Better is a graceful warm handoff to live agents with the conversation context preserved. Document the per-mode behavior, test the failure modes in staging, and exercise the failover paths quarterly.
+**Disaster-recovery and degraded-mode operation.** When upstream dependencies fail, the bot must degrade gracefully with per-stage failover policy:
 
-**Compensation operations for refilled-but-wrong medications.** When the bot auto-approves a refill that turns out to be wrong (wrong medication identification, protocol applied to incomplete data, prescriber-flagged retrospectively), the operations team needs operational tooling to compensate: contact the patient, contact the pharmacy if the medication has not been picked up, document the event, surface it for clinical review. The compensation path is explicit, audited, and exercised in tabletop drills.
+- Bedrock LLM outage: degraded-mode response using cached intent-classification and pre-built safe responses; no new refill actions; queue for later processing.
+- Bedrock Knowledge Bases outage: degraded-mode response without medication-information retrieval; refill actions can still proceed if protocol evaluation does not require KB content.
+- Bedrock Agents outage: degraded-mode response with simplified orchestration path or direct fallback to safe-response defaults.
+- Bedrock Guardrails outage: stricter system-prompt-side scope enforcement replaces Guardrails filtering; no refill actions permitted without Guardrails active as a conservative default.
+- DynamoDB outage: conservative session-state recreation from the last-known checkpoint; no new refill actions until state consistency is confirmed.
+- S3 outage: graceful read-failure for audit; Kinesis-buffered audit records held until S3 recovers; no refill actions blocked by audit-write failure (audit catch-up on recovery).
+- E-prescribing platform (Surescripts) outage: recipe-distinct critical dependency requiring honest user-facing communication ("we cannot send prescriptions right now; a staff member will follow up with you within [SLA]") and queue-for-clinical-staff-follow-up with structured context.
+- EHR outage: explicit user-facing communication that the bot is degraded and an alternate channel (phone number) is provided; no medication-list access means no refill actions.
+- CDS layer outage: conservative-deny-or-route disposition for all refill requests (the bot cannot verify interactions without the CDS layer, so it routes to clinical staff).
+
+Failover-detection thresholds, failover-back triggers, and quarterly testing cadence. Cross-region failover for Bedrock, Bedrock Agents, Bedrock Knowledge Bases, Lambda, DynamoDB, the EHR integration, and the e-prescribing platform integration where the institution's RTO and RPO require it.
+
+**Compensation operations for refilled-but-wrong medications.** When the bot auto-approves a refill that turns out to be wrong (wrong medication identification, protocol applied to incomplete data, prescriber-flagged retrospectively), the operations team needs operational tooling to compensate. The compensation operations tooling surface includes:
+
+- View-medication-action-history tool: retrieve the full chain of actions for a given patient, medication, and time window.
+- Reverse-prescription tool with pharmacy-coordination path: when the medication has been picked up, contact the patient with safety information; when the medication has not been picked up, contact the pharmacy to halt dispensing.
+- Rebook-with-corrected-parameters tool: re-run the refill with corrected protocol inputs once the root cause is identified.
+- Compensation-event-lifecycle integration with EventBridge (`refill_compensated` event with idempotency key `(original_prescription_id, compensation_event_id, "compensated")`).
+- Audit-trail preservation discipline: the original refill record remains immutable; the compensation record links to it.
+- Operational tooling surface with access-control via institutional IdP; pharmacist read-access for pharmacy-coordination actions; prescriber read-access for retrospective review.
+
+The compensation path is explicit, audited, and exercised in tabletop drills before launch.
 
 **Operational ownership across multiple teams.** The bot sits at the intersection of patient experience (voice persona, conversational design), clinical leadership (refill protocol, delegation arrangement), pharmacy operations (pharmacy directory, e-prescribing setup), IT (EHR and e-prescribing-platform integration), compliance (audit retention, identity-verification policy, refill-event-journal governance), and the contact center (handoff queues, agent training). Establish clear ownership at the start. Without it, the bot drifts and the metrics are not reviewed.
 
 **Build-vs-buy rigor for institutions evaluating commercial alternatives.** Several commercial vendors offer healthcare-specific refill management products integrated with the major EHRs and e-prescribing platforms. The buy path is faster and comes with EHR-integration maintenance. The build path makes sense for institutions with unusual protocols, with research interest in the technology, or with already-significant in-house conversational AI infrastructure. Either way, a rigorous vendor evaluation is required.
+
+**Prompt-injection defense with medication-action amplification.** The Bedrock Agents tool-orchestration path carries recipe-distinct medication-action amplification risk: a successful prompt injection could manipulate medication mapping, manipulate e_prescribe arguments, or manipulate patient_stated_context to influence disposition. The architectural defense includes:
+
+- Delimited-input framing for the agent and the medication-resolution LLM: `<patient_utterance>`, `<verified_session_context>`, `<conversation_history>`, `<medication_list>` are structurally separated so the model can distinguish patient input from system context.
+- Tool-Lambda enforcement: every tool validates the `patient_id` and `medication_id` arguments against the verified session `patient_id` and the resolved medication record. The agent's prompt is a hint; the tool-Lambda is the enforcement. The `e_prescribe` tool additionally validates that `prescribing_provider_id` matches the medication's documented prescribing provider.
+- Per-language jailbreak-test corpus including medication-action-injection cases (manipulate medication mapping, manipulate e_prescribe arguments, manipulate patient_stated_context to influence disposition).
+- Bedrock Guardrails configuration for both the orchestration model and the medication-resolution model with denied-topics list specific to medication-action manipulation.
+- Audit logging of tool-Lambda patient_id-and-medication_id-cross-check outcomes (every validation pass or fail is recorded for retrospective analysis).
+
+**Faithfulness-check stage between generation and delivery.** Every refill-related claim the bot makes to the patient (refill-sent claim, pharmacy-selection claim, lab-value claim, medication-name claim, dose claim, days-supply claim, refills-authorized claim, status claim, expected-readiness claim) must be grounded to either a tool-call result or a retrieved knowledge-base chunk. The faithfulness check includes:
+
+- An independent verifier model (protected from prompt injection by Guardrails on its input) that compares the generated response against the tool-call results and KB retrieval chunks.
+- Structured-output schema validation: the verifier emits a pass/fail per claim with the grounding evidence reference.
+- Rule-based contradiction detection: if the generated text asserts "sent to Walgreens" but the e_prescribe result shows "CVS," the contradiction fires automatically.
+- Omission and hallucination detection: claims present in the response but absent from any tool result or KB chunk are flagged.
+- Regenerate-attempt budget (typically two retries) to avoid infinite loops; if the budget is exhausted, fall back to a safe-response default ("I completed your request but want to confirm the details; please check with the pharmacy directly").
+- Per-cohort faithfulness-failure rate becomes a launch-gate metric per the cohort monitoring discipline.
+
+**Working-store-vs-archive-store discipline.** The tool-call-ledger DynamoDB on the real-time hot path holds only structural references: tool name, invocation timestamp, structural arguments (medication_id, protocol_version, delegation_version), structural result (disposition, latency, outcome), and an `archive_ref` pointer. Free-text patient-stated context, full `data_consulted` content (lab values, blood-pressure history, condition details, allergy details), and full `rules_fired` details route to a per-conversation tool-call-archive S3 prefix with the appropriate KMS key class. The architecture diagram includes `tool_call_archive` and `refill_event_data_archive` components. Per-record-class access-control: medical-records team plus operations team plus pharmacist read-access plus prescriber read-access for retrospective review on the refill-event journal; engineering and audit-and-compliance for the tool-call ledger. Cross-correlation discipline with the institution's e-prescribing platform records and pharmacy records enables end-to-end audit reconstruction.
+
+**IAM and WAF enforcement as architectural commitment.** Each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Bedrock Agents action-group ARN, or the production EventBridge rule ARN as appropriate. Defense-in-depth event-payload validation at the start of each tool-Lambda verifies the invoking context against the production constants and validates the `patient_id` and `medication_id` arguments against the verified session and resolved medication. Per-endpoint WAF rate-limit policy: stricter limits per IP and per session for refill endpoints than for FAQ endpoints, bot-detection allow-list for accessibility tools, abuse-detection telemetry including unusual-fill-cadence and unusual-pharmacy patterns, per-endpoint review cadence monthly, per-endpoint false-positive and false-negative monitoring integrated with per-cohort monitoring.
+
+**Tool-surface contract management with medication-action amplification awareness.** Each tool in the refill bot's action-group surface is a contract with the EHR, the CDS layer, or the e-prescribing platform. The contract management includes:
+
+- Per-tool versioned schemas with semantic versioning.
+- Per-tool deprecation policy and backward-compatibility discipline.
+- Per-tool change-management process owned jointly by engineering, clinical leadership, and pharmacy operations.
+- Per-tool audit-stamp: the audit record at Step 10A carries per-tool version stamps (`active_e_prescribe_tool_version`, `active_protocol_evaluate_tool_version`, `active_medication_resolution_tool_version`, `active_lab_reconciliation_tool_version`, `active_interaction_screening_tool_version`).
+- Per-tool canary deployment with traffic-shift: new tool versions serve a small fraction of traffic before full promotion.
+
+**Deployment pattern as versioned-asset discipline.** The following assets are version-controlled with commit-SHA-tied builds: versioned system prompt, intent-classification prompt, medication-resolution prompt, institutional persona, institution-glossary, redaction taxonomy, per-language consent disclosure assets, Bedrock Guardrails policy, knowledge-base corpus snapshot, protocol document, per-medication-class protocol versions, prescriber-delegation arrangements, per-state PDMP configuration, identity-verification policy, per-cohort launch-gate threshold values, and tool-surface schemas. Use Bedrock inference profiles for prompt-and-model versioning with rollback-on-regression. The held-out evaluation set covers representative refill conversations, controlled-substance scenarios, specialist-medication scenarios, discontinued-medication scenarios, multilingual conversations, prompt-injection test cases, and faithfulness test cases. Per-cohort canary deployment with traffic-shift before full promotion.
+
+**Multi-language deployment (build for day one).** Per-language medication-name resolution handles brand-name versus generic-name conventions in each language (medication names marketed under different brand names in different countries and languages). Per-language identity-verification phrasings. Per-language protocol-decision phrasings. Per-language medication-information content from native-language sources. Per-language asset-versioning following the deployment-pattern discipline. Per-language launch-gate following the cohort monitoring discipline. Build the multi-language surface at the architecture level from day one even if the initial deployment is English-only; retrofitting per-language medication resolution is substantially harder than building it in.
+
+**EventBridge idempotency keys.** Per-event idempotency keys for EventBridge events:
+
+- `conversation_started` = (session_id, "started")
+- `refill_requested` = (session_id, medication_id, "requested")
+- `refill_auto_approved` = (session_id, prescription_id, "approved")
+- `refill_routed` = (session_id, routed_to, routing_event_id, "routed")
+- `refill_denied` = (session_id, denial_event_id, "denied")
+- `refill_failed` = (session_id, failure_event_id, "failed")
+- `cosignature_pending` = (prescription_id, "pending")
+- `cosignature_completed` = (prescription_id, "completed")
+- `refill_compensated` = (original_prescription_id, compensation_event_id, "compensated")
+- `conversation_closed` = (session_id, "closed")
+
+Downstream consumers maintain a deduplication store (DynamoDB with TTL on the deduplication record) sized to the consumer's processing latency.
+
+**Accessibility conformance and per-channel authentication.** WCAG 2.1 AA conformance for the chat widget: ARIA labeling, keyboard navigation, screen-reader announcements for new messages, high-contrast mode, font scaling, alternative input methods including the voice channel. Named ownership at the accessibility program manager and the patient-experience team's elderly-patient-focused review (recipe-distinct: the canonical user Eleanor at 71 is the equity-stake population).
+
+Per-channel data-in-transit posture: TLS 1.2 minimum for all channels, per-channel session-token TTL and isolation policy. Per-channel BAA scope: web chat and in-app under the institution's AWS BAA; voice via Connect under the institutional BAA; SMS via aggregator with aggregator BAA; authenticated patient-portal embed under the patient-portal vendor's BAA (which must explicitly cover the embedded chat surface). The recipe's recommended path for refill actions is the authenticated portal embed. Per-channel TCPA/10DLC compliance for SMS. Audit-record propagation of the per-channel authentication context.
+
+**Lab-reconciliation pipeline as architectural prerequisite.** The institution's lab-reconciliation pipeline (recipe 5.6 patterns) is the upstream integration point for the refill bot's protocol evaluation. When the relevant lab was drawn at an outside facility and the result has not been reconciled, the bot's protocol evaluation may incorrectly find "monitoring overdue." Investing in faster outside-lab reconciliation is the operational floor for the bot's auto-approval rate. The lab-reconciliation tool checks for pending-reconciliation outside-lab results, but the institution's lab-reconciliation pipeline determines how quickly those results become available.
+
+**Operational metrics, model selection, and network egress.** Per-language-by-medication-class three-axis cohort-hash labels for fine-grained CloudWatch metric intersections may approach single-conversation granularity for long-tail languages or rare medication classes; the analytics layer (Athena) preserves human-readable cohort labels with broader access-control surface for retrospective analysis.
+
+Default-model recommendation: Claude Sonnet-class for orchestration (strong tool-use support plus medical-terminology comprehension), Haiku-class for lighter-weight intent classification and medication-resolution. Verify model HIPAA eligibility at build time against the AWS HIPAA Eligible Services Reference.
+
+PrivateLink egress hierarchy for external integrations: PrivateLink preferred where supported; for pharmacy integrations and Surescripts, Direct Connect or VPN as second tier; public-Internet-with-TLS as tertiary with per-vendor TLS posture verified.
 
 ---
 

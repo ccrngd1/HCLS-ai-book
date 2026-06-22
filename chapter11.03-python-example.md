@@ -14,7 +14,7 @@ You will need the AWS SDK for Python:
 pip install boto3
 ```
 
-In production you would also configure an Amazon Bedrock Agent (or a custom Lambda-based orchestrator) with action groups defining the refill tools (`patient_lookup`, `medication_list_lookup`, `medication_resolution`, `lab_reconciliation`, `interaction_screening`, `protocol_evaluate`, `e_prescribe`, `clinical_routing`, `refill_status_check`, `cancel_refill_request`, `cosignature_enqueue`), each backed by a tool-implementation Lambda that wraps the institution's EHR FHIR API, the institution's clinical-decision-support layer (CDS Hooks where available), and the institution's e-prescribing platform (typically Surescripts-routed). You would also configure an Amazon Bedrock Knowledge Base ingesting curated content from S3 covering the medication-information corpus (each medication or class with its purpose, common questions, food-and-timing notes, side-effect summaries from the practice's preferred clinical reference), the patient-facing phrasings of the practice's refill protocol (so the bot can explain a routing decision in language the patient understands), and the practice's standing-order documentation (for staff-facing reasoning surfaces). You would configure an Amazon Bedrock Guardrail with restricted-topic filters for clinical-advice, dose-change-recommendation, medication-discontinuation-guidance, and controlled-substance-auto-approval categories, an API Gateway endpoint fronting the chat-handler Lambda, an AWS WAF web ACL with stricter rate limits on the refill endpoint than on either the FAQ or scheduling endpoints, the four DynamoDB tables (conversation-state, conversation-metadata, tool-call-ledger, cosignature-queue), an Amazon S3 bucket with Object Lock in compliance mode for the refill-event journal sized to the longest of HIPAA's six-year minimum, the state's medical-records-retention rules, and the institutional regulatory floor, an EventBridge bus for refill-lifecycle events (`conversation_started`, `refill_requested`, `refill_auto_approved`, `refill_routed`, `refill_denied`, `refill_failed`, `cosignature_pending`, `cosignature_completed`, `controlled_substance_routed`, `crisis_detected`, `conversation_closed`), a Kinesis Data Firehose delivery stream for the conversation-audit archive, AWS Secrets Manager secrets for the EHR and e-prescribing-platform credentials, and (where applicable) the Connect contact-center integration for the live-clinician handoff path. The demo replaces all of these with small mocks so the focus stays on the per-turn classification, identity-verification, medication-resolution, protocol-evaluation, e-prescribe-or-route, and disposition logic rather than on the platform plumbing.
+In production you would also configure an Amazon Bedrock Agent (or a custom Lambda-based orchestrator) with action groups defining the refill tools (`patient_lookup`, `medication_list_lookup`, `medication_resolution`, `lab_reconciliation`, `interaction_screening`, `protocol_evaluate`, `e_prescribe`, `clinical_routing`, `refill_status_check`, `cancel_refill_request`, `cosignature_enqueue`), each backed by a tool-implementation Lambda that wraps the institution's EHR FHIR API, the institution's clinical-decision-support layer (CDS Hooks where available), and the institution's e-prescribing platform (typically Surescripts-routed). You would also configure an Amazon Bedrock Knowledge Base ingesting curated content from S3 covering the medication-information corpus (each medication or class with its purpose, common questions, food-and-timing notes, side-effect summaries from the practice's preferred clinical reference), the patient-facing phrasings of the practice's refill protocol (so the bot can explain a routing decision in language the patient understands), and the practice's standing-order documentation (for staff-facing reasoning surfaces). You would configure an Amazon Bedrock Guardrail with restricted-topic filters for clinical-advice, dose-change-recommendation, medication-discontinuation-guidance, and controlled-substance-auto-approval categories, an API Gateway endpoint fronting the chat-handler Lambda, an AWS WAF web ACL with stricter rate limits on the refill endpoint than on either the FAQ or scheduling endpoints, the four DynamoDB tables (conversation-state, conversation-metadata, tool-call-ledger, cosignature-queue), an Amazon S3 bucket with Object Lock in compliance mode for the refill-event journal sized to the longest of HIPAA's six-year minimum, state-specific medical-records-retention rules, state-specific PDMP retention rules where applicable for controlled-substance-related records, state-specific pharmacy-record retention rules, state-specific consumer-privacy-law retention rules (CCPA/CPRA, VCDPA, CPA, etc.), per-channel retention obligations (TCPA/10DLC for SMS), and the institutional regulatory floor, an EventBridge bus for refill-lifecycle events (`conversation_started`, `refill_requested`, `refill_auto_approved`, `refill_routed`, `refill_denied`, `refill_failed`, `cosignature_pending`, `cosignature_completed`, `controlled_substance_routed`, `crisis_detected`, `conversation_closed`), a Kinesis Data Firehose delivery stream for the conversation-audit archive, AWS Secrets Manager secrets for the EHR and e-prescribing-platform credentials, and (where applicable) the Connect contact-center integration for the live-clinician handoff path. The demo replaces all of these with small mocks so the focus stays on the per-turn classification, identity-verification, medication-resolution, protocol-evaluation, e-prescribe-or-route, and disposition logic rather than on the platform plumbing.
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
@@ -44,7 +44,7 @@ A few things worth knowing upfront:
 - **Identity verification has a higher floor for refill actions.** A patient logged into the patient portal asking to check on a pending refill needs lower assurance than an unauthenticated patient asking to e-prescribe a maintenance medication. Many institutions require authenticated portal sessions for any refill action that results in transmission. The demo's `IDENTITY_POLICY` table reflects this; production owns the policy as a versioned governance artifact reviewed by the privacy officer.
 - **Prescriber co-signature is asynchronous but mandatory.** Every auto-approved refill enqueues to the prescriber's co-signature queue with an SLA. The bot does not wait for the co-signature; the prescriber reviews within the institutional timeline (typically 24-72 hours). The demo's `cosignature_queue` table is the placeholder for what is normally a queue with SLA monitoring, escalation, and reporting wired into the prescriber's EHR inbox.
 - **The refill-event journal is durable and separately governed.** Conversation logs are PHI and have audit obligations; refill-event-journal records are clinical-record events and have medical-record-retention obligations. The demo writes both, but the production deployment has separate KMS keys, separate retention windows, and separate access controls for each.
-- **Conversation logs are PHI by association.** A patient interacting with the institution's refill bot has identified themselves as a patient of the institution and has discussed specific medications they take. The conversation log is HIPAA-relevant. Audit logging, encryption, access controls, and retention policies apply. The demo writes a redacted record; production writes through Firehose into an Object-Lock S3 bucket sized to the longest of HIPAA's six-year minimum, the state's medical-records-retention rules, and the institutional regulatory floor.
+- **Conversation logs are PHI by association.** A patient interacting with the institution's refill bot has identified themselves as a patient of the institution and has discussed specific medications they take. The conversation log is HIPAA-relevant. Audit logging, encryption, access controls, and retention policies apply. The demo writes a redacted record; production writes through Firehose into an Object-Lock S3 bucket sized to the longest of HIPAA's six-year minimum, state-specific medical-records-retention rules, state-specific PDMP and pharmacy-record retention rules where applicable, state-specific consumer-privacy-law retention rules, per-channel retention obligations, and the institutional regulatory floor.
 - **The output check verifies refill claims against tool results.** A bot that says "your refill has been sent to Walgreens" when the e-prescribe tool did not actually return success is a bot that lets patients assume their medication is on the way when it is not, which can be a clinical-safety event. The demo's `screen_output` extracts refill-confirmation claims and verifies that each claim is supported by a successful `e_prescribe` tool result; production extends this with stronger LLM-based claim-vs-evidence checks.
 - **DynamoDB rejects Python `float`.** Every confidence score, threshold, time-window, lab value, and numeric metadata field passes through `Decimal` on its way in and on its way out. The `_to_decimal` helper handles it.
 - **The example collapses many Lambdas into a single Python file.** In production the chat handler, the input-screening function, the identity-verification function, each tool-implementation function, the output-screening function, and the audit-archival function are separate Lambdas with their own IAM roles, error handling, retries, and DLQs. Comments call out where the boundaries should fall.
@@ -610,6 +610,28 @@ def _from_decimal(obj):
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
+
+
+def _get_cosign_sla_tier(medication_class: str) -> str:
+    """
+    Return the co-signature SLA tier for a medication class.
+    Tighter SLA tiers for higher-risk classes.
+    """
+    high_priority_classes = [
+        "anticoagulant", "antiarrhythmic", "immunosuppressant"]
+    if medication_class in high_priority_classes:
+        return "urgent_24h"
+    return "standard_48h"
+
+
+def _get_escalation_policy(
+        prescriber_id: str, medication_class: str) -> str:
+    """
+    Return the escalation policy identifier for a prescriber
+    and medication class combination.
+    """
+    # In production this is looked up from a governance table.
+    return f"escalation-{prescriber_id}-{medication_class}"
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -2227,12 +2249,22 @@ def _execute_auto_approve(session_id: str,
             medication.get("id"),
         "protocol_version":
             decision.get("protocol_version"),
+        "medication_class_protocol_version":
+            decision.get("medication_class_protocol_version"),
+        "delegation_version":
+            decision.get("delegation_version"),
         "rules_fired":
             decision.get("rules_fired", []),
+        "sla_tier":
+            _get_cosign_sla_tier(medication.get("class")),
         "sla_deadline": (
             datetime.now(timezone.utc)
             + timedelta(hours=COSIGNATURE_SLA_HOURS)
         ).isoformat(),
+        "escalation_policy":
+            _get_escalation_policy(
+                medication.get("prescribing_provider_id"),
+                medication.get("class")),
         "session_id": session_id,
         "enqueued_at": _now_iso(),
         "status": "pending",
@@ -2247,6 +2279,13 @@ def _execute_auto_approve(session_id: str,
     })
 
     # Step 6D: write the refill-event journal.
+    # The journal carries only structural fields. Free-text
+    # context (data_consulted, rules_fired details,
+    # patient_stated_context) routes to the per-conversation
+    # archive in production; here we write rule-IDs only.
+    rules_fired_ids = [
+        r.get("rule_id", r) if isinstance(r, dict) else r
+        for r in decision.get("rules_fired", [])]
     _write_refill_journal({
         "event_type":      "refill_auto_approved",
         "event_id":         str(uuid.uuid4()),
@@ -2264,8 +2303,17 @@ def _execute_auto_approve(session_id: str,
             medication.get("prescribing_provider_id"),
         "protocol_version":
             decision.get("protocol_version"),
-        "rules_fired":
-            decision.get("rules_fired", []),
+        "medication_class_protocol_version":
+            decision.get("medication_class_protocol_version"),
+        "delegation_version":
+            decision.get("delegation_version"),
+        "rules_fired_summary":   rules_fired_ids,
+        "data_consulted_archive_ref":
+            f"{session_id}/data_consulted",
+        "rules_fired_archive_ref":
+            f"{session_id}/rules_fired",
+        "patient_stated_context_archive_ref":
+            f"{session_id}/patient_context",
         "session_id":      session_id,
         "initiated_at":    _now_iso(),
     })
@@ -2584,7 +2632,13 @@ def _write_refill_journal(record: dict) -> None:
     separately governed from the conversation log. In production
     the bucket has Object Lock in compliance mode and a retention
     period sized to the longest of HIPAA's six-year minimum,
-    state law, and the institutional regulatory floor.
+    state-specific medical-records retention rules,
+    state-specific PDMP retention rules where applicable for
+    controlled-substance-related records, state-specific
+    pharmacy-record retention rules, state-specific
+    consumer-privacy-law retention rules (CCPA/CPRA, VCDPA,
+    CPA, etc.), per-channel retention obligations (TCPA/10DLC
+    for SMS), and the institutional regulatory floor.
     """
     key = (
         f"{INSTITUTION_ID}/"
