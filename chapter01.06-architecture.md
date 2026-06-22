@@ -838,4 +838,14 @@ FUNCTION assemble_final_record(document_key, execution_id, enhanced_image_key):
 
 ---
 
+## Estimated Implementation Time
+
+| Tier | Scope | Time |
+|------|-------|------|
+| Basic | Single-model extraction (Haiku only), Textract quality signal for confidence scoring, Step Functions orchestration with A2I callback, private workforce setup, S3/DynamoDB storage, no tiered routing or feedback loop | 4-6 weeks |
+| Production-ready | Full dual-model tiered routing (Haiku + Sonnet) based on Textract confidence thresholds, prompt caching, structured A2I reviewer interface with side-by-side comparison, confidence-based auto-accept logic, merge Lambda for combining auto-accepted and reviewed results, audit trail, monitoring dashboards, threshold tuning from production data | 3-5 months |
+| With variations | Feedback loop capturing reviewer corrections as few-shot prompt examples, specialty-specific prompt libraries, batch reprocessing mode, Bedrock Data Automation evaluation, multi-site deployment with per-site threshold calibration | 2-3 months beyond production-ready |
+
+---
+
 *← [Main Recipe 1.6](chapter01.06-handwritten-clinical-note-digitization) · [Python Example](chapter01.06-python-example) · [Chapter Preface](chapter01-preface)*
