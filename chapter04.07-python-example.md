@@ -1634,8 +1634,9 @@ def allocate_enrollments(enriched_candidates: list, run_date: str,
                 UpdateExpression=(
                     "SET #s = :recommended, recommended_run_date = :rd, "
                     "allocation_reason = :ar, allocation_stage = :stg, "
-                    "policy_version = :pv "
-                    "ADD state_history :history_event"
+                    "policy_version = :pv, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :history_event)"
                 ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
@@ -1644,6 +1645,7 @@ def allocate_enrollments(enriched_candidates: list, run_date: str,
                     ":ar":          row["allocation_reason"],
                     ":stg":         row["stage_name"],
                     ":pv":          POLICY_VERSION,
+                    ":empty":       [],
                     ":history_event": [{
                         "event":             "transitioned_eligible_to_recommended",
                         "timestamp":         run_date,
@@ -1924,13 +1926,15 @@ def dispatch_outreach(allocated_recommendations: list, run_date: str,
             state_table.update_item(
                 Key={"patient_id": patient_id, "program_id": program_id},
                 UpdateExpression=(
-                    "SET #s = :outreach, outreach_id = :oid "
-                    "ADD state_history :history_event"
+                    "SET #s = :outreach, outreach_id = :oid, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :history_event)"
                 ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
                     ":outreach":      "outreach_in_progress",
                     ":oid":           outreach_id,
+                    ":empty":         [],
                     ":history_event": [{
                         "event":       "transitioned_recommended_to_outreach",
                         "timestamp":   run_date,
@@ -2202,6 +2206,38 @@ def _templated_briefing_fallback(context: dict, row: dict) -> dict:
                                         "should read chart context before outreach.",
     }
 
+
+def _decrement_outreach_counter(patient_id: str) -> None:
+    """
+    Decrement the rolling 30-day outreach counter on the patient profile.
+    Called when an outreach attempt results in a terminal-unreachable,
+    declined, or deferred outcome: the slot didn't produce the intended
+    enrollment conversation, so it should not count against the patient's
+    future outreach budget.
+
+    Uses SET with subtraction (not ADD, which only supports Number and Set
+    types) and a ConditionExpression to prevent going below zero.
+    """
+    dynamodb = boto3.resource("dynamodb")
+    profile_table = dynamodb.Table(PATIENT_PROFILE_TABLE)
+    try:
+        profile_table.update_item(
+            Key={"patient_id": patient_id},
+            UpdateExpression=(
+                "SET cm_outreach_recent_30d_count = "
+                "cm_outreach_recent_30d_count - :one"
+            ),
+            ExpressionAttributeValues={
+                ":one":  Decimal("1"),
+                ":zero": Decimal("0"),
+            },
+            ConditionExpression="cm_outreach_recent_30d_count > :zero",
+        )
+    except Exception:
+        # Condition check fails if counter is already 0; safe to ignore.
+        pass
+
+
 def record_outreach_attempt(outreach_id: str, attempt_result: dict,
                               run_date: str) -> None:
     """
@@ -2259,12 +2295,14 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
                 Key={"patient_id": patient_id, "program_id": program_id},
                 UpdateExpression=(
                     "SET #s = :enrolled, "
-                    "enrollment_metadata = :em "
-                    "ADD state_history :history_event"
+                    "enrollment_metadata = :em, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :history_event)"
                 ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
                     ":enrolled":      "enrolled",
+                    ":empty":         [],
                     ":em": {
                         "enrolled_at":           _now_iso(),
                         "consent_form_id":        consent_id,
@@ -2286,10 +2324,15 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
         try:
             state_table.update_item(
                 Key={"patient_id": patient_id, "program_id": program_id},
-                UpdateExpression="SET #s = :declined ADD state_history :he",
+                UpdateExpression=(
+                    "SET #s = :declined, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :he)"
+                ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
                     ":declined": "declined",
+                    ":empty":    [],
                     ":he": [{
                         "event":         "transitioned_outreach_to_declined",
                         "timestamp":     _now_iso(),
@@ -2302,6 +2345,11 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
                 "Failed to persist decline for %s/%s: %s",
                 patient_id, program_id, exc,
             )
+        # Decrement the outreach budget: a declined outreach did not
+        # produce the intended enrollment conversation. Without this,
+        # the counter accumulates phantom consumption that silences
+        # the patient from future enrollment outreach for 30 days.
+        _decrement_outreach_counter(patient_id)
 
     elif result == "unreachable":
         if attempt_result.get("attempt_count", 0) >= MAX_OUTREACH_ATTEMPTS:
@@ -2310,10 +2358,15 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
             try:
                 state_table.update_item(
                     Key={"patient_id": patient_id, "program_id": program_id},
-                    UpdateExpression="SET #s = :failed ADD state_history :he",
+                    UpdateExpression=(
+                        "SET #s = :failed, "
+                        "state_history = list_append("
+                        "if_not_exists(state_history, :empty), :he)"
+                    ),
                     ExpressionAttributeNames={"#s": "state"},
                     ExpressionAttributeValues=_to_decimal_dict({
                         ":failed": "outreach_failed",
+                        ":empty":  [],
                         ":he": [{
                             "event":     "transitioned_outreach_to_failed",
                             "timestamp": _now_iso(),
@@ -2329,18 +2382,7 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
             # Decrement the CM outreach budget when the attempt
             # terminates unreachable; the slot didn't actually result
             # in a patient-facing conversation.
-            try:
-                profile_table.update_item(
-                    Key={"patient_id": patient_id},
-                    UpdateExpression=(
-                        "ADD cm_outreach_recent_30d_count :neg "
-                    ),
-                    ExpressionAttributeValues={":neg": Decimal("-1")},
-                    ConditionExpression="cm_outreach_recent_30d_count > :zero",
-                    ExpressionAttributeNames=None,
-                )
-            except Exception:
-                pass
+            _decrement_outreach_counter(patient_id)
         else:
             new_outreach_state = "unreachable_pending_retry"
             new_program_state = None    # state stays outreach_in_progress
@@ -2352,13 +2394,15 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
             state_table.update_item(
                 Key={"patient_id": patient_id, "program_id": program_id},
                 UpdateExpression=(
-                    "SET #s = :deferred, deferred_until = :du "
-                    "ADD state_history :he"
+                    "SET #s = :deferred, deferred_until = :du, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :he)"
                 ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
                     ":deferred": "deferred",
                     ":du":       attempt_result.get("defer_until"),
+                    ":empty":    [],
                     ":he": [{
                         "event":        "transitioned_outreach_to_deferred",
                         "timestamp":    _now_iso(),
@@ -2372,6 +2416,11 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
                 "Failed to persist deferral for %s/%s: %s",
                 patient_id, program_id, exc,
             )
+        # Decrement the outreach budget: a deferred outreach did not
+        # produce the intended enrollment conversation. The counter
+        # will be re-incremented when the deferred outreach is
+        # re-attempted after defer_until.
+        _decrement_outreach_counter(patient_id)
     else:
         logger.warning("Unknown outreach result: %s", result)
         return
@@ -2487,10 +2536,15 @@ def score_engagement(patient_id: str, program_id: str, run_date: str,
         try:
             state_table.update_item(
                 Key={"patient_id": patient_id, "program_id": program_id},
-                UpdateExpression="SET #s = :st ADD state_history :he",
+                UpdateExpression=(
+                    "SET #s = :st, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :he)"
+                ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
                     ":st": new_state,
+                    ":empty": [],
                     ":he": [{
                         "event":            f"transitioned_to_{new_state}",
                         "timestamp":        _now_iso(),
@@ -2862,12 +2916,14 @@ def process_disenrollment_decision(decision_id: str,
                 Key={"patient_id": patient_id, "program_id": program_id},
                 UpdateExpression=(
                     "SET #s = :graduated, "
-                    "graduation_metadata = :gm "
-                    "ADD state_history :he"
+                    "graduation_metadata = :gm, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :he)"
                 ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
                     ":graduated": "graduated",
+                    ":empty":     [],
                     ":gm": {
                         "graduated_at": _now_iso(),
                         "post_graduation_observation_window":
@@ -2922,13 +2978,15 @@ def process_disenrollment_decision(decision_id: str,
                 UpdateExpression=(
                     "SET #s = :extended, "
                     "enrollment_metadata.target_duration = "
-                    "enrollment_metadata.target_duration + :ext "
-                    "ADD state_history :he"
+                    "enrollment_metadata.target_duration + :ext, "
+                    "state_history = list_append("
+                    "if_not_exists(state_history, :empty), :he)"
                 ),
                 ExpressionAttributeNames={"#s": "state"},
                 ExpressionAttributeValues=_to_decimal_dict({
                     ":extended": "enrolled_extended",
                     ":ext":      EXTENSION_DAYS,
+                    ":empty":    [],
                     ":he": [{
                         "event":       "extended",
                         "timestamp":   _now_iso(),
@@ -2979,13 +3037,15 @@ def _persist_disenrollment(patient_id: str, program_id: str,
         state_table.update_item(
             Key={"patient_id": patient_id, "program_id": program_id},
             UpdateExpression=(
-                "SET #s = :st, disenrollment_metadata = :dm "
-                "ADD state_history :he"
+                "SET #s = :st, disenrollment_metadata = :dm, "
+                "state_history = list_append("
+                "if_not_exists(state_history, :empty), :he)"
             ),
             ExpressionAttributeNames={"#s": "state"},
             ExpressionAttributeValues=_to_decimal_dict({
                 ":st": new_state,
                 ":dm": metadata,
+                ":empty": [],
                 ":he": [{
                     "event":       f"transitioned_to_{new_state}",
                     "timestamp":   _now_iso(),
@@ -3066,6 +3126,57 @@ def recommend_cross_program_transitions(patient_id: str,
         )
 
     return record
+
+
+def sweep_stale_pending_outreach(run_date: str) -> None:
+    """
+    Hourly sweep: for outreach-state rows where state is 'queued' or
+    'outreach_in_progress' and created_at is more than 7 days ago
+    with no engagement-event activity, mark state as
+    'stale_no_activity' and decrement the outreach counter.
+
+    This catches outreach dispatched but never reached the patient
+    (care-manager attrition, queue overflow, system errors). Without
+    this sweep, phantom counter consumption silences the patient from
+    future enrollment outreach.
+    """
+    dynamodb = boto3.resource("dynamodb")
+    outreach_table = dynamodb.Table(OUTREACH_STATE_TABLE)
+    cutoff = (datetime.fromisoformat(run_date)
+              - timedelta(days=7)).isoformat()
+
+    # In production, use a GSI on state + created_at for efficient
+    # scanning. This example uses a full scan for simplicity.
+    response = outreach_table.scan(
+        FilterExpression=(
+            "(#s = :queued OR #s = :in_progress) AND created_at < :cutoff"
+        ),
+        ExpressionAttributeNames={"#s": "state"},
+        ExpressionAttributeValues={
+            ":queued":      "queued",
+            ":in_progress": "outreach_in_progress",
+            ":cutoff":      cutoff,
+        },
+    )
+    for row in response.get("Items", []):
+        try:
+            outreach_table.update_item(
+                Key={"outreach_id": row["outreach_id"]},
+                UpdateExpression="SET #s = :stale",
+                ExpressionAttributeNames={"#s": "state"},
+                ExpressionAttributeValues={":stale": "stale_no_activity"},
+            )
+            _decrement_outreach_counter(row["patient_id"])
+            logger.info(
+                "Marked stale outreach %s for %s/%s",
+                row["outreach_id"], row["patient_id"], row["program_id"],
+            )
+        except Exception as exc:
+            logger.warning(
+                "Failed to mark stale outreach %s: %s",
+                row["outreach_id"], exc,
+            )
+
 
 def post_graduation_observation(run_date: str) -> list:
     """
@@ -3741,9 +3852,9 @@ Run this end-to-end against a curated program registry, populated claims/EHR/lab
 
 **Cold-start handling for new programs.** The example assumes every program has trained response, likelihood, and engagement models. A brand-new program has none. Cold-start strategy: launch new programs with rule-based scoring only (no supervised model), run a randomized pilot for the first 1-2 cycles to bootstrap training data, fall back to baseline scoring if the model is underfitting, document explicitly in the recommendation log that the program is in "calibrating" mode. Mirrors the cold-start pattern from 4.6.
 
-**Data-quality flag propagation.** The `data_quality_flag` is set per (patient, program) but downstream consumers in this example don't gate on it. Production should: skip outreach when the flag is `cross_provider_fragmentation` (the patient may have care relationships that the registry doesn't see); de-prioritize when the flag is `sparse_history`; escalate to clinical-informatics review when the flag is `multi_source_disagreement` and the priority is high. A confidently "eligible" recommendation on a patient with `cross_provider_fragmentation` is a confidently mis-calibrated recommendation if the patient is already enrolled in care management at a different system.
+**Data-quality flag propagation.** The `data_quality_flag` is set per (patient, program) but downstream consumers in this example don't gate on it. Production must gate at these sites: (1) the disenrollment evaluator must route `cross_provider_fragmentation` and `multi_source_disagreement` patients through a `verify_engagement_first` action before any `disenroll_for_no_engagement` recommendation (as now specified in the architecture pseudocode); (2) the response-enrichment step should widen the uplift confidence interval on non-complete data-quality cases; (3) the orchestrator should route fragmented-data patients through a verification-first allocation path; (4) the briefing generator should include a `data_quality_caveat` in `confidence_notes`; (5) the engagement scorer should widen CI on the engagement score and require multi-source consistency for `is_at_risk = true`; (6) the cross-program transition recommender should flag recommendations with a `data_quality_caveat`. A confidently "eligible" recommendation on a patient with `cross_provider_fragmentation` is a confidently mis-calibrated recommendation if the patient is already enrolled in care management at a different system. Disenrolling on incomplete data has civil-rights implications when it concentrates in protected cohorts.
 
-**Idempotency and retry semantics.** Each stage's outputs are addressed by deterministic keys (run_date, patient_id, program_id) and writes should be conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The example uses `put_item` and `update_item` without conditions on most paths; production adds `ConditionExpression` to the relevant writes (e.g., `attribute_not_exists(briefing_id)` on the briefings put) so reattempted writes converge.
+**Idempotency and retry semantics.** Each stage's outputs are addressed by deterministic keys (run_date, patient_id, program_id) and writes should be conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The example uses `put_item` and `update_item` without conditions on most paths; production adds `ConditionExpression` to the relevant writes (e.g., `attribute_not_exists(briefing_id)` on the briefings put) so reattempted writes converge. A DynamoDB gotcha: appending to a List attribute requires the `list_append(if_not_exists(state_history, :empty), :new_event)` pattern in the `UpdateExpression`, not the `ADD` action (which only supports Number and Set data types). All state-transition sites in this example use the correct `list_append` + `if_not_exists` pattern.
 
 **Mid-program clinical-deterioration detection.** The example uses a synthetic flag (`_DEMO_DETERIORATION`). Production: a continuous monitor over the engagement-event stream and the clinical-event feeds that detects deterioration during enrollment (new admission, abnormal lab, condition progression, sharp engagement drop concurrent with clinical signals) and triggers the disenrollment-and-cross-program-transition path immediately rather than waiting for the weekly disenrollment cycle. Latency between deterioration and escalation is a clinical-quality metric; minutes-to-hours is the target, not days.
 

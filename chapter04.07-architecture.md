@@ -142,7 +142,7 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker (Training, Batch Transform, Feature Store, Pipelines), Amazon DynamoDB, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon Connect, Amazon SES, Amazon Pinpoint or contracted SMS provider, Amazon QuickSight, AWS HealthLake (optional), AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Per-Lambda least-privilege: `sagemaker:CreateTransformJob` / `DescribeTransformJob` scoped to specific model ARNs; `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables (especially `patient-program-state`, `engagement-state`, `outreach-state`); `bedrock:InvokeModel` on specific foundation-model ARNs; `s3:GetObject` / `PutObject` scoped to enrollment, eligibility, evaluation, and briefing buckets; `kinesis:PutRecord` on the cm-engagement-stream; `connect:*` scoped to the care-management contact flow; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities. Never `*`.  |
+| **IAM Permissions** | Per-Lambda least-privilege: `sagemaker:CreateTransformJob` / `DescribeTransformJob` scoped to specific model ARNs (e.g., `arn:aws:sagemaker:us-east-1:123456789012:model/cm-response-hf-*`); `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific table ARNs (e.g., `arn:aws:dynamodb:us-east-1:123456789012:table/patient-program-state`); `bedrock:InvokeModel` on specific foundation-model ARNs (e.g., `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku*`); `s3:GetObject` / `PutObject` scoped to enrollment, eligibility, evaluation, and briefing buckets; `kinesis:PutRecord` on the cm-engagement-stream; `connect:*` scoped to the care-management contact flow; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities. Never `*`. |
 | **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker, DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, Connect, SES, Pinpoint, KMS, HealthLake.  |
 | **Encryption** | DynamoDB: customer-managed KMS at rest (especially `patient-program-state`, `engagement-state`, and `enrollment-briefings`; the per-(patient, program) state plus engagement scoring is highly inferential PHI). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker training, Batch Transform, and Feature Store: VPC-only, with KMS keys for model artifacts and Feature Store offline storage. Lambda log groups KMS-encrypted. Briefing text stored in DynamoDB is PHI; the briefing contains diagnoses, social context, and clinical-trajectory framing. |
 | **VPC** | Production: Lambdas in VPC. SageMaker training, Batch Transform, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), EventBridge (`events`), Glue, Athena, STS, SES, Pinpoint, Connect, HealthLake. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR FHIR feeds typically arrive via PrivateLink, Direct Connect, or SFTP-over-VPN. Care management system integrations vary by vendor; PrivateLink or VPN preferred. VPC Flow Logs enabled. |
@@ -646,7 +646,26 @@ FUNCTION dispatch_outreach(allocated_recommendations, run_date):
             //   suggested_outreach_window, confidence_notes }
 
         validate_briefing(briefing_parsed, observed_context = briefing_context)
-            // 
+            // Four-layer validation:
+            // (1) Schema and length: all required fields present,
+            //     each field within character-count bounds.
+            // (2) Clinical-fact grounding: every referenced diagnosis,
+            //     lab value, event, or medication in the briefing must
+            //     appear in observed_context. The LLM cannot
+            //     hallucinate diagnoses or clinical events.
+            // (3) Prohibited content: no PHI not present in source
+            //     context, no prescriber names other than the
+            //     patient's assigned providers, no language that
+            //     overrides the deterministic program assignment or
+            //     implies a clinical recommendation beyond the
+            //     structured recommendation.
+            // (4) Required disclosures: briefing must include notes
+            //     that it is advisory, subject to clinical judgment,
+            //     and that patient consent is required for enrollment.
+            // On failure: replace the LLM briefing with a templated
+            // fallback that lists the structured context (program,
+            // uplift, barriers, recent events) without LLM narration.
+            // Log the failure for prompt-engineering review.
 
         DynamoDB.PutItem("enrollment-briefings", {
             briefing_id:        build_briefing_id(row, run_date),
@@ -743,6 +762,13 @@ FUNCTION record_outreach_attempt(outreach_id, attempt_result):
                         decline_reason: attempt_result.reason
                     })
                 })
+            // Decrement the rolling 30-day outreach counter. The
+            // outreach did not produce an enrollment conversation;
+            // without decrement, phantom counter consumption silences
+            // the patient from future enrollment outreach. This
+            // disproportionately affects cohorts with flaky channels
+            // (the same cohorts equity floors protect).
+            decrement_outreach_counter(outreach.patient_id)
 
         CASE "unreachable":
             outreach.state = "unreachable_pending_retry"
@@ -758,6 +784,7 @@ FUNCTION record_outreach_attempt(outreach_id, attempt_result):
                             attempts: attempt_result.attempt_count
                         })
                     })
+                decrement_outreach_counter(outreach.patient_id)
 
         CASE "deferred":
             outreach.state = "deferred"
@@ -773,6 +800,7 @@ FUNCTION record_outreach_attempt(outreach_id, attempt_result):
                         defer_reason: attempt_result.reason
                     })
                 })
+            decrement_outreach_counter(outreach.patient_id)
 
     DynamoDB.PutItem("outreach-state", outreach)
 
@@ -784,6 +812,41 @@ FUNCTION record_outreach_attempt(outreach_id, attempt_result):
         result:        attempt_result.result,
         timestamp:     current UTC timestamp
     })
+
+FUNCTION decrement_outreach_counter(patient_id):
+    // Conditional decrement: subtract 1 from the rolling 30-day
+    // outreach counter only if the current value is > 0.
+    // Uses SET with arithmetic (not ADD, which only supports Number
+    // and Set types, not List). The ConditionExpression prevents
+    // going below zero when multiple decrements race.
+    DynamoDB.UpdateItem("patient-profile",
+        key = patient_id,
+        updates = {
+            cm_outreach_recent_30d_count:
+                cm_outreach_recent_30d_count - 1
+        },
+        condition = "cm_outreach_recent_30d_count > 0"
+    )
+
+FUNCTION sweep_stale_pending_outreach(run_date):
+    // Hourly sweep: for outreach-state rows where state is "queued"
+    // or "outreach_in_progress" and created_at is more than 7 days
+    // ago with no engagement-event activity, mark state as
+    // "stale_no_activity" and decrement the counter. This catches
+    // outreach that was dispatched but never reached the patient
+    // (care-manager attrition, queue overflow, system errors).
+    stale_rows = DynamoDB.Query("outreach-state",
+        filter = "state IN (:queued, :in_progress) AND created_at < :cutoff",
+        params = { :queued: "queued",
+                   :in_progress: "outreach_in_progress",
+                   :cutoff: run_date - 7 days }
+    )
+    FOR each row in stale_rows:
+        IF no_engagement_events(row.patient_id, row.program_id, since = row.created_at):
+            DynamoDB.UpdateItem("outreach-state",
+                key = row.outreach_id,
+                updates = { state: "stale_no_activity" })
+            decrement_outreach_counter(row.patient_id)
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter04.07-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -915,7 +978,20 @@ FUNCTION evaluate_disenrollment(patient_id, program_id, run_date):
     // later, partial-credit graduation may be appropriate. For-cause
     // disenrollment is reserved for sustained no-engagement after
     // multiple retention attempts.
-    IF engagement.is_at_risk AND
+    //
+    // Data-quality gate: when the patient's data_quality_flag indicates
+    // cross_provider_fragmentation or multi_source_disagreement, the
+    // engagement profile may appear worse than reality because the
+    // patient is engaging through encounters the recommender's data
+    // feed does not see. Disenrolling on incomplete data has civil-
+    // rights implications when it concentrates in protected cohorts
+    // (mobile populations, recent plan-changers, patients seen across
+    // multiple practices). Route through verification first.
+    IF state.data_quality_flag IN {"cross_provider_fragmentation",
+                                     "multi_source_disagreement"}
+       AND recommended_would_be("disenroll_for_no_engagement"):
+        recommended_action = "verify_engagement_first"
+    ELSE IF engagement.is_at_risk AND
        count_failed_retention_attempts(patient_id, program_id) >= POLICY.max_retention_attempts AND
        days_since_last_engagement >= POLICY.disenroll_no_engagement_days:
         recommended_action = "disenroll_for_no_engagement"
@@ -959,7 +1035,19 @@ FUNCTION evaluate_disenrollment(patient_id, program_id, run_date):
             //   policy_rule, suggested_human_review_questions }
 
         validate_rationale(rationale_parsed, observed_context = rationale_context)
-            // 
+            // Mirrors the briefing validator pattern:
+            // (1) Schema: all required fields present and within bounds.
+            // (2) Fact grounding: every clinical event, engagement
+            //     metric, and date cited must exist in rationale_context.
+            // (3) Prohibited content: no PHI beyond source context,
+            //     no autonomous disenrollment language (the rationale
+            //     is decision support, not a decision).
+            // (4) Required notes: must state that the recommendation
+            //     is subject to clinical-lead review and that the
+            //     patient may appeal.
+            // On failure: replace with a templated rationale listing
+            // the policy-rule trigger and engagement-history evidence
+            // without LLM narration. Log for prompt-engineering review.
 
         DynamoDB.PutItem("disenrollment-decisions", {
             decision_id:           new UUID,
@@ -1090,6 +1178,49 @@ FUNCTION process_disenrollment_decision(decision_id, human_decision):
             resolved_at:          current UTC timestamp
         })
 
+FUNCTION sweep_pending_decisions(run_date):
+    // Daily sweep: enforce SLA on pending disenrollment and
+    // cross-program-transition decisions. Without this, pending
+    // reviews accumulate and complex cases (which correlate with
+    // cohorts the equity floors protect) sit longer, producing
+    // disparate review latency.
+    pending = DynamoDB.Query("disenrollment-decisions",
+        filter = "human_review_pending = :true",
+        params = { :true: true }
+    )
+    FOR each decision in pending:
+        age_days = run_date - decision.recommended_at
+        sla = lookup_sla(decision.recommended_action)
+            // disenroll_for_no_engagement: 7 days
+            // disenroll_did_not_complete: 14 days
+            // transition_to_higher_acuity: 3 days (72 hours)
+            // graduate transitions: 14 days
+            // relapse transitions: 7 days
+
+        IF age_days > sla.review_days:
+            BRANCH on sla.auto_default:
+                CASE "defer_and_extend":
+                    // Auto-defer 7 more days, then extend_for_review
+                    IF age_days > sla.review_days + 7:
+                        execute_human_decision(decision.decision_id,
+                            { decision: "auto_default",
+                              actual_action: "extend_for_review" })
+                CASE "graduate_with_partial_credit":
+                    execute_human_decision(decision.decision_id,
+                        { decision: "auto_default",
+                          actual_action: "graduate_with_partial_credit" })
+                CASE "escalate_medical_director":
+                    escalate_to(decision, "medical_director")
+                CASE "auto_expire":
+                    execute_human_decision(decision.decision_id,
+                        { decision: "auto_expire",
+                          actual_action: decision.recommended_action })
+                CASE "escalate_program_manager":
+                    escalate_to(decision, "program_manager")
+
+    // Emit per-cohort review-latency metrics for equity monitoring.
+    emit_review_latency_metrics(pending, run_date)
+
 FUNCTION post_graduation_observation(run_date):
     // Daily sweep of recently graduated patients within their
     // observation window. Watch for relapse signals (admission,
@@ -1189,7 +1320,7 @@ FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, conte
   "state_history": [
     { "event": "transitioned_eligible_to_recommended", "timestamp": "2026-04-12", "stage": "disease_specific", "allocation_reason": "high_uplift_disease_fit" },
     { "event": "transitioned_recommended_to_outreach", "timestamp": "2026-04-15", "assigned_to": "cm-007" },
-    { "event": "transitioned_outreach_to_enrolled", "timestamp": "2026-04-19", "consent_form_id": "consent-2026-04-19-pat-002148-hf" }
+    { "event": "transitioned_outreach_to_enrolled", "timestamp": "2026-04-19", "consent_form_id": "cns-a8f2e914-7b3c-4d01-9e56-1f4a82c0d7e3" }
   ],
   "uplift_score": {
     "point_estimate": 0.18,
@@ -1210,8 +1341,8 @@ FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, conte
   },
   "enrollment_metadata": {
     "enrolled_at": "2026-04-19",
-    "consent_form_id": "consent-2026-04-19-pat-002148-hf",
-    "baseline_assessment_id": "baseline-2026-04-19-pat-002148-hf",
+    "consent_form_id": "cns-a8f2e914-7b3c-4d01-9e56-1f4a82c0d7e3",
+    "baseline_assessment_id": "bsa-3c7d09e1-4a62-48bf-a1d3-5e8f20b6c9a4",
     "target_duration": 84
   },
   "cohort_features": {
@@ -1227,9 +1358,11 @@ FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, conte
 
 **Sample care manager enrollment briefing:**
 
+*Note: The briefing below includes care-management-relevant context surfaced from Linda's full patient profile (Medicare coverage details, family responsibilities, language preferences, home environment details) beyond what the opening vignette in The Problem section establishes. In production, the briefing synthesizes the patient's complete record, not just the high-level narrative visible to the recommendation pipeline.*
+
 ```json
 {
-  "briefing_id": "brief-2026-04-15-pat-002148-hf",
+  "briefing_id": "brf-e47c1a02-9d8f-4b56-a3e1-7f2d0c84b5a9",
   "patient_id": "pat-002148",
   "program_id": "heart-failure-program",
   "headline": "HF program candidate after recent decompensation; cost concerns likely; daughter is engaged.",
@@ -1362,7 +1495,29 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Privacy in program state and enrollment briefings.** The `patient-program-state` table joins (patient_id, program_id, state, uplift_score, priority_components) and is highly inferential. A row indicating "patient recommended for high-risk complex-care program" is more sensitive than a row indicating "patient eligible for wellness program." Apply tighter controls to program state for stigmatized or high-sensitivity programs (behavioral health, substance use, palliative care, HIV-related): narrower IAM read scopes, optional separate-table partitioning, additional CloudTrail data event capture, and a documented minimum-necessary access policy. Enrollment briefings stored in DynamoDB are PHI; the briefing text contains diagnoses, social context, and trajectory framing. Treat them with the same encryption, IAM, and audit posture as clinical notes.
 
-**Idempotency and retry semantics.** Same pattern as 4.4 through 4.6. Each stage's outputs are addressed by deterministic keys (run_date, program_id, patient_id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.
+**Idempotency and retry semantics.** Same pattern as 4.4 through 4.6. Each stage's outputs are addressed by deterministic keys (run_date, program_id, patient_id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ. A DynamoDB gotcha worth noting: the pseudocode's "append to state_history list" idiom requires the `list_append(if_not_exists(state_history, :empty), :new_event)` pattern in the UpdateExpression, not the `ADD` action (which only supports Number and Set types, not List). The Python companion demonstrates the correct pattern at every state-transition site.
+
+**Opaque, non-reversible identifiers.** The `tracking_id`, `briefing_id`, and `decision_id` values carried across care-manager queues, EHR inboxes, and engagement events must not embed plain-text `patient_id`. Plain-text patient identifiers in those channels constitute PHI leakage. Use UUIDs or HMAC-SHA256 over the composite key with a per-environment secret. The lookup table mapping opaque identifier to patient record stays within the PHI-protected boundary; the identifier itself travels outside. Update all sample identifiers in Expected Results accordingly.
+
+**Cross-recipe priority arbitration.** Recipe 4.7 enrollment outreach has a separate contact budget from Recipes 4.4, 4.5, and 4.6 routine outreach, with a hard cap on combined contacts within a rolling 30 days (configured in the shared chapter-level config object). The enrollment conversation is the highest-priority interaction in Chapter 4 and should not be routinely deferred for adherence reminders or care-gap outreach. When cap constraints would conflict, enrollment outreach wins and the routine message is deferred to the next eligible window. Document this arbitration in the cross-recipe shared config alongside the per-recipe contact budgets.
+
+**Disenrollment-decision SLA and escalation.** The `disenrollment-decisions` and `cross-program-transitions` queues both hold rows with `human_review_pending: true`. Without SLAs and escalation, three pathologies emerge: (a) patients remain enrolled indefinitely while recommendations sit unreviewed, consuming slots other patients could use; (b) stale reviews eventually execute against out-of-date data; (c) complex cases (which correlate with protected cohorts) sit longer in the queue, producing disparate review latency the equity dashboard does not catch. Per-action defaults that err toward retention rather than disenrollment:
+
+| Action | Review SLA | Auto-default on miss |
+|--------|-----------|---------------------|
+| `disenroll_for_no_engagement` | 7 days | Auto-defer 7 more days, then default to `extend_for_review` with current data |
+| `disenroll_did_not_complete` | 14 days | Default to `graduate_with_partial_credit` |
+| `transition_to_higher_acuity` | 72 hours | Escalate to medical director |
+| Graduation transitions | 14 days | Auto-expire (graduation proceeds) |
+| Relapse transitions | 7 days | Escalate to program manager |
+
+A `sweep_pending_decisions` Lambda runs daily: for each pending decision past its SLA, apply the auto-default or escalation. Per-cohort review-latency monitoring goes into the equity instrumentation alongside per-cohort disenrollment-rate metrics; disparities in review latency are fairness signals just like disparities in eventual outcome.
+
+**SDOH-cohort PHI boundary.** Cohort labels like `transportation_barrier` and `low_food_security` are PHI-equivalent under the minimum-necessary principle. Engagement events should carry only the cohort axes the equity dashboard actually consumes, with narrower IAM scope than for general engagement data. The equity-dashboard reader role gets access to the cohort-axis attributes; the general analytics role does not. Separate the equity-metric attributes into a dedicated DynamoDB attribute set (or a separate table partition) with its own access policy.
+
+**DLQ coverage on all Lambda paths.** (a) Step Functions to Lambda pipeline: Catch on each Lambda task pointing to an SQS failure queue keyed on (run_date, stage, failure_reason). (b) Kinesis to state-machine-worker Lambda: configure an OnFailure destination on the event source mapping pointing to SQS, with a CloudWatch alarm on DLQ depth. (c) SageMaker Batch Transform job failures: SageMaker does not surface failures via DLQ; wire the Step Functions Catch to handle TransformJob failed states explicitly and route to the same failure queue. A silently-dropped state-transition event is operationally damaging in this recipe (a missed `program_at_risk` event delays retention; a missed `program_enrolled` event leaves the engagement scorer unarmed), so DLQ coverage matters substantively.
+
+**Model registry and retraining automation.** With 3 model families (response, enrollment-likelihood, engagement-prediction) across 5 programs, the recipe manages 15 model artifacts. Use the SageMaker Model Registry with per-model-family approval workflows. Retraining triggers: an EventBridge rule fires monthly, launching a SageMaker Pipeline per model family that trains, evaluates against the held-out set, registers a candidate version, runs a canary evaluation against recent actuals, and (if metrics pass) promotes the candidate to "Approved" status. The Batch Transform job references the latest Approved model ARN from the registry. Failed canary runs alert the data science team without blocking production (the previous approved version continues serving).
 
 **Cost-per-enrollment and cost-per-prevented-event tracking.** The cost numbers in the prerequisites table are infrastructure only. Production reporting needs end-to-end cost (infrastructure + care-manager loaded hours + telephony + program-specific costs like Bluetooth scales for HF or pharmacist time for polypharmacy) divided by confirmed prevented events attributable to the program (above the matched-control baseline). That number compared to the value of prevented events (avoided admission cost, avoided ED visit cost, plan-quality-bonus value) determines whether the program returns its budget. The data engineering to track this end-to-end with attribution is its own project and is essential for program-level decisions about expansion or contraction.
 
