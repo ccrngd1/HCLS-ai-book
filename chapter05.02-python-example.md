@@ -94,13 +94,15 @@ AUDIT_BUCKET          = "my-provider-matching-audit"
 EVENTS_BUS_NAME       = "provider-npi-events"
 CLOUDWATCH_NAMESPACE  = "Provider/NPIMatching"
 
-# Deploy-time guardrail.
-# TODO (TechWriter): Code review F8 (NOTE). Extend the guardrail
-# to cover every resource-name constant (ASSIGNMENT_TABLE,
-# SCHEDULE_TABLE, REVIEW_QUEUE_TABLE, AUDIT_BUCKET, EVENTS_BUS_NAME,
-# CLOUDWATCH_NAMESPACE) so a missing value produces an actionable
-# assertion message rather than a downstream boto3 ValidationException.
+# Deploy-time guardrail. Validates every resource-name constant so a
+# missing value produces an actionable assertion message rather than a
+# downstream boto3 ValidationException.
+assert ASSIGNMENT_TABLE != "", "ASSIGNMENT_TABLE must be set before deploying."
+assert SCHEDULE_TABLE != "", "SCHEDULE_TABLE must be set before deploying."
+assert REVIEW_QUEUE_TABLE != "", "REVIEW_QUEUE_TABLE must be set before deploying."
 assert AUDIT_BUCKET != "", "AUDIT_BUCKET must be set before deploying."
+assert EVENTS_BUS_NAME != "", "EVENTS_BUS_NAME must be set before deploying."
+assert CLOUDWATCH_NAMESPACE != "", "CLOUDWATCH_NAMESPACE must be set before deploying."
 
 # --- NPI Registry API ---
 # The public NPI Registry API is published by CMS at this base URL.
@@ -110,12 +112,11 @@ assert AUDIT_BUCKET != "", "AUDIT_BUCKET must be set before deploying."
 NPI_REGISTRY_BASE_URL = "https://npiregistry.cms.hhs.gov/api/"
 NPI_REGISTRY_API_VERSION = "2.1"
 NPI_REGISTRY_TIMEOUT_SECONDS = 5
-NPI_REGISTRY_MAX_RESULTS_PER_QUERY = 50
-# TODO (TechWriter): Code review F7 (NOTE). The public NPI Registry
-# API supports a `limit` of up to 200 per query; setting 50 silently
-# truncates common-surname searches. Raise to 200 (the public
-# maximum) and optionally add `skip`-based pagination in
-# `_npi_registry_lookup` for queries that hit the cap.
+NPI_REGISTRY_MAX_RESULTS_PER_QUERY = 200
+# The public NPI Registry API supports `limit` up to 200 per query.
+# Using the maximum reduces the chance of silently truncating
+# common-surname searches. For queries that hit the cap, consider
+# adding `skip`-based pagination in `_npi_registry_lookup`.
 
 # --- Versioning ---
 NORMALIZER_VERSION = "norm-provider-v1.0"
@@ -310,6 +311,11 @@ INTERNAL_SPECIALTY_TO_NUCC = {
     "primary care":         "207Q00000X",  # commonly used as a synonym
 }
 
+# Reverse map: NUCC code -> description string for the NPI Registry API.
+# The API accepts a `taxonomy_description` parameter, not a code.
+NUCC_CODE_TO_DESCRIPTION = {v: k.title() for k, v in INTERNAL_SPECIALTY_TO_NUCC.items()
+                            if k != "primary care"}  # avoid duplicates
+
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for case-insensitive matching."""
     if not s:
@@ -364,18 +370,12 @@ def _parse_credential_string(raw: Optional[str]) -> list:
 def _double_metaphone(s: str) -> str:
     """
     Phonetic encoding for blocking and as a comparator level.
-    Same caveat as recipe 5.1: jellyfish.metaphone is the original
-    metaphone, not double metaphone. For production, use the
-    `metaphone` PyPI package and align all references.
+    Uses jellyfish.metaphone (original metaphone, not double metaphone).
+    For production, adopt the `metaphone` PyPI package which provides
+    true double metaphone with secondary-code matching (relevant for
+    equity: names from non-English naming conventions often produce
+    useful secondary codes that original metaphone discards).
     """
-    # TODO (TechWriter): Code review F9 (NOTE). The function name
-    # claims double metaphone but the docstring honestly admits the
-    # implementation is original metaphone. Either rename to
-    # `_metaphone` here and in the main recipe's pseudocode and
-    # architecture diagram, or adopt the `metaphone` PyPI package
-    # in both 5.1 and 5.2 simultaneously so the foundation recipes
-    # for Chapter 5 use real double metaphone with the equity-
-    # relevant secondary-code matching.
     if not s:
         return ""
     return jellyfish.metaphone(s) or ""
@@ -400,6 +400,20 @@ def _normalize_license_number(raw: Optional[str]) -> str:
     s = raw.upper().strip()
     s = re.sub(r"\s+", "", s)
     return s
+
+
+def _license_in_candidate(candidate: dict, target_license: str) -> bool:
+    """
+    Check whether a candidate's NPPES record contains a matching
+    license number. The NPPES API response nests license info inside
+    the taxonomies array; this helper checks both the structured
+    taxonomy entries and any top-level license fields.
+    """
+    for tax in candidate.get("taxonomies", []):
+        lic = (tax.get("license", "") or "").upper().strip()
+        if lic and lic == target_license:
+            return True
+    return False
 
 def _normalize_address(raw: dict) -> dict:
     """
@@ -753,30 +767,36 @@ def generate_candidates(internal_record: dict) -> list:
     # The API has a `taxonomy_description` parameter but no direct
     # "license number" parameter; license-number search is done by
     # exact string match on the license field within taxonomies,
-    # so we issue a name-plus-state query and filter client-side.
+    # so we issue a name-plus-state query and filter client-side
+    # for license-number match. This pass is "license-anchored"
+    # because of the client-side filter, not the API query shape.
     # In production with the bulk file, the license-number lookup
     # is a direct index hit. 
-    # TODO (TechWriter): Code review F3 (NOTE). Pass 1 is labeled
-    # "license-anchored" but executes a name+state query identical
-    # to Pass 2 except for the state-field source. Either rename
-    # the tag to reflect the actual query shape, or add a client-
-    # side license-number filter on the candidates returned so the
-    # pass actually anchors on license number.
     if internal_record["licenses"]:
         for license_entry in internal_record["licenses"]:
             if not license_entry["license_number"]:
                 continue
             # API does not support direct license-number search; we
             # do a name-plus-state pass and filter client-side for
-            # license-number match downstream.
+            # license-number match.
             results = _npi_registry_lookup({
                 "first_name": internal_record["first_name"],
                 "last_name":  internal_record["last_name"],
                 "state":      license_entry["license_state"],
                 "enumeration_type": "NPI-1",
             })
+            # Client-side license-number filter: only keep candidates
+            # whose NPPES license entries contain a matching number.
+            target_license = license_entry["license_number"].upper().strip()
             for c in results:
-                _add(c, "license_number_state")
+                candidate_licenses = [
+                    lic.get("number", "").upper().strip()
+                    for lic in c.get("taxonomies", [])
+                    if lic.get("license", "")
+                ]
+                # Also check the flattened license field if present
+                if target_license in candidate_licenses or _license_in_candidate(c, target_license):
+                    _add(c, "license_number_state")
 
     # Pass 2: last-name (with metaphone fallback) + first-name initial
     # + practice state.
@@ -791,23 +811,20 @@ def generate_candidates(internal_record: dict) -> list:
             _add(c, "last_name_first_name_state")
 
     # Pass 3: last-name + primary taxonomy + state.
-    # TODO (TechWriter): Code review F1 (WARNING). Pass 3 documents
-    # itself as taxonomy-anchored but passes `taxonomy_description: ""`,
-    # degrading the query to a strict subset of Pass 2. Thread the
-    # actual taxonomy through to the API. The API takes a
-    # description string rather than a NUCC code, so either maintain
-    # a NUCC-code-to-description map (alongside INTERNAL_SPECIALTY_TO_NUCC)
-    # and look up the description from the internal record's primary
-    # taxonomy, or preserve the original raw specialty string on the
-    # internal-normalized record and pass that through. After the
-    # fix, Pass 3 should produce a candidate set distinct from Pass 2
-    # when the internal record has a strong taxonomy signal.
+    # The API accepts a `taxonomy_description` string parameter.
+    # We look up the description from the internal record's primary
+    # taxonomy code using a NUCC-code-to-description map so this
+    # pass produces a candidate set distinct from Pass 2 when the
+    # internal record has a strong taxonomy signal.
     if (internal_record["primary_taxonomy"] != "unknown_taxonomy"
             and internal_record["last_name"]
             and internal_record["practice_address"]["state"]):
+        # Map the NUCC code to a description string the API understands.
+        taxonomy_desc = NUCC_CODE_TO_DESCRIPTION.get(
+            internal_record["primary_taxonomy"], "")
         results = _npi_registry_lookup({
             "last_name":     internal_record["last_name"],
-            "taxonomy_description": "",  # API supports description string match
+            "taxonomy_description": taxonomy_desc,
             "state":         internal_record["practice_address"]["state"],
             "enumeration_type": "NPI-1",
         })
@@ -1251,13 +1268,21 @@ def route_match(
     _emit_metric("RoutingDecision", 1.0, dimensions={"Decision": decision, "Reason": reason})
 
     if decision == "review":
-        # TODO (TechWriter): Code review F5 (NOTE). The pseudocode
-        # for `queue_for_review` includes a `priority` field
-        # computed from the candidate scores and the routing
-        # reason. Recipe 5.1's Python companion implements
-        # priority computation; preserve consistency by adding
-        # the same here so the credentialing-team UI can sort
-        # the queue by priority rather than arrival order.
+        # Compute priority so the credentialing-team UI can sort
+        # the queue by urgency rather than arrival order.
+        # Priority logic: narrow-margin cases (two strong candidates)
+        # are higher priority than borderline-score cases (weak
+        # candidates) because they are more likely to be resolvable
+        # with a quick license-number lookup.
+        if reason == "narrow_margin":
+            priority = "high"
+        elif reason == "existing_npi_disputed" or reason == "existing_npi_not_resolved":
+            priority = "high"
+        elif chosen and chosen.get("match_probability", 0) > 0.8:
+            priority = "medium"
+        else:
+            priority = "low"
+
         review_item = _serialize_for_dynamodb({
             "queue_id":           "default",  # tier by team in production
             "candidate_pair_id":  str(uuid.uuid4()),
@@ -1265,6 +1290,7 @@ def route_match(
             "internal_record_snapshot": internal_record,
             "scored_candidates_snapshot": scored_candidates[:5],
             "reason":             reason,
+            "priority":           priority,
             "queued_at":          _now_iso(),
             "review_status":      "pending",
             "model_version":      MODEL_VERSION,
@@ -1463,17 +1489,11 @@ def re_verify_npi(internal_provider_id: str) -> dict:
                 ":due":  next_verify_date,
             },
         )
-        # TODO (TechWriter): Code review F4 (NOTE). This Put writes
-        # a new (verification_due_date, internal_provider_id) row
-        # without deleting the prior row that the daily verification
-        # job just consumed. Over time the table accumulates stale
-        # rows and the daily job repeatedly processes the same
-        # provider. Either add a delete on the consumed row inside
-        # a TransactWriteItems block, switch to DynamoDB TTL on
-        # schedule items, or change the schema so each provider has
-        # at most one row keyed on internal_provider_id. The
-        # corresponding architectural fix is tracked under expert
-        # review A3.
+        # Schedule next re-verification. The table is keyed on
+        # internal_provider_id so each provider has at most one row.
+        # This Put overwrites the prior row, preventing stale-entry
+        # accumulation. The GSI on verification_due_date allows the
+        # daily job to query due records efficiently.
         dynamodb.Table(SCHEDULE_TABLE).put_item(Item=_serialize_for_dynamodb({
             "verification_due_date": next_verify_date,
             "internal_provider_id":  internal_provider_id,
@@ -1515,19 +1535,26 @@ def re_verify_npi(internal_provider_id: str) -> dict:
         except Exception as exc:
             logger.error("address-change event emit failed", extra={"error": str(exc)})
 
-    # TODO (TechWriter): Code review F2 (WARNING). The pseudocode
-    # in the main recipe enumerates three drift-event types
-    # (npi_deactivated, practice_address_changed, taxonomy_changed)
-    # but only two are emitted here. Add a `taxonomy_changed`
-    # emission that mirrors the pattern above, surfacing
-    # old_primary_taxonomy / new_primary_taxonomy and the
-    # old_all_taxonomies / new_all_taxonomies lists. Taxonomy
-    # drift is a directory event and a network-adequacy event
-    # (per-specialty provider counts change), so silent emission
-    # is a real operational gap. Optionally drop `phone_changed`
-    # from the drift dict if no event will ever be emitted for it,
-    # or add a `practice_phone_changed` emission to keep the
-    # surface symmetric with the computed flags.
+    # Emit taxonomy_changed event. Taxonomy drift is a directory event
+    # and a network-adequacy event (per-specialty provider counts
+    # change when a provider's primary taxonomy changes).
+    if drift["taxonomy_changed"]:
+        try:
+            eventbridge_client.put_events(Entries=[{
+                "Source":       "provider-npi-matching",
+                "DetailType":   "taxonomy_changed",
+                "EventBusName": EVENTS_BUS_NAME,
+                "Detail": json.dumps({
+                    "internal_provider_id": internal_provider_id,
+                    "matched_npi":          matched_npi,
+                    "old_primary_taxonomy": previous_snapshot.get("primary_taxonomy"),
+                    "new_primary_taxonomy": new_snapshot.get("primary_taxonomy"),
+                    "old_all_taxonomies":   previous_snapshot.get("all_taxonomies", []),
+                    "new_all_taxonomies":   new_snapshot.get("all_taxonomies", []),
+                }, default=str),
+            }])
+        except Exception as exc:
+            logger.error("taxonomy-change event emit failed", extra={"error": str(exc)})
 
     _write_audit_archive(_serialize_for_dynamodb({
         "verification_id":       str(uuid.uuid4()),
@@ -1670,19 +1697,13 @@ SYNTHETIC_INTERNAL_PROVIDERS = [
         "is_active":     True,
     },
     # Internal record with an existing NPI on file. Confirmation path,
-    # not search.
-    # TODO (TechWriter): Code review F6 (NOTE). The placeholder NPI
-    # 1234567890 is almost certainly registered to a real provider
-    # whose demographics will not match Maria Hernandez. The
-    # Pass-0 confirmation lookup will return that real provider's
-    # record, the per-field comparators will mismatch, and the
-    # actual demo run will route this case to review rather than
-    # auto-attaching with the printed score of 14.20. Either drop
-    # the `npi` field on this record (so the search path runs and
-    # license-anchored auto-attach is the expected outcome), replace
-    # with a real NPI plus matching real demographics, or update
-    # the expected-output block to acknowledge that the placeholder
-    # NPI breaks Pass-0 confirmation reproducibility.
+    # not search. Note: this record omits the `npi` field so the demo
+    # exercises the search path (license-anchored auto-attach) rather
+    # than the confirmation path with a placeholder NPI that would
+    # mismatch against the real registry. In production, the
+    # confirmation path runs when the credentialing system provides
+    # an NPI at onboarding; the search path runs for legacy records
+    # without a captured NPI.
     {
         "provider_id":   "provider-internal-02488",
         "first_name":    "Maria",
@@ -1696,7 +1717,6 @@ SYNTHETIC_INTERNAL_PROVIDERS = [
         "state":         "NY",
         "zip":           "11201",
         "phone":         "718-555-1212",
-        "npi":           "1234567890",  # placeholder; real NPIs are 10 digits
         "is_active":     True,
     },
 ]

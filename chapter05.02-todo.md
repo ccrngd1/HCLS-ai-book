@@ -1,58 +1,38 @@
 # Open TODOs: Recipe 5.2: Provider NPI Matching ⭐
 
-> Auto-extracted 2026-06-18 from inline source comments (41 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+> Remaining items require human verification at time of build (current URLs, pricing, regulatory details) or a product decision only the author can make. Each is prefixed with `[NEEDS HUMAN]`.
 
-## main — `chapter05.02-provider-npi-matching.md`
+## main - `chapter05.02-provider-npi-matching.md`
 
-- **L9** — TODO: verify provider directory accuracy statistics; CMS Secret Shopper studies and several health plan audits have repeatedly documented inaccuracy rates in the 30-50% range for provider directory entries; specific recent figures vary by year and study.
-- **L11** — TODO: verify the current No Surprises Act provider-directory accuracy provisions and CMS sub-regulatory guidance at time of build; the framework imposes specific verification windows (typically every 90 days) and specific remediation pathways.
-- **L13** — TODO: confirm; HIPAA Administrative Simplification mandates the NPI as the standard unique identifier for healthcare providers in HIPAA-covered transactions, issued by NPPES under CMS.
-- **L35** — TODO: confirm at time of build; the NPI Final Rule (45 CFR 162.404) and CMS guidance establish the lifelong-stable Type 1 design.
-- **L37** — TODO: verify the precise NPPES public-data field set at time of build; the schema is documented in the NPPES Data Dissemination File specification published by CMS and is updated periodically.
-- **L39** — TODO: verify; CMS Provider Directory Accuracy reports and OIG audits have documented address staleness in NPPES.
-- **L47** — TODO: confirm the current NPPES Downloadable File schema and update cadence; CMS publishes a monthly full file plus weekly incremental updates. The full file is large (multiple GB compressed) and contains every active and historical NPI.
-- **L49** — TODO: confirm the current NPI Registry API endpoint, parameters, and rate limits at time of build; the public API is at npiregistry.cms.hhs.gov with documented query parameters and is rate-limited.
-- **L82** — TODO (TechWriter): Expert review A5 (MEDIUM). Diagnose the Type 2 persistence model in the architecture: the assignment record should carry the matched Type 1 NPI plus a list of current Type 2 affiliations (each with affiliated organization, effective date range, primary-billing flag); drift detection should surface `type2_affiliation_added` and `type2_affiliation_removed` as separate events from Type 1 drift, with downstream consumers (claims validation, network-adequacy reporting) subscribing to the events relevant to their workflow.
-- **L99** — TODO: verify current No Surprises Act provider-directory provisions and any CMS rule updates at time of build.
-- **L100** — TODO: verify current vendor landscape at time of build; the market consolidates and new entrants emerge.
-- **L102** — TODO: confirm; FHIR US Core profiles for Practitioner and PractitionerRole are referenced in TEFCA exchange and in CMS interoperability rules.
-- **L270** — TODO (TechWriter): Expert review A2 (HIGH). Specify the operational thresholds, per-axis aggregation, disparity-metric definitions, and chronic-suppression handling for cohort-stratified accuracy monitoring. Match-rate disparity threshold (suggested 0.10), auto-attach precision disparity threshold (suggested 0.05), review-queue depth-per-FTE disparity (suggested 0.20), post-match drift-rate disparity (suggested 0.05), MIN_COHORT_SAMPLE_SIZE (suggested 100 per measurement window because provider volumes are smaller than patient volumes; document the rationale for the lower floor). Specify per-axis-per-metric override mechanism, cohort-stratified gold-set construction discipline, and the diagnose-and-address workflow that fires on threshold crossings. Inherits the rigor from 5.1's cohort-monitoring framework.
-- **L286** — TODO: confirm specifics; CMS Medicare Advantage Provider Directory rules, NCQA standards, and state Medicaid agency rules each impose distinct verification cadences.
-- **L288** — TODO (TechWriter): Expert review A4 (MEDIUM). Architect the per-segment cadence model. Add a `verification-cadence-config` table keyed on segment_id (medicare_advantage, medicaid_<state>, commercial, behavioral_health, ...) with cadence_days, regulatory_basis, and last_reviewed_at. The `provider-npi-assignment` record carries a provider_segments list; `attach_npi` computes the effective cadence as the minimum across segments. A cadence change for a segment triggers a re-schedule for every provider in that segment. The recipe correctly diagnoses the trap in the Honest Take but the architecture's single VERIFICATION_CADENCE_DAYS constant produces the global-cadence pattern the Honest Take warns against.
-- **L297** — TODO: confirm current penalty structures at time of build; the regulatory framework continues to evolve.
+- [NEEDS HUMAN] Verify provider directory accuracy statistics; CMS Secret Shopper studies document inaccuracy rates in the 30-50% range but specific recent figures vary by year and study.
+- [NEEDS HUMAN] Verify the current No Surprises Act provider-directory accuracy provisions and CMS sub-regulatory guidance at time of build; verification windows and remediation pathways may have been updated.
+- [NEEDS HUMAN] Confirm HIPAA Administrative Simplification NPI mandate details (45 CFR 162.404) are still current at time of build.
+- [NEEDS HUMAN] Confirm the NPI Final Rule (45 CFR 162.404) and CMS guidance still establish the lifelong-stable Type 1 design at time of build.
+- [NEEDS HUMAN] Verify the precise NPPES public-data field set at time of build; the schema is documented in the NPPES Data Dissemination File specification and is updated periodically.
+- [NEEDS HUMAN] Verify CMS Provider Directory Accuracy reports and OIG audits documenting address staleness in NPPES are still current references.
+- [NEEDS HUMAN] Confirm the current NPPES Downloadable File schema and update cadence (monthly full file plus weekly incremental updates) at time of build.
+- [NEEDS HUMAN] Confirm the current NPI Registry API endpoint, parameters, and rate limits at time of build (npiregistry.cms.hhs.gov).
+- [NEEDS HUMAN] Verify current No Surprises Act provider-directory provisions and any CMS rule updates at time of build.
+- [NEEDS HUMAN] Verify current vendor landscape at time of build; the market consolidates and new entrants emerge.
+- [NEEDS HUMAN] Confirm FHIR US Core profiles for Practitioner and PractitionerRole are still referenced in TEFCA exchange and CMS interoperability rules.
+- [NEEDS HUMAN] Confirm specifics of CMS Medicare Advantage Provider Directory rules, NCQA standards, and state Medicaid agency rules regarding distinct verification cadences.
+- [NEEDS HUMAN] Confirm current penalty structures at time of build; the regulatory framework continues to evolve.
 
-## architecture — `chapter05.02-architecture.md`
+## architecture - `chapter05.02-architecture.md`
 
-- **L23** — TODO (TechWriter): Expert review S1 (HIGH). Specify the identity-boundary policy for the real-time onboarding path, `attach_npi`, `re_verify_npi`, and the review-queue API. The real-time onboarding event should carry a producer-signed envelope (source_system, source_record_id, event_id, signed_payload) that the candidate-generator Lambda validates before processing. `attach_npi` should validate that `decision_metadata.invocation_source` matches the calling Lambda's execution role (auto_attach_pipeline, review_queue_decision, batch_match_pipeline) and reject mismatches with a logged metric. The review-queue Lambda should validate that the named reviewer had an assigned queue containing the pair and is not in the conflict-of-interest list. `re_verify_npi` should be invoked only by the daily Step Functions execution role with `(internal_provider_id, verification_due_date)` as the idempotency key. Same chapter pattern as 4.4-5.1; the consequence here is sharper because the assignment table is the canonical anchor for credentialing, claims, directory, and network-adequacy reporting consumers.
-- **L28** — TODO: confirm whether the institution has an existing credentialing system (Symplr, Echo, MedTrainer, Modio, Verifiable, internal) to integrate with. The architecture supports either path; if integrating, replace this surface with the integration adapter and the review queue is exposed as records inside the credentialing tool.
-- **L32** — TODO (TechWriter): Expert review A10 (MEDIUM). Specify Lake Formation column-level and row-level access controls for the audit archive's Glue-cataloged tables. QuickSight has named row-level security but Athena does not; a direct Athena query against the audit archive can read every PHI-adjacent row regardless of cohort or access role. Same chapter pattern as 5.1 Finding A10.
-- **L136** — TODO: confirm the current NPPES download URL pattern at time of build; the file is published at download.cms.gov / NPPES download pages.
-- **L137** — TODO (TechWriter): Expert review S2 (MEDIUM). Specify the architectural retention floor: the longer of (HIPAA 6-year minimum, the institution's documented credentialing-record retention policy, the state-specific credentialing retention statute, and the network-adequacy attestation retention requirement; many institutions land at 7 to 10 years). Specify S3 Object Lock in Compliance mode for immutability and a lifecycle policy that transitions to S3 Glacier Deep Archive after 90 days. Forward CloudTrail data events to a dedicated audit AWS account isolated from the production data plane.
-- **L139** — TODO: verify staffing ratios; the figures here are rough estimates from credentialing-tool vendor literature and may vary by organization.
-- **L141** — TODO: replace with verified, current pricing once the implementing team validates against the AWS Pricing Calculator.
-- **L168** — TODO: confirm the maintained state of pyNPI at time of build; alternative wrappers exist and may be more current.
-- **L857** — TODO: replace illustrative figures with measured results from the deployment. Vendor-published figures from provider-data services often emphasize the easy cases (coverage, auto-attach precision) and not the harder ones (cohort fairness, drift-detection latency).
-- **L881** — TODO: confirm current network adequacy verification requirements by line of business at time of build; CMS, NCQA, and state-level rules are the relevant authorities.
-- **L889** — TODO: confirm; the OIG LEIE is published monthly at oig.hhs.gov with the full list and incremental update files.
-- **L891** — TODO (TechWriter): Expert review S3 (MEDIUM). Promote LEIE integration from "Variations and Extensions" into the main architecture. Federal payer compliance (42 USC § 1320a-7) makes LEIE checks table stakes for organizations participating in Medicare Advantage, Medicaid Managed Care, or any federally-funded program; an unchecked NPI exposes the institution to recoupment risk and CMP penalties under § 1320a-7a. Add to the architecture diagram a parallel LEIE Verification flow consuming the monthly OIG LEIE file, with a `leie-sanction-status` attribute on `provider-npi-assignment` carrying the most recent check timestamp and result. Add to the EventBridge fan-out a `provider_sanctioned` detail-type. Update the Honest Take to name LEIE alongside the deactivation flag as the highest-priority drift events. Reference the OIG Special Advisory Bulletin on the Effect of Exclusion as the regulatory anchor.
-- **L898** — TODO (TechWriter): Expert review A8 (MEDIUM). Specify the OpenSearch failover. OpenSearch availability is a single point of failure for the real-time onboarding path; the candidate-generator Lambda should fall back to (a) a direct NPI Registry API query when OpenSearch is unavailable, or (b) "queued for matching" status with an SQS handoff to the asynchronous scoring path, with a CloudWatch alarm on chronic OpenSearch availability issues. Specify the fallback order and the latency-budget check that triggers the asynchronous path.
-- **L907** — TODO (TechWriter): Expert review A7 (MEDIUM). Specify DLQ coverage on every Lambda path, the Step Functions Catch-with-route-to-DLQ pattern, and an `attachment_id` ConditionExpression on the attach-NPI Put preventing duplicate writes. Distinguish retryable infrastructure failures from terminal logic failures. Same chapter pattern as 4.4-5.1. The duplicate-attach event consequence is sharper here because downstream credentialing-system, directory, and claims-validation consumers may take action on each event delivery.
-- **L912** — TODO (TechWriter): Expert review A9 (MEDIUM). Architect the matching-primitives library boundary explicitly. Specify the versioned Lambda layer or Glue Python library that hosts the shared blocking passes, comparators, and Fellegi-Sunter combiner; the version-coupling contract (each recipe pins a specific library version); and the audit-archive shared-substrate cross-recipe consumption pattern. Same chapter pattern as 5.1 Finding A8.
-- **L919** — TODO: confirm current sanction-list sources and update cadences at time of build.
-- **L923** — TODO: confirm DMF access requirements at time of build; the limited-access DMF requires specific authorizations under federal law and may not be available to all organizations.
-- **L959** — TODO: confirm the current names and locations of the aws-samples repos at time of build; the organizations have been reorganizing. Search aws-samples and aws-solutions-library-samples for entity-resolution and reference-data examples.
-- **L965** — TODO: replace generic "search the blog" pointers with two or three specific, verified blog post URLs once they are confirmed to exist. Avoid any made-up URLs.
-- **L969** — TODO: confirm the current download URL pattern at time of build; CMS occasionally restructures the data-dissemination pages.
-- **L972** — TODO: confirm current URL at time of build.
-- **L979** — TODO: confirm the most relevant CMS guidance pages at time of build.
-- **L980** — TODO: confirm specific URL at time of build; CMS publishes Secret Shopper studies and Provider Directory Review reports periodically.
-
-## python-example — `chapter05.02-python-example.md`
-
-- **L109** — TODO: confirm the current base URL and any
-# version path at time of build; CMS occasionally updates the API
-# endpoint.
-- **L776** — TODO: confirm the NPI Registry API's
-    # license-number search behavior at time of build; the public
-    # API has limited license-search support and the bulk file is
-    # the right substrate for license-anchored matching.
+- [NEEDS HUMAN] Confirm whether the institution has an existing credentialing system (Symplr, Echo, MedTrainer, Modio, Verifiable, internal) to integrate with. The architecture supports either path.
+- [NEEDS HUMAN] Confirm the current NPPES download URL pattern at time of build; the file is published at download.cms.gov / NPPES download pages.
+- [NEEDS HUMAN] Verify staffing ratios; the figures (0.1-0.5 FTE per 10,000 providers) are rough estimates from credentialing-tool vendor literature and may vary by organization.
+- [NEEDS HUMAN] Replace with verified, current pricing once the implementing team validates against the AWS Pricing Calculator.
+- [NEEDS HUMAN] Confirm the maintained state of pyNPI at time of build; alternative wrappers exist and may be more current.
+- [NEEDS HUMAN] Replace illustrative performance figures with measured results from the deployment. Vendor-published figures often emphasize easy cases.
+- [NEEDS HUMAN] Confirm current network adequacy verification requirements by line of business at time of build; CMS, NCQA, and state-level rules are the relevant authorities.
+- [NEEDS HUMAN] Confirm the OIG LEIE is published monthly at oig.hhs.gov with the full list and incremental update files.
+- [NEEDS HUMAN] Confirm current sanction-list sources and update cadences at time of build.
+- [NEEDS HUMAN] Confirm DMF access requirements at time of build; the limited-access DMF requires specific authorizations under federal law.
+- [NEEDS HUMAN] Confirm the current names and locations of the aws-samples repos at time of build; search aws-samples and aws-solutions-library-samples for entity-resolution and reference-data examples.
+- [NEEDS HUMAN] Replace generic "search the blog" pointers with two or three specific, verified blog post URLs once they are confirmed to exist. Avoid any made-up URLs.
+- [NEEDS HUMAN] Confirm the current NPPES download URL pattern at time of build; CMS occasionally restructures the data-dissemination pages.
+- [NEEDS HUMAN] Confirm current URL for NUCC taxonomy code set at time of build.
+- [NEEDS HUMAN] Confirm the most relevant CMS guidance pages at time of build.
+- [NEEDS HUMAN] Confirm specific URL for CMS Secret Shopper studies and Provider Directory Review reports at time of build.
