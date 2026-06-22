@@ -143,9 +143,9 @@ Logical stages:
 
 4. **Novelty scoring.** Compute the distance to the k-th nearest neighbor. If above threshold, flag the claim as out-of-distribution. This signal feeds into the hybrid decision engine.
 
-5. **Case retrieval API.** Downstream consumers (billing worklists, provider portals) can request "show me similar resolved claims" for any given claim. Returns enriched records with outcome, denial reason, and similarity score.
+5. **Case retrieval API.** Downstream consumers (billing worklists, provider portals) can request "show me similar resolved claims" for any given claim. Returns enriched records with outcome, denial reason, and similarity score. Access control matters here: provider-facing portals should only surface cases from the same provider organization (filter the OpenSearch query by `provider_org_id`) or return de-identified cases with PHI stripped. Internal billing worklists can see broader cross-organization comparisons because they operate under the covered entity's own workforce authorization. Implement row-level filtering at the query layer, not the application layer, so that a misconfigured UI can't accidentally leak cross-organization case details.
 
-6. **Cluster assignment.** Periodically re-cluster the denied claims population. Assign incoming denied claims to their nearest archetype cluster for routing.
+6. **Cluster assignment.** Re-cluster the denied claims population monthly, or when denial volume since the last run exceeds a configurable threshold (e.g., 5,000 new denials). Store cluster labels in your prediction store with a `cluster_version` field so downstream routing queries always reference the current version. When a new clustering run completes, increment the version and write new labels alongside the old ones; consumers switch to the new version atomically. Alert when cluster composition shifts significantly between runs (measured by adjusted Rand index or simple size-ratio changes), since a sudden shift often signals a payer rule change or data pipeline issue that warrants human review.
 
 7. **Hybrid decision engine.** Combines the primary XGBoost score from 7.11 with the novelty score and kNN outcome distribution to produce a final recommendation: {prediction, confidence, supporting_cases, novelty_flag, recommended_action}.
 
