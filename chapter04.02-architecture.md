@@ -18,11 +18,13 @@
 
 **AWS Lambda for the inference path and ingestion handlers.** Recommendation requests are short, stateless, and bursty (a portal page load triggers one). Lambda fits this naturally. The ingestion handler that processes new content events is also a fine Lambda workload. Set reserved concurrency on the inference Lambda to protect the patient-facing path from noisy-neighbor effects.
 
-**Amazon API Gateway for the recommendation endpoint.** The portal, the email-composer Lambda from Recipe 4.1, and the post-visit summary generator (Recipe 2.5) all need to call the recommender. API Gateway gives you a single authenticated endpoint, request throttling, and integration with WAF for basic protection. Pair with Lambda authorizers or IAM-signed requests for service-to-service auth.
+**Amazon API Gateway for the recommendation endpoint.** The portal, the email-composer Lambda from Recipe 4.1, and the post-visit summary generator (Recipe 2.5) all need to call the recommender. Two distinct caller contexts require two API Gateway deployments fronting the same recommender Lambda. Public portal calls (patient-session authentication via Cognito or a Lambda authorizer, with the recommender Lambda enforcing that the request body's `patient_id` matches the resolved identity from the authorizer token; the recommender must validate this itself rather than trusting the upstream caller) reach a public regional REST API. Service-to-service calls (IAM-signed SigV4 with a least-privileged execution role per calling service) reach a private REST API exposed via a VPC interface endpoint, invisible to the internet. Both APIs get request throttling and WAF integration. On the public-facing API, apply WAF rate-limiting on a header populated by the Lambda authorizer (the resolved patient identifier). A starting point of 10 requests per patient per minute and 100 requests per patient per hour protects shared backend quotas (Bedrock, OpenSearch) from a single misbehaving caller or a compromised session token.
 
 **Amazon Kinesis Data Streams for engagement events.** Same engagement-event bus you stood up for Recipe 4.1, with new event types added (content_impression, content_click, content_completion, content_rating). One bus, multiple producers, multiple consumers. The reward-attribution Lambda picks up content-related events and persists them to a structured engagement table.
 
 **Amazon SageMaker for the re-ranker training and (optionally) hosting.** The re-ranker is a gradient-boosted ranking model (XGBoost-Ranker or LightGBM with `lambdarank` objective). SageMaker Training Jobs handle the periodic retraining; SageMaker Endpoints host the model for inference if you graduate beyond a Lambda-embedded scoring function. For a starter implementation, you can host the trained model as a Lambda layer and skip the endpoint entirely. The Lambda-layer approach hits a 250 MB ceiling once you add XGBoost or LightGBM with their numpy/scipy dependencies; plan to graduate to a SageMaker Endpoint when the layer approach starts to feel cramped, which often happens earlier than expected.
+
+The retraining trigger is an EventBridge scheduled rule (weekly for most patient-education catalogs; daily is overkill at typical volumes and overfits to noise). The schedule invokes a Step Functions workflow that exports engagement data from DynamoDB, builds a learning-to-rank dataset with position-bias correction, launches a SageMaker Training Job, and evaluates the trained model against a holdout NDCG metric. For the Lambda-layer deployment path, the promotion step publishes a new Lambda layer version containing the serialized model artifact, then updates the recommender Lambda's layer reference via an alias with a canary weight (10% for 30 minutes, then full traffic if no error-rate regression). For the SageMaker Endpoint path, promotion uses endpoint variant weights: deploy the new model as a new production variant at 10%, monitor latency and error rate for an hour, then shift 100% and delete the old variant.
 
 **AWS Glue / Amazon EMR / AWS Step Functions for the offline content ingestion pipeline.** The reading-level computation, embedding generation, and metadata indexing form a small DAG. Step Functions is the lowest-friction orchestrator for a pipeline of this size. Glue or EMR are overkill unless your catalog is much larger than typical or includes complex preprocessing.
 
@@ -32,16 +34,17 @@
 
 ```mermaid
 flowchart LR
-    A[Content CMS] -->|New / Updated Content| B[EventBridge]
+    A[Content CMS] -->|New / Updated / Deprecated| B[EventBridge]
     B --> C[Step Functions\ningest-content]
     C -->|Extract text| D[Lambda\nextract-and-clean]
+    C -->|Failure| C_DLQ[SQS\ningestion-failures]
     D -->|Compute reading level| E[Lambda\nreading-level]
     D -->|Generate embedding| F[Bedrock\nTitan Embed]
     F --> G[OpenSearch\nk-NN Index]
     E --> H[DynamoDB\ncontent-metadata]
     D --> I[S3\ncontent-bodies]
 
-    J[Portal / Email / Post-Visit] -->|Recommendation request| K[API Gateway]
+    J[Portal / Email / Post-Visit] -->|Recommendation request| K[API Gateway\npublic + private]
     K --> L[Lambda\nrecommender]
     L -->|Patient features| M[DynamoDB\npatient-profile]
     L -->|Hard filter + vector search| G
@@ -50,13 +53,18 @@ flowchart LR
     L -->|Optional content tailoring| O[Bedrock\nClaude / Nova]
     L -->|Recommendation log| P[DynamoDB\nrecommendation-log]
     L -->|Return top N| K
+    L -.->|On failure| L_DLQ[SQS\nrecommender-DLQ]
 
     Q[Patient] -.Click / Read / Rate.-> J
     J -->|Engagement events| R[Kinesis\nengagement-stream]
     R --> S[Lambda\nattribution]
+    R -.->|OnFailure destination| S_DLQ[SQS\nattribution-DLQ]
     S --> T[DynamoDB\nengagement-table]
-    T -->|Periodic retrain| U[SageMaker Training\nre-ranker]
-    U --> N
+
+    W[EventBridge\nweekly schedule] -->|Trigger| X[Step Functions\nretrain-workflow]
+    X --> T
+    X -->|Train| U[SageMaker Training\nre-ranker]
+    U -->|Promote| N
     S --> V[CloudWatch\nFairness + Coverage]
 
     style G fill:#9ff,stroke:#333
@@ -66,6 +74,9 @@ flowchart LR
     style T fill:#9ff,stroke:#333
     style I fill:#cfc,stroke:#333
     style R fill:#f9f,stroke:#333
+    style C_DLQ fill:#fcc,stroke:#333
+    style L_DLQ fill:#fcc,stroke:#333
+    style S_DLQ fill:#fcc,stroke:#333
 ```
 
 ### Prerequisites
@@ -550,7 +561,13 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Recommendation diversity and exposure controls.** Without explicit diversity logic, the recommender will surface the most similar three items to the query. If those three are all variations of the same article (e.g., a primary article, its summary, and its FAQ), the patient sees redundancy. Production systems use Maximal Marginal Relevance (MMR), category diversification, or a position-based cap ("no more than 2 items from the same topic in top 5") to maintain breadth. This is a small extension but it materially affects perceived quality.
 
-**Content lifecycle hooks.** When content is deprecated, retired, or under review, the index needs to reflect that within minutes, not days. A recommendation log that surfaces a deprecated piece of content is a small operational embarrassment; surfacing content that has been clinically retracted (rare but real) is worse. Wire deprecation events through the same ingestion pipeline with high priority.
+**Content lifecycle hooks.** When content is deprecated, retired, or under review, the index needs to reflect that within minutes, not days. A recommendation log that surfaces a deprecated piece of content is a small operational embarrassment; surfacing content that has been clinically retracted (rare but real) is worse. The architecture handles this by extending the Step Functions ingestion workflow to accept a `lifecycle_action` parameter (`PUBLISHED`, `UPDATED`, `DEPRECATED`, `RETIRED`). For deprecation, a dedicated Lambda atomically sets `status = "deprecated"` on both the DynamoDB content-metadata row and the OpenSearch document for the same `content_id`. The hard filter in Step 3 (`{ "term": { "status": "active" } }`) immediately excludes deprecated content from all future candidate sets. The SLA target is deprecation propagation within 5 minutes of the CMS event. Add a CloudWatch metric (`DeprecationPropagationLatency`) measuring elapsed time from EventBridge receipt to OpenSearch index confirmation, with an alarm at the 5-minute threshold. If you need sub-second propagation (clinical retraction of harmful content), bypass Step Functions entirely and invoke the deprecation Lambda synchronously from EventBridge with a separate high-priority rule.
+
+**Dead-letter queue coverage on all Lambda paths.** The architecture has three distinct Lambda invocation patterns, each needing its own failure-handling strategy:
+
+1. **API Gateway to recommender Lambda (synchronous).** This is a synchronous request-response path; an SQS DLQ on the Lambda function captures asynchronous invocation failures but doesn't help when API Gateway is the caller. The practical approach: pair structured JSON logging (recommendation_id, patient_id hash, failure reason) with a CloudWatch 5xx alarm on the API Gateway stage, and document a replay-from-logs runbook for incident investigation. Accept the synchronous-API tradeoff (the patient gets an error page, not a silent drop) and focus monitoring effort on the alarm.
+2. **Step Functions to ingestion Lambdas (orchestrated).** Each task state in the ingestion workflow should include a `Catch` block that routes failures to an SQS queue keyed on `content_id` and failure reason. A separate "failed-ingestion replay" process (another Step Functions workflow, triggered on a schedule or manually) retries the failed content_ids. Without this, a transient Bedrock throttle during a batch import silently leaves content un-indexed.
+3. **Kinesis to attribution Lambda (event-source mapping).** Configure an `OnFailure` destination on the Kinesis event-source mapping, pointing to an SQS queue (or SNS topic). Set a CloudWatch alarm on DLQ depth. This is the most insidious failure mode: a silently-failing attribution Lambda drops engagement events, and the re-ranker's training data becomes incomplete with no observable symptom until a cohort dashboard regresses weeks later. The DLQ makes the failure visible immediately.
 
 **Re-ranker labeling and training.** The pseudocode treats the re-ranker as either a hand-tuned scoring function or a learned model. In production, the leap from one to the other requires labeled training data: pairs of (patient context, candidate set, observed engagement) that get joined into a learning-to-rank dataset. Building that join correctly (positives are clicked or completed items; negatives are impressions that didn't get engagement; weights account for position bias) is its own small engineering project. Underinvest here and the learned ranker is worse than the hand-tuned one.
 
