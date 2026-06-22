@@ -1,19 +1,13 @@
 # Open TODOs: Recipe 3.4: Medication Dispensing Anomalies ⭐
 
-> Auto-extracted 2026-06-18 from inline source comments (10 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+## main - `chapter03.04-medication-dispensing-anomalies.md`
 
-## main — `chapter03.04-medication-dispensing-anomalies.md`
+- [NEEDS HUMAN] **L167** - Future expansion: once HIPAA-eligible clinical LLM deployments become standard in hospital settings, this section should be expanded with specific patterns. No actionable fix until the field matures beyond pilot stage.
 
-- **L167** — TODO (TechWriter): once HIPAA-eligible clinical LLM deployments become standard in hospital settings, this section should be expanded with specific patterns. Current state is that several vendors are piloting, no clear production-standard pattern has emerged.
-- **L177** — TODO (TechWriter): look up specific published studies on pharmacy alert override rates. Possible sources: the literature around CPOE implementation studies, AHRQ patient safety reports, JAMIA publications on clinical decision support override rates. Don't fabricate specific numbers; cite real studies or keep the claim directional.
+## architecture - `chapter03.04-architecture.md`
 
-## architecture — `chapter03.04-architecture.md`
-
-- **L39** — TODO (TechWriter): as HIPAA-eligible Bedrock patterns mature in healthcare in 2026, add a specific reference to validated clinical-reasoning triage architectures. Avoid speculative specifics for now.
-- **L115** — TODO (TechWriter): confirm current published ADE cost estimates. AHRQ, ISMP, and IHI have published numbers over the years that need to be checked for current accuracy before citing specifics.
-- **L155** — TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repo that demonstrates medication safety or clinical decision support analytics. A direct match has not been confirmed at the time of writing.
-- **L824** — TODO (TechWriter): these benchmark ranges are directional from typical pharmacy-safety project experience. Replace with measured numbers once the pipeline runs for a few cycles. Consider referencing published studies on CDSS alert override rates; they consistently show rates in the 80-95% range for unfiltered pharmacy alerts which is the source of the "alert fatigue" framing.
-- **L871** — TODO (TechWriter): consider adding a note about FDA 510(k) and De Novo pathways for clinical decision support software, as some dispensing anomaly detectors may cross into regulated device territory depending on how outputs are used. The FDA's 2022 CDS guidance document is the relevant reference.
-- **L887** — TODO (TechWriter): once specific validated patterns for LLM-assisted clinical triage are published in the healthcare literature with demonstrated safety data, expand this section with concrete references. As of this writing, pilots exist but broadly-accepted production patterns do not.
-- **L916** — TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repo that demonstrates an end-to-end medication safety or clinical decision support pipeline. A direct match has not been confirmed at the time of writing.
-- **L922** — TODO (TechWriter): verify and add two or three specific AWS blog posts on clinical decision support, medication safety analytics, or pharmacy operations on AWS; confirm URLs exist before inclusion.
+- [NEEDS HUMAN] **L39** - Future expansion: as HIPAA-eligible Bedrock patterns mature in healthcare, add a specific reference to validated clinical-reasoning triage architectures. No actionable fix until peer-reviewed production patterns exist.
+- [NEEDS HUMAN] **L155** - Cannot verify existence of a specific aws-samples or aws-solutions-library-samples repo for medication safety or clinical decision support analytics. Do not add unverified URLs.
+- [NEEDS HUMAN] **L887** - Future expansion: once specific validated patterns for LLM-assisted clinical triage are published with demonstrated safety data, expand this section with concrete references. No actionable fix until broadly-accepted production patterns exist.
+- [NEEDS HUMAN] **L916** - Cannot verify existence of a specific aws-samples repo demonstrating an end-to-end medication safety or clinical decision support pipeline. Do not add unverified URLs.
+- [NEEDS HUMAN] **L922** - Cannot verify specific AWS blog post URLs on clinical decision support or medication safety analytics. Do not add unverified URLs.

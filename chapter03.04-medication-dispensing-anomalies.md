@@ -120,7 +120,7 @@ A reasonable technical progression: start with rule-based clinical screening ove
 
 One last piece of the technology discussion, because it's the reason most medication alerting systems fail: clinical alert fatigue is real, it's measurable, and it's the primary constraint on system design.
 
-Every study in the literature that looks at clinical alert override rates finds the same thing: when the alert load crosses a threshold (the numbers vary by study and clinical setting, but rates above 90% override are common in production pharmacy alerts), clinicians stop reading the alerts and start dismissing them reflexively. At that point the alert system is negative-value: it costs attention, produces no benefit, and teaches staff to ignore the subset of alerts that actually matter. 
+Every study in the literature that looks at clinical alert override rates finds the same thing: when the alert load crosses a threshold, clinicians stop reading the alerts and start dismissing them reflexively. Published research on CPOE and pharmacy CDS consistently reports override rates in the 80-95% range for unfiltered pharmacy alerts (JAMIA, AHRQ patient safety reports, and the broader CDSS implementation literature all converge on this range). At that point the alert system is negative-value: it costs attention, produces no benefit, and teaches staff to ignore the subset of alerts that actually matter.
 
 The practical consequences for architecture:
 
