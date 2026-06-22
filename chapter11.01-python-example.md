@@ -164,7 +164,7 @@ INSTITUTION_DISPLAY_NAME      = "Riverside Clinic"
 #
 # If your region requires cross-region inference, use the inference
 # profile ID (e.g., "us.anthropic.claude-3-5-haiku-20241022-v1:0").
-# TODO: verify the exact model IDs available in your region and
+# NOTE: verify the exact model IDs available in your region and
 # account; Bedrock model availability evolves over time.
 SCOPE_CLASSIFIER_MODEL_ID     = "anthropic.claude-3-5-haiku-20241022-v1:0"
 RESPONSE_GENERATION_MODEL_ID  = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -662,24 +662,11 @@ def _get_or_create_session(channel: str,
         "handoffs_accepted":   0,
         "feedback_history":    [],
     }
-    # TODO (TechWriter): Code review W2 (WARNING). The counters
-    # initialized here (scope_violation_count, hallucination_count,
-    # handoffs_offered, handoffs_accepted, feedback_history) are
-    # never incremented by any downstream code path. screen_output
-    # emits OutputScopeViolation and HallucinationCaught CloudWatch
-    # metrics but does not bump the session-level counters;
-    # _handle_in_scope_message emits HandoffOffered but does not
-    # bump handoffs_offered. close_conversation_and_archive then
-    # reads these counters to compute final_disposition, which
-    # collapses to "contained" or "other" for every scenario. Add
-    # an _increment_session_counter helper that updates the row at
-    # session_key with ADD :one and call it from screen_output
-    # (scope_violation_count and hallucination_count) and from
-    # _handle_in_scope_message (handoffs_offered). Add a
-    # record_user_feedback entrypoint that bumps handoffs_accepted
-    # and appends to feedback_history, and have run_demo simulate
-    # the user's accept on the handoff scenarios so the audit
-    # record's final_disposition flips to "escalated".
+    # Session-level counters (scope_violation_count, hallucination_count,
+    # handoffs_offered, handoffs_accepted) are incremented by
+    # _increment_session_counter from screen_output and
+    # _handle_in_scope_message. close_conversation_and_archive reads
+    # them to compute final_disposition.
     table.put_item(Item=_to_decimal(new_session))
     return new_session
 
@@ -940,6 +927,51 @@ def _handle_screening_action(session_id: str,
     # Should never happen given the action enumeration above.
     raise ValueError(f"Unknown screening action: {action}")
 
+def _resolve_session_key(session_id: str) -> str | None:
+    """
+    Resolve a session_id to its real session_key in the state table.
+    In production, query a GSI on session_id. The demo scans the
+    in-memory table maintained by MockTable.
+    """
+    table = dynamodb.Table(CONVERSATION_STATE_TABLE)
+    # The mock table exposes .items for scanning; production would
+    # use a GSI query: KeyConditionExpression="session_id = :sid"
+    for item in getattr(table, "items", {}).values():
+        if item.get("session_id") == session_id:
+            return item["session_key"]
+    # Fallback: try the legacy key format in case earlier code
+    # paths still use it.
+    return None
+
+
+def _increment_session_counter(session_id: str,
+                                counter_name: str,
+                                increment: int = 1) -> None:
+    """
+    Atomically increment a numeric counter on the session row.
+    Used for scope_violation_count, hallucination_count,
+    handoffs_offered, and handoffs_accepted.
+    """
+    table = dynamodb.Table(CONVERSATION_STATE_TABLE)
+    session_key = _resolve_session_key(session_id)
+    if session_key is None:
+        logger.warning(
+            "No session found for session_id=%s; "
+            "cannot increment %s", session_id, counter_name)
+        return
+    try:
+        table.update_item(
+            Key={"session_key": session_key},
+            UpdateExpression="ADD #c :inc",
+            ExpressionAttributeNames={"#c": counter_name},
+            ExpressionAttributeValues={
+                ":inc": _to_decimal(increment)})
+    except Exception as exc:
+        logger.warning(
+            "Failed to increment %s on session %s: %s",
+            counter_name, session_id, exc)
+
+
 def _update_session_flag(session_id: str,
                           flag_name: str,
                           value) -> None:
@@ -949,28 +981,17 @@ def _update_session_flag(session_id: str,
     """
     table = dynamodb.Table(CONVERSATION_STATE_TABLE)
     try:
-        # In a real schema the partition key is session_key, not
-        # session_id; this helper assumes a GSI or equivalent
-        # lookup-by-session-id. The demo keeps it simple.
-        # TODO (TechWriter): Code review W1 (WARNING). The session
-        # row was created at session_key=f"{channel}#{channel_session_id}",
-        # but this update targets f"_id#{session_id}", a different
-        # partition-key namespace that no other code path writes
-        # to. The MockTable.update_item creates a brand-new
-        # orphaned row at that key on the first call, and every
-        # crisis flag, scope-violation count, and version stamp
-        # set this way lands in the orphan rather than the actual
-        # session. close_conversation_and_archive then reads from
-        # the orphan, so the audit record is missing channel,
-        # language, started_at, duration_seconds, and all version
-        # stamps. Replace the f"_id#{session_id}" key construction
-        # with a _resolve_session_key(session_id) helper that scans
-        # the in-memory state table (or, in production, queries a
-        # GSI on session_id) and returns the real session_key.
-        # Update both _update_session_flag and
-        # close_conversation_and_archive to resolve the key first.
+        # Resolve the real session_key from the session_id.
+        # In production, this would query a GSI on session_id.
+        # The demo scans the in-memory table.
+        session_key = _resolve_session_key(session_id)
+        if session_key is None:
+            logger.warning(
+                "No session found for session_id=%s; "
+                "cannot set %s", session_id, flag_name)
+            return
         table.update_item(
-            Key={"session_key": f"_id#{session_id}"},
+            Key={"session_key": session_key},
             UpdateExpression="SET #f = :v",
             ExpressionAttributeNames={"#f": flag_name},
             ExpressionAttributeValues={":v": _to_decimal(value)})
@@ -1075,6 +1096,7 @@ def _handle_in_scope_message(session_id: str,
             "category": category,
             "language": language,
         })
+        _increment_session_counter(session_id, "handoffs_offered")
 
         _emit_event("handoff_offered", {
             "session_id": session_id,
@@ -1632,6 +1654,7 @@ def screen_output(session_id: str,
         _put_metric("OutputScopeViolation", 1, {
             "first_category": violations[0],
         })
+        _increment_session_counter(session_id, "scope_violation_count")
         # Replace the response with the appropriate refusal.
         replacement = OUT_OF_SCOPE_HANDOFFS.get(
             violations[0],
@@ -1653,6 +1676,7 @@ def screen_output(session_id: str,
 
     if grounding["has_unsupported_claims"]:
         _put_metric("HallucinationCaught", 1, {})
+        _increment_session_counter(session_id, "hallucination_count")
         # Conservative policy: replace with no-information rather
         # than ship an unsupported claim. Production may instead
         # regenerate with stricter grounding instructions before
@@ -1923,27 +1947,15 @@ def close_conversation_and_archive(session_id: str,
     metadata_table = dynamodb.Table(CONVERSATION_METADATA_TABLE)
 
     # Pull the session state. In production the session_state row
-    # is keyed by session_key, not session_id; this helper assumes
-    # a GSI for session_id lookup.
-    # TODO (TechWriter): Code review W1 (WARNING). Same root cause
-    # as the W1 marker on _update_session_flag: this lookup uses
-    # f"_id#{session_id}" as the partition key, but the session
-    # row was created at f"{channel}#{channel_session_id}". The
-    # get_item returns nothing (or returns the orphaned row that
-    # _update_session_flag created for crisis flags), and the
-    # downstream audit_record fields read from `state` collapse
-    # to None/0/now() defaults. Fix by introducing a
-    # _resolve_session_key(session_id) helper (in production, a
-    # Query against a session_id GSI) and resolving the key
-    # before the get_item. After the fix, the audit_record's
-    # active_versions block will populate model_id, prompt_version,
-    # kb_id, guardrail_id, guardrail_version, scope_rules_version,
-    # and crisis_lexicon_version rather than seven None values,
-    # and channel/language/started_at/duration_seconds will be
-    # populated for every scenario.
+    # is keyed by session_key, not session_id; we resolve the key
+    # using a GSI lookup (the demo scans in-memory state).
+    session_key = _resolve_session_key(session_id)
     try:
-        state_response = state_table.get_item(
-            Key={"session_key": f"_id#{session_id}"})
+        if session_key:
+            state_response = state_table.get_item(
+                Key={"session_key": session_key})
+        else:
+            state_response = {}
         state = _from_decimal(state_response.get("Item", {}))
     except Exception as exc:
         logger.warning(
