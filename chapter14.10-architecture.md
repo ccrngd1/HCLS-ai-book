@@ -8,7 +8,9 @@
 
 ### Why These Services
 
-**Amazon SageMaker for model development and solver execution.** Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development and processing jobs for compute-intensive solver runs and data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.
+**Amazon SageMaker for model development and solver execution.** Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development and Processing Jobs for compute-intensive solver runs and data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.
+
+Why Processing Jobs instead of Training Jobs? Training Jobs carry ML-specific semantics: they produce model artifacts, support hyperparameter tuning, and integrate with SageMaker's model registry. None of that applies to solver execution. A MIP solver reads input data, runs a branch-and-bound algorithm, and writes a solution file. Processing Jobs are the right fit because they're designed for generic compute tasks (data preparation, evaluation, any batch workload) without the ML artifact overhead. They accept input from S3, execute your container, and write output to S3. That's exactly what solver execution needs. If you need Spot instance support for cost savings on long-running solves, Processing Jobs support managed Spot with automatic interruption handling, so you don't need to reach for Training Jobs just to get Spot checkpointing.
 
 **Amazon S3 for data lake and model artifacts.** The input data (patient origin files, demographic projections, financial data, competitor intelligence) and output artifacts (solution files, scenario comparisons, sensitivity analyses) all live in S3. This provides durable, versioned storage with fine-grained access control.
 
@@ -482,9 +484,9 @@ The pseudocode demonstrates the optimization pattern. Deploying this for actual 
 - [HiGHS Solver (Open Source)](https://highs.dev/)
 - [PuLP: Python Linear Programming Library](https://coin-or.github.io/pulp/)
 
-**AWS Solutions and Blogs:**
-- [Optimization with Amazon SageMaker](https://aws.amazon.com/sagemaker/)
-- [AWS Healthcare and Life Sciences Solutions](https://aws.amazon.com/health/)
+**Healthcare and Industry:**
+- [AWS Healthcare and Life Sciences](https://aws.amazon.com/health/)
+- [HIPAA on AWS: Architecting for Security and Compliance](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 ---
 
