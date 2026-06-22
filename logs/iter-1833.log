@@ -1,0 +1,960 @@
+# parallel_worker header: concurrency_limit=4 batch_id=batch-1782114982772-000043-67bee18a5afcc478 iteration=1833 task_id=ch15-r06-findings persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2783 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m28167 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md
+[38;5;244m - Completed in 0.2s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m46046 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a clear picture of the todo items and the source files. Let me read the STYLE-GUIDE and RECIPE-GUIDE for reference, then start applying the fixes.[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/STYLE-GUIDE.md[0m, from line [38;5;141m1[0m to [38;5;141m60[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/RECIPE-GUIDE.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3490 bytes[0m from /tmp/ralph-worktrees/iter-1833/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4546 bytes[0m from /tmp/ralph-worktrees/iter-1833/RECIPE-GUIDE.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have enough context. Let me apply the seven findings to the architecture companion and python example. Let me work through them systematically.[0m[0m
+[0m[0m
+[1mFinding L54 (HIGH): Error handling and circuit breaker pattern for inference path.[22m[0m[0m
+[0m[0m
+I'll add this to the architecture companion's pseudocode section, specifically in Step 6 where the inference call happens.[0m[0m
+[0m[0m
+[1mFinding L56 (MEDIUM): Model rollback and canary deployment strategy.[22m[0m[0m
+[0m[0m
+I'll add this to the "Why This Isn't Production-Ready" or as a new subsection.[0m[0m
+[0m[0m
+[1mFinding L71 (HIGH): Role-separated IAM guidance.[22m[0m[0m
+[0m[0m
+I'll replace the flat IAM permission list in Prerequisites.[0m[0m
+[0m[0m
+[1mFinding L73 (MEDIUM): Latency budget note.[22m[0m[0m
+[0m[0m
+I'll add to Prerequisites or a new paragraph in "Why These Services."[0m[0m
+[0m[0m
+[1mFinding L75 (MEDIUM): Capacity planning note.[22m[0m[0m
+[0m[0m
+Add a note about concurrent patient handling.[0m[0m
+[0m[0m
+[1mFinding L330 (MEDIUM): Tamper-evident audit trail.[22m[0m[0m
+[0m[0m
+Add to pseudocode after [38;5;10mstore_recommendation[0m call in Step 6.[0m[0m
+[0m[0m
+[1mFinding L433 (MEDIUM): De-identification requirements for retraining.[22m[0m[0m
+[0m[0m
+Add to "Why This Isn't Production-Ready" section.[0m[0m
+[0m[0m
+Let me apply these changes:[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 59    [0m:[38;5;9m[49m | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`, `dynamodb:PutItem`, `states:StartExecution` |
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m | **IAM Roles (least-privilege)** | See role separation table below |
+[0m[K
+Updating: [38;5;141mchapter15.06-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow I need to add the role separation table after the Prerequisites table. Let me find where to insert it:[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 65    [0m:[38;5;9m[49m | **Cost Estimate** | Training: ~$50-200 per training run (ml.g4dn.xlarge spot instances, 4-8 hours). Inference endpoint: ~$100/month (ml.m5.large). DynamoDB and Lambda: negligible at clinical volumes. |
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m | **Latency Budget** | End-to-end target < 3 seconds. State construction (DynamoDB read): 50-200ms. SageMaker inference: 50-200ms. Safety constraints: ~10ms. Recommend provisioned concurrency on Lambda and minimum instance count of 1 on SageMaker endpoint to eliminate cold starts. |
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m | **Capacity Planning** | Typical ICU (20-50 patients, checks every 1-4 hours) produces < 10 requests/minute peak. A single ml.m5.large endpoint handles one ICU comfortably. For hospital-wide deployment (multiple ICUs, stepdown units), configure SageMaker auto-scaling with target tracking on InvocationsPerInstance. |
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m | **Cost Estimate** | Training: ~$50-200 per training run (ml.g4dn.xlarge spot instances, 4-8 hours). Inference endpoint: ~$100/month (ml.m5.large with min instance count 1). DynamoDB and Lambda: negligible at clinical volumes. |
+[0m[K
+Updating: [38;5;141mchapter15.06-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow add the IAM role separation table after the Prerequisites table:[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+     69[0m:[38;5;10m[49m ## IAM Role Separation
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m Avoid a single monolithic role. Split permissions across four purpose-scoped roles with explicit resource ARN constraints:
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m | Role | Purpose | Permissions | Resource Scope |
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m |------|---------|-------------|----------------|
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m | **State Constructor Lambda** | Fetches patient history, invokes policy endpoint | `dynamodb:GetItem`, `dynamodb:Query` on patient state table; `sagemaker:InvokeEndpoint` on the glucose policy endpoint ARN | `arn:aws:dynamodb:REGION:ACCOUNT:table/patient-glucose-state`, `arn:aws:sagemaker:REGION:ACCOUNT:endpoint/glucose-rl-policy-*` |
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m | **Safety Constraint Lambda** | Reads patient state, writes final recommendation to operational store and audit archive | `dynamodb:GetItem` on patient state table; `dynamodb:PutItem` on recommendations table; `s3:PutObject` on audit bucket; `logs:PutLogEvents` | Scoped to specific table/bucket ARNs |
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m | **Training Pipeline Role** | Periodic offline training workflow | `s3:GetObject` on episode bucket; `s3:PutObject` on model artifact bucket; `sagemaker:CreateTrainingJob`, `sagemaker:CreateModel`, `sagemaker:UpdateEndpoint`; `states:StartExecution` | Scoped to training-specific S3 prefixes and SageMaker resources tagged `project=glucose-rl` |
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m | **Monitoring Role** | Dashboards, alarms, drift detection | `cloudwatch:GetMetricData`, `cloudwatch:PutMetricAlarm`, `cloudwatch:DescribeAlarms`; `logs:FilterLogEvents` | Read-only on CloudWatch metrics and log groups for this application |
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m Each role uses condition keys (`aws:RequestedRegion`, resource tags) to prevent lateral movement. The State Constructor Lambda never writes to the recommendations store; the Training Pipeline Role never invokes the live endpoint.
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m 
+[0m[49m[39m  69, 82[0m:[39m[49m ## Ingredients
+[0m[K
+Updating: [38;5;141mchapter15.06-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow apply [1mFinding L54[22m: Error handling and circuit breaker in the inference path. I'll update Step 6's [38;5;10mgenerate_recommendation[0m pseudocode:[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  335, 335[0m:[39m[49m ```pseudocode
+[0m[49m[39m  336, 336[0m:[39m[49m FUNCTION generate_recommendation(patient_id, new_glucose_reading):
+[0m[49m[39m  337, 337[0m:[39m[49m     // Called when a new glucose measurement is entered for an ICU patient.
+[0m[49m[39m  338, 338[0m:[39m[49m 
+[0m[49m[38;5;9m- 339     [0m:[38;5;9m[49m     // Fetch the patient's recent history from the state store
+[0m[49m[38;5;9m- 340     [0m:[38;5;9m[49m     patient_history = fetch_from_dynamodb(table="patient-glucose-state", key=patient_id)
+[0m[49m[38;5;10m+      339[0m:[38;5;10m[49m     // Fetch the patient's recent history from the state store.
+[0m[49m[38;5;10m+      340[0m:[38;5;10m[49m     // If DynamoDB is unavailable, return a safe fallback.
+[0m[49m[38;5;10m+      341[0m:[38;5;10m[49m     TRY:
+[0m[49m[38;5;10m+      342[0m:[38;5;10m[49m         patient_history = fetch_from_dynamodb(table="patient-glucose-state", key=patient_id)
+[0m[49m[38;5;10m+      343[0m:[38;5;10m[49m     CATCH (DynamoDB timeout OR service error):
+[0m[49m[38;5;10m+      344[0m:[38;5;10m[49m         log_error("state_fetch_failed", patient_id, error)
+[0m[49m[38;5;10m+      345[0m:[38;5;10m[49m         increment_metric("glucose_rl.state_fetch_failures")
+[0m[49m[38;5;10m+      346[0m:[38;5;10m[49m         RETURN {
+[0m[49m[38;5;10m+      347[0m:[38;5;10m[49m             status:  "FALLBACK",
+[0m[49m[38;5;10m+      348[0m:[38;5;10m[49m             message: "System unavailable. Use standard sliding scale protocol.",
+[0m[49m[38;5;10m+      349[0m:[38;5;10m[49m             reason:  "Patient state store unreachable"
+[0m[49m[38;5;10m+      350[0m:[38;5;10m[49m         }
+[0m[49m[39m  341, 351[0m:[39m[49m 
+[0m[49m[39m  342, 352[0m:[39m[49m     // Update history with new reading
+[0m[49m[39m  343, 353[0m:[39m[49m     update_patient_state(patient_history, new_glucose_reading)
+[0m[49m[39m  344, 354[0m:[39m[49m 
+[0m[49m[39m  345, 355[0m:[39m[49m     // Construct the state vector for the RL policy
+[0m[49m[39m  346, 356[0m:[39m[49m     state_vector = build_state_vector(patient_history)
+[0m[49m[39m  347, 357[0m:[39m[49m 
+[0m[49m[38;5;9m- 348     [0m:[38;5;9m[49m     // Get the RL policy's recommendation
+[0m[49m[38;5;9m- 349     [0m:[38;5;9m[49m     raw_recommendation = invoke_sagemaker_endpoint(
+[0m[49m[38;5;9m- 350     [0m:[38;5;9m[49m         endpoint = "glucose-rl-policy-v2",
+[0m[49m[38;5;9m- 351     [0m:[38;5;9m[49m         payload  = state_vector
+[0m[49m[38;5;9m- 352     [0m:[38;5;9m[49m     )
+[0m[49m[38;5;10m+      358[0m:[38;5;10m[49m     // Get the RL policy's recommendation.
+[0m[49m[38;5;10m+      359[0m:[38;5;10m[49m     // Circuit breaker: if the endpoint has failed N times in the last M minutes,
+[0m[49m[38;5;10m+      360[0m:[38;5;10m[49m     // skip the call and return the standard protocol fallback immediately.
+[0m[49m[38;5;10m+      361[0m:[38;5;10m[49m     IF circuit_breaker.is_open("sagemaker-glucose-endpoint"):
+[0m[49m[38;5;10m+      362[0m:[38;5;10m[49m         log_warning("circuit_breaker_open", patient_id)
+[0m[49m[38;5;10m+      363[0m:[38;5;10m[49m         increment_metric("glucose_rl.circuit_breaker_trips")
+[0m[49m[38;5;10m+      364[0m:[38;5;10m[49m         RETURN {
+[0m[49m[38;5;10m+      365[0m:[38;5;10m[49m             status:  "FALLBACK",
+[0m[49m[38;5;10m+      366[0m:[38;5;10m[49m             message: "System unavailable. Use standard sliding scale protocol.",
+[0m[49m[38;5;10m+      367[0m:[38;5;10m[49m             reason:  "Policy endpoint circuit breaker open (recent failures exceeded threshold)"
+[0m[49m[38;5;10m+      368[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+      369[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      370[0m:[38;5;10m[49m     TRY:
+[0m[49m[38;5;10m+      371[0m:[38;5;10m[49m         raw_recommendation = invoke_sagemaker_endpoint(
+[0m[49m[38;5;10m+      372[0m:[38;5;10m[49m             endpoint = "glucose-rl-policy-v2",
+[0m[49m[38;5;10m+      373[0m:[38;5;10m[49m             payload  = state_vector,
+[0m[49m[38;5;10m+      374[0m:[38;5;10m[49m             timeout  = 2000  // ms; fail fast for clinical workflow
+[0m[49m[38;5;10m+      375[0m:[38;5;10m[49m         )
+[0m[49m[38;5;10m+      376[0m:[38;5;10m[49m         circuit_breaker.record_success("sagemaker-glucose-endpoint")
+[0m[49m[38;5;10m+      377[0m:[38;5;10m[49m     CATCH (endpoint 5xx OR timeout OR model error):
+[0m[49m[38;5;10m+      378[0m:[38;5;10m[49m         circuit_breaker.record_failure("sagemaker-glucose-endpoint")
+[0m[49m[38;5;10m+      379[0m:[38;5;10m[49m         log_error("inference_failed", patient_id, error)
+[0m[49m[38;5;10m+      380[0m:[38;5;10m[49m         increment_metric("glucose_rl.inference_failures")
+[0m[49m[38;5;10m+      381[0m:[38;5;10m[49m         RETURN {
+[0m[49m[38;5;10m+      382[0m:[38;5;10m[49m             status:  "FALLBACK",
+[0m[49m[38;5;10m+      383[0m:[38;5;10m[49m             message: "System unavailable. Use standard sliding scale protocol.",
+[0m[49m[38;5;10m+      384[0m:[38;5;10m[49m             reason:  "Policy inference failed: " + error.message
+[0m[49m[38;5;10m+      385[0m:[38;5;10m[49m         }
+[0m[49m[39m  353, 386[0m:[39m[49m 
+[0m[49m[39m  354, 387[0m:[39m[49m     // Apply hard safety constraints
+[0m[49m[39m  355, 388[0m:[39m[49m     safe_recommendation = apply_safety_constraints(
+[0m[49m[39m  356, 389[0m:[39m[49m         raw_recommendation.dose,
+[0m[49m[39m  357, 390[0m:[39m[49m         patient_history,
+[0m[49m[39m  358, 391[0m:[39m[49m         SAFETY_CONSTRAINTS
+[0m[49m[39m  359, 392[0m:[39m[49m     )
+[0m[49m[39m  360, 393[0m:[39m[49m 
+[0m[49m[39m  361, 394[0m:[39m[49m     // Package for clinical display
+[0m[49m[39m  362, 395[0m:[39m[49m     recommendation = {
+[0m[49m[39m  363, 396[0m:[39m[49m         patient_id:          patient_id,
+[0m[49m[39m  364, 397[0m:[39m[49m         timestamp:           current_utc_timestamp(),
+[0m[49m[39m  365, 398[0m:[39m[49m         recommended_dose:    safe_recommendation.final_dose,
+[0m[49m[39m  366, 399[0m:[39m[49m         dose_units:          "units insulin (regular)",
+[0m[49m[39m  367, 400[0m:[39m[49m         confidence:          safe_recommendation.confidence,
+[0m[49m[39m  368, 401[0m:[39m[49m         reasoning: {
+[0m[49m[39m  369, 402[0m:[39m[49m             current_glucose:     new_glucose_reading,
+[0m[49m[39m  370, 403[0m:[39m[49m             trend:               patient_history.glucose_velocity,
+[0m[49m[39m  371, 404[0m:[39m[49m             insulin_on_board:    patient_history.insulin_on_board,
+[0m[49m[39m  372, 405[0m:[39m[49m             constraints_active:  safe_recommendation.constraints_activated
+[0m[49m[39m  373, 406[0m:[39m[49m         },
+[0m[49m[39m  374, 407[0m:[39m[49m         clinician_action:    "PENDING"  // updated when clinician responds
+[0m[49m[39m  375, 408[0m:[39m[49m     }
+[0m[49m[39m  376, 409[0m:[39m[49m 
+[0m[49m[39m  377, 410[0m:[39m[49m     // Store recommendation for audit and outcome tracking
+[0m[49m[39m  378, 411[0m:[39m[49m     store_recommendation(recommendation)
+[0m[49m[39m  379, 412[0m:[39m[49m 
+[0m[49m[38;5;10m+      413[0m:[38;5;10m[49m     // Write tamper-evident audit record to immutable archive.
+[0m[49m[38;5;10m+      414[0m:[38;5;10m[49m     // The operational store (DynamoDB) serves real-time reads.
+[0m[49m[38;5;10m+      415[0m:[38;5;10m[49m     // The immutable archive serves compliance and post-hoc analysis.
+[0m[49m[38;5;10m+      416[0m:[38;5;10m[49m     write_audit_record_to_immutable_store(
+[0m[49m[38;5;10m+      417[0m:[38;5;10m[49m         bucket  = "glucose-rl-audit-archive",
+[0m[49m[38;5;10m+      418[0m:[38;5;10m[49m         key     = "recommendations/{patient_id}/{timestamp}.json",
+[0m[49m[38;5;10m+      419[0m:[38;5;10m[49m         body    = recommendation,
+[0m[49m[38;5;10m+      420[0m:[38;5;10m[49m         options = { object_lock_mode: "COMPLIANCE", retain_until: now + 7_years }
+[0m[49m[38;5;10m+      421[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+      422[0m:[38;5;10m[49m 
+[0m[49m[39m  380, 423[0m:[39m[49m     RETURN recommendation
+[0m[49m[39m  381, 424[0m:[39m[49m ```
+[0m[K
+Updating: [38;5;141mchapter15.06-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow apply [1mFinding L56[22m: Model rollback and canary deployment strategy. I'll add this as a subsection after "Why This Isn't Production-Ready":[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  469, 469[0m:[39m[49m ## Why This Isn't Production-Ready
+[0m[49m[39m  470, 470[0m:[39m[49m 
+[0m[49m[39m  471, 471[0m:[39m[49m **Regulatory pathway is unclear.** An RL-based dosing recommendation system likely falls under FDA regulation as a clinical decision support tool. The regulatory pathway for adaptive/learning systems is still evolving. You'd need to demonstrate safety through extensive retrospective validation, simulation testing, and likely a prospective clinical trial.
+[0m[49m[39m  472, 472[0m:[39m[49m 
+[0m[49m[39m  473, 473[0m:[39m[49m **Off-policy evaluation has high variance.** OPE estimates are noisy, especially for policies that deviate significantly from historical behavior. The confidence intervals on "time in range improvement" may be wide enough to be clinically meaningless. You need large datasets (thousands of ICU stays) to get tight estimates.
+[0m[49m[39m  474, 474[0m:[39m[49m 
+[0m[49m[39m  475, 475[0m:[39m[49m **Behavior policy estimation is hard.** Importance sampling requires knowing the probability of each historical action under the clinician's behavior policy. Clinicians don't follow a single policy; they vary by experience, shift, patient acuity, and institutional culture. Estimating the behavior policy from data introduces its own errors.
+[0m[49m[39m  476, 476[0m:[39m[49m 
+[0m[49m[38;5;9m- 477     [0m:[38;5;9m[49m **Model drift.** Clinical practice changes over time (new protocols, new medications, different patient populations). A policy trained on 2020-2023 data may not be optimal for 2026 patients. You need ongoing monitoring and periodic retraining.
+[0m[49m[38;5;10m+      477[0m:[38;5;10m[49m **Model drift.** Clinical practice changes over time (new protocols, new medications, different patient populations). A policy trained on 2020-2023 data may not be optimal for 2026 patients. You need ongoing monitoring and periodic retraining.
+[0m[49m[38;5;10m+      478[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      479[0m:[38;5;10m[49m **De-identification for retraining requires careful handling.** Episode logs feeding back into the training pipeline contain temporal glucose patterns that carry re-identification risk even after pseudonymization (a rare glucose trajectory can fingerprint a patient). Production retraining pipelines need: (1) formal pseudonymization with key management separate from the training infrastructure, (2) IRB coverage for the retraining protocol (not just the initial study), (3) minimum cohort sizes per episode bin to prevent rare-pattern leakage, and (4) clear PHI status determination for derived features (your compliance team needs to weigh in on whether glucose variability metrics constitute PHI under HIPAA's Safe Harbor standard).
+[0m[49m[38;5;10m+      480[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      481[0m:[38;5;10m[49m ## Model Deployment: Canary Rollout and Rollback
+[0m[49m[38;5;10m+      482[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      483[0m:[38;5;10m[49m When deploying a new policy version, never cut over 100% of traffic at once. Use SageMaker production variants to run a canary deployment:
+[0m[49m[38;5;10m+      484[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      485[0m:[38;5;10m[49m 1. **Deploy new model as a secondary variant** with 5-10% traffic weight using `CreateEndpointConfig` with two `ProductionVariant` entries (the current model at 90-95%, the candidate at 5-10%).
+[0m[49m[38;5;10m+      486[0m:[38;5;10m[49m 2. **Monitor override rates and safety metrics** on the canary variant for 48-72 hours. Key signals: clinician override rate, constraints-activated frequency, and glucose outcomes for patients whose recommendations were followed.
+[0m[49m[38;5;10m+      487[0m:[38;5;10m[49m 3. **Automatic rollback trigger:** If the canary variant's override rate exceeds the baseline by more than 15 percentage points, or if any patient receiving canary recommendations experiences severe hypoglycemia (< 40 mg/dL), automatically shift traffic back to 100% on the proven model using `UpdateEndpointWeightsAndCapacities`. Wire this through a CloudWatch alarm that invokes a Lambda to perform the traffic shift.
+[0m[49m[38;5;10m+      488[0m:[38;5;10m[49m 4. **Gradual promotion:** If the canary performs at or above baseline after 72 hours, ramp to 25%, then 50%, then 100% over one week. Each step requires the same safety checks to pass.
+[0m[49m[38;5;10m+      489[0m:[38;5;10m[49m 5. **Model Registry versioning:** Every deployed model is registered in SageMaker Model Registry with approval status. Rollback is instant because the previous approved version is always available. Tag each version with its OPE metrics so you can audit why a version was promoted or rolled back.
+[0m[K
+Updating: [38;5;141mchapter15.06-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow I need to add a note about CloudWatch alarms on Lambda error rates and endpoint 5xx (part of Finding L54). Let me add it to the Monitoring description in "Why These Services":[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-architecture.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 17    [0m:[38;5;9m[49m **Amazon CloudWatch for monitoring and alerting.** Track recommendation acceptance rates, override patterns, glucose outcomes for patients where recommendations were followed vs. overridden, and model drift indicators. Alert on anomalous recommendation patterns (e.g., consistently recommending maximum doses).
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m **Amazon CloudWatch for monitoring and alerting.** Track recommendation acceptance rates, override patterns, glucose outcomes for patients where recommendations were followed vs. overridden, and model drift indicators. Alert on anomalous recommendation patterns (e.g., consistently recommending maximum doses). Configure alarms on: Lambda error rate > 1% over 5 minutes, SageMaker endpoint 5xx rate > 0.5%, inference latency p99 > 2 seconds, and DynamoDB read throttles. All alarms route to the clinical engineering on-call; any alarm firing should also trigger the circuit breaker that returns the "use standard protocol" fallback.
+[0m[K
+Updating: [38;5;141mchapter15.06-architecture.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me update the Python example to be consistent with the architecture companion changes. The main things to update there are:[0m[0m
+[0m[0m
+1. Error handling / circuit breaker in [38;5;10mget_policy_recommendation[0m and [38;5;10mfetch_patient_state[0m (Finding L54)[0m[0m
+2. Audit trail write after [38;5;10mstore_recommendation[0m (Finding L330)[0m[0m
+3. De-identification note in the "Gap to Production" section (Finding L433)[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 742     [0m:[38;5;9m[49m def fetch_patient_state(patient_id: str) -> dict:
+[0m[49m[38;5;10m+      742[0m:[38;5;10m[49m def fetch_patient_state(patient_id: str) -> Optional[dict]:
+[0m[49m[39m  743, 743[0m:[39m[49m     """
+[0m[49m[39m  744, 744[0m:[39m[49m     Retrieve the patient's recent glucose history and clinical state from DynamoDB.
+[0m[49m[39m  745, 745[0m:[39m[49m 
+[0m[49m[39m  746, 746[0m:[39m[49m     The state table stores the last N readings and current clinical context
+[0m[49m[39m  747, 747[0m:[39m[49m     for each active ICU patient. Updated every time a new glucose reading arrives.
+[0m[49m[39m  748, 748[0m:[39m[49m 
+[0m[49m[38;5;10m+      749[0m:[38;5;10m[49m     Returns None (not an empty dict) on failure so callers can distinguish
+[0m[49m[38;5;10m+      750[0m:[38;5;10m[49m     "no data" from "service unavailable" and fall back to standard protocol.
+[0m[49m[38;5;10m+      751[0m:[38;5;10m[49m 
+[0m[49m[39m  749, 752[0m:[39m[49m     Args:
+[0m[49m[39m  750, 753[0m:[39m[49m         patient_id: Unique patient identifier (e.g., "ICU-2026-04821").
+[0m[49m[39m  751, 754[0m:[39m[49m 
+[0m[49m[39m  752, 755[0m:[39m[49m     Returns:
+[0m[49m[38;5;9m- 753     [0m:[38;5;9m[49m         Dict with recent glucose readings, insulin history, and clinical context.
+[0m[49m[38;5;10m+      756[0m:[38;5;10m[49m         Dict with recent glucose readings, insulin history, and clinical context,
+[0m[49m[38;5;10m+      757[0m:[38;5;10m[49m         or None if DynamoDB is unreachable.
+[0m[49m[39m  754, 758[0m:[39m[49m     """
+[0m[49m[38;5;9m- 755     [0m:[38;5;9m[49m     response = state_table.get_item(Key={"patient_id": patient_id})
+[0m[49m[38;5;10m+      759[0m:[38;5;10m[49m     try:
+[0m[49m[38;5;10m+      760[0m:[38;5;10m[49m         response = state_table.get_item(Key={"patient_id": patient_id})
+[0m[49m[38;5;10m+      761[0m:[38;5;10m[49m     except Exception as e:
+[0m[49m[38;5;10m+      762[0m:[38;5;10m[49m         logger.error("DynamoDB get_item failed for %s: %s", patient_id, e)
+[0m[49m[38;5;10m+      763[0m:[38;5;10m[49m         return None
+[0m[49m[39m  756, 764[0m:[39m[49m 
+[0m[49m[39m  757, 765[0m:[39m[49m     if "Item" not in response:
+[0m[49m[39m  758, 766[0m:[39m[49m         logger.warning("No state found for patient %s", patient_id)
+[0m[49m[39m  759, 767[0m:[39m[49m         return {}
+[0m[49m[39m  760, 768[0m:[39m[49m 
+[0m[49m[39m  761, 769[0m:[39m[49m     item = response["Item"]
+[0m[49m[39m  762, 770[0m:[39m[49m 
+[0m[49m[39m  763, 771[0m:[39m[49m     # DynamoDB stores numbers as Decimal. Convert to float for numpy compatibility.
+[0m[49m[39m  764, 772[0m:[39m[49m     return {
+[0m[49m[39m  765, 773[0m:[39m[49m         "glucose_current": float(item.get("glucose_current", 0)),
+[0m[49m[39m  766, 774[0m:[39m[49m         "glucose_prev_1": float(item.get("glucose_prev_1", 0)),
+[0m[49m[39m  767, 775[0m:[39m[49m         "glucose_prev_2": float(item.get("glucose_prev_2", 0)),
+[0m[49m[39m  768, 776[0m:[39m[49m         "glucose_velocity": float(item.get("glucose_velocity", 0)),
+[0m[49m[39m  769, 777[0m:[39m[49m         "insulin_on_board": float(item.get("insulin_on_board", 0)),
+[0m[49m[39m  770, 778[0m:[39m[49m         "insulin_infusion_rate": float(item.get("insulin_infusion_rate", 0)),
+[0m[49m[39m  771, 779[0m:[39m[49m         "nutrition_rate": float(item.get("nutrition_rate", 0)),
+[0m[49m[39m  772, 780[0m:[39m[49m         "vasopressor_dose": float(item.get("vasopressor_dose", 0)),
+[0m[49m[39m  773, 781[0m:[39m[49m         "steroid_flag": float(item.get("steroid_flag", 0)),
+[0m[49m[39m  774, 782[0m:[39m[49m         "creatinine": float(item.get("creatinine", 1.0)),
+[0m[49m[39m  775, 783[0m:[39m[49m         "bmi": float(item.get("bmi", 25)),
+[0m[49m[39m  776, 784[0m:[39m[49m         "apache_score": float(item.get("apache_score", 15)),
+[0m[49m[39m  777, 785[0m:[39m[49m         "previous_dose": float(item.get("previous_dose", 0)),
+[0m[49m[39m  778, 786[0m:[39m[49m     }
+[0m[K
+Updating: [38;5;141mchapter15.06-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow update [38;5;10mget_policy_recommendation[0m with error handling:[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 831     [0m:[38;5;9m[49m def get_policy_recommendation(state_vector: np.ndarray) -> dict:
+[0m[49m[38;5;10m+      831[0m:[38;5;10m[49m def get_policy_recommendation(state_vector: np.ndarray) -> Optional[dict]:
+[0m[49m[39m  832, 832[0m:[39m[49m     """
+[0m[49m[39m  833, 833[0m:[39m[49m     Call the SageMaker endpoint to get the RL policy's recommended dose.
+[0m[49m[39m  834, 834[0m:[39m[49m 
+[0m[49m[39m  835, 835[0m:[39m[49m     The endpoint hosts the trained CQL model. It takes a state vector and
+[0m[49m[39m  836, 836[0m:[39m[49m     returns Q-values for each action, from which we pick the best.
+[0m[49m[39m  837, 837[0m:[39m[49m 
+[0m[49m[38;5;10m+      838[0m:[38;5;10m[49m     Returns None if the endpoint is unavailable (timeout, 5xx, model error).
+[0m[49m[38;5;10m+      839[0m:[38;5;10m[49m     The caller should fall back to "use standard protocol" on None.
+[0m[49m[38;5;10m+      840[0m:[38;5;10m[49m 
+[0m[49m[39m  838, 841[0m:[39m[49m     Args:
+[0m[49m[39m  839, 842[0m:[39m[49m         state_vector: Normalized state array from construct_state_vector.
+[0m[49m[39m  840, 843[0m:[39m[49m 
+[0m[49m[39m  841, 844[0m:[39m[49m     Returns:
+[0m[49m[38;5;9m- 842     [0m:[38;5;9m[49m         Dict with recommended_dose (units) and confidence score.
+[0m[49m[38;5;10m+      845[0m:[38;5;10m[49m         Dict with recommended_dose (units) and confidence score, or None on failure.
+[0m[49m[39m  843, 846[0m:[39m[49m     """
+[0m[49m[39m  844, 847[0m:[39m[49m     payload = json.dumps({"state": state_vector.tolist()})
+[0m[49m[39m  845, 848[0m:[39m[49m 
+[0m[49m[38;5;9m- 846     [0m:[38;5;9m[49m     response = sagemaker_runtime.invoke_endpoint(
+[0m[49m[38;5;9m- 847     [0m:[38;5;9m[49m         EndpointName=SAGEMAKER_ENDPOINT,
+[0m[49m[38;5;9m- 848     [0m:[38;5;9m[49m         ContentType="application/json",
+[0m[49m[38;5;9m- 849     [0m:[38;5;9m[49m         Body=payload,
+[0m[49m[38;5;9m- 850     [0m:[38;5;9m[49m     )
+[0m[49m[38;5;10m+      849[0m:[38;5;10m[49m     try:
+[0m[49m[38;5;10m+      850[0m:[38;5;10m[49m         response = sagemaker_runtime.invoke_endpoint(
+[0m[49m[38;5;10m+      851[0m:[38;5;10m[49m             EndpointName=SAGEMAKER_ENDPOINT,
+[0m[49m[38;5;10m+      852[0m:[38;5;10m[49m             ContentType="application/json",
+[0m[49m[38;5;10m+      853[0m:[38;5;10m[49m             Body=payload,
+[0m[49m[38;5;10m+      854[0m:[38;5;10m[49m         )
+[0m[49m[38;5;10m+      855[0m:[38;5;10m[49m     except Exception as e:
+[0m[49m[38;5;10m+      856[0m:[38;5;10m[49m         logger.error("SageMaker endpoint invocation failed: %s", e)
+[0m[49m[38;5;10m+      857[0m:[38;5;10m[49m         return None
+[0m[49m[39m  851, 858[0m:[39m[49m 
+[0m[49m[39m  852, 859[0m:[39m[49m     result = json.loads(response["Body"].read().decode("utf-8"))
+[0m[49m[39m  853, 860[0m:[39m[49m 
+[0m[49m[39m  854, 861[0m:[39m[49m     # The endpoint returns Q-values for each discrete action
+[0m[49m[39m  855, 862[0m:[39m[49m     q_values = np.array(result["q_values"])
+[0m[49m[39m  856, 863[0m:[39m[49m     best_action_idx = int(np.argmax(q_values))
+[0m[49m[39m  857, 864[0m:[39m[49m     recommended_dose = ACTION_SPACE[best_action_idx]
+[0m[49m[39m  858, 865[0m:[39m[49m 
+[0m[49m[39m  859, 866[0m:[39m[49m     # Confidence: how much better is the best action vs. the second best?
+[0m[49m[39m  860, 867[0m:[39m[49m     # Large gap = high confidence. Small gap = uncertain.
+[0m[49m[39m  861, 868[0m:[39m[49m     sorted_q = np.sort(q_values)[::-1]
+[0m[49m[39m  862, 869[0m:[39m[49m     if len(sorted_q) > 1 and sorted_q[0] != 0:
+[0m[49m[39m  863, 870[0m:[39m[49m         confidence = min(1.0, (sorted_q[0] - sorted_q[1]) / abs(sorted_q[0]))
+[0m[49m[39m  864, 871[0m:[39m[49m     else:
+[0m[49m[39m  865, 872[0m:[39m[49m         confidence = 0.5
+[0m[49m[39m  866, 873[0m:[39m[49m 
+[0m[49m[39m  867, 874[0m:[39m[49m     return {
+[0m[49m[39m  868, 875[0m:[39m[49m         "recommended_dose": recommended_dose,
+[0m[49m[39m  869, 876[0m:[39m[49m         "action_index": best_action_idx,
+[0m[49m[39m  870, 877[0m:[39m[49m         "confidence": round(confidence, 3),
+[0m[49m[39m  871, 878[0m:[39m[49m         "q_values": q_values.tolist(),
+[0m[49m[39m  872, 879[0m:[39m[49m     }
+[0m[K
+Updating: [38;5;141mchapter15.06-python-example.md[0m
+[38;5;244m - Completed in 0.2s[0m
+
+[38;5;141m> [0mNow update the [38;5;10mgenerate_insulin_recommendation[0m pipeline function to handle the error cases and add the audit trail write:[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  889,  889[0m:[39m[49m def generate_insulin_recommendation(patient_id: str, new_glucose: float) -> dict:
+[0m[49m[39m  890,  890[0m:[39m[49m     """
+[0m[49m[39m  891,  891[0m:[39m[49m     End-to-end pipeline: new glucose reading in, insulin recommendation out.
+[0m[49m[39m  892,  892[0m:[39m[49m 
+[0m[49m[39m  893,  893[0m:[39m[49m     This is the function that gets called when a nurse enters a new glucose
+[0m[49m[39m  894,  894[0m:[39m[49m     measurement. It:
+[0m[49m[39m  895,  895[0m:[39m[49m     1. Fetches the patient's recent history
+[0m[49m[39m  896,  896[0m:[39m[49m     2. Updates state with the new reading
+[0m[49m[39m  897,  897[0m:[39m[49m     3. Constructs the RL state vector
+[0m[49m[39m  898,  898[0m:[39m[49m     4. Gets the policy's recommendation
+[0m[49m[39m  899,  899[0m:[39m[49m     5. Applies safety constraints
+[0m[49m[38;5;9m- 900      [0m:[38;5;9m[49m     6. Returns a recommendation for clinician review
+[0m[49m[38;5;10m+       900[0m:[38;5;10m[49m     6. Writes a tamper-evident audit record
+[0m[49m[38;5;10m+       901[0m:[38;5;10m[49m     7. Returns a recommendation for clinician review
+[0m[49m[38;5;10m+       902[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+       903[0m:[38;5;10m[49m     If any critical step fails (state fetch, inference), the function returns
+[0m[49m[38;5;10m+       904[0m:[38;5;10m[49m     a FALLBACK response directing the clinician to use the standard sliding
+[0m[49m[38;5;10m+       905[0m:[38;5;10m[49m     scale protocol. Silent failures are never acceptable in clinical systems.
+[0m[49m[39m  901,  906[0m:[39m[49m 
+[0m[49m[39m  902,  907[0m:[39m[49m     The clinician always has the final say. This is decision support, not
+[0m[49m[39m  903,  908[0m:[39m[49m     autonomous control.
+[0m[49m[39m  904,  909[0m:[39m[49m 
+[0m[49m[39m  905,  910[0m:[39m[49m     Args:
+[0m[49m[39m  906,  911[0m:[39m[49m         patient_id: Unique patient identifier.
+[0m[49m[39m  907,  912[0m:[39m[49m         new_glucose: The new glucose reading in mg/dL.
+[0m[49m[39m  908,  913[0m:[39m[49m 
+[0m[49m[39m  909,  914[0m:[39m[49m     Returns:
+[0m[49m[39m  910,  915[0m:[39m[49m         Dict with the recommendation, reasoning, and safety information.
+[0m[49m[38;5;10m+       916[0m:[38;5;10m[49m         On infrastructure failure, returns a FALLBACK dict instead.
+[0m[49m[39m  911,  917[0m:[39m[49m     """
+[0m[49m[39m  912,  918[0m:[39m[49m     print(f"\n{'='*60}")
+[0m[49m[39m  913,  919[0m:[39m[49m     print(f"GLUCOSE CONTROL RL: New reading for {patient_id}")
+[0m[49m[39m  914,  920[0m:[39m[49m     print(f"{'='*60}")
+[0m[49m[39m  915,  921[0m:[39m[49m 
+[0m[49m[39m  916,  922[0m:[39m[49m     # Step 1: Fetch current patient state
+[0m[49m[38;5;9m- 917      [0m:[38;5;9m[49m     print("\n[1/5] Fetching patient state from DynamoDB...")
+[0m[49m[38;5;10m+       923[0m:[38;5;10m[49m     print("\n[1/6] Fetching patient state from DynamoDB...")
+[0m[49m[39m  918,  924[0m:[39m[49m     patient_data = fetch_patient_state(patient_id)
+[0m[49m[38;5;10m+       925[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+       926[0m:[38;5;10m[49m     # None means DynamoDB was unreachable (not just "no prior data")
+[0m[49m[38;5;10m+       927[0m:[38;5;10m[49m     if patient_data is None:
+[0m[49m[38;5;10m+       928[0m:[38;5;10m[49m         print("  ERROR: DynamoDB unreachable. Returning fallback.")
+[0m[49m[38;5;10m+       929[0m:[38;5;10m[49m         return {
+[0m[49m[38;5;10m+       930[0m:[38;5;10m[49m             "patient_id": patient_id,
+[0m[49m[38;5;10m+       931[0m:[38;5;10m[49m             "status": "FALLBACK",
+[0m[49m[38;5;10m+       932[0m:[38;5;10m[49m             "message": "System unavailable. Use standard sliding scale protocol.",
+[0m[49m[38;5;10m+       933[0m:[38;5;10m[49m             "reason": "Patient state store unreachable",
+[0m[49m[38;5;10m+       934[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+       935[0m:[38;5;10m[49m 
+[0m[49m[39m  919,  936[0m:[39m[49m     if not patient_data:
+[0m[49m[39m  920,  937[0m:[39m[49m         print("  WARNING: No prior state found. Using defaults.")
+[0m[49m[39m  921,  938[0m:[39m[49m         patient_data = {"glucose_current": new_glucose, "previous_dose": 0}
+[0m[49m[39m  922,  939[0m:[39m[49m 
+[0m[49m[39m  923,  940[0m:[39m[49m     # Step 2: Update state with new reading
+[0m[49m[38;5;9m- 924      [0m:[38;5;9m[49m     print(f"[2/5] Updating state: new glucose = {new_glucose} mg/dL")
+[0m[49m[38;5;10m+       941[0m:[38;5;10m[49m     print(f"[2/6] Updating state: new glucose = {new_glucose} mg/dL")
+[0m[49m[39m  925,  942[0m:[39m[49m     update_patient_state(patient_id, new_glucose, patient_data)
+[0m[49m[39m  926,  943[0m:[39m[49m 
+[0m[49m[39m  927,  944[0m:[39m[49m     # Refresh patient_data with the new glucose as current
+[0m[49m[39m  928,  945[0m:[39m[49m     patient_data["glucose_prev_2"] = patient_data.get("glucose_prev_1", new_glucose)
+[0m[49m[39m  929,  946[0m:[39m[49m     patient_data["glucose_prev_1"] = patient_data.get("glucose_current", new_glucose)
+[0m[49m[39m  930,  947[0m:[39m[49m     patient_data["glucose_current"] = new_glucose
+[0m[49m[39m  931,  948[0m:[39m[49m     patient_data["glucose_velocity"] = (
+[0m[49m[39m  932,  949[0m:[39m[49m         (new_glucose - patient_data["glucose_prev_1"]) / 4.0
+[0m[49m[39m  933,  950[0m:[39m[49m     )
+[0m[49m[39m  934,  951[0m:[39m[49m 
+[0m[49m[39m  935,  952[0m:[39m[49m     # Step 3: Construct state vector
+[0m[49m[38;5;9m- 936      [0m:[38;5;9m[49m     print("[3/5] Constructing state vector...")
+[0m[49m[38;5;10m+       953[0m:[38;5;10m[49m     print("[3/6] Constructing state vector...")
+[0m[49m[39m  937,  954[0m:[39m[49m     state_vector = construct_state_vector(patient_data)
+[0m[49m[39m  938,  955[0m:[39m[49m     print(f"  State vector (first 4 features): {state_vector[:4]}")
+[0m[49m[39m  939,  956[0m:[39m[49m 
+[0m[49m[39m  940,  957[0m:[39m[49m     # Step 4: Get policy recommendation
+[0m[49m[38;5;9m- 941      [0m:[38;5;9m[49m     print("[4/5] Querying RL policy endpoint...")
+[0m[49m[38;5;10m+       958[0m:[38;5;10m[49m     print("[4/6] Querying RL policy endpoint...")
+[0m[49m[39m  942,  959[0m:[39m[49m     policy_result = get_policy_recommendation(state_vector)
+[0m[49m[38;5;10m+       960[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+       961[0m:[38;5;10m[49m     if policy_result is None:
+[0m[49m[38;5;10m+       962[0m:[38;5;10m[49m         print("  ERROR: SageMaker endpoint unavailable. Returning fallback.")
+[0m[49m[38;5;10m+       963[0m:[38;5;10m[49m         return {
+[0m[49m[38;5;10m+       964[0m:[38;5;10m[49m             "patient_id": patient_id,
+[0m[49m[38;5;10m+       965[0m:[38;5;10m[49m             "status": "FALLBACK",
+[0m[49m[38;5;10m+       966[0m:[38;5;10m[49m             "message": "System unavailable. Use standard sliding scale protocol.",
+[0m[49m[38;5;10m+       967[0m:[38;5;10m[49m             "reason": "Policy inference endpoint unreachable",
+[0m[49m[38;5;10m+       968[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+       969[0m:[38;5;10m[49m 
+[0m[49m[39m  943,  970[0m:[39m[49m     raw_dose = policy_result["recommended_dose"]
+[0m[49m[39m  944,  971[0m:[39m[49m     print(f"  Raw recommendation: {raw_dose} units (confidence: {policy_result['confidence']})")
+[0m[49m[39m  945,  972[0m:[39m[49m 
+[0m[49m[39m  946,  973[0m:[39m[49m     # Step 5: Apply safety constraints
+[0m[49m[38;5;9m- 947      [0m:[38;5;9m[49m     print("[5/5] Applying safety constraints...")
+[0m[49m[38;5;10m+       974[0m:[38;5;10m[49m     print("[5/6] Applying safety constraints...")
+[0m[49m[39m  948,  975[0m:[39m[49m     previous_dose = patient_data.get("previous_dose", 0)
+[0m[49m[39m  949,  976[0m:[39m[49m     safe_result = apply_safety_constraints(raw_dose, patient_data, previous_dose)
+[0m[49m[39m  950,  977[0m:[39m[49m 
+[0m[49m[39m  951,  978[0m:[39m[49m     if safe_result["constraints_activated"]:
+[0m[49m[39m  952,  979[0m:[39m[49m         for constraint in safe_result["constraints_activated"]:
+[0m[49m[39m  953,  980[0m:[39m[49m             print(f"  CONSTRAINT: {constraint}")
+[0m[49m[39m  954,  981[0m:[39m[49m     else:
+[0m[49m[39m  955,  982[0m:[39m[49m         print("  No constraints activated.")
+[0m[49m[39m  956,  983[0m:[39m[49m 
+[0m[49m[39m  957,  984[0m:[39m[49m     final_dose = safe_result["final_dose"]
+[0m[49m[39m  958,  985[0m:[39m[49m     print(f"\n  FINAL RECOMMENDATION: {final_dose} units insulin")
+[0m[49m[39m  959,  986[0m:[39m[49m 
+[0m[49m[39m  960,  987[0m:[39m[49m     # Package the recommendation
+[0m[49m[39m  961,  988[0m:[39m[49m     recommendation = {
+[0m[49m[39m  962,  989[0m:[39m[49m         "patient_id": patient_id,
+[0m[49m[39m  963,  990[0m:[39m[49m         "timestamp": int(time.time()),
+[0m[49m[39m  964,  991[0m:[39m[49m         "glucose_reading": new_glucose,
+[0m[49m[39m  965,  992[0m:[39m[49m         "recommended_dose": final_dose,
+[0m[49m[39m  966,  993[0m:[39m[49m         "dose_units": "units insulin (regular)",
+[0m[49m[39m  967,  994[0m:[39m[49m         "confidence": policy_result["confidence"],
+[0m[49m[39m  968,  995[0m:[39m[49m         "reasoning": {
+[0m[49m[39m  969,  996[0m:[39m[49m             "current_glucose": new_glucose,
+[0m[49m[39m  970,  997[0m:[39m[49m             "glucose_trend": round(patient_data["glucose_velocity"], 1),
+[0m[49m[39m  971,  998[0m:[39m[49m             "insulin_on_board": patient_data.get("insulin_on_board", 0),
+[0m[49m[39m  972,  999[0m:[39m[49m             "raw_policy_dose": raw_dose,
+[0m[49m[39m  973, 1000[0m:[39m[49m             "constraints_activated": safe_result["constraints_activated"],
+[0m[49m[39m  974, 1001[0m:[39m[49m         },
+[0m[49m[39m  975, 1002[0m:[39m[49m         "clinician_action": "PENDING",
+[0m[49m[39m  976, 1003[0m:[39m[49m     }
+[0m[49m[39m  977, 1004[0m:[39m[49m 
+[0m[49m[38;5;10m+      1005[0m:[38;5;10m[49m     # Store recommendation in operational store (DynamoDB) for real-time reads
+[0m[49m[38;5;10m+      1006[0m:[38;5;10m[49m     store_recommendation(recommendation)
+[0m[49m[38;5;10m+      1007[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      1008[0m:[38;5;10m[49m     # Step 6: Write tamper-evident audit record.
+[0m[49m[38;5;10m+      1009[0m:[38;5;10m[49m     # The operational store serves the clinical workflow. This immutable archive
+[0m[49m[38;5;10m+      1010[0m:[38;5;10m[49m     # serves compliance: S3 Object Lock in COMPLIANCE mode prevents anyone
+[0m[49m[38;5;10m+      1011[0m:[38;5;10m[49m     # (including root) from deleting or overwriting the record during retention.
+[0m[49m[38;5;10m+      1012[0m:[38;5;10m[49m     print("[6/6] Writing immutable audit record to S3...")
+[0m[49m[38;5;10m+      1013[0m:[38;5;10m[49m     write_immutable_audit_record(recommendation)
+[0m[49m[38;5;10m+      1014[0m:[38;5;10m[49m 
+[0m[49m[39m  978, 1015[0m:[39m[49m     print(f"\n  Recommendation packaged. Awaiting clinician decision.")
+[0m[49m[39m  979, 1016[0m:[39m[49m     print(f"{'='*60}\n")
+[0m[49m[39m  980, 1017[0m:[39m[49m 
+[0m[49m[39m  981, 1018[0m:[39m[49m     return recommendation
+[0m[K
+Updating: [38;5;141mchapter15.06-python-example.md[0m
+[38;5;244m - Completed in 0.3s[0m
+
+[38;5;141m> [0mNow I need to add the [38;5;10mstore_recommendation[0m and [38;5;10mwrite_immutable_audit_record[0m helper functions. Let me find where to insert them (after [38;5;10mget_policy_recommendation[0m and before the full pipeline section):[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m for pattern: [38;5;141m## full pipeline: generate recommendation[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern '## Full Pipeline: Generate Recommendation' in /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+I'll modify the following file: [38;5;141mchapter15.06-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  882, 882[0m:[39m[49m ---
+[0m[49m[39m  883, 883[0m:[39m[49m 
+[0m[49m[38;5;10m+      884[0m:[38;5;10m[49m ## Step 8: Audit Trail and Recommendation Storage
+[0m[49m[38;5;10m+      885[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      886[0m:[38;5;10m[49m *Maps to the audit trail guidance in Step 6 of the architecture companion. The operational store (DynamoDB) serves real-time clinical reads. The immutable archive (S3 with Object Lock) serves compliance and post-hoc analysis. Both writes happen on every recommendation.*
+[0m[49m[38;5;10m+      887[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      888[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+      889[0m:[38;5;10m[49m # S3 client for audit archive
+[0m[49m[38;5;10m+      890[0m:[38;5;10m[49m s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+[0m[49m[38;5;10m+      891[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      892[0m:[38;5;10m[49m # Bucket must have Object Lock enabled at creation time (cannot be added later).
+[0m[49m[38;5;10m+      893[0m:[38;5;10m[49m # Configure a default retention of 7 years in COMPLIANCE mode.
+[0m[49m[38;5;10m+      894[0m:[38;5;10m[49m AUDIT_BUCKET = "glucose-rl-audit-archive"
+[0m[49m[38;5;10m+      895[0m:[38;5;10m[49m AUDIT_RETENTION_DAYS = 2555  # ~7 years
+[0m[49m[38;5;10m+      896[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      897[0m:[38;5;10m[49m def store_recommendation(recommendation: dict):
+[0m[49m[38;5;10m+      898[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+      899[0m:[38;5;10m[49m     Write recommendation to the operational DynamoDB table for real-time reads.
+[0m[49m[38;5;10m+      900[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      901[0m:[38;5;10m[49m     This table is queryable by patient_id and timestamp, enabling the clinical
+[0m[49m[38;5;10m+      902[0m:[38;5;10m[49m     UI to show recommendation history and the monitoring system to track outcomes.
+[0m[49m[38;5;10m+      903[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+      904[0m:[38;5;10m[49m     recommendations_table = dynamodb.Table("glucose-rl-recommendations")
+[0m[49m[38;5;10m+      905[0m:[38;5;10m[49m     recommendations_table.put_item(
+[0m[49m[38;5;10m+      906[0m:[38;5;10m[49m         Item={
+[0m[49m[38;5;10m+      907[0m:[38;5;10m[49m             "patient_id": recommendation["patient_id"],
+[0m[49m[38;5;10m+      908[0m:[38;5;10m[49m             "timestamp": Decimal(str(recommendation["timestamp"])),
+[0m[49m[38;5;10m+      909[0m:[38;5;10m[49m             "glucose_reading": Decimal(str(recommendation["glucose_reading"])),
+[0m[49m[38;5;10m+      910[0m:[38;5;10m[49m             "recommended_dose": Decimal(str(recommendation["recommended_dose"])),
+[0m[49m[38;5;10m+      911[0m:[38;5;10m[49m             "confidence": Decimal(str(recommendation["confidence"])),
+[0m[49m[38;5;10m+      912[0m:[38;5;10m[49m             "reasoning": json.dumps(recommendation["reasoning"]),
+[0m[49m[38;5;10m+      913[0m:[38;5;10m[49m             "clinician_action": recommendation["clinician_action"],
+[0m[49m[38;5;10m+      914[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+      915[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+      916[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      917[0m:[38;5;10m[49m def write_immutable_audit_record(recommendation: dict):
+[0m[49m[38;5;10m+      918[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+      919[0m:[38;5;10m[49m     Write a tamper-evident copy to S3 with Object Lock (COMPLIANCE mode).
+[0m[49m[38;5;10m+      920[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      921[0m:[38;5;10m[49m     Object Lock in COMPLIANCE mode means nobody (not even account root) can
+[0m[49m[38;5;10m+      922[0m:[38;5;10m[49m     delete or overwrite this object during the retention period. This satisfies
+[0m[49m[38;5;10m+      923[0m:[38;5;10m[49m     regulatory requirements for tamper-evident clinical decision audit trails.
+[0m[49m[38;5;10m+      924[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      925[0m:[38;5;10m[49m     The key structure is: recommendations/{patient_id}/{timestamp}.json
+[0m[49m[38;5;10m+      926[0m:[38;5;10m[49m     This makes it straightforward to retrieve all recommendations for a patient
+[0m[49m[38;5;10m+      927[0m:[38;5;10m[49m     during an audit or malpractice review.
+[0m[49m[38;5;10m+      928[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+      929[0m:[38;5;10m[49m     key = (
+[0m[49m[38;5;10m+      930[0m:[38;5;10m[49m         f"recommendations/{recommendation['patient_id']}"
+[0m[49m[38;5;10m+      931[0m:[38;5;10m[49m         f"/{recommendation['timestamp']}.json"
+[0m[49m[38;5;10m+      932[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+      933[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      934[0m:[38;5;10m[49m     try:
+[0m[49m[38;5;10m+      935[0m:[38;5;10m[49m         s3_client.put_object(
+[0m[49m[38;5;10m+      936[0m:[38;5;10m[49m             Bucket=AUDIT_BUCKET,
+[0m[49m[38;5;10m+      937[0m:[38;5;10m[49m             Key=key,
+[0m[49m[38;5;10m+      938[0m:[38;5;10m[49m             Body=json.dumps(recommendation, default=str).encode("utf-8"),
+[0m[49m[38;5;10m+      939[0m:[38;5;10m[49m             ContentType="application/json",
+[0m[49m[38;5;10m+      940[0m:[38;5;10m[49m             ServerSideEncryption="aws:kms",
+[0m[49m[38;5;10m+      941[0m:[38;5;10m[49m             ObjectLockMode="COMPLIANCE",
+[0m[49m[38;5;10m+      942[0m:[38;5;10m[49m             ObjectLockRetainUntilDate=_retention_date(),
+[0m[49m[38;5;10m+      943[0m:[38;5;10m[49m         )
+[0m[49m[38;5;10m+      944[0m:[38;5;10m[49m     except Exception as e:
+[0m[49m[38;5;10m+      945[0m:[38;5;10m[49m         # Audit write failure is serious but should not block the recommendation
+[0m[49m[38;5;10m+      946[0m:[38;5;10m[49m         # from reaching the clinician. Log loudly and alarm on this metric.
+[0m[49m[38;5;10m+      947[0m:[38;5;10m[49m         logger.error("AUDIT WRITE FAILED for %s: %s", key, e)
+[0m[49m[38;5;10m+      948[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      949[0m:[38;5;10m[49m def _retention_date():
+[0m[49m[38;5;10m+      950[0m:[38;5;10m[49m     """Calculate the retention-until date (7 years from now)."""
+[0m[49m[38;5;10m+      951[0m:[38;5;10m[49m     from datetime import datetime, timedelta, timezone
+[0m[49m[38;5;10m+      952[0m:[38;5;10m[49m     return datetime.now(timezone.utc) + timedelta(days=AUDIT_RETENTION_DAYS)
+[0m[49m[38;5;10m+      953[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+      954[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      955[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      956[0m:[38;5;10m[49m 
+[0m[49m[39m  884, 957[0m:[39m[49m ## Full Pipeline: Generate Recommendation
+[0m[K
+Updating: [38;5;141mchapter15.06-python-example.md[0m
+[38;5;244m - Completed in 0.2s[0m
+
+[38;5;141m> [0mNow update the "Gap to Production" section to include the de-identification requirements (Finding L433) and the role-separated IAM (consistent with the architecture companion):[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  1147, 1147[0m:[39m[49m **Infrastructure hardening:**
+[0m[49m[39m  1148, 1148[0m:[39m[49m - Error handling and retries for all AWS API calls (already partially shown)
+[0m[49m[39m  1149, 1149[0m:[39m[49m - Input validation: reject malformed glucose readings, out-of-range values
+[0m[49m[39m  1150, 1150[0m:[39m[49m - Structured JSON logging with correlation IDs (never log PHI values)
+[0m[49m[38;5;9m- 1151      [0m:[38;5;9m[49m - IAM least-privilege: separate roles for training vs. inference vs. state management
+[0m[49m[38;5;10m+       1151[0m:[38;5;10m[49m - IAM least-privilege: separate roles for state construction, safety constraints, training pipeline, and monitoring (see architecture companion for the full role separation table)
+[0m[49m[39m  1152, 1152[0m:[39m[49m - VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch
+[0m[49m[39m  1153, 1153[0m:[39m[49m - KMS customer-managed keys for all PHI-containing resources
+[0m[49m[39m  1154, 1154[0m:[39m[49m - DynamoDB point-in-time recovery and S3 versioning for audit trail
+[0m[49m[38;5;9m- 1155      [0m:[38;5;9m[49m - Load testing: ensure the inference path completes within the clinical workflow timeout (< 5 seconds)
+[0m[49m[38;5;10m+       1155[0m:[38;5;10m[49m - S3 Object Lock (COMPLIANCE mode) on the audit bucket for tamper-evident recommendation logs
+[0m[49m[38;5;10m+       1156[0m:[38;5;10m[49m - Load testing: ensure the inference path completes within the clinical workflow timeout (< 3 seconds end-to-end)
+[0m[49m[38;5;10m+       1157[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+       1158[0m:[38;5;10m[49m **De-identification for retraining:**
+[0m[49m[38;5;10m+       1159[0m:[38;5;10m[49m - Episode logs feeding into the retraining pipeline contain temporal glucose patterns that carry re-identification risk even after pseudonymization (a rare glucose trajectory can fingerprint a patient)
+[0m[49m[38;5;10m+       1160[0m:[38;5;10m[49m - Pseudonymization keys must live in a separate HSM/KMS key hierarchy from the training infrastructure
+[0m[49m[38;5;10m+       1161[0m:[38;5;10m[49m - IRB coverage must explicitly include the retraining protocol, not just the initial retrospective study
+[0m[49m[38;5;10m+       1162[0m:[38;5;10m[49m - Minimum cohort sizes per episode bin prevent rare-pattern re-identification
+[0m[49m[38;5;10m+       1163[0m:[38;5;10m[49m - Your compliance team needs to rule on whether derived features (glucose variability metrics, insulin sensitivity estimates) constitute PHI under HIPAA's Safe Harbor standard
+[0m[49m[38;5;10m+       1164[0m:[38;5;10m[49m - Expect this determination to take 2-4 months with institutional privacy counsel
+[0m[K
+Updating: [38;5;141mchapter15.06-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me also update the IAM Permissions line in the Python example's Setup section to reference the role separation:[0m[0m
+I'll modify the following file: [38;5;141mchapter15.06-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;9m- 15    [0m:[38;5;9m[49m Your environment needs AWS credentials configured (via environment variables, instance profile, or `~/.aws/credentials`). The IAM role or user needs `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:Query`, `s3:GetObject`, `s3:PutObject`, and `sagemaker:CreateTrainingJob`.
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m Your environment needs AWS credentials configured (via environment variables, instance profile, or `~/.aws/credentials`). For development, the IAM role or user needs `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:Query`, `s3:GetObject`, `s3:PutObject`, and `sagemaker:CreateTrainingJob`. In production, split these across four purpose-scoped roles (see the architecture companion's IAM Role Separation section).
+[0m[K
+Updating: [38;5;141mchapter15.06-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me clear all resolved items from the todo file. All seven findings have been addressed:[0m[0m
+[0m[0m
+- **L54** (HIGH): Added error handling, circuit breaker, and CloudWatch alarms ✓[0m[0m
+- **L56** (MEDIUM): Added canary deployment and rollback section ✓[0m[0m
+- **L71** (HIGH): Replaced flat IAM list with 4-role separation table ✓[0m[0m
+- **L73** (MEDIUM): Added latency budget note in Prerequisites ✓[0m[0m
+- **L75** (MEDIUM): Added capacity planning note in Prerequisites ✓[0m[0m
+- **L330** (MEDIUM): Added tamper-evident audit trail (S3 Object Lock) ✓[0m[0m
+- **L433** (MEDIUM): Added de-identification/retraining guidance ✓[0m[0m
+I'll create the following file: [38;5;141mchapter15.06-todo.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m   1, 1[0m:[39m[49m # Open TODOs: Recipe 15.6: Glucose Control in ICU
+[0m[49m[39m   2, 2[0m:[39m[49m 
+[0m[49m[38;5;9m-  3   [0m:[38;5;9m[49m > Auto-extracted 2026-06-18 from inline source comments (7 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+[0m[49m[38;5;9m-  4   [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m-  5   [0m:[38;5;9m[49m ## architecture — `chapter15.06-architecture.md`
+[0m[49m[38;5;9m-  6   [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m-  7   [0m:[38;5;9m[49m - **L54** — TODO (TechWriter): Expert review A1 (HIGH). Add error handling and circuit breaker pattern to the inference path. Specify behavior when SageMaker endpoint is unavailable or DynamoDB read fails (return explicit "no recommendation available, use standard protocol" rather than failing silently). Add CloudWatch alarms on Lambda error rates and endpoint 5xx responses.
+[0m[49m[38;5;9m-  8   [0m:[38;5;9m[49m - **L56** — TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback and canary deployment strategy. Describe SageMaker production variants for canary deployment, override rate monitoring, and automatic rollback triggers when new model underperforms.
+[0m[49m[38;5;9m-  9   [0m:[38;5;9m[49m - **L71** — TODO (TechWriter): Expert review S1 (HIGH). Replace the flat IAM permission list with role-separated guidance. Separate into at least 4 roles: (1) State Constructor Lambda with scoped DynamoDB and SageMaker InvokeEndpoint access, (2) Safety Constraint Lambda with read-only patient state and write to recommendation store, (3) Training Pipeline role with S3 and SageMaker training permissions, (4) Monitoring role with CloudWatch access. Add resource ARN constraints to all permissions.
+[0m[49m[38;5;9m- 10   [0m:[38;5;9m[49m - **L73** — TODO (TechWriter): Expert review A3 (MEDIUM). Add latency budget note: target end-to-end < 3 seconds. State construction ~50-200ms, SageMaker inference ~50-200ms, safety constraints ~10ms. Recommend provisioned concurrency on Lambda and minimum instance count of 1 on SageMaker endpoint.
+[0m[49m[38;5;9m- 11   [0m:[38;5;9m[49m - **L75** — TODO (TechWriter): Expert review A4 (MEDIUM). Add capacity planning note for concurrent patient handling. Typical ICU (20-50 patients, checks every 1-4 hours) produces low peak concurrency (< 10/minute). Single ml.m5.large sufficient for one ICU; configure auto-scaling for hospital-wide deployment.
+[0m[49m[38;5;9m- 12   [0m:[38;5;9m[49m - **L330** — TODO (TechWriter): Expert review S2 (MEDIUM). Add tamper-evident audit trail guidance after the store_recommendation call. Recommendation logs should also be written to S3 with Object Lock (compliance mode) or CloudWatch Logs with a resource policy preventing deletion. The operational store (DynamoDB) serves real-time reads; the immutable archive serves compliance.
+[0m[49m[38;5;9m- 13   [0m:[38;5;9m[49m - **L433** — TODO (TechWriter): Expert review S3 (MEDIUM). Add note about de-identification requirements for production data feeding back into retraining. Clarify pseudonymization requirements for episode logs, IRB coverage for retraining pipeline, and PHI status of temporal glucose patterns (re-identification risk persists even after pseudonymization).
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m All findings resolved. No remaining items.
+[0m[K
+Replacing: [38;5;141mchapter15.06-todo.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me verify the files are consistent by checking for any em dashes or en dashes that might have crept in:[0m[0m
+Searching for: [38;5;141m—|–[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—|–[0m under /tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for: [38;5;141m—|–[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—|–[0m under /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood, no em or en dashes. Let me also quickly verify the architecture file looks correct around the changes by checking the new IAM section and the error handling pseudocode are properly formed:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md[0m for pattern: [38;5;141miam role separation[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'IAM Role Separation' in /tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md[0m for pattern: [38;5;141mmodel deployment: canary rollout[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'Model Deployment: Canary Rollout' in /tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mEverything looks properly structured. Let me also quickly verify the python example's new audit section is in the right place:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m for pattern: [38;5;141mstep 8: audit trail[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'Step 8: Audit Trail' in /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mAll changes applied. Let me do a final check on the todo file:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m93 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mAll seven findings have been resolved:[0m[0m
+[0m[0m
+| Finding | Severity | Fix Applied |[0m[0m
+|---------|----------|-------------|[0m[0m
+| [1mL54[22m (error handling/circuit breaker) | HIGH | Added try/catch + circuit breaker pattern to Step 6 pseudocode; explicit "no recommendation, use standard protocol" fallback; CloudWatch alarms on Lambda errors and endpoint 5xx in the monitoring service description. Matching error handling added to Python example's [38;5;10mfetch_patient_state[0m and [38;5;10mget_policy_recommendation[0m. |[0m[0m
+| [1mL56[22m (canary deployment/rollback) | MEDIUM | New "Model Deployment: Canary Rollout and Rollback" section with production variants, override rate monitoring, automatic rollback triggers, gradual promotion schedule, and Model Registry versioning. |[0m[0m
+| [1mL71[22m (role-separated IAM) | HIGH | Replaced flat permission list with a new "IAM Role Separation" section containing a 4-role table (State Constructor, Safety Constraint, Training Pipeline, Monitoring) with specific permissions and resource ARN constraints. |[0m[0m
+| [1mL73[22m (latency budget) | MEDIUM | Added "Latency Budget" row to Prerequisites with per-stage timing breakdown (50-200ms state, 50-200ms inference, ~10ms safety) and provisioned concurrency recommendation. |[0m[0m
+| [1mL75[22m (capacity planning) | MEDIUM | Added "Capacity Planning" row covering typical ICU concurrency (< 10/min), single endpoint sizing, and auto-scaling for hospital-wide deployment. |[0m[0m
+| [1mL330[22m (tamper-evident audit) | MEDIUM | Added S3 Object Lock (COMPLIANCE mode) write after [38;5;10mstore_recommendation[0m in both the architecture pseudocode and the Python example (new Step 8 section with [38;5;10mwrite_immutable_audit_record[0m). |[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 19.17 • Time: 4m 25s
+
+[0m[1G[0m[0m[?25h| [1mL433[22m (de-identification for retraining) | MEDIUM | Added paragraph to "Why This Isn't Production-Ready" covering pseudonymization key separation, IRB coverage for retraining, minimum cohort sizes, and PHI status of derived features. Matching content in the Python example's "Gap to Production" section. |[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m93 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe todo file claims all findings are resolved. Let me verify the source files to check for consistency, no em dashes, and technical correctness.[0m[0m
+Searching for files: [38;5;141m**/chapter15*06*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m10 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.32s[0m
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/reviews/chapter15.06-expert-review.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/reviews/chapter15.06-code-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m30049 bytes[0m from /tmp/ralph-worktrees/iter-1833/reviews/chapter15.06-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m8404 bytes[0m from /tmp/ralph-worktrees/iter-1833/reviews/chapter15.06-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the actual source files for em dashes and TODO markers, and verify consistency between the architecture companion and python example:[0m[0m
+[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06*.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m<!-- TODO[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06*.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 1.331s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m<!-- TODO[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 1.542s[0m
+
+[38;5;141m> [0mThe em dash match is only in the review file (quoting what it checked for), not in the recipe source files. Let me now verify the architecture and python example files for consistency and check that the findings were actually resolved:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, from line [38;5;141m1[0m to [38;5;141m80[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m7137 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4437 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141mcircuit breaker|error handling|fallback[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mtamper|Object Lock|immutable|audit[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mcanary|rollback|production variant[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m9 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833 (result is truncated)
+[38;5;244m - Completed in 0.275s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m9 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833 (result is truncated)
+[38;5;244m - Completed in 0.282s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m6 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833 (result is truncated)
+[38;5;244m - Completed in 0.201s[0m
+
+Searching for: [38;5;141mde-identif|pseudonym|retraining|IRB[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141midempoten|episode key|dedup[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mdata event|data-plane|DynamoDB.*log[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mTTL|lifecycle|retention|Glacier[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m4 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.147s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244midempoten|episode key|dedup[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.149s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m2 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.122s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.117s[0m
+
+Searching for: [38;5;141mcustom.*container|pre-packag|training container|dependencies[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mcompound|compounding|multiplicat[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mcrude proxy|approximation|illustration only[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mtabular.*3 of|only uses 3|tabular simplification[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mcustom.*container|pre-packag|training container|dependencies[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.176s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mcompound|compounding|multiplicat[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.226s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m2 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.435s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mtabular.*3 of|only uses 3|tabular simplification[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.146s[0m
+
+Searching for: [38;5;141mpharmacokinetic|half-life|decay[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mcorrelation ID|print.*demo|print.*production[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mDynamoDB TTL|retention|lifecycle policy[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mpharmacokinetic|half-life|decay[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.107s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m3 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.116s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mDynamoDB TTL|retention|lifecycle policy[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.169s[0m
+
+Searching for: [38;5;141mdata retention|lifecycle|TTL|discharge[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-architecture.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141minsulin_on_board.*0\.[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mTODO[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.242s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.112s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mTODO[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.105s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, from line [38;5;141m452[0m to [38;5;141m470[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m627 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me check for the code review findings more thoroughly - the comments about compounding constraints, the tabular simplification, and the insulin decay:[0m[0m
+[0m[0m
+Searching for: [38;5;141m_state_to_index|Q.*table|N_BINS[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141mrenal.*adjust|renal_impairment[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-python-example.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m22 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833 (result is truncated)
+[38;5;244m - Completed in 0.93s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m4 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.97s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, from line [38;5;141m335[0m to [38;5;141m355[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m854 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, from line [38;5;141m560[0m to [38;5;141m600[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1982 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, from line [38;5;141m600[0m to [38;5;141m630[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1419 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check whether the code review findings (which were all NOTE/WARNING severity) were addressed vs. considered out of scope. Let me also verify the main recipe for TODO markers:[0m[0m
+[0m[0m
+Searching for: [38;5;141mTODO[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-glucose-control-icu.md[0m)[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1833[0m ([38;5;141mchapter15.06-glucose-control-icu.md[0m)[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mTODO[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.102s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under /tmp/ralph-worktrees/iter-1833
+[38;5;244m - Completed in 0.93s[0m
+
+[38;5;141m> [0mNow let me check the edit-status file to understand what was done and verify the todo file contents more carefully:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/reviews/chapter15.06-edit-status.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4470 bytes[0m from /tmp/ralph-worktrees/iter-1833/reviews/chapter15.06-edit-status.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m93 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me verify that the HIGH findings (S1, A1) were indeed resolved in the architecture file, and that the MEDIUM findings (S2, S3, A2, A3, A4) were handled as well. From my earlier grepping I can see evidence of most. Let me check a few more carefully:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md[0m, from line [38;5;141m330[0m to [38;5;141m500[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m10876 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me verify there are no issues with the code review findings by checking the python example in relevant sections:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, from line [38;5;141m680[0m to [38;5;141m730[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2185 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me check the end of the python example for the "Gap to Production" section and verify consistency with the architecture companion:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md[0m, from line [38;5;141m1100[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4858 bytes[0m from /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a comprehensive picture. Let me verify the key findings were resolved:[0m[0m
+[0m[0m
+1. [1mS1 (HIGH) - IAM least-privilege[22m: ✅ Architecture companion has a full IAM Role Separation table with 4 roles and resource ARN scopes.[0m[0m
+2. [1mA1 (HIGH) - Error handling/circuit breaker[22m: ✅ Architecture companion pseudocode has circuit breaker pattern, DynamoDB fallback, SageMaker failure handling, CloudWatch alarms.[0m[0m
+3. [1mS2 (MEDIUM) - Tamper-evident audit[22m: ✅ [38;5;10mwrite_audit_record_to_immutable_store[0m with Object Lock (COMPLIANCE mode, 7-year retention) in pseudocode.[0m[0m
+4. [1mS3 (MEDIUM) - De-identification for retraining[22m: ✅ Full paragraph in "Why This Isn't Production-Ready" section covering pseudonymization, IRB, re-identification risk.[0m[0m
+5. [1mA2 (MEDIUM) - Canary/rollback[22m: ✅ Full "Model Deployment: Canary Rollout and Rollback" section with 5 steps.[0m[0m
+6. [1mA3 (MEDIUM) - Latency budget[22m: ✅ Prerequisites table has "Latency Budget" row with target < 3 seconds and component breakdowns.[0m[0m
+7. [1mA4 (MEDIUM) - Concurrent patients[22m: ✅ Prerequisites table has "Capacity Planning" row covering ICU volumes and auto-scaling.[0m[0m
+8. [1mV2 (MEDIUM) - TODO markers[22m: ✅ No TODO markers found in any source file.[0m[0m
+9. [1mV3 (LOW) - Repetition[22m: ✅ Edit status confirms it was resolved.[0m[0m
+10. [1mS4 (LOW) - DynamoDB data-plane audit[22m: Not explicitly visible as a separate addition, but audit logging is extensively covered.[0m[0m
+11. [1mS5 (LOW) - Data retention/lifecycle[22m: Not explicitly found as a standalone addition, but the audit bucket uses 7-year retention.[0m[0m
+12. [1mN1 (LOW) - VPC endpoints[22m: ✅ Step Functions and KMS are in the VPC endpoint list.[0m[0m
+13. [1mN2 (LOW) - Training container[22m: Referenced in Python example's "Gap to Production" section.[0m[0m
+14. [1mCode review findings (all WARNING/NOTE)[22m: Partially addressed - the [38;5;10m_state_to_index[0m docstring mentions "massive simplification," but the additional clarifying comments suggested aren't present. However, these were NOTE/WARNING severity code-review items, not the expert-review findings listed in the todo file.[0m[0m
+[0m[0m
+Let me check if the original todo file ever listed the code review findings or only the expert-review findings:[0m[0m
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1833 && git log --oneline -10 -- chapter15.06-todo.md 2>/dev/null | head -5[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check git history for the todo file to understand what was originally there
+
+3cd4ee74 Fix finding-resolution validator churn + reconcile state after overnight crash
+af435b8d Extract 2,115 inline TODO findings into per-recipe -todo.md files
+[38;5;244m - Completed in 3.886s[0m
+
+I will run the following command: [38;5;141mcd /tmp/ralph-worktrees/iter-1833 && git show af435b8d:chapter15.06-todo.md 2>/dev/null | head -80[0m[38;5;244m (using tool: shell)[0m
+Purpose: View original content of the todo file
+
+# Open TODOs — Recipe 15.6: Glucose Control in ICU
+
+> Auto-extracted 2026-06-18 from inline source comments (7 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+
+## architecture — `chapter15.06-architecture.md`
+
+- **L54** — TODO (TechWriter): Expert review A1 (HIGH). Add error handling and circuit breaker pattern to the inference path. Specify behavior when SageMaker endpoint is unavailable or DynamoDB read fails (return explicit "no recommendation available, use standard protocol" rather than failing silently). Add CloudWatch alarms on Lambda error rates and endpoint 5xx responses.
+- **L56** — TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback and canary deployment strategy. Describe SageMaker production variants for canary deployment, override rate monitoring, and automatic rollback triggers when new model underperforms.
+- **L71** — TODO (TechWriter): Expert review S1 (HIGH). Replace the flat IAM permission list with role-separated guidance. Separate into at least 4 roles: (1) State Constructor Lambda with scoped DynamoDB and SageMaker InvokeEndpoint access, (2) Safety Constraint Lambda with read-only patient state and write to recommendation store, (3) Training Pipeline role with S3 and SageMaker training permissions, (4) Monitoring role with CloudWatch access. Add resource ARN constraints to all permissions.
+- **L73** — TODO (TechWriter): Expert review A3 (MEDIUM). Add latency budget note: target end-to-end < 3 seconds. State construction ~50-200ms, SageMaker inference ~50-200ms, safety constraints ~10ms. Recommend provisioned concurrency on Lambda and minimum instance count of 1 on SageMaker endpoint.
+- **L75** — TODO (TechWriter): Expert review A4 (MEDIUM). Add capacity planning note for concurrent patient handling. Typical ICU (20-50 patients, checks every 1-4 hours) produces low peak concurrency (< 10/minute). Single ml.m5.large sufficient for one ICU; configure auto-scaling for hospital-wide deployment.
+- **L330** — TODO (TechWriter): Expert review S2 (MEDIUM). Add tamper-evident audit trail guidance after the store_recommendation call. Recommendation logs should also be written to S3 with Object Lock (compliance mode) or CloudWatch Logs with a resource policy preventing deletion. The operational store (DynamoDB) serves real-time reads; the immutable archive serves compliance.
+- **L433** — TODO (TechWriter): Expert review S3 (MEDIUM). Add note about de-identification requirements for production data feeding back into retraining. Clarify pseudonymization requirements for episode logs, IRB coverage for retraining pipeline, and PHI status of temporal glucose patterns (re-identification risk persists even after pseudonymization).
+[38;5;244m - Completed in 0.238s[0m
+
+[38;5;141m> [0mNow I can see the original 7 findings in the todo file. Let me verify they were all resolved:[0m[0m
+[0m[0m
+1. [1mA1 (HIGH)[22m - Circuit breaker/error handling: ✅ Present in pseudocode (lines 340-390 area)[0m[0m
+2. [1mA2 (MEDIUM)[22m - Canary/rollback: ✅ Full section "Model Deployment: Canary Rollout and Rollback"[0m[0m
+3. [1mS1 (HIGH)[22m - IAM role separation: ✅ Full "IAM Role Separation" table with 4 roles[0m[0m
+4. [1mA3 (MEDIUM)[22m - Latency budget: ✅ In Prerequisites table[0m[0m
+5. [1mA4 (MEDIUM)[22m - Capacity planning: ✅ In Prerequisites table[0m[0m
+6. [1mS2 (MEDIUM)[22m - Tamper-evident audit: ✅ [38;5;10mwrite_audit_record_to_immutable_store[0m in pseudocode[0m[0m
+7. [1mS3 (MEDIUM)[22m - De-identification for retraining: ✅ Full paragraph in "Why This Isn't Production-Ready"[0m[0m
+[0m[0m
+All 7 original findings have been resolved in the architecture companion. The todo file now states "All findings resolved. No remaining items." The python example's "Gap to Production" section references the architecture companion's IAM roles, mentions S3 Object Lock, and is consistent with the architecture companion.[0m[0m
+[0m[0m
+Let me do one final check - no em dashes in the recipe source files (excluding the review file which just mentions em dashes in a review context):[0m[0m
+I will run the following command: [38;5;141mgrep -Pn '\x{2014}' /tmp/ralph-worktrees/iter-1833/chapter15.06-architecture.md /tmp/ralph-worktrees/iter-1833/chapter15.06-python-example.md /tmp/ralph-worktrees/iter-1833/chapter15.06-glucose-control-icu.md 2>/dev/null || echo "No em dashes found"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check for em dashes (U+2014) in recipe source files
+
+No em dashes found
+[38;5;244m - Completed in 0.40s[0m
+
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 14.97 • Time: 2m 24s
+
+[0m[1G[0m[0m[?25h[38;5;141m> [0m{"verdict": "pass", "rationale": "All 7 original findings from chapter15.06-todo.md have been resolved in the architecture companion: S1 (IAM role separation table with 4 scoped roles and ARN constraints), A1 (circuit breaker pattern with DynamoDB/SageMaker fallback in pseudocode), S2 (tamper-evident audit via S3 Object Lock COMPLIANCE mode), S3 (de-identification/IRB/re-identification risk paragraph in 'Why This Isn't Production-Ready'), A2 (full canary rollout and rollback section), A3 (latency budget row in Prerequisites), A4 (capacity planning row in Prerequisites). The todo file correctly states all findings resolved. The python example's Gap to Production section is consistent with the architecture companion (references same IAM roles, S3 Object Lock, latency targets, VPC endpoints). No em dashes in any recipe source file. No TODO markers remain. No clinical or security regressions introduced."}

@@ -420,11 +420,22 @@ def apply_dsmb_override(trial_id, override_type, parameters, authorized_by):
         raise ValueError(f"Unknown override type: {override_type}")
 
     # Update state with optimistic locking (same pattern as update_posteriors).
-    # In production, DSMB overrides should also use conditional writes to prevent
-    # a concurrent posterior update from silently overwriting the override.
+    # DSMB overrides are rare, but a concurrent posterior update could silently
+    # overwrite the override without this condition check.
     state["version"] = int(state["version"]) + 1
-    # TODO (TechWriter): Code review Issue 1 (WARNING). Add ConditionExpression here to match update_posteriors pattern. Currently simplified for readability.
-    state_table.put_item(Item=state)
+    try:
+        state_table.put_item(
+            Item=state,
+            ConditionExpression="version = :expected_version",
+            ExpressionAttributeValues={
+                ":expected_version": state["version"] - 1,
+            },
+        )
+    except state_table.meta.client.exceptions.ConditionalCheckFailedException:
+        # Concurrent update detected. DSMB overrides are critical, so retry
+        # immediately rather than failing silently.
+        print("Concurrent update detected during DSMB override. Retry needed.")
+        raise
 
     # Log the override in the audit trail
     override_record = {
