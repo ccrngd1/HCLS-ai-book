@@ -1,0 +1,202 @@
+# parallel_worker header: concurrency_limit=4 batch_id=batch-1782111444965-000036-1ca6a995419e79a3 iteration=1805 task_id=ch13-r05-findings persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1167 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m31567 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me read the Python example file:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-python-example.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m47942 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a clear picture of the three findings. Let me address them:[0m[0m
+[0m[0m
+1. [1mL65[22m: DynamoDB [38;5;10mpatient-pathway-state[0m table lacks item-level access control for HIPAA Minimum Necessary[0m[0m
+2. [1mL453[22m: Missing "Why This Isn't Production-Ready" section in the architecture companion[0m[0m
+3. [1mL481[22m: Verify healthcare-specific Neptune samples on aws-samples[0m[0m
+[0m[0m
+Let me check the existing structure around L65 to understand where to add the security callout:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m, from line [38;5;141m55[0m to [38;5;141m75[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4172 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me look at where the "Expected Results" section ends and "Variations" begins, to find where "Why This Isn't Production-Ready" should go:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m, from line [38;5;141m430[0m to [38;5;141m470[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2849 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the rest of the file to see how it ends:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m, from line [38;5;141m470[0m to [38;5;141m510[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1618 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me also check the RECIPE-GUIDE for the exact expected section ordering:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1805/RECIPE-GUIDE.md[0m for pattern: [38;5;141mwhy this isn[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'Why This Isn' in /tmp/ralph-worktrees/iter-1805/RECIPE-GUIDE.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. Now I have all the information I need. Let me apply the fixes:[0m[0m
+[0m[0m
+[1mFinding L65[22m: Add IAM leading-key conditions for DynamoDB item-level access control in the Prerequisites.[0m[0m
+[1mFinding L453[22m: Add the "Why This Isn't Production-Ready" section between Expected Results and Variations.[0m[0m
+[1mFinding L481[22m: I cannot verify whether additional healthcare-specific Neptune samples exist on aws-samples beyond what's already listed. I'll mark this as [38;5;10m[NEEDS HUMAN][0m.[0m[0m
+[0m[0m
+Let me apply the fixes:[0m[0m
+I'll modify the following file: [38;5;141mchapter13.05-architecture.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add DynamoDB item-level access control row to Prerequisites table for HIPAA Minimum Necessary compliance (Finding L65)
+
+[49m[38;5;9m- 56    [0m:[38;5;9m[49m | **IAM Permissions** | Traversal Engine Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN). State Updater Lambda: `neptune-db:ReadDataViaQuery` (read pathway structure only). Pathway Loader (admin): `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `neptune-db:DeleteDataViaQuery`. All Lambdas: `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` (scoped to table ARN). `s3:GetObject`, `s3:PutObject` (scoped to pathway bucket). `events:PutEvents`. `sqs:SendMessage` (DLQ). Never grant `neptune-db:*` in production; separate read and write roles per function. |
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m | **IAM Permissions** | Traversal Engine Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN). State Updater Lambda: `neptune-db:ReadDataViaQuery` (read pathway structure only). Pathway Loader (admin): `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `neptune-db:DeleteDataViaQuery`. All Lambdas: `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` (scoped to table ARN). `s3:GetObject`, `s3:PutObject` (scoped to pathway bucket). `events:PutEvents`. `sqs:SendMessage` (DLQ). Never grant `neptune-db:*` in production; separate read and write roles per function. |
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m | **DynamoDB Item-Level Access (HIPAA Minimum Necessary)** | The `patient-pathway-state` table contains PHI-adjacent data (patient IDs, pathway positions, timestamps). For HIPAA Minimum Necessary compliance, enforce item-level access control so that Lambda functions processing one department's events cannot read another department's patient records. Use IAM policy conditions with `dynamodb:LeadingKeys` to restrict each department's State Updater Lambda to only the patient IDs it services. Example: add a department prefix to patient IDs (e.g., `CARDIOLOGY-PAT-12345`) and scope IAM with `"dynamodb:LeadingKeys": ["CARDIOLOGY-*"]`. Alternatively, if patient IDs cannot be prefixed, implement application-layer enforcement: the State Updater Lambda validates that the incoming clinical event's department tag matches the patient's assigned department (looked up from a department-mapping table) before reading or writing the pathway state. Choose one approach and document it in your deployment runbook. The IAM leading-key approach is stronger (enforced at the API layer, not bypassable by code bugs) but requires a predictable partition key structure. |
+[0m[K
+Updating: [38;5;141mchapter13.05-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow add the "Why This Isn't Production-Ready" section between Expected Results and Variations:[0m[0m
+I'll modify the following file: [38;5;141mchapter13.05-architecture.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add 'Why This Isn't Production-Ready' section between Expected Results and Variations (Finding L453)
+
+[49m[39m  452, 452[0m:[39m[49m ---
+[0m[49m[39m  453, 453[0m:[39m[49m 
+[0m[49m[38;5;10m+      454[0m:[38;5;10m[49m ## Why This Isn't Production-Ready
+[0m[49m[38;5;10m+      455[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      456[0m:[38;5;10m[49m This architecture covers the core graph traversal and state management loop. But several production concerns remain unaddressed:
+[0m[49m[38;5;10m+      457[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      458[0m:[38;5;10m[49m **HL7/FHIR integration testing.** The EventBridge integration assumes clean, well-structured clinical events. Real EHR feeds (HL7v2 ADT messages, FHIR Subscription notifications) arrive with missing fields, duplicate deliveries, out-of-order timestamps, and encoding quirks. You need an integration test suite that replays captured HL7v2 message streams against the State Updater Lambda and validates that pathway state transitions match expected behavior. Budget 3-4 weeks just for edge cases in message parsing.
+[0m[49m[38;5;10m+      459[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      460[0m:[38;5;10m[49m **Pathway authoring UI.** This recipe assumes pathway definitions arrive as structured JSON. In practice, clinical committees author pathways in narrative documents, Visio diagrams, or proprietary pathway editors. You need a tool that lets clinicians (not engineers) build and validate pathway graphs visually, with guardrails that enforce structural rules (exactly one start node, decision points need multiple branches). Without this, every pathway update requires an engineer to hand-translate a PDF into graph JSON.
+[0m[49m[38;5;10m+      461[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      462[0m:[38;5;10m[49m **Clinical committee governance workflow.** Pathways change. Evidence evolves, formularies shift, and outcomes data reveals better approaches. Production needs a governance workflow: propose a pathway change, route it through clinical committee review, stage it for testing, validate it against synthetic patients, and then promote it to production, all while patients already on the old version continue uninterrupted. Version management is the easy part; organizational buy-in for the governance process is the hard part.
+[0m[49m[38;5;10m+      463[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      464[0m:[38;5;10m[49m **Multi-pathway conflict detection.** A patient on three simultaneous pathways can receive contradictory recommendations (one says fluid bolus, another says fluid restriction). This architecture treats each pathway independently. Production needs a conflict detection layer that checks new recommendations against all active pathways before surfacing them to clinicians.
+[0m[49m[38;5;10m+      465[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      466[0m:[38;5;10m[49m **Graceful degradation under EHR outage.** If the FHIR endpoint goes down, condition evaluation fails. The system should degrade to showing pathway position without real-time condition status, rather than returning errors or stale recommendations without indicating staleness.
+[0m[49m[38;5;10m+      467[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      468[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      469[0m:[38;5;10m[49m 
+[0m[49m[39m  454, 470[0m:[39m[49m ## Variations and Extensions
+[0m[K
+Updating: [38;5;141mchapter13.05-architecture.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow update the todo file to remove the resolved findings and mark the unverifiable one:[0m[0m
+I'll create the following file: [38;5;141mchapter13.05-todo.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Remove resolved findings (L65, L453) from todo; mark L481 as NEEDS HUMAN since we cannot verify aws-samples repo contents
+
+[49m[39m  1, 1[0m:[39m[49m # Open TODOs: Recipe 13.5: Clinical Pathway / Protocol Modeling
+[0m[49m[39m  2, 2[0m:[39m[49m 
+[0m[49m[39m  3, 3[0m:[39m[49m > Auto-extracted 2026-06-18 from inline source comments (3 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+[0m[49m[39m  4, 4[0m:[39m[49m 
+[0m[49m[39m  5, 5[0m:[39m[49m ## architecture — `chapter13.05-architecture.md`
+[0m[49m[39m  6, 6[0m:[39m[49m 
+[0m[49m[38;5;9m- 7   [0m:[38;5;9m[49m - **L65** — TODO (TechWriter): Expert review S2 (HIGH). DynamoDB patient-pathway-state table has no item-level access control. For HIPAA Minimum Necessary, consider IAM leading-key conditions (dynamodb:LeadingKeys with department tags) or application-layer enforcement so that Lambdas processing one department cannot access another department's patient records. Document the chosen approach in the Prerequisites or a security callout.
+[0m[49m[38;5;9m- 8   [0m:[38;5;9m[49m - **L453** — TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add a section covering gaps a production deployment must close (e.g., HL7/FHIR integration testing, pathway authoring UI, clinical committee governance workflow).
+[0m[49m[38;5;9m- 9   [0m:[38;5;9m[49m - **L481** — TODO (TechWriter): Verify if there are additional healthcare-specific Neptune samples available on aws-samples.
+[0m[49m[38;5;10m+    7[0m:[38;5;10m[49m - [NEEDS HUMAN] **L481** — Verify if there are additional healthcare-specific Neptune samples available on aws-samples. Cannot verify repository contents externally; someone with GitHub access should search `aws-samples` for healthcare or clinical Neptune examples beyond `amazon-neptune-samples` and `amazon-neptune-ontology-example-blog` (already listed).
+[0m[K
+Replacing: [38;5;141mchapter13.05-todo.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me verify the architecture file doesn't contain any em dashes or TODO comments:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m for pattern: [38;5;141m–[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '–' in /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.7s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m for pattern: [38;5;141m<!-- todo[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '<!-- TODO' in /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. Let me verify the new sections read well in context:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m, from line [38;5;141m55[0m to [38;5;141m60[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3276 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m, from line [38;5;141m449[0m to [38;5;141m475[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3687 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mEverything looks good. Let me do a final check of the todo file:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m658 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mAll three findings resolved:[0m[0m
+[0m[0m
+1. [1mL65 (RESOLVED)[22m: Added a new [38;5;10mDynamoDB Item-Level Access (HIPAA Minimum Necessary)[0m row to the Prerequisites table. It documents two approaches: IAM [38;5;10mdynamodb:LeadingKeys[0m conditions with department-prefixed partition keys (stronger, enforced at the API layer) or application-layer enforcement with department-mapping validation. Explains tradeoffs and recommends documenting the chosen approach in a deployment runbook.[0m[0m
+[0m[0m
+2. [1mL453 (RESOLVED)[22m: Added a full "Why This Isn't Production-Ready" section between Expected Results and Variations, covering five production gaps: HL7/FHIR integration testing, pathway authoring UI, clinical committee governance workflow, multi-pathway conflict detection, and graceful degradation under EHR outage.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 12.05 • Time: 1m 52s
+
+[0m[1G[0m[0m[?25h3. [1mL481 (DEFERRED as [NEEDS HUMAN])[22m: I cannot verify the current contents of the [38;5;10maws-samples[0m GitHub org to confirm whether additional healthcare-specific Neptune samples exist beyond the two already listed. Left in the todo with a clear explanation of what a human should check.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m658 bytes[0m from /tmp/ralph-worktrees/iter-1805/chapter13.05-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the current state of the architecture companion and the python example to understand the full context:[0m[0m
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-1805[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-1805[0m [38;5;244m(showing 1000 of 4482 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.546s[0m
+
+[38;5;141m> [0mI can see the todo file has only one remaining item, and it's already marked with [38;5;10m[NEEDS HUMAN][0m. Let me verify this is the complete and correct state of the todo file and check the relevant source files for consistency.[0m[0m
+Searching for files: [38;5;141m**/chapter13.05*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1805[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m9 files[0m under /tmp/ralph-worktrees/iter-1805
+[38;5;244m - Completed in 0.33s[0m
+
+[38;5;141m> [0mThe todo file has exactly one item remaining, and it is already properly marked as [38;5;10m[NEEDS HUMAN][0m with a clear reason (cannot verify GitHub repository contents externally). The pass condition states that findings should be either (a) resolved in source files, or (b) explicitly deferred with a [38;5;10m[NEEDS HUMAN][0m note and a reason. This single remaining item satisfies condition (b).[0m[0m
+[0m[0m
+Let me quickly verify there are no regressions by checking that the architecture and python example files exist and don't contain [38;5;10m<!-- TODO -->[0m comments or em dashes:[0m[0m
+[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md[0m for pattern: [38;5;141m<!-- todo[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1805/chapter13.05-python-example.md[0m for pattern: [38;5;141m<!-- todo[0mI will run the following command: [38;5;141mgrep -n '—' /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md /tmp/ralph-worktrees/iter-1805/chapter13.05-python-example.md /tmp/ralph-worktrees/iter-1805/chapter13.05-clinical-pathway-protocol-modeling.md 2>/dev/null | head -20[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check for em dashes in recipe source files
+
+
+[38;5;10m ✓ [0mFound 0 matches for pattern '<!-- TODO' in /tmp/ralph-worktrees/iter-1805/chapter13.05-architecture.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern '<!-- TODO' in /tmp/ralph-worktrees/iter-1805/chapter13.05-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.6s[0m
+
+[38;5;244m - Completed in 0.61s[0m
+
+[38;5;141m> [0mNo em dashes found in any of the recipe source files, and no [38;5;10m<!-- TODO -->[0m comments remain. The todo file's only remaining item is properly deferred with [38;5;10m[NEEDS HUMAN][0m.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 3.66 • Time: 28s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "The single remaining finding (L481 in architecture companion) is properly deferred with a '[NEEDS HUMAN]' prefix and clear reason explaining that external GitHub repository verification is required. No em dashes exist in recipe source files. No <!-- TODO --> comments remain. The todo file is in a valid terminal state per the pass condition."}

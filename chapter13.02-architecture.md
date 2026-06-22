@@ -72,7 +72,7 @@ flowchart TD
 | **Amazon API Gateway** | REST interface with auth, rate limiting, and request validation |
 | **Amazon OpenSearch Service** | Full-text search and geospatial filtering to complement graph traversal |
 | **AWS KMS** | Encryption key management for Neptune, S3, and OpenSearch |
-| **Amazon CloudWatch** | Monitoring, query latency metrics, and alerting on stale data |
+| **Amazon CloudWatch** | Custom metrics for graph freshness (last bulk load timestamp, record update percentage, expired edge count), query latency tracking, and staleness alerting |
 
 ### Code
 
@@ -335,6 +335,89 @@ FUNCTION apply_incremental_update(change_event):
     log_change_event(change_event)
 ```
 
+**Step 6: Monitor graph freshness.** A provider directory that silently goes stale is worse than one that doesn't exist, because users trust it. You need custom CloudWatch metrics that answer three questions: "When was the last successful load?", "How current is the data?", and "How much of the graph is expired?" These metrics drive alerts and power a health endpoint that consuming applications can check before trusting results.
+
+```pseudocode
+FUNCTION publish_freshness_metrics(neptune_endpoint, cloudwatch_client):
+    // Metric 1: Last successful bulk load timestamp.
+    // Alert if this exceeds 48 hours, meaning the nightly refresh failed
+    // or didn't run. This catches silent pipeline failures that leave
+    // the graph serving increasingly stale data.
+    last_load_time = query Neptune:
+        MATCH (m:MetadataNode {type: "bulk_load"})
+        RETURN m.last_success_timestamp
+        ORDER BY m.last_success_timestamp DESC
+        LIMIT 1
+
+    cloudwatch_client.put_metric_data(
+        namespace = "ProviderDirectory/GraphFreshness",
+        metric_name = "LastBulkLoadAgeHours",
+        value = hours_since(last_load_time),
+        unit = "Count"
+    )
+
+    // Metric 2: Percentage of provider records updated in the last 30 days.
+    // A healthy directory sees regular churn (providers update addresses,
+    // accepting status, etc.). If this drops below ~60%, something is wrong
+    // with the incremental update pipeline.
+    freshness_query = query Neptune:
+        MATCH (p:Provider)
+        WITH count(p) AS total,
+             count(CASE WHEN p.last_updated > date_minus(today(), 30)
+                        THEN 1 END) AS recent
+        RETURN toFloat(recent) / total * 100 AS pct_updated_30d
+
+    cloudwatch_client.put_metric_data(
+        namespace = "ProviderDirectory/GraphFreshness",
+        metric_name = "PercentRecordsUpdated30Days",
+        value = freshness_query.pct_updated_30d,
+        unit = "Percent"
+    )
+
+    // Metric 3: Count of IN_NETWORK edges with term_date in the past.
+    // These are expired network participations still in the graph.
+    // A small count is normal (historical records). A spike means
+    // a network termination file was loaded without proper processing,
+    // or the term_date filter in search queries isn't working.
+    expired_edges = query Neptune:
+        MATCH ()-[r:IN_NETWORK]->()
+        WHERE r.term_date < today()
+        RETURN count(r) AS expired_count
+
+    cloudwatch_client.put_metric_data(
+        namespace = "ProviderDirectory/GraphFreshness",
+        metric_name = "ExpiredNetworkEdges",
+        value = expired_edges.expired_count,
+        unit = "Count"
+    )
+
+// Run this on a schedule (every 15 minutes via EventBridge rule triggering Lambda).
+// CloudWatch alarms:
+//   - LastBulkLoadAgeHours > 48  -> P2 alert to data engineering on-call
+//   - PercentRecordsUpdated30Days < 60 -> P3 alert for investigation
+//   - ExpiredNetworkEdges > previous_day * 1.5 -> P3 anomaly alert
+
+FUNCTION health_endpoint(neptune_endpoint):
+    // Expose a /health route on the query API that consuming applications
+    // can check before trusting search results. Returns graph freshness
+    // metadata so callers can display warnings or degrade gracefully
+    // when data is stale.
+    last_load = get_last_bulk_load_timestamp(neptune_endpoint)
+    record_freshness = get_percent_updated_30d(neptune_endpoint)
+    node_count = query Neptune: MATCH (p:Provider) RETURN count(p)
+    edge_count = query Neptune: MATCH ()-[r]->() RETURN count(r)
+
+    RETURN {
+        "status": "healthy" IF hours_since(last_load) < 48 ELSE "degraded",
+        "last_bulk_load": last_load,
+        "hours_since_last_load": hours_since(last_load),
+        "percent_records_fresh_30d": record_freshness,
+        "provider_count": node_count,
+        "edge_count": edge_count,
+        "checked_at": now()
+    }
+```
+
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and Neptune's openCypher endpoint, check out the [Python Example](chapter13.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -410,7 +493,7 @@ FUNCTION apply_incremental_update(change_event):
 
 **Network adequacy compliance.** CMS and state regulators require health plans to demonstrate adequate provider networks (enough providers of each specialty within distance/time standards). The graph makes these calculations natural, but you need to build the compliance reporting layer on top: automated adequacy checks, gap identification, and regulatory filing support.
 
-**Data quality monitoring.** A graph with stale data is worse than no graph, because it produces confidently wrong answers. You need automated freshness checks: "what percentage of provider records were updated in the last 30 days?" "How many network edges have term dates in the past?" Alert on staleness thresholds.
+**Data quality monitoring.** Step 6 above covers the foundational freshness metrics and health endpoint, but production needs more: automated comparison of graph counts against source-of-truth systems (did the load drop 10% of providers silently?), detection of orphaned nodes (locations with no connected providers), and trend analysis on data freshness over time. Consider a dedicated data quality dashboard that tracks these signals and feeds into operational runbooks for the on-call team.
 
 **Multi-tenancy.** If you serve multiple payer clients, each with their own network definitions, you need tenant isolation in the graph. Options: separate Neptune clusters per tenant (expensive, simple), shared cluster with tenant-scoped queries (cheaper, complex), or a hybrid where large tenants get dedicated clusters.
 
