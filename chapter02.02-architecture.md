@@ -75,6 +75,24 @@ flowchart LR
 
 #### Walkthrough
 
+**Step 0: Check the cache.** Before calling any inference APIs, compute a cache key from the source text and target reading level. If this exact document has been simplified before at this exact grade target, serve the cached result and skip all downstream steps. Standard discharge instruction templates (knee replacement, cataract surgery, colonoscopy) reuse boilerplate language that varies only in patient-specific details. Without this step, you pay full Comprehend Medical and Bedrock costs every time the same template shows up. The Expected Results section benchmarks this at 30-50% cache hit rate after warm-up, which translates directly to cost and latency savings at that same rate.
+
+```pseudocode
+FUNCTION check_cache(original_text, target_grade):
+    // Compute a stable key from the source text and reading level target.
+    // SHA-256 is deterministic and collision-resistant enough for a cache key.
+    cache_key = SHA256(original_text + "|" + target_grade)
+
+    // Look up in the results table. DynamoDB GetItem is single-digit
+    // millisecond latency vs. 3-6 seconds for the full pipeline.
+    cached = GET from "simplified-documents" WHERE cache_key = cache_key
+
+    IF cached exists AND cached.simplified_text is not empty:
+        RETURN { hit: true, result: cached }
+    ELSE:
+        RETURN { hit: false, cache_key: cache_key }
+```
+
 **Step 1: Extract medical entities from source text.** Before simplifying anything, identify the critical clinical content that must survive the transformation. Medication names, dosages, conditions, procedures, dates, and provider names are non-negotiable. If any of these get lost or altered during simplification, the output is unsafe. Amazon Comprehend Medical parses clinical text and returns structured entities with their categories and positions. We use this as our "preservation checklist" that gets verified after simplification. Skip this step and you have no way to automatically detect when simplification accidentally drops a medication or changes a dosage.
 
 ```pseudocode
@@ -249,7 +267,7 @@ FUNCTION simplify_segment(segment, must_preserve, reading_level):
 **Step 4: Validate readability and preservation.** This is the automated quality gate. Two checks run on every simplified segment. First: does the output actually meet the target reading level? Readability formulas (Flesch-Kincaid, SMOG) calculate a grade level from sentence length and word complexity. If the simplified text still reads at a 12th-grade level, it failed. Second: do all critical entities from Step 1 still appear in the output? If the source mentioned "ticagrelor 90mg BID" and the simplified version doesn't contain "ticagrelor" or "90mg," something got lost. Both checks are deterministic and fast. No LLM needed. Segments that fail either check get flagged for human review or re-simplification with a more aggressive prompt.
 
 ```pseudocode
-FUNCTION validate_output(simplified_segment, original_segment, must_preserve, target_grade):
+FUNCTION validate_output(simplified_segment, must_preserve, target_grade):
     issues = []
     
     // Check 1: Readability score
@@ -407,6 +425,24 @@ Simplified output (6th grade target):
 | Throughput | ~20 documents/second (Lambda concurrency limited) |
 
 **Where it struggles:** Very long documents (>3 pages) where context window limits force aggressive chunking. Highly specialized subspecialty text (genetics reports, pathology findings) where even the "simplified" version requires domain knowledge. Documents mixing multiple languages. Handwritten addenda that were OCR'd with errors in the source text (garbage in, garbage out).
+
+---
+
+## Why This Isn't Production-Ready
+
+**No retry loop on validation failure.** When a segment fails the readability check, this pipeline flags it and moves on. A production system re-prompts with more aggressive instructions (shorter sentences, more substitution) up to a retry limit before escalating to human review. Expect 50-70% of flagged segments to pass on retry with a stricter prompt, which means your current "needs_review" rate is artificially high.
+
+**Naive entity matching.** The preservation check uses case-insensitive substring matching. This produces false negatives when punctuation differs ("aspirin 81 mg" vs. "aspirin 81mg") and can't verify that a translated term ("heart attack") actually corresponds to the original concept ("myocardial infarction"). Production needs tokenized matching with a small edit-distance threshold and a maintained synonym allowlist.
+
+**No dead-letter queue.** Every external call (Bedrock, Comprehend Medical, DynamoDB) can fail transiently. This pipeline surfaces those failures as Lambda errors. Production routes failed documents to an SQS dead-letter queue for retry and alerting, rather than losing the simplification request entirely.
+
+**Single-pass segmentation.** The keyword classifier is first-match-wins. Ambiguous sections (medication instructions that mention follow-up timing) get classified by whichever keyword list iterates first. A production classifier should score all matches and apply the stricter prompt on ties, or use a small trained model.
+
+**No prompt versioning or A/B testing.** Prompts are baked into the pseudocode. Production stores them in versioned S3 objects, routes a percentage of traffic to new versions, and tracks readability scores per version to detect regressions before promoting.
+
+**No human review workflow.** Flagged segments get stored in DynamoDB but nothing consumes them. Production feeds flagged documents to an SQS queue backing a review UI where health literacy specialists edit, approve, or reject. Track reviewer edit distance over time to identify prompt weaknesses.
+
+**No long-document chunking.** Comprehend Medical's 20,000-character limit and Bedrock's context window both require chunking for multi-page documents. This pipeline assumes everything fits in a single call. Hospital course narratives regularly exceed these limits.
 
 ---
 
