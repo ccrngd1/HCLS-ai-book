@@ -352,13 +352,25 @@ def solve_model(
 
     if status == "Infeasible":
         # The constraints are contradictory. No valid schedule exists.
-        # In production, you'd identify which constraints conflict.
+        # In production, you'd identify which constraints conflict (IIS extraction).
         logger.error("Model is infeasible. Check constraint compatibility.")
         return {
             "status": "INFEASIBLE",
             "schedule": {},
             "objective_value": None,
             "solve_seconds": solve_seconds,
+            "flag_for_review": False,
+        }
+
+    if status == "Not Solved":
+        # Solver crashed or hit an internal error before finding any solution.
+        logger.error("Solver failed without producing a solution.")
+        return {
+            "status": "SOLVER_FAILURE",
+            "schedule": {},
+            "objective_value": None,
+            "solve_seconds": solve_seconds,
+            "flag_for_review": False,
         }
 
     # Extract the solution: which service got which block?
@@ -370,11 +382,20 @@ def solve_model(
             if pulp.value(x[sid][bid]) == 1:
                 schedule[bid] = sid
 
+    # Check solution quality. In production, distinguish:
+    # - gap <= 5%: near-optimal, proceed automatically
+    # - gap 5-15%: suboptimal but acceptable, flag for human review
+    # - gap > 15%: too far from optimal, don't replace current schedule
+    # PuLP doesn't expose the MIP gap directly for CBC, but commercial solvers do.
+    # Here we just flag "Not Optimal" status (solver hit time limit before proving optimality).
+    flag_for_review = status == "Not Solved" or status != "Optimal"
+
     return {
         "status": status.upper(),
         "schedule": schedule,
         "objective_value": pulp.value(model.objective),
         "solve_seconds": solve_seconds,
+        "flag_for_review": flag_for_review,
     }
 ```
 
@@ -573,11 +594,15 @@ def run_block_optimization(
     print("Step 4: Solving (this may take a few seconds)...")
     solution = solve_model(model, x, inputs["blocks"], inputs["services"])
     print(f"  Status: {solution['status']}")
-    print(f"  Objective value: {solution['objective_value']:.2f}")
-    print(f"  Solve time: {solution['solve_seconds']:.1f}s\n")
+    if solution["objective_value"] is not None:
+        print(f"  Objective value: {solution['objective_value']:.2f}")
+    print(f"  Solve time: {solution['solve_seconds']:.1f}s")
+    if solution.get("flag_for_review"):
+        print("  *** FLAGGED FOR REVIEW: solution may be suboptimal ***")
+    print()
 
-    if solution["status"] == "INFEASIBLE":
-        print("ERROR: No feasible schedule exists under current constraints.")
+    if solution["status"] in ("INFEASIBLE", "SOLVER_FAILURE"):
+        print(f"ERROR: {solution['status']}. No valid schedule produced.")
         print("Review room capabilities and minimum allocation requirements.")
         return solution
 

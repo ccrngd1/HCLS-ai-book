@@ -213,27 +213,78 @@ FUNCTION run_solver(model_file_path, time_limit_seconds):
     // Wait for job completion
     wait for job to reach SUCCEEDED or FAILED state
 
-    IF job.status == FAILED:
-        raise error "Solver failed. Check logs for infeasibility or resource limits."
+    // --- Granular solver outcome handling ---
+    // The solver can fail in multiple distinct ways. Each requires a different response.
+    // Treating them uniformly ("solver failed, alert someone") loses critical diagnostic
+    // information and delays resolution.
 
-    // Parse the solution from the solver output
-    solution = read solution file from S3 (written by the solver container)
+    IF job.status == FAILED AND job.exit_code != 0:
+        // Container crashed (OOM, segfault, misconfigured image).
+        // This is an infrastructure problem, not a model problem.
+        log error "Solver container crashed. Exit code: {job.exit_code}. Check CloudWatch logs."
+        publish CloudWatch metric: solver_crash = 1
+        alert operations team via SNS
+        RETURN {status: "SOLVER_CRASH", schedule: null, action: "ops_investigate"}
 
-    // Extract key quality metrics
-    objective_value = solution.objective_value
-    optimality_gap = solution.mip_gap       // how far from provably optimal (0% = perfect)
-    solve_time = solution.solve_time_seconds
+    // Read the solver's status output (solvers write termination status to a known file)
+    solver_status = read solver status file from S3
 
-    // Parse the assignment matrix back into a human-readable schedule
-    schedule = empty map
-    FOR each variable x[s, r, b] in solution where value == 1:
-        schedule[room r][block b] = service s
+    IF solver_status == INFEASIBLE:
+        // The constraints are contradictory. No valid schedule exists under current rules.
+        // Common causes: minimum block guarantees exceed total available blocks,
+        // room capability constraints leave a service with no feasible room,
+        // or a manual lock conflicts with a minimum guarantee for another service.
+        log warning "Model is infeasible. Constraint set has no valid solution."
+        publish CloudWatch metric: solver_infeasible = 1
+        // Provide diagnostics: which constraints are in the Irreducible Infeasible Set (IIS)?
+        iis_constraints = parse IIS from solver output (if solver supports IIS extraction)
+        write infeasibility report to S3
+        alert scheduling governance committee:
+            "No valid schedule exists. Conflicting constraints identified. Review required."
+        RETURN {status: "INFEASIBLE", schedule: null, iis: iis_constraints,
+                action: "relax_constraints"}
 
-    // Store the parsed schedule
-    write schedule to S3 as JSON
-    write solution metadata (gap, time, objective) to S3
+    IF solver_status == OPTIMAL OR solver_status == FEASIBLE:
+        // Parse the solution
+        solution = read solution file from S3
+        objective_value = solution.objective_value
+        optimality_gap = solution.mip_gap
 
-    RETURN schedule, optimality_gap
+        IF optimality_gap > 0.15:
+            // Gap > 15%: solution is feasible but far from optimal.
+            // The solver hit the time limit before converging.
+            // Don't auto-replace the current schedule with a weak solution.
+            log warning "Solver timed out with large gap: {optimality_gap * 100}%"
+            alert operations team:
+                "Solver did not converge. Gap={optimality_gap*100}%. Current schedule retained."
+            RETURN {status: "TIMEOUT_LARGE_GAP", schedule: null,
+                    gap: optimality_gap, action: "increase_time_limit_and_rerun"}
+
+        IF optimality_gap > 0.05 AND optimality_gap <= 0.15:
+            // Gap 5-15%: suboptimal but potentially acceptable.
+            // Flag for human review but don't block the pipeline.
+            log info "Suboptimal solution: gap={optimality_gap * 100}%. Flagging for review."
+            flag_for_review = true
+        ELSE:
+            // Gap <= 5%: near-optimal. Proceed normally.
+            flag_for_review = false
+
+        // Parse the assignment matrix back into a human-readable schedule
+        schedule = empty map
+        FOR each variable x[s, r, b] in solution where value == 1:
+            schedule[room r][block b] = service s
+
+        // Store the parsed schedule
+        write schedule to S3 as JSON
+        write solution metadata (gap, time, objective, flag_for_review) to S3
+
+        RETURN {status: "SOLVED", schedule: schedule, gap: optimality_gap,
+                flag_for_review: flag_for_review}
+
+    // Catch-all: unexpected solver status
+    log error "Unexpected solver status: {solver_status}"
+    alert operations team via SNS
+    RETURN {status: "UNKNOWN_FAILURE", schedule: null, action: "ops_investigate"}
 ```
 
 **Step 4: Evaluate and compare the proposed schedule.** A raw optimization output is not useful to decision-makers without context. This step computes predicted performance metrics for the proposed schedule and compares them against the current schedule. It answers the questions leadership will ask: "How does utilization change? Which services gain or lose blocks? What's the predicted revenue impact?" Without this comparison, the optimization output is a black box that nobody will trust enough to approve.
@@ -338,6 +389,55 @@ FUNCTION handle_block_release(room, block, releasing_service):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and an open-source solver, check out the [Python Example](chapter14.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
+### Schedule Approval Access Control
+
+Block schedule changes are politically sensitive. A proposed schedule that takes blocks away from one service and gives them to another will generate immediate pushback from department chiefs. The system needs a formal approval workflow with clear role-based access control, audit trails, and state transitions. Without this, your optimization output has no path to becoming the active schedule.
+
+**State machine.** Every proposed schedule passes through defined states:
+
+```text
+[proposed] --> [under_review] --> [approved] --> [active]
+                    |                  |
+                    v                  v
+              [rejected]         [superseded]
+```
+
+Each transition is an explicit action by an authorized user, recorded with identity and timestamp.
+
+**Access control model.** API Gateway exposes approval endpoints authenticated via Amazon Cognito (or IAM, depending on your identity provider). Role-based access restricts who can perform which transitions:
+
+| Role | Allowed Transitions | Source |
+|------|-------------------|--------|
+| Scheduling Analyst | proposed -> under_review | Cognito group: `scheduling-analysts` |
+| Governance Committee Member | under_review -> approved, under_review -> rejected | Cognito group: `surgical-governance` |
+| System (automated) | approved -> active (on effective date) | EventBridge scheduled rule with IAM role |
+| Administrator | any -> superseded (emergency override) | Cognito group: `scheduling-admins` |
+
+**DynamoDB state tracking.** The schedule state table stores every transition:
+
+```pseudocode
+DynamoDB Table: schedule_approvals
+  Partition Key: schedule_id (e.g., "2026-Q3-proposed-v2")
+  Sort Key: transition_timestamp (ISO 8601)
+
+  Attributes:
+    from_state: previous state
+    to_state: new state
+    actor_identity: Cognito sub or IAM principal ARN
+    actor_name: human-readable name (for display, not for authz)
+    reason: free-text justification (required for rejections)
+    metadata: additional context (committee vote count, conditions)
+```
+
+The current state of any schedule is the `to_state` of the most recent transition record. Query with `ScanIndexForward: false, Limit: 1` on the sort key to get the latest state in a single read.
+
+**CloudTrail integration.** Every API Gateway call to the approval endpoints is logged in CloudTrail. This provides a tamper-resistant audit trail independent of DynamoDB. When a service chief asks "who approved this schedule change and when?", you can answer from two independent sources.
+
+**Implementation notes:**
+- The Cognito user pool should federate with your hospital's identity provider (Active Directory, Okta, PingFederate). Don't maintain a separate user database for scheduling governance.
+- API Gateway resource policy should restrict access to the VPC or corporate network. Schedule approvals should not be reachable from the public internet.
+- Consider requiring multi-party approval (2 of N governance committee members) for schedules that reduce any service's allocation by more than 20%. Implement via a `pending_approvals` counter in the state record.
+
 ## Expected Results
 
 **Sample proposed schedule output (partial):**
@@ -396,6 +496,28 @@ FUNCTION handle_block_release(room, block, releasing_service):
 
 ---
 
+## Why This Isn't Production-Ready
+
+The architecture above demonstrates the pattern. Deploying this to a real surgical block committee requires closing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will determine whether your optimization output ever becomes an active schedule:
+
+**Approval workflow is the product.** The optimizer produces a proposed schedule. Getting that proposal approved, communicated, and enacted is harder than the optimization itself. Production requires a full governance workflow: multi-party approval from the surgical governance committee, structured comment and objection capture, conditional approvals ("approved if Cardiac keeps Monday AM in OR-3"), versioned proposals with diff views, and a defined escalation path when consensus fails. The access control model in the pseudocode is the foundation, but the UI and process design around it are a 6-month project.
+
+**EHR integration is bidirectional and fragile.** The scheduler needs to read case history from the EHR (for demand estimation) and write approved schedules back (so the booking system reflects the new block ownership). Most EHR systems expose scheduling data through HL7 ADT feeds or FHIR R4 Schedule/Slot resources, but write-back typically requires vendor-specific APIs (Epic OpTime, Oracle Health SurgiNet). Plan for a dedicated integration layer with retry logic, conflict detection (what if someone booked a case during the approval window?), and rollback capability. Budget 8-12 weeks for this integration alone.
+
+**Surgeon-level decomposition.** This recipe optimizes at the service level (Orthopedics gets 5 blocks). Production systems must further decompose into surgeon-specific assignments within each service's allocation. That's a second-stage optimization problem with its own constraints: surgeon preferences, call schedules, vacation calendars, case complexity matching, and fellowship training requirements. Some services handle this internally; others expect the scheduling system to do it.
+
+**Seasonal re-training and model drift.** Surgical demand is seasonal (joint replacements spike in Q1, trauma spikes in summer). The demand forecast feeding the optimizer needs seasonal adjustment, and the optimizer's weight parameters need periodic re-calibration. Build a quarterly model-review cadence: compare predicted utilization against actual utilization for the previous quarter, retrain the demand forecaster, and adjust objective weights if the committee's priorities have shifted.
+
+**Dead letter queues and failure recovery.** The block release engine (EventBridge to Lambda) uses asynchronous invocation. If the Lambda fails (DynamoDB throttling, temporary network partition), the release event retries and then disappears. Configure an SQS dead letter queue on the release Lambda, alarm on queue depth, and build a replay mechanism. A silently lost release event means a block sits unused that a waitlisted service could have filled.
+
+**Idempotency on release decisions.** EventBridge can deliver the same release event more than once. Without the conditional DynamoDB write (checking that the block is still in "released" state), you risk double-assignment or overwriting a legitimate assignment made seconds earlier. The pseudocode shows the conditional write pattern, but production also needs a reconciliation job that detects and alerts on any double-assignment state.
+
+**Constraint versioning and audit.** When the block committee changes a policy (new minimum guarantee for a growing service, new room capability after a renovation), those constraint changes need to be versioned and traceable. Store constraint definitions in a versioned S3 prefix or DynamoDB with version attributes. Every solver run should record which constraint version it used, so you can explain why a particular quarter's schedule looked the way it did.
+
+**Stakeholder communication automation.** When a new schedule is approved, affected services need structured notifications: what changed for them, effective date, who to contact with concerns. Build templated notifications through Amazon SES or your hospital's communication platform. Manual emails from the scheduling office don't scale and introduce inconsistency.
+
+---
+
 ## Variations and Extensions
 
 **Multi-site optimization.** Health systems with multiple surgical facilities can optimize across sites: route high-complexity cases to the facility with specialized equipment while distributing routine cases to maximize overall system utilization. This multiplies the problem size but the formulation is structurally the same.
@@ -421,9 +543,13 @@ FUNCTION handle_block_release(room, block, releasing_service):
 - [PuLP: Python LP/MIP Modeler](https://coin-or.github.io/pulp/) (Python interface to multiple solvers including CBC and HiGHS)
 
 **AWS Sample Repos:**
+- [`employee-shift-scheduling-optimization-cdk`](https://github.com/aws-samples/employee-shift-scheduling-optimization-cdk): CDK-based employee scheduling optimization using constraint programming. Demonstrates the pattern of formulating scheduling problems and solving them on AWS infrastructure.
+- [`route-optimization-accelerator`](https://github.com/aws-samples/route-optimization-accelerator): Linear optimization for vehicle routing and traveling salesman problems with configurable constraints (capacity, time windows, duration). Shows the general pattern of packaging a solver on AWS with constraint configuration.
+- [`robust-time-series-forecasting-with-mlops`](https://github.com/aws-samples/robust-time-series-forecasting-with-mlops): End-to-end time-series forecasting pipeline on SageMaker with MLOps automation. Relevant for the demand forecasting component that feeds the block optimizer.
 
 **Operations Research in Healthcare:**
-
+- [INFORMS Healthcare Applications](https://www.informs.org/News-Room/O.R.-Analytics-for-Government-Officials/Topic-Areas/Healthcare): INFORMS resources on operations research applied to healthcare, including surgical scheduling, resource allocation, and capacity planning
+- [Operations Research for Health Care (Elsevier)](https://www.scimagojr.com/journalsearch.php?q=21100202150&tip=sid): Peer-reviewed journal focused on OR and analytics methods applied to health and health care delivery problems
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by Operations/Scheduling for reference architectures)
 
 ---
