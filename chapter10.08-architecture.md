@@ -275,7 +275,26 @@ ON capture_initiated(patient_id, indication, capture_context):
         device_class: capture_context.device_class,
         started_at: now(),
         jurisdiction:
-            lookup_patient_jurisdiction(patient_id)
+            lookup_patient_jurisdiction(patient_id),
+        mental_health_profile:
+            protocol.is_mental_health_indication,
+        part_2_eligible:
+            protocol.is_42_cfr_part_2_eligible
+    })
+
+    // Step 1C-ii: disclosure-accounting log entry for
+    // the initial biometric-data collection event.
+    disclosure_accounting_log.append({
+        event_type: "biometric_data_collection",
+        session_id: session_id,
+        patient_id_hash: hash(patient_id),
+        jurisdiction:
+            lookup_patient_jurisdiction(patient_id),
+        data_elements: ["voice_audio"],
+        purpose: indication,
+        consent_id: consent_outcome.consent_id,
+        accessor: "voice_biomarker_pipeline",
+        timestamp: now()
     })
 
     // Step 1D: walk the speaker through the protocol
@@ -384,15 +403,48 @@ FUNCTION extract_features(session_id):
         // biomarkers).
         linguistic_features = NULL
         IF task_def.uses_linguistic_features:
-            transcript = transcribe_medical.start_job(
+            // Linguistic-feature extraction uses a
+            // wait-for-callback pattern so the Lambda
+            // does not block (and bill) during the
+            // Transcribe Medical job. The feature-
+            // extraction Lambda starts the transcription
+            // job and returns a task token to Step
+            // Functions. Step Functions pauses the
+            // execution until an EventBridge rule
+            // detects the Transcribe job-completion
+            // event and calls back with the task token.
+            // A separate Lambda step then retrieves the
+            // transcript and runs the linguistic-feature
+            // extractor. This avoids the 15-minute
+            // Lambda timeout ceiling on long samples
+            // and eliminates idle-billing waste.
+            transcribe_job = transcribe_medical.start_job(
                 audio_ref: segment.audio_ref,
                 language: state.protocol.language,
-                show_speaker_labels: false)
-            wait_for_transcribe(transcript.job_name)
-            transcript_text = retrieve_transcript(
-                transcript.job_name)
+                show_speaker_labels: false,
+                output_bucket: FEATURE_BUCKET,
+                output_key:
+                    f"{session_id}/{segment.task_id}/transcript.json")
 
-            // TODO (TechWriter): Expert review A9 (MEDIUM). Transcribe Medical async job-wait inside the feature-extraction Lambda is a latency-and-reliability anti-pattern (Lambda billed for wait period, 15-minute maximum execution time may be exceeded for long samples). Split linguistic-feature extraction into separate Step Functions step or use wait-for-callback pattern; feature-extraction Lambda invokes start_job and returns job_name; Step Functions awaits job-completion event; separate Lambda step retrieves transcript and invokes extract_linguistic_features.
+            // Return the job name to Step Functions.
+            // The state machine uses a
+            // .waitForTaskToken integration to pause
+            // until the Transcribe completion event
+            // triggers the callback Lambda.
+            RETURN {
+                status: "AWAITING_TRANSCRIPTION",
+                transcribe_job_name:
+                    transcribe_job.job_name,
+                task_token: step_functions_task_token,
+                segment_task_id: segment.task_id
+            }
+
+        // --- Resumed after Transcribe completion callback ---
+        // Step Functions invokes this continuation Lambda
+        // with the completed transcript reference.
+        IF resuming_after_transcription:
+            transcript_text = retrieve_transcript(
+                transcribe_job_name)
 
             linguistic_features = extract_linguistic_features(
                 transcript: transcript_text,
@@ -606,13 +658,40 @@ FUNCTION score_biomarkers(session_id):
             scored_at: now()
         }
 
+    // Archive-reference pattern: write full scores
+    // content (including per-feature patient values and
+    // cohort baselines, which are biometric-derived
+    // data) to the score-archive S3 bucket under a
+    // biometric-derived KMS key class. The metadata
+    // table holds only structural metadata and the S3
+    // reference, never the raw biometric-derived values.
+    score_archive_key = f"{session_id}/scores.json"
+    s3.put_object(
+        bucket: SCORE_ARCHIVE_BUCKET,
+        key: score_archive_key,
+        body: serialize(scores),
+        sse_kms_key_id: BIOMETRIC_DERIVED_KMS_KEY)
+
     capture_session_table.update(
         session_id: session_id,
-        scores: scores,
+        score_archive_ref:
+            f"s3://{SCORE_ARCHIVE_BUCKET}/{score_archive_key}",
+        per_indication_metadata: {
+            indication: {
+                status: sc.status,
+                category: (sc.category
+                    if sc.status == "SCORED" else NULL),
+                cohort: (sc.cohort
+                    if sc.status == "SCORED" else NULL),
+                model_version: (sc.model_version
+                    if sc.status == "SCORED" else NULL),
+                calibration_version: (sc.calibration_version
+                    if sc.status == "SCORED" else NULL)
+            }
+            FOR indication, sc IN scores
+        },
         scoring_completed_at: now(),
         status: "scored")
-
-    // TODO (TechWriter): Expert review S2 (HIGH). capture_session_table accumulates biomarker scores with patient feature values (top_features.patient_value, cohort_baseline_mean) outside the archive-reference pattern; same chapter pattern as 10.1-10.7 with recipe-distinct biometric-derived-data extension. Adopt audit-record discipline uniformly: write full scores content to per-session score-archive S3 bucket with biometric-derived KMS key class; metadata table holds only references plus structural metadata (status, category, cohort, model_version, calibration_version, faithfulness_annotations_summary, archive_refs). Update Cross-Cutting Design Points to elevate working-store-as-archive-reference pattern.
 
     RETURN scores
 ```
@@ -663,14 +742,27 @@ FUNCTION package_interpretation(session_id):
 
         // Step 5C: clinician-facing summary using
         // Bedrock for natural-language packaging.
-        clinician_summary = bedrock.invoke_model(
+        // Prompt-injection defense: transcript content
+        // is delimited with explicit boundary markers
+        // so the model treats it as data, not as
+        // instruction. Structured-output schema
+        // validation enforces the expected response
+        // shape. A secondary deterministic check
+        // validates that numeric claims in the summary
+        // match the source biomarker fields.
+        clinician_summary_raw = bedrock.invoke_model(
             model_id: SUMMARY_MODEL,
             prompt: build_summary_prompt(
                 indication: indication,
                 score: score,
                 trajectory: trajectory,
                 clinical_action: clinical_action,
-                template: CLINICIAN_SUMMARY_TEMPLATE),
+                template: CLINICIAN_SUMMARY_TEMPLATE,
+                // Delimited-input framing for any
+                // transcript-derived content to prevent
+                // prompt injection from patient speech.
+                transcript_delimiter: "<transcript>",
+                transcript_close: "</transcript>"),
             guardrail_id: BIOMARKER_GUARDRAIL_ID,
             response_format: {
                 type: "json_schema",
@@ -678,7 +770,61 @@ FUNCTION package_interpretation(session_id):
             },
             max_tokens: 800)
 
+        // Step 5C-ii: faithfulness check on the
+        // LLM-generated summary. Structured-output
+        // schema validation is first (reject malformed
+        // responses). Citation grounding checks that
+        // each claim in the summary traces to a source
+        // biomarker field. Rule-based contradiction
+        // detection catches numeric mismatches. For
+        // high-stakes indications, an LLM-judge
+        // faithfulness scorer provides a secondary
+        // check. On faithfulness failure, fall back to
+        // a deterministic structured-summary renderer.
+        schema_valid = validate_schema(
+            clinician_summary_raw.content, SUMMARY_SCHEMA)
+        citation_grounded = check_citation_grounding(
+            summary: clinician_summary_raw.content,
+            source_fields: {
+                score: score,
+                trajectory: trajectory,
+                clinical_action: clinical_action
+            })
+        numeric_consistent = check_numeric_consistency(
+            summary: clinician_summary_raw.content,
+            score: score,
+            trajectory: trajectory)
+
+        faithfulness_pass = (
+            schema_valid AND
+            citation_grounded AND
+            numeric_consistent)
+
+        IF NOT faithfulness_pass:
+            clinician_summary = render_structured_summary(
+                indication, score, trajectory,
+                clinical_action)
+            log_faithfulness_failure(
+                session_id, indication,
+                schema_valid, citation_grounded,
+                numeric_consistent)
+            cloudwatch.put_metric(
+                namespace: "VoiceBiomarker",
+                metric_name: "FaithfulnessFailureRate",
+                value: 1,
+                dimensions: {
+                    indication: indication,
+                    cohort: score.cohort
+                })
+        ELSE:
+            clinician_summary = clinician_summary_raw.content
+
         // Step 5D: store the trajectory record.
+        // The trajectory table is classified as a
+        // biometric-derived data store. Encryption
+        // uses the biometric-derived KMS key class.
+        // Biometric-data governance (right-to-deletion,
+        // disclosure-accounting) applies.
         trajectory_table.put({
             patient_id_hash: state.patient_id_hash,
             indication: indication,
@@ -698,19 +844,42 @@ FUNCTION package_interpretation(session_id):
             score: score,
             trajectory: trajectory,
             clinical_action: clinical_action,
-            clinician_summary: clinician_summary.content,
+            clinician_summary: clinician_summary,
+            faithfulness_pass: faithfulness_pass,
             packaged_at: now()
         }
 
+    // Archive-reference pattern for interpretations:
+    // write full content (including LLM-generated
+    // clinician_summary) to the interpretation-archive
+    // S3 bucket under the biometric-derived KMS key.
+    // The metadata table holds only structural
+    // references, not raw biometric-derived values.
+    interp_archive_key = f"{session_id}/interpretations.json"
+    s3.put_object(
+        bucket: INTERPRETATION_ARCHIVE_BUCKET,
+        key: interp_archive_key,
+        body: serialize(interpretations),
+        sse_kms_key_id: BIOMETRIC_DERIVED_KMS_KEY)
+
     capture_session_table.update(
         session_id: session_id,
-        interpretations: interpretations,
+        interpretation_archive_ref:
+            f"s3://{INTERPRETATION_ARCHIVE_BUCKET}/{interp_archive_key}",
+        per_indication_interpretation_metadata: {
+            indication: {
+                status: interp.status,
+                clinical_action: (interp.clinical_action
+                    if interp.status == "INTERPRETED"
+                    else NULL),
+                faithfulness_pass: (interp.faithfulness_pass
+                    if interp.status == "INTERPRETED"
+                    else NULL)
+            }
+            FOR indication, interp IN interpretations
+        },
         packaging_completed_at: now(),
         status: "interpreted")
-
-    // TODO (TechWriter): Expert review S2 (HIGH) continued. interpretations content (including LLM-generated clinician_summary) and trajectory_table entries (calibrated_score, cohort, confound_flags, recording_chain, trajectory_delta) need archive-reference pattern. Write interpretations content to per-session interpretation-archive S3 bucket with same KMS key class; metadata holds only references. Classify trajectory_table as biometric-derived data store with biometric-data governance.
-    // TODO (TechWriter): Expert review A2 (MEDIUM). Faithfulness check on the LLM-generated clinician_summary architecturally implicit. Add faithfulness-check stage between Bedrock summary generation and interpretation packaging: structured-output schema validation, citation grounding for each summary section to source biomarker fields, LLM-judge faithfulness scoring as secondary check for high-stakes indications, rule-based contradiction detection. Fall back to render_structured_summary on faithfulness block. Per-cohort faithfulness-failure-rate as launch gate.
-    // TODO (TechWriter): Expert review S4 (MEDIUM). Foundation-model prompt-injection risk for the LLM-judged linguistic-feature-extraction and clinician-summary-rendering paths underspecified. Add delimited-input framing for transcript content (<transcript>...</transcript>), strict structured-output validation, secondary deterministic-feature-engineering check; per-language and prompt-injection edge-case test discipline.
 
     RETURN interpretations
 ```
@@ -727,7 +896,13 @@ FUNCTION deliver_to_workflow(session_id):
         // Observation. The Observation includes the
         // score, the cohort context, the confound flags,
         // and the indeterminate-result status where
-        // applicable.
+        // applicable. Idempotency: use a conditional
+        // create with an idempotency key composed of
+        // (session_id, indication). On duplicate write,
+        // return the prior resource_id rather than
+        // creating a second Observation, which would
+        // trigger duplicate decision-support alerts
+        // and corrupt the longitudinal baseline.
         observation_resource = build_fhir_observation(
             patient_id: lookup_patient_id(
                 state.patient_id_hash),
@@ -735,11 +910,23 @@ FUNCTION deliver_to_workflow(session_id):
             interpretation: interpretation,
             performed_at: state.started_at)
 
-        healthlake_client.create_resource(
-            resource_type: "Observation",
-            resource: observation_resource)
+        idempotency_identifier = {
+            system: "urn:institution:voice-biomarker",
+            value: f"{session_id}:{indication}"
+        }
+        observation_resource.identifier = [
+            idempotency_identifier]
 
-        // TODO (TechWriter): Expert review A3 (MEDIUM). Idempotency for HealthLake FHIR Observation write-back architecturally implicit; duplicate write produces duplicate Observation triggering duplicate decision-support alert, mis-sized longitudinal baseline, mis-calibrated trajectory. Specify per-write idempotency key (session_id, indication) or (patient_id_hash, indication, captured_at_truncated_to_minute); on idempotency-match return prior resource_id; FHIR conditional-create where HealthLake supports.
+        // FHIR conditional-create: If-None-Exist
+        // header checks against the identifier.
+        // HealthLake returns 200 with the existing
+        // resource if one matches; 201 if created.
+        healthlake_response = healthlake_client.create_resource(
+            resource_type: "Observation",
+            resource: observation_resource,
+            conditional_create_criteria:
+                f"identifier={idempotency_identifier.system}|"
+                f"{idempotency_identifier.value}")
 
         // Step 6B: surface the result to the clinical
         // workflow per the institutionally-approved
@@ -834,6 +1021,8 @@ FUNCTION audit_and_surveillance(session_id):
         capture_completed_at: state.capture_completed_at,
         scoring_completed_at: state.scoring_completed_at,
         delivered_at: state.packaging_completed_at,
+        mental_health_profile: state.mental_health_profile,
+        part_2_eligible: state.part_2_eligible,
         indications_attempted:
             list(interpretations.keys()),
         per_indication_outcomes: {
@@ -862,17 +1051,47 @@ FUNCTION audit_and_surveillance(session_id):
                 calibration_version:
                     (interp.score.calibration_version
                      if interp.status == "INTERPRETED"
-                     else NULL)
+                     else NULL),
+                model_card_version:
+                    (interp.score.model_card_version
+                     if interp.status == "INTERPRETED"
+                     else NULL),
+                clinical_action_mapping_version:
+                    CLINICAL_ACTION_MAPPING_VERSION
             }
             FOR indication, interp IN interpretations
         },
         recording_chain_metadata:
             state.feature_set.recording_chain_metadata,
         consent_id: state.consent_id,
-        protocol_version: state.protocol_version
+        protocol_version: state.protocol_version,
+        feature_pipeline_version: FEATURE_PIPELINE_VERSION,
+        eligibility_rules_version:
+            ELIGIBILITY_RULES_VERSION,
+        summary_prompt_version: SUMMARY_PROMPT_VERSION
     }
 
-    audit_archive_kinesis_firehose.put(audit_record)
+    // Route to appropriate audit-archive prefix based
+    // on mental-health-profile and Part 2 flags.
+    audit_prefix = determine_audit_prefix(
+        mental_health_profile: state.mental_health_profile,
+        part_2_eligible: state.part_2_eligible,
+        jurisdiction: state.jurisdiction)
+    audit_archive_kinesis_firehose.put(
+        audit_record, prefix: audit_prefix)
+
+    // Disclosure-accounting log entry for the audit
+    // event itself.
+    disclosure_accounting_log.append({
+        event_type: "session_audit_complete",
+        session_id: session_id,
+        patient_id_hash: state.patient_id_hash,
+        jurisdiction: state.jurisdiction,
+        data_elements: ["audit_record"],
+        purpose: "post_market_surveillance",
+        accessor: "voice_biomarker_pipeline",
+        timestamp: now()
+    })
 
     // Step 7A: schedule audio deletion per consent
     // terms. Feature-vector retention is configured
@@ -927,6 +1146,192 @@ FUNCTION audit_and_surveillance(session_id):
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter10.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+
+---
+
+### Cross-Cutting Architectural Primitives
+
+The following subsections specify architectural primitives that the pseudocode references but that require more detail than inline comments can carry. Each elevates a concern from "passing prose reference" to "named, enforceable architectural decision."
+
+#### Voice-as-Biometric-Data Governance
+
+Voice samples are biometric identifiers under multiple legal frameworks simultaneously. The architecture treats biometric-data governance as a first-class primitive, not a compliance afterthought.
+
+**Disclosure-accounting log.** Every operation that accesses, processes, or discloses a voice sample or its biometric derivatives (feature vectors, scores, trajectory entries) appends an entry to a disclosure-accounting log. The log records: who accessed, what was accessed (audio, features, score, trajectory), when, for what purpose, and which patient and jurisdiction the data belongs to. The log is append-only, stored in the audit-archive bucket with Object Lock in compliance mode, encrypted under its own KMS key. Step 1B captures the initial collection entry. Every subsequent pipeline step (feature extraction, scoring, interpretation, EHR write-back, clinician view, patient view) appends its own disclosure-accounting entry. The disclosure-accounting log supports GDPR Article 30 record-of-processing, BIPA disclosure-accounting, and institutional audit requirements.
+
+**Right-to-deletion workflow with feature-vector propagation.** When a patient exercises their right to deletion (GDPR Article 17, BIPA, or institutional policy), the deletion workflow propagates across all biometric-derived data: raw audio (S3), feature vectors (S3), scores stored in the score-archive bucket, interpretation-archive entries, trajectory-table entries (DynamoDB), HealthLake FHIR Observations, and any disclosure-accounting entries that are not themselves required for regulatory retention. Cryptographic erasure serves as the deletion primitive: the per-patient or per-session KMS key is scheduled for deletion, rendering all encrypted artifacts unrecoverable without requiring individual object deletion across every store. The workflow is triggered by a patient-portal request or a privacy-officer action, validated against jurisdiction-specific retention floors (some jurisdictions require minimum retention that overrides deletion requests), and produces a deletion-confirmation artifact in the audit archive.
+
+**Per-jurisdiction key management.** Patients in different jurisdictions trigger different biometric-data governance rules. The architecture supports per-jurisdiction KMS key classes so that cryptographic erasure for one jurisdiction's data does not affect another's. The S3 prefix structure partitions data by `/jurisdiction/<jur>/profile/<prof>/...` to enable per-jurisdiction lifecycle policies and per-jurisdiction key association.
+
+**Feature-vector biometric classification.** Feature vectors extracted from voice samples are themselves biometric data (they can be used for speaker identification). The architecture classifies feature vectors as biometric-derived data, applies the same governance as raw audio (encryption with biometric-data KMS key class, disclosure-accounting, right-to-deletion propagation), and applies retention policies independently of audio retention (feature vectors may be retained longer than audio, per consent terms, for surveillance and re-validation purposes).
+
+**Synthetic-voice-detection and voice-cloning defense.** The capture-quality-assessment stage includes a synthetic-voice-detection check that flags audio exhibiting characteristics of text-to-speech synthesis or voice-cloning artifacts. Flagged samples produce an ineligibility result ("capture authenticity not confirmed") rather than entering the biomarker pipeline. This defends against adversarial inputs in research-enrollment and disability-assessment contexts.
+
+**GDPR Article 9 per-region deployment.** For patients whose jurisdiction triggers GDPR, voice samples are special-category biometric data under Article 9. The architecture enforces explicit consent (not legitimate-interest) as the lawful basis, data-residency within the EU/EEA region for EU patients (separate S3 buckets, separate SageMaker endpoints in eu-west-1 or eu-central-1), and right-to-erasure with the 30-day response window. Per-region deployment configuration is a deploy-time parameter, not a runtime branching decision.
+
+**Pediatric-profile biometric governance.** Pediatric voice samples carry additional governance requirements: parental/guardian consent rather than patient consent, extended retention-floor rules (state pediatric-records retention statutes often extend to age-of-majority plus additional years), and stricter access controls. The architecture tags pediatric sessions at capture time and applies the pediatric governance profile throughout the pipeline.
+
+**Operational ownership.** Voice-as-biometric-data governance is co-owned by the institutional privacy officer and the institutional records-management function. Technical implementation is engineering-owned; policy decisions (retention terms, disclosure language, deletion-request adjudication) are privacy-officer-owned.
+
+#### Per-Device-Pattern Audio Path Authentication and Encryption
+
+Voice biomarker audio traverses different capture paths depending on the device class. Each path has specific authentication and encryption requirements.
+
+**TLS minimum, mTLS preferred for dedicated clinic microphones.** All audio in transit uses TLS 1.2+ minimum. Dedicated clinic-microphone devices (which have a known identity and can hold a client certificate) use mutual TLS (mTLS) to authenticate both ends of the connection. This prevents a rogue device on the clinic network from submitting audio to the biomarker pipeline.
+
+**Per-encounter session tokens for smartphone-app and web-app capture.** Smartphone apps and browser-based capture use per-encounter session tokens tied to the authenticated patient session. The token is scoped to a single capture session, expires at session completion or after a short timeout (15 minutes), and is non-replayable.
+
+**Device-attestation for smartphone-app and kiosk patterns.** Where the platform supports it (iOS DeviceCheck, Android SafetyNet/Play Integrity, kiosk-specific attestation), device-attestation tokens are submitted with the audio. The pipeline validates attestation before accepting the sample. Failed attestation produces a capture-rejection with a prompt to use an alternative capture path.
+
+**Per-device-class BAA scope.** The BAA with AWS covers audio in transit and at rest within AWS. For device-class patterns that involve non-AWS intermediaries (e.g., a telehealth platform's audio path before it reaches the pipeline API), the BAA scope extends to the intermediary via a separate BAA or subprocessor agreement. The architecture documents which device-class patterns require which BAA coverage.
+
+**Per-device-class certification.** Each supported device class has a certification record in the model-card configuration: the device class name, the validated microphone characteristics, the expected codec, the validated bandwidth, and the date of last certification review. Uncertified device classes produce a capture-rejection.
+
+**Audit-record propagation of device-attestation context.** The capture-session record and the audit archive include the device-attestation context (attestation result, device class, device token hash) for every sample. Post-market surveillance can stratify by device class to detect device-specific performance degradation.
+
+#### External-Vendor Biomarker-Model API Data-in-Transit Posture
+
+When the pipeline calls an external vendor's biomarker-model API (rather than hosting the model on SageMaker), the data-in-transit posture for biometric-data export requires explicit specification.
+
+**Vendor API authentication.** mTLS where the vendor supports it; otherwise API key plus scoped IAM credentials with per-call rotation via Secrets Manager. The credentials are pinned to the specific vendor endpoint and cannot be used for any other purpose.
+
+**TLS-in-transit minimum with certificate pinning.** TLS 1.2+ minimum for vendor API calls. Where the vendor provides a stable certificate chain, certificate pinning prevents MITM attacks on the vendor connection. The pinned certificate set is maintained as a deploy-time configuration artifact with an explicit rotation cadence.
+
+**Per-call disclosure-accounting log entry.** Every call to an external vendor API produces a disclosure-accounting log entry recording: the vendor name, the data elements transmitted (audio reference or feature-vector reference), the patient jurisdiction, and the timestamp. This supports the patient's right to know who has processed their biometric data.
+
+**Vendor BAA scope.** The vendor BAA covers audio data in transit to the vendor, at rest within the vendor's pipeline, and within the vendor's subprocessors. The architecture verifies BAA coverage at contract time and re-validates annually.
+
+**Vendor data-residency commitment.** The vendor's data-processing location is aligned with the patient's jurisdiction. For EU patients, the vendor processes within EU/EEA unless explicit consent covers cross-border transfer. The vendor's data-residency commitment is documented in the vendor configuration.
+
+**Egress hierarchy.** The architecture prefers the most isolated network path available: PrivateLink (where the vendor exposes a VPC endpoint service) > Direct Connect or VPN (where a dedicated private connection exists) > public Internet with TLS (as a last resort with the mitigations above). The choice is per-vendor and documented in the vendor configuration.
+
+#### Per-Cohort Accuracy and Adoption Monitoring with Launch-Gate Discipline
+
+The recipe's prose elevates cross-cohort generalization as the single largest gap between published voice-biomarker accuracy and real-world deployment accuracy. This section promotes per-cohort monitoring from prose to architectural primitive.
+
+**Single-axis cohorts.** The surveillance system tracks per-cohort metrics along each individual axis: age-band, sex, language, recording-chain (device class plus codec), jurisdiction, indication, and confound-flag-pattern.
+
+**Two-axis cohorts.** For the interaction effects that single-axis monitoring misses, the system also tracks two-axis cohorts: language-by-recording-chain, age-band-by-indication, sex-by-language, and jurisdiction-by-recording-chain. These capture the performance failures that occur only at the intersection of two axes.
+
+**Per-cohort minimum sample size.** A cohort's metrics are only reported (and only used for launch-gate decisions) when the cohort has accumulated at least the minimum sample size (configurable per indication; typical floor is 50-100 scored samples per cohort per quarter). Below-threshold cohorts are flagged as "insufficient data for cohort evaluation."
+
+**Per-cohort threshold metrics.** Each cohort is evaluated against: AUC, sensitivity, specificity, indeterminate-rate, cross-cohort generalization gap (delta between this cohort's AUC and the overall AUC), sustained-utilization rate (what fraction of eligible patients in this cohort actually complete the biomarker workflow), and score-distribution drift (KL divergence or similar between the current quarter's score distribution and the validation-time distribution).
+
+**Launch gate.** Every cohort that has met minimum sample size must meet the institutional per-cohort performance threshold before the indication is deployed to that cohort. Cohorts that fail the gate are disabled for that indication: eligible patients in that cohort receive a "biomarker not available for your profile" result rather than a potentially-misleading score. The gate is evaluated quarterly and re-evaluated after model or calibration updates.
+
+**Cohort-disabled-feature workflow.** When a cohort fails the launch gate, the eligibility-check step automatically excludes patients matching that cohort. The exclusion is logged, surfaced on the operational dashboard, and reported to the clinical-quality review meeting. Re-enablement requires a corrective-action plan (additional calibration data, model retraining, or cohort-specific threshold adjustment) and re-validation.
+
+**Mental-health-profile tighter thresholds.** For mental-health indications (depression severity, suicidality risk), per-cohort thresholds are tighter than for lower-stakes indications (respiratory monitoring, Parkinson's trajectory). The justification is that false-positive mental-health biomarker results carry higher trust-damage risk and that the clinical-action mapping for mental-health biomarkers is higher-stakes.
+
+**Per-jurisdiction cohort segmentation.** Cohort segmentation aligns with biometric-data governance jurisdiction boundaries. A cohort defined by jurisdiction can be independently enabled or disabled without affecting other jurisdictions, supporting the per-jurisdiction regulatory posture.
+
+#### Mental-Health, Substance-Use, and 42 CFR Part 2 Biomarker Profile
+
+Voice biomarkers for depression severity, suicidality risk, and substance-use-related indicators require a more restrictive governance profile than physical-health biomarkers. 42 CFR Part 2 applies when the biomarker indication intersects with substance-use treatment records.
+
+**Shorter retention.** Audio and feature-vector retention for mental-health-profile biomarkers defaults to shorter windows than physical-health indications (24-48 hours for audio vs. 24-72 hours for physical-health biomarkers; feature vectors follow proportionally). The shorter window reflects the higher sensitivity of mental-health voice data and the narrower consent terms appropriate to the use case.
+
+**Narrower access controls with separate KMS key class.** Mental-health biomarker results are encrypted under a separate KMS key class from physical-health results. Access to the mental-health key class requires additional IAM conditions (membership in the mental-health-clinical-team group, explicit per-session justification logging). This prevents incidental access by clinicians or staff who are not part of the patient's mental-health care team.
+
+**Clinical-action mapping capped at decision_support_only.** Mental-health biomarker results are never routed directly to patient-facing channels without clinician review. The clinical-action mapping for mental-health indications is capped at `decision_support_only` with mandatory clinician acknowledgement before any downstream action. No automated patient messaging based on mental-health biomarker scores.
+
+**Crisis-response workflow integration.** For high-suicidality scores that exceed the institutional crisis threshold, the system integrates with the established crisis-response workflow (immediate clinician notification via the highest-priority channel, linkage to crisis counselor on-call). The integration is pre-configured and tested quarterly. The biomarker does not replace the crisis-response workflow; it triggers entry into it.
+
+**No patient-facing direct release.** Mental-health biomarker scores are never surfaced to the patient without clinician mediation. The patient-facing summary for mental-health indications, if rendered at all, is clinician-approved before delivery.
+
+**Separate audit-archive prefix with mental-health-record disclosure-accounting metadata.** Mental-health biomarker audit records use a separate S3 prefix (`/mental-health-profile/...`) with tighter access controls and separate disclosure-accounting metadata that tracks mental-health-specific access patterns.
+
+**Cross-encounter analytics exclusion.** Mental-health biomarker data is excluded from cross-encounter aggregate analytics unless the analytics are specifically authorized for mental-health-quality-improvement purposes with appropriate IRB or privacy-officer review. This prevents incidental surfacing of mental-health biomarker patterns in institutional dashboards that are not designed for mental-health data.
+
+**42 CFR Part 2 flags.** When the biomarker indication is eligible for 42 CFR Part 2 protection (substance-use-related indications), the capture-session record is flagged at Step 1 and the flag propagates through all subsequent records. The 42 CFR Part 2 flag triggers: more restrictive disclosure rules (no re-disclosure without explicit patient authorization), separate disclosure-accounting log entries, and integration with the institution's Part 2 compliance infrastructure.
+
+**Step 1 and Step 7 audit-record updates.** The capture-session record (Step 1) includes `mental_health_profile: true/false` and `part_2_eligible: true/false` flags set at capture initiation based on the indication. The audit record (Step 7) carries these flags and routes to the appropriate audit-archive prefix and disclosure-accounting pathway.
+
+#### Foundation-Model and Per-Cohort-Calibration Versioning via Inference Profiles
+
+Every artifact that influences scoring (model weights, prompts, model cards, calibration curves) is versioned, stamped on every encounter, and subject to change-management discipline.
+
+**Versioned definitions in source control.** Model cards, summary prompts, calibration curves, eligibility rules, and clinical-action mappings live as versioned artifacts in the institution's configuration repository. Every change produces a new version tag. Deployments reference specific version tags, never "latest."
+
+**SageMaker endpoint canary deployment with traffic-shift.** New per-indication model versions deploy to a canary variant receiving a small percentage of traffic (typically 5-10%). The canary's per-cohort metrics are compared against the production variant's established baseline. Traffic shifts to the new variant only when the canary meets all per-cohort launch-gate thresholds. Regression triggers automatic rollback.
+
+**Bedrock inference profile for prompt-and-model versioning with rollback-on-regression.** Clinician-summary rendering uses a Bedrock inference profile that pins the foundation model version and the prompt template version. Prompt updates deploy through the same canary pattern: a new inference profile receives a fraction of traffic; faithfulness-failure-rate and clinician-satisfaction metrics are compared against baseline; rollback triggers automatically on regression.
+
+**Held-out evaluation set with per-cohort coverage.** Each per-indication model maintains a held-out evaluation set that spans all validated cohorts. The evaluation set runs against every canary deployment before traffic-shift approval. The evaluation set includes prompt-injection test cases for the LLM paths.
+
+**Version stamping on every encounter audit record.** The audit record produced at Step 7 includes: `model_version`, `calibration_version`, `model_card_version`, `clinical_action_mapping_version`, `summary_prompt_version`, `feature_pipeline_version`, and `eligibility_rules_version`. A future audit reconstructs exactly which configuration produced a given score.
+
+**SaMD-specific change-management discipline.** For indications with FDA clearance (or pending clearance), model and calibration changes that affect the device's intended use or performance characteristics trigger the SaMD change-management process. The version-control system tags clearance-affecting changes, and the deployment pipeline enforces a regulatory-affairs review gate before those changes enter production.
+
+#### Multi-Language Pipeline Pattern
+
+The architecture supports multi-language deployment from day one rather than treating non-English languages as a later add-on.
+
+**Per-language ASR configuration with custom vocabulary.** Each supported language has its own Transcribe Medical (or Transcribe) configuration with language-specific custom vocabularies for medical terminology. The custom vocabulary is maintained by clinical-informatics staff with native-speaker input for each language.
+
+**Per-language acoustic-feature calibration data.** Acoustic features (fundamental frequency range, formant positions, articulation-rate norms) differ by language. Each supported language has its own calibration dataset that establishes language-specific norms. Models that use acoustic features are either language-specific or include language as an explicit input feature with per-language calibration.
+
+**Per-language linguistic-feature LLM-judge prompts with native-speaker clinical-informatics input.** For cognitive biomarkers that use LLM-judged linguistic features (semantic coherence, topic adherence), the LLM prompts are language-specific, developed with native-speaker clinical-informatics expertise, and validated against a per-language gold-standard annotation set.
+
+**Per-language template definitions and faithfulness rule catalogs.** Clinician-summary templates, patient-facing message templates, and faithfulness-check rules are per-language. Translation is not a post-hoc step on English templates; each language has its own clinical-informatics-reviewed templates.
+
+**Per-language validation cohort.** Each language has its own validation cohort with the same rigor as the English cohort (speaker-disjoint splits, confound-controlled design, per-cohort reporting). A new language is not deployed until its validation cohort meets the launch-gate thresholds.
+
+**Per-language consent disclosure.** Consent disclosures and biometric-data notifications are rendered in the patient's preferred language, reviewed by the legal team for per-jurisdiction accuracy in that language.
+
+#### Audio Retention Configuration with Per-Jurisdiction Differentiation
+
+Audio retention is not a single global setting. It varies by jurisdiction, by consent terms, by indication profile, and by regulatory context.
+
+**Configurable retention windows.** Default retention windows are: 24-72 hours for physical-health biomarkers, 24-48 hours for mental-health-profile biomarkers, 24 hours for 42-CFR-Part-2-eligible indications. Per-jurisdiction adjustments override the defaults where biometric-data law specifies shorter maximum retention (or where specific consent terms authorize longer retention for research purposes).
+
+**Per-jurisdiction adjustments.** Illinois (BIPA): retention capped at the shorter of consent terms and the purpose-fulfillment window (typically 24 hours for clinical scoring, longer only with explicit written consent). Washington: similar purpose-limitation constraint. GDPR (EU patients): retention limited to the minimum necessary for the stated purpose, with explicit data-minimization documentation. Per-jurisdiction rules are maintained as configuration, not code, with legal-team review on the update cadence.
+
+**Per-prefix S3 lifecycle policies.** The audio bucket's S3 lifecycle policies are configured per-prefix on the `/jurisdiction/<jur>/profile/<prof>/...` structure. Each prefix has its own lifecycle rule that enforces the jurisdiction-and-profile-specific retention window. Lifecycle actions are: transition to Glacier Instant Retrieval at 50% of retention window (for cost savings while retaining recoverability), permanent deletion at retention-window expiry. Object Lock in governance mode prevents accidental early deletion during the retention window.
+
+#### Audit-Log Retention Floors
+
+Audit-log retention is sized to the longest applicable retention requirement across all regulatory and institutional frameworks. The retention floor is not a single number; it is the maximum of:
+
+- **HIPAA six-year minimum:** applies to all PHI-related audit records.
+- **State-specific medical-records retention:** some states require longer than six years. Pediatric records often extend to age-of-majority plus additional years (varies by state; some require retention until age 21 or 25).
+- **Per-jurisdiction biometric-records retention:** BIPA requires retention documentation for three years after last collection or last use (whichever is later). GDPR Article 9 requires documentation of processing basis for the life of the processing activity plus a reasonable buffer. Washington and similar statutes have their own floors.
+- **FDA SaMD post-market surveillance retention:** for cleared devices, retention sized to the post-market surveillance plan (often 10+ years for long-term safety monitoring).
+- **Mental-health-record-specific retention statutes:** many states have mental-health-record retention floors that exceed the general medical-records retention (often 10-15 years).
+- **42 CFR Part 2 disclosure-accounting log retention:** for substance-use-eligible visits, the disclosure-accounting log must be retained for the life of the patient record.
+- **Institutional regulatory floor:** the institution's own retention policy, which is often the most conservative (longest) of all applicable requirements.
+
+The S3 lifecycle policy on the audit-archive bucket enforces the longest-of calculation. The calculation is per-session (based on the patient's jurisdiction, age at time of capture, indication profile, and any applicable SaMD clearance status) and is recorded as a retention-floor-expiry field on the audit record at Step 7.
+
+#### Lambda Invocation Authentication
+
+Each Lambda function in the pipeline is invoked only by its intended caller. Resource-based policies on each Lambda pin the invoking principal to specific source ARNs.
+
+**API-Gateway-to-Lambda:** The capture-ingest Lambda's resource-based policy allows invocation only from the production API Gateway stage ARN. No other principal can invoke it directly.
+
+**Step-Functions-to-Lambda:** Pipeline-stage Lambdas (feature-extraction, eligibility-check, scoring, calibration, interpretation-packaging, audit) allow invocation only from the specific Step Functions state-machine ARN that orchestrates the pipeline.
+
+**EventBridge-to-Lambda:** Event-driven Lambdas (clinician-feedback handler, surveillance-metric emitter) allow invocation only from the specific EventBridge rule ARNs that trigger them.
+
+**Defense-in-depth event-payload validation.** In addition to IAM-level invocation control, each Lambda validates incoming event payloads against production constants (expected source, expected detail-type, expected schema version) before processing. An event that passes IAM checks but fails payload validation is logged and rejected.
+
+#### Disaster Recovery and Partial-Failure Topology
+
+When individual services fail, the pipeline degrades gracefully rather than failing completely. The biomarker is decision support; its unavailability does not block clinical care.
+
+**SageMaker endpoint outage.** Primary mitigation: cross-region fallback endpoint in a secondary region (with the same model version and calibration). If cross-region is not available, graceful degradation: the system returns "biomarker not currently available" for the affected indication, logs the outage, and does not produce a score. The clinical workflow proceeds without the biomarker.
+
+**Bedrock unavailability.** The clinician-summary rendering falls back to `render_structured_summary` (a deterministic template-based renderer that produces a less-natural but factually-correct summary from the structured score data). The structured-output-only summary is marked as "template-rendered" in the audit record.
+
+**Transcribe Medical unavailability.** Cognitive-biomarker indications that depend on linguistic features become ineligible. The eligibility-check step returns "cognitive biomarker not assessable: transcription service unavailable." Acoustic-only indications (Parkinson's, cough) continue to score normally.
+
+**HealthLake unavailability.** The FHIR Observation write-back fails. The interpretation is stored durably in the interpretation-archive bucket and in the trajectory table. A retry mechanism (EventBridge scheduled rule) re-attempts the HealthLake write on a backoff cadence until HealthLake recovers. The clinician alert is delivered independently of the FHIR write (it does not depend on HealthLake).
+
+**EHR API unreachable.** The EHR write-back for clinician alerting fails. The system stores the pending alert in a DynamoDB queue with exponential-backoff retry. The alert is delayed but not lost. If the EHR remains unreachable beyond a threshold (configurable; typically 4 hours), an operational alarm fires and the on-call team is notified.
+
+**Failover detection and failover-back triggers.** Health checks on each upstream service run at 60-second intervals. Three consecutive failures trigger failover to the degraded-mode behavior. Three consecutive successes after a failover trigger failover-back to the primary behavior. The failover state is observable on the operational dashboard.
+
+**Quarterly testing cadence.** Each failure mode is tested in staging on a quarterly cadence. The test validates that the degraded behavior produces the expected outputs (correct status codes, correct audit records, correct operational alarms) and that failover-back restores normal operation cleanly.
 
 ---
 
@@ -1064,7 +1469,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Integration with clinical research workflows.** Voice biomarker work in healthcare often spans the clinical-care boundary: research data can inform clinical care, and clinical-care data can inform research-track validation. The architecture for moving data between research and clinical contexts (with appropriate consent, IRB approval, and de-identification) is complex and needs explicit governance. Without it, the institution either silos the research and clinical work (limiting scientific progress and clinical improvement) or blurs the boundary improperly (creating compliance and trust risks).
 
-**Disaster recovery and degraded-mode operation.** When upstream services fail (SageMaker endpoint outage, Bedrock outage, HealthLake outage), the system must degrade gracefully. The biomarker is decision support; its absence does not block clinical care. Document the per-mode behavior and test the failure modes in staging.
+**Disaster recovery and degraded-mode operation.** When upstream services fail (SageMaker endpoint outage, Bedrock outage, HealthLake outage), the system must degrade gracefully. The biomarker is decision support; its absence does not block clinical care. Document the per-mode behavior and test the failure modes in staging. See the Disaster Recovery and Partial-Failure Topology subsection in the Cross-Cutting Architectural Primitives section for the per-service failover specification.
+
+**Voice-as-Biometric-Data Governance Operations.** The biometric-data governance primitives specified in the Cross-Cutting Architectural Primitives section require named operational owners. The institutional privacy officer owns the policy decisions: consent disclosure language, retention terms, deletion-request adjudication, per-jurisdiction compliance posture. The institutional records-management function owns the retention-floor calculations, audit-log lifecycle enforcement, and disclosure-accounting log integrity. Engineering owns the technical implementation of both. Without these named owners, the biometric-data governance primitives decay into documentation that no one enforces.
 
 ---
 

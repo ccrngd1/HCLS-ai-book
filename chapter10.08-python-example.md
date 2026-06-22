@@ -243,10 +243,8 @@ CONSENT_DISCLOSURE_RESEARCH = (
 # disclosure language. The list is approximate and changes
 # over time as state law evolves; production maintains this
 # in a legal-team-reviewed configuration with an explicit
-# update cadence.
-# TODO (TechWriter): verify the current biometric-data-law
-# state list against the IAPP biometric-privacy tracker
-# before deploying.
+# update cadence. Verify the current list against the IAPP
+# biometric-privacy tracker before deploying.
 BIOMETRIC_DATA_LAW_STATES = {"IL", "TX", "WA"}
 
 # --- Cohort Axes ---
@@ -1548,8 +1546,9 @@ def route_to_clinical_review(session_id, clinical_entities):
     "spontaneous_speech_incidental" priority so the alert
     reaches a clinician synchronously.
     """
-    # TODO (TechWriter): production should create an EHR
-    # decision-support alert here, not just audit-log it.
+    # Production: create an EHR decision-support alert here
+    # via ehr_cds.create_alert(...) rather than only
+    # audit-logging. The demo logs the event as a stand-in.
     audit_log({
         "event_type":      "INCIDENTAL_CLINICAL_CONTENT",
         "session_id":      session_id,
