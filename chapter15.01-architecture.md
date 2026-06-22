@@ -20,6 +20,12 @@
 
 **Amazon CloudWatch for monitoring and rollback triggers.** The system monitors alert-to-action ratios, alert volumes, and missed-event rates. If any metric crosses a predefined threshold (ironic, yes), CloudWatch alarms trigger automatic rollback to the previous threshold configuration.
 
+**Amazon SQS for dead letter queuing and learning circuit breakers.** When the reward-calculator Lambda fails to process an alert event (malformed payload, EHR API timeout, transient dependency error), the failed event routes to an SQS dead letter queue (DLQ) rather than being silently dropped. Individual transient failures get reprocessed automatically via redrive policy (max 3 retries with exponential backoff). But the DLQ also serves a more important role: detecting systematic failures that should pause online learning entirely.
+
+Here's why this matters. If the EHR API that provides clinician response data goes down for hours, every reward calculation during that window will fail. Those events land in the DLQ. If you let the RL agent continue training on the successfully-processed subset, you introduce selection bias: the training data only contains alerts where the reward happened to be computable (perhaps alerts during low-traffic hours when the EHR was still responsive), and the agent learns a policy skewed toward those conditions.
+
+The circuit breaker pattern: a CloudWatch alarm monitors the DLQ depth and the ratio of failed-to-successful reward calculations. If more than 20% of events are failing within a 30-minute window, the alarm triggers a Lambda that sets a "learning_paused" flag in DynamoDB. While paused, the threshold-updater Lambda continues serving the current policy (no degradation to live alerting) but stops sending new training data to S3 and skips the next scheduled training job. When the DLQ drains back to normal levels and the failure ratio drops below 5%, a recovery Lambda clears the flag and resumes learning. Events that accumulated in the DLQ during the outage get reprocessed, but they're tagged with a "delayed_reward" flag so the training pipeline can decide whether to include them (stale rewards from hours-old alerts may not reflect the state accurately).
+
 ### Architecture Diagram
 
 ```mermaid

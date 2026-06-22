@@ -71,6 +71,30 @@ For alert threshold optimization, the practical answer is: **start offline, depl
 
 You train the initial policy on historical data. You validate it against held-out periods. You deploy it with hard safety bounds and monitoring. And then you allow it to make small online adjustments within those bounds, with automatic rollback if alert-to-action ratios deteriorate.
 
+### Offline Policy Evaluation: How Do You Know the Policy Works Before Deploying It?
+
+Here's the fundamental challenge with offline RL: you trained a new policy on historical data, but that data was collected under the *old* policy (the static thresholds that were in place). How do you estimate what would have happened if your new policy had been making the decisions? You can't just replay the history and pretend the new policy was in charge, because the new policy would have generated different alerts, which would have prompted different clinician responses, which would have created different outcomes. The counterfactual world is unobservable.
+
+This is the offline policy evaluation (OPE) problem, and it's the reason you can't skip straight from "trained a model" to "deployed in the ICU."
+
+**Doubly robust estimators** are the practical starting point for OPE in this domain. The idea: combine two imperfect estimates to get a better one. You build a model of the reward function (what reward would action A get in state S?) and you also use importance sampling (reweight historical observations based on how likely the new policy would have been to take the same actions the old policy took). The "doubly robust" part means that if either the reward model *or* the importance weights are correct, the overall estimate is unbiased. In practice neither is perfect, but the combination is far more stable than either approach alone.
+
+The concrete workflow:
+
+1. **Compute behavior policy probabilities.** For each historical decision point, estimate the probability that the old policy (static thresholds) would have made the observed choice. For static thresholds, this is straightforward: the behavior policy always "chooses" the same threshold, so the probability is 1 for the observed action and 0 for alternatives.
+
+2. **Compute target policy probabilities.** For the same decision points, compute what your new RL policy would have done. This gives you the importance ratio (target probability / behavior probability).
+
+3. **Build a reward model.** Train a regression model to predict reward given (state, action) pairs from the historical data. This doesn't need to be perfect; it's a bias-reduction term.
+
+4. **Combine via the doubly robust estimator.** The formula blends the direct reward model estimate with importance-weighted corrections from the actual observed rewards. Standard implementations exist in libraries like `d3rlpy` or `COBS`.
+
+5. **Compare against baseline.** The key metric is not "does the new policy look good in absolute terms?" but "does it outperform the behavior policy (static thresholds) by a statistically significant margin?" If the OPE estimate shows the new policy performs similarly or worse than what's already deployed, don't deploy it.
+
+6. **Validate with a short online A/B test.** OPE gives you a sanity check, but it has known failure modes (high variance with large policy divergence, model misspecification). Before full deployment, run the new policy on one or two units for 1-2 weeks with tight monitoring. Compare outcomes against matched control units still running static thresholds. If the online A/B confirms the OPE estimates within an acceptable confidence interval, proceed with broader rollout.
+
+The critical insight: OPE is not a replacement for online testing. It's a filter. It lets you reject bad policies cheaply (without exposing patients to them) and gives you confidence to run the expensive, time-consuming online pilot with policies that have at least passed the offline sanity check.
+
 ### The Contextual Bandit Simplification
 
 Here's a pragmatic observation: for many alert threshold problems, you don't actually need full RL. A contextual bandit formulation is often sufficient and much simpler to implement.
