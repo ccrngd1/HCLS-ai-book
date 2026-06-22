@@ -38,10 +38,21 @@ flowchart TD
     K -->|Medium Propensity| M[Payment Plan\nOffer Queue]
     K -->|Low Propensity| N[Financial Assistance\nScreening Queue]
 
+    %% Feedback and monitoring loop
+    A -->|Resolved Balances\nGround Truth| O[S3 Bucket\nground-truth/]
+    O -->|Labels + Predictions| P[Lambda\nCalibration Monitor]
+    P -->|Rolling AUC, ECE| Q[CloudWatch\nModel Metrics]
+    Q -->|ECE > 0.05 or\nAUC < 0.75| R[EventBridge\nRetrain Trigger]
+    R -->|Launch| F
+
     style F fill:#ff9,stroke:#333
     style H fill:#ff9,stroke:#333
     style I fill:#9ff,stroke:#333
+    style P fill:#f9f,stroke:#333
+    style Q fill:#f9f,stroke:#333
 ```
+
+The feedback loop (pink nodes) is what makes this system self-correcting. Every night, a calibration monitoring Lambda compares recent predictions against ground truth outcomes (balances that have since resolved). It computes rolling AUC and Expected Calibration Error (ECE) over a trailing 30-day window and publishes both metrics to CloudWatch. When ECE exceeds 0.05 or AUC drops below 0.75, an EventBridge rule fires to trigger a new SageMaker training job. Without this loop, the model silently degrades as patient payment behavior shifts (seasonal patterns, economic changes, policy updates) and nobody notices until revenue cycle leadership asks why the scores "feel wrong."
 
 ## Prerequisites
 
@@ -276,6 +287,16 @@ FUNCTION score_open_balances(feature_file_path, model_artifact, calibration_mode
     RETURN calibrated_scores
 ```
 
+**DynamoDB PHI retention and access control.** The predictions table stores PHI: patient IDs linked to financial behavioral data (propensity scores, payment history summaries via SHAP values). This combination is sensitive and requires deliberate access controls beyond default encryption at rest.
+
+Three things to get right:
+
+1. **TTL policy.** Enable DynamoDB TTL on a `ttl_expiry` attribute. Set it to balance resolution date plus your audit retention window (typically 90 days post-resolution for internal audit, longer if your compliance team requires it). This ensures predictions don't accumulate indefinitely. Stale predictions for resolved balances serve no operational purpose but still constitute PHI exposure.
+
+2. **IAM policy separation.** Create distinct IAM policies for different consumers of this table. The strategy engine Lambda needs `dynamodb:Query` and `dynamodb:GetItem` with broad access to all score ranges (it processes the full portfolio). Other consumers, such as a patient-facing billing portal or a reporting dashboard, should have restricted policies: condition keys limiting access to specific `patient_id` values or requiring a specific `score_date` range. No consumer outside revenue cycle operations should have access to this table at all.
+
+3. **GSI access restriction.** The `score-range` GSI (partition key: `score_date`, sort key: `propensity_score`) enables efficient queries like "all balances below 0.4 scored today." This GSI should be accessible only to the strategy engine role and authorized revenue cycle analysts. Clinical staff, patient access representatives, and other non-financial roles should never see propensity scores. Enforce this through IAM policies with `dynamodb:index` resource ARNs scoped to the specific GSI, not table-wide `dynamodb:Query` grants.
+
 **Step 4: Strategy engine.** The Lambda function reads predictions from DynamoDB and routes each balance to the appropriate collection strategy based on propensity score thresholds. High-propensity balances get standard treatment (they'll pay on their own). Medium-propensity balances get proactive intervention (payment plan offers, financial counselor outreach). Low-propensity balances get early financial assistance screening. The thresholds are configurable business parameters, not model parameters. Adjust them based on your staff capacity, payment plan administrative costs, and financial assistance policies.
 
 ```pseudocode
@@ -285,6 +306,11 @@ HIGH_THRESHOLD    = 0.75   // above this: patient will likely pay without interv
 MEDIUM_THRESHOLD  = 0.40   // between medium and high: intervention may help
 // below medium: likely needs financial assistance or will not pay
 
+// Randomization holdout: reserve a fraction of balances for random
+// strategy assignment to create counterfactual data. Without this,
+// the model's predictions become self-fulfilling (see Honest Take).
+HOLDOUT_RATE = 0.07  // 7% of balances get random assignment
+
 FUNCTION apply_collection_strategy(balance_predictions):
     // Read today's predictions and route each balance to the right queue.
     FOR each prediction in balance_predictions:
@@ -293,11 +319,30 @@ FUNCTION apply_collection_strategy(balance_predictions):
         patient_id = prediction.patient_id
         amount     = prediction.balance_amount
 
+        // --- Randomization holdout ---
+        // Reserve ~7% of balances for random strategy assignment.
+        // This creates counterfactual data: what would have happened
+        // if we'd treated this balance differently? Essential for
+        // validating that the score-based routing actually improves
+        // outcomes vs. random assignment.
+        is_holdout = (hash(balance_id + today) mod 100) < (HOLDOUT_RATE * 100)
+
+        IF is_holdout == true:
+            // Randomly assign to any strategy, ignoring the score.
+            random_strategy = random_choice(["standard_statements",
+                                             "payment_plan_offer",
+                                             "financial_counselor_outreach",
+                                             "financial_assistance_screening"])
+            route_to_queue(random_strategy, balance_id)
+            log_decision(balance_id, patient_id, score, random_strategy,
+                         is_holdout=true, model_recommended=determine_strategy(score, amount))
+            CONTINUE
+
         // For cold-start patients (no payment history), route to a default
         // strategy rather than relying on a weak prediction.
         IF prediction.cold_start == true:
             route_to_queue("new_patient_default", balance_id)
-            log_decision(balance_id, patient_id, score, "new_patient_default")
+            log_decision(balance_id, patient_id, score, "new_patient_default", is_holdout=false)
             CONTINUE
 
         IF score >= HIGH_THRESHOLD:
@@ -324,7 +369,7 @@ FUNCTION apply_collection_strategy(balance_predictions):
 
         // Log the routing decision for audit and model monitoring.
         // This creates the feedback loop: did the strategy work?
-        log_decision(balance_id, patient_id, score, assigned_queue)
+        log_decision(balance_id, patient_id, score, assigned_queue, is_holdout=false)
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -371,6 +416,26 @@ FUNCTION apply_collection_strategy(balance_predictions):
 - Patients whose financial situation has recently changed (job loss, divorce, new insurance). Historical behavior stops being predictive.
 - Very small balances ($10-25) where the signal-to-noise ratio is poor and the collection cost exceeds the balance.
 - Balances in active dispute. A patient contesting a charge has different dynamics than one simply not paying.
+
+**Interpreting scores relative to balance age.** A subtlety that catches people: a 90-day outcome model applied to a balance at day 85 has only 5 days of remaining outcome window. That score is much more definitive (the patient either pays in the next 5 days or they don't) than the same numerical score on a day-5 balance (which still has 85 days of uncertainty). A 0.4 score at day 85 is a near-certain non-payment signal; a 0.4 at day 5 means "we're not sure yet." The strategy engine should account for this. Two practical approaches: (1) train multiple time-horizon models (30-day, 60-day, 90-day) and use the one whose remaining window matches your decision point, or (2) add age-adjusted thresholds in the strategy engine so that a "medium" score on a young balance routes to "wait and re-score" rather than immediate intervention.
+
+---
+
+## Why This Isn't Production-Ready
+
+This architecture works as a proof of concept and will generate real predictions. But there's a gap between "generates scores" and "runs in a revenue cycle department handling real patient financial decisions." Here's what's missing:
+
+**Calibration monitoring.** The architecture diagram shows the feedback loop, but you need to operationalize it: daily comparison of predicted probabilities against actual outcomes for resolved balances, with alerting when ECE drifts above your threshold. Without this, your strategy engine's thresholds silently become meaningless over weeks to months.
+
+**Fairness audits.** The model will learn demographic correlations with payment behavior. Some reflect systemic inequities, not individual behavior. You need regular (monthly minimum) fairness analysis using SageMaker Clarify or equivalent: check whether the model produces systematically different score distributions across protected groups, and whether the strategy engine's routing creates disparate impact.
+
+**Integration with billing workflow.** The strategy engine routes to "queues" in pseudocode. In production, those queues are your actual collection workflow system (Epic WorkQueue, Waystar, Experian Health, or custom). The integration layer (API calls, file drops, HL7 messages) is where most of the real implementation effort lives, and it varies wildly by billing system vendor.
+
+**Holdout analysis pipeline.** The randomization holdout creates counterfactual data, but someone needs to actually analyze it: is the model-driven routing producing better recovery rates than random assignment? This requires a periodic analysis job that compares outcomes across holdout vs. model-routed balances within each score band.
+
+**Model versioning and rollback.** When you retrain, the new model may be worse than the old one. You need automated validation (score the calibration set, check that AUC and ECE meet thresholds) before promoting a new model to production. If validation fails, keep the previous model running and alert the ML team.
+
+**Operational runbook.** What happens when the nightly scoring fails? When DynamoDB throttles? When the billing system extract is empty? Each failure mode needs a documented response: who gets paged, what's the fallback (use yesterday's scores? route everything to "standard"?), and what's the blast radius.
 
 ---
 

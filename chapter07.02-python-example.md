@@ -570,6 +570,12 @@ def apply_collection_strategy(predictions: list[dict]) -> dict:
     adjust them based on your staff capacity, payment plan costs, and
     financial assistance policies.
 
+    Includes a randomization holdout: ~7% of balances get randomly assigned
+    to a strategy regardless of their score. This creates counterfactual data
+    to validate that model-driven routing actually outperforms random assignment
+    and prevents self-fulfilling prophecy (if you never contact low-score patients,
+    you can never learn whether they would have paid with outreach).
+
     In production, this function runs in Lambda and writes routing decisions
     to an SQS queue or directly updates the collection workflow system.
 
@@ -578,19 +584,43 @@ def apply_collection_strategy(predictions: list[dict]) -> dict:
                      balance_id, propensity_score, balance_amount, etc.
 
     Returns:
-        Summary dict with counts per strategy queue.
+        Summary dict with counts per strategy queue and holdout count.
     """
-    routing_summary = {
-        "standard_statements": 0,
-        "payment_plan_offer": 0,
-        "financial_counselor_outreach": 0,
-        "financial_assistance_screening": 0,
-    }
+    import hashlib
+    import random
+
+    HOLDOUT_RATE = 0.07  # 7% of balances get random assignment
+    ALL_STRATEGIES = [
+        "standard_statements",
+        "payment_plan_offer",
+        "financial_counselor_outreach",
+        "financial_assistance_screening",
+    ]
+
+    routing_summary = {s: 0 for s in ALL_STRATEGIES}
+    routing_summary["holdout_count"] = 0
+    score_date = datetime.date.today().isoformat()
 
     for pred in predictions:
         score = float(pred["propensity_score"])
         amount = float(pred["balance_amount"])
         balance_id = pred["balance_id"]
+
+        # Deterministic holdout assignment: hash(balance_id + date) ensures
+        # the same balance gets the same holdout decision if re-run on the
+        # same day, but different decisions across days.
+        holdout_hash = int(hashlib.sha256(
+            f"{balance_id}{score_date}".encode()
+        ).hexdigest(), 16) % 100
+        is_holdout = holdout_hash < (HOLDOUT_RATE * 100)
+
+        if is_holdout:
+            strategy = random.choice(ALL_STRATEGIES)
+            routing_summary[strategy] += 1
+            routing_summary["holdout_count"] += 1
+            logger.debug("Balance %s (score=%.3f) -> %s [HOLDOUT]",
+                         balance_id, score, strategy)
+            continue
 
         if score >= HIGH_PROPENSITY_THRESHOLD:
             # High propensity: standard statement cadence.
