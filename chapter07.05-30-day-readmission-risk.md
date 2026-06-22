@@ -105,59 +105,6 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.05-architecture). The Python example is linked from there.
 
-## Expected Results
-
-### Sample Output
-
-```json
-{
-  "patient_id": "PAT-2847193",
-  "encounter_id": "ENC-9928374",
-  "discharge_date": "2026-03-15T14:30:00Z",
-  "scored_at": "2026-03-15T15:02:33Z",
-  "model_version": "readmission-xgb-v2.3",
-  "probability": 0.41,
-  "risk_tier": "HIGH",
-  "risk_drivers": [
-    {"feature": "admissions_past_6mo", "value": 3, "contribution": 0.12},
-    {"feature": "discharge_medication_count", "value": 14, "contribution": 0.09},
-    {"feature": "length_of_stay", "value": 8, "contribution": 0.07},
-    {"feature": "has_chf", "value": true, "contribution": 0.06},
-    {"feature": "albumin_last", "value": 2.8, "contribution": 0.05}
-  ],
-  "interventions": [
-    "nurse_callback_48hr",
-    "pharmacist_med_reconciliation",
-    "care_transition_program_enrollment",
-    "remote_weight_monitoring"
-  ],
-  "calibration_check": {
-    "predicted_decile": 8,
-    "historical_rate_for_decile": 0.38
-  }
-}
-```
-### Performance Benchmarks
-
-| Metric | Expected Value | Notes |
-|--------|---------------|-------|
-| AUC-ROC (C-statistic) | 0.68-0.75 | Depends on feature richness; social determinants push toward upper range |
-| Calibration slope | 0.90-1.10 | After Platt scaling; check quarterly |
-| Brier score | 0.12-0.16 | Lower is better; baseline (prevalence) ~0.13 |
-| Sensitivity at top 15% | 0.35-0.45 | Captures 35-45% of actual readmissions in top risk tier |
-| PPV at top 15% | 0.28-0.38 | 28-38% of flagged patients actually readmit |
-| Scoring latency | <500ms | End-to-end from feature assembly to score storage |
-| Time from discharge to score | <2 hours | Includes ADT event propagation delay |
-| Model retraining frequency | Monthly | Or when AUC drops below 0.65 |
-
-### Where It Struggles
-
-- **Patients with no prior history at your facility.** New patients or transfers from other systems have sparse feature vectors. The model defaults to population-level risk, which is less useful.
-- **Social determinant-driven readmissions.** A patient readmitted because they couldn't afford their medications or had no transportation to follow-up won't be well-predicted by clinical features alone.
-- **Planned readmissions misclassified as unplanned.** The CMS planned readmission algorithm isn't perfect. Some planned returns get labeled as failures, inflating your apparent readmission rate.
-- **Weekend and holiday discharges.** Patients discharged when follow-up resources are unavailable have elevated risk that's driven by system factors, not patient factors. The model may not capture this well unless day-of-week features are included.
-- **Rapidly changing care patterns.** If your hospital launches a new heart failure program that dramatically reduces CHF readmissions, the model trained on pre-program data will over-predict risk for CHF patients until retrained.
-
 ---
 
 ## The Honest Take

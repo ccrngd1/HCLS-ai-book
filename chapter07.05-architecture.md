@@ -20,6 +20,10 @@
 
 **Amazon SNS for intervention notifications.** When a patient is scored as high-risk, the appropriate care team needs to be notified immediately. SNS delivers notifications to care transition nurses, case managers, or automated workflow systems based on the risk tier and contributing factors. Important: SNS messages containing patient identifiers and clinical indicators constitute PHI. Restrict topic subscriptions to HIPAA-compliant endpoints only (Lambda functions, SQS queues within your VPC, or HTTPS endpoints covered under your BAA). Do not use email or SMS subscriptions for messages containing patient-level data. If email notification is needed, send a minimal alert ("1 new high-risk discharge requires review") with a link to the secure care management dashboard.
 
+**Amazon SQS Dead Letter Queue for failed scoring events.** Not every discharge will score cleanly on the first attempt. HealthLake might be temporarily unavailable, the SageMaker endpoint might be scaling up, or a patient's record might have malformed data that breaks feature assembly. Rather than silently dropping these patients (which means a high-risk patient never gets scored and never gets an intervention), route failures to an SQS dead letter queue. Set a CloudWatch alarm on DLQ depth > 0 so your operations team knows immediately when patients are falling through the cracks. A daily retry Lambda re-processes messages from the DLQ with exponential backoff. For patients still unscored after 24 hours, escalate to a manual review fallback: these patients should appear on the care transition team's worklist for human assessment regardless of model output. The 24-hour SLA matters because intervention effectiveness degrades rapidly after discharge.
+
+**Amazon DynamoDB as a pre-computed feature store.** For sites processing more than 100 discharges per day, querying HealthLake for all historical utilization features at scoring time introduces unacceptable latency. The hybrid approach: run a nightly Glue job that pre-computes historical features (prior admissions in 6/12 months, ED visit counts, prior 30-day readmission flags, medication history summaries) and writes them to a DynamoDB table keyed by patient_id. At scoring time, the workflow queries HealthLake only for current-encounter features (this admission's diagnoses, labs, medications) and pulls pre-computed historical features from DynamoDB in a single GetItem call. This hybrid keeps end-to-end feature assembly latency under 500ms even for patients with complex histories spanning years of encounters.
+
 ## Architecture Diagram
 
 ```mermaid
@@ -35,11 +39,14 @@ flowchart TD
     subgraph Event Processing
         A -->|Discharge Event| F[EventBridge\nDischarge Filter]
         F -->|Qualified Discharge| G[Step Functions\nScoring Workflow]
+        G -->|On Failure| DLQ[SQS Dead Letter Queue]
+        DLQ -->|Daily Retry| RETRY[Retry Lambda]
+        RETRY -->|Reprocess| G
     end
 
     subgraph Feature Assembly
-        G -->|Query Patient Data| H[HealthLake\nFHIR Store]
-        G -->|Historical Features| I[S3 Feature Store\nParquet]
+        G -->|Current Encounter| H[HealthLake\nFHIR Store]
+        G -->|Historical Features| I[DynamoDB\nFeature Store]
         H --> J[Feature Vector\nAssembly]
         I --> J
     end
@@ -56,7 +63,8 @@ flowchart TD
     end
 
     subgraph Model Lifecycle
-        P[Glue\nFeature Engineering] -->|Training Data| Q[S3\nTraining Dataset]
+        P[Glue\nNightly Feature Compute] -->|Pre-computed Features| I
+        P -->|Training Data| Q[S3\nTraining Dataset]
         Q --> R[SageMaker Training\nMonthly Retrain]
         R -->|New Model| K
     end
@@ -71,30 +79,31 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon EventBridge, AWS Step Functions, Amazon DynamoDB, Amazon SNS, Amazon S3, Amazon QuickSight |
+| **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon EventBridge, AWS Step Functions, Amazon DynamoDB, Amazon SQS, Amazon SNS, Amazon S3, Amazon QuickSight |
 | **IAM Permissions** | `sagemaker:InvokeEndpoint`, `healthlake:SearchWithGet`, `healthlake:ReadResource`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`. All permissions should be scoped to specific resource ARNs (e.g., `sagemaker:InvokeEndpoint` targeting `arn:aws:sagemaker:{region}:{account}:endpoint/readmission-risk-*`). Use separate IAM roles for the scoring Lambda, training pipeline, and monitoring functions with distinct permission boundaries. |
 | **BAA** | Required. All services handling PHI must be covered under your AWS BAA. HealthLake, SageMaker, DynamoDB, S3, Glue, Step Functions, EventBridge, SNS, and QuickSight are all HIPAA-eligible. |
 | **Encryption** | S3: SSE-KMS for feature stores and model artifacts. DynamoDB: encryption at rest (default). HealthLake: AWS-managed or customer-managed KMS keys. SageMaker: KMS encryption for training data, model artifacts, and endpoint traffic. All inter-service communication over TLS. |
 | **VPC** | Production: SageMaker endpoints, Glue jobs, and Lambda functions in VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), CloudWatch Logs (interface), Step Functions/states (interface), and SNS (interface). HealthLake accessed via interface endpoint (verify regional availability; HealthLake has more limited regional availability than other services in this architecture). |
 | **CloudTrail** | Enabled for all API calls. Critical for HIPAA audit trail: who accessed which patient's risk score, when, and from where. Note: DynamoDB data events log table name and API action but not item keys. Implement application-level audit logging (patient_id, requesting identity, timestamp) for patient-level access auditing required by HIPAA. |
 | **Sample Data** | MIMIC-III or MIMIC-IV (publicly available ICU dataset with readmission outcomes). CMS Synthetic Public Use Files for claims-based features. Never use real PHI in development. Model validation on real patient data requires a HIPAA-compliant environment with the same security controls as production. |
-| **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large): ~$0.115/hour (~$83/month). Scoring latency: <200ms per patient. At 100 discharges/day, the per-discharge cost is ~$0.003. HealthLake: $0.60/GB stored + $0.09 per 1000 read operations. Glue: $0.44/DPU-hour for batch feature engineering. Feature assembly involves 5-7 FHIR queries per patient; parallelize independent queries to keep assembly latency under 1 second. |
+| **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large): ~$0.115/hour (~$83/month). Scoring latency: <200ms per patient. At 100 discharges/day, the per-discharge cost is ~$0.003. HealthLake: $0.60/GB stored + $0.09 per 1000 read operations. Glue: $0.44/DPU-hour for batch feature engineering. DynamoDB feature store: on-demand pricing at ~$1.25/million writes (nightly batch) + ~$0.25/million reads (at scoring time). SQS DLQ: effectively free at this volume ($0.40/million requests). Feature assembly involves 5-7 FHIR queries per patient for current-encounter features plus one DynamoDB GetItem for historical features; parallelize the FHIR queries to keep assembly latency under 500ms. |
 
 ## Ingredients
 
 | AWS Service | Role |
 |------------|------|
 | **Amazon SageMaker** | Model training (monthly), real-time scoring endpoint, model registry |
-| **Amazon HealthLake** | FHIR-native clinical data store for real-time feature queries |
-| **AWS Glue** | Batch feature engineering, historical feature computation, training data preparation |
+| **Amazon HealthLake** | FHIR-native clinical data store for current-encounter feature queries |
+| **AWS Glue** | Nightly historical feature computation, training data preparation |
 | **Amazon EventBridge** | Discharge event ingestion and filtering |
 | **AWS Step Functions** | Orchestrates the scoring workflow with error handling and retries |
-| **Amazon DynamoDB** | Stores risk scores for real-time lookup by downstream systems |
+| **Amazon DynamoDB** | Pre-computed feature store (keyed by patient_id) and risk score storage for real-time lookup |
+| **Amazon SQS** | Dead letter queue for failed scoring events; enables retry and manual review fallback |
 | **Amazon SNS** | Delivers high-risk alerts to care transition teams |
-| **Amazon S3** | Feature store (Parquet), model artifacts, training datasets, scoring audit logs |
+| **Amazon S3** | Model artifacts, training datasets, scoring audit logs, long-term score archive |
 | **Amazon QuickSight** | Readmission analytics dashboards for leadership and quality teams |
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
-| **Amazon CloudWatch** | Monitoring, alerting on scoring failures, model performance metrics |
+| **Amazon CloudWatch** | Monitoring, alerting on scoring failures and DLQ depth, model performance metrics |
 
 ## Pseudocode Walkthrough
 
@@ -143,17 +152,17 @@ FUNCTION handle_discharge_event(event):
 ```
 ### Step 2: Feature Assembly from Clinical Data
 
-**What this does:** Queries multiple data sources to assemble the complete feature vector for the discharged patient. Combines real-time clinical data from the current encounter with historical utilization patterns.
+**What this does:** Queries multiple data sources to assemble the complete feature vector for the discharged patient. Current-encounter features come from HealthLake in real time. Historical utilization features come from the pre-computed DynamoDB feature store (populated nightly by Glue). This hybrid approach keeps assembly latency under 500ms even for patients with complex multi-year histories.
 
-**What goes wrong if you skip it:** The model receives incomplete or stale data, producing unreliable risk scores. Missing features (especially prior utilization history) dramatically reduce predictive accuracy.
+**What goes wrong if you skip it:** The model receives incomplete or stale data, producing unreliable risk scores. Missing features (especially prior utilization history) dramatically reduce predictive accuracy. If you query HealthLake for all historical features at scoring time, latency spikes to 3-5 seconds for patients with long encounter histories, which breaks your SLA at high discharge volumes.
 
 ```pseudocode
 FUNCTION assemble_features(discharge_info):
     patient_id = discharge_info.patient_id
     encounter_id = discharge_info.encounter_id
 
-    // --- Current Encounter Features ---
-    // Query HealthLake for the index admission details
+    // --- Current Encounter Features (from HealthLake, real-time) ---
+    // These are specific to the just-ended admission and can only be queried live.
     encounter = FHIR_SEARCH("Encounter", id=encounter_id)
     conditions = FHIR_SEARCH("Condition", encounter=encounter_id)
     medications = FHIR_SEARCH("MedicationRequest", encounter=encounter_id)
@@ -178,28 +187,44 @@ FUNCTION assemble_features(discharge_info):
         bnp_last: most_recent_value(labs, code="42637-9")
     }
 
-    // --- Historical Utilization Features ---
-    // Look back 12 months for prior utilization patterns
-    lookback_start = discharge_info.discharge_date - 365 days
-    prior_encounters = FHIR_SEARCH("Encounter",
-        patient=patient_id,
-        date_range=[lookback_start, discharge_info.discharge_date],
-        type="inpatient")
-    prior_ed_visits = FHIR_SEARCH("Encounter",
-        patient=patient_id,
-        date_range=[lookback_start, discharge_info.discharge_date],
-        type="emergency")
+    // --- Historical Utilization Features (from DynamoDB feature store) ---
+    // Pre-computed nightly by Glue. Single GetItem call by patient_id.
+    // For sites with >100 discharges/day, this avoids expensive historical
+    // FHIR queries at scoring time and keeps latency under 500ms.
+    precomputed = DYNAMODB_GET("patient-feature-store", key=patient_id)
 
-    history_features = {
-        admissions_past_6mo: COUNT(prior_encounters WHERE date > now - 180 days),
-        admissions_past_12mo: COUNT(prior_encounters),
-        ed_visits_past_6mo: COUNT(prior_ed_visits WHERE date > now - 180 days),
-        prior_30day_readmission: ANY(prior_encounters WHERE
-            days_since_prior_discharge <= 30),
-        days_since_last_admission: days_between(
-            most_recent(prior_encounters).discharge_date,
-            discharge_info.discharge_date)
-    }
+    IF precomputed IS NOT NULL:
+        history_features = {
+            admissions_past_6mo: precomputed.admissions_past_6mo,
+            admissions_past_12mo: precomputed.admissions_past_12mo,
+            ed_visits_past_6mo: precomputed.ed_visits_past_6mo,
+            prior_30day_readmission: precomputed.prior_30day_readmission,
+            days_since_last_admission: precomputed.days_since_last_admission
+        }
+    ELSE:
+        // Fallback for new patients not yet in feature store:
+        // query HealthLake directly (slower but correct)
+        lookback_start = discharge_info.discharge_date - 365 days
+        prior_encounters = FHIR_SEARCH("Encounter",
+            patient=patient_id,
+            date_range=[lookback_start, discharge_info.discharge_date],
+            type="inpatient")
+        prior_ed_visits = FHIR_SEARCH("Encounter",
+            patient=patient_id,
+            date_range=[lookback_start, discharge_info.discharge_date],
+            type="emergency")
+
+        history_features = {
+            admissions_past_6mo: COUNT(prior_encounters WHERE date > now - 180 days),
+            admissions_past_12mo: COUNT(prior_encounters),
+            ed_visits_past_6mo: COUNT(prior_ed_visits WHERE date > now - 180 days),
+            prior_30day_readmission: ANY(prior_encounters WHERE
+                days_since_prior_discharge <= 30),
+            days_since_last_admission: days_between(
+                most_recent(prior_encounters).discharge_date,
+                discharge_info.discharge_date)
+        }
+    END IF
 
     // --- Comorbidity Features ---
     // Calculate Elixhauser comorbidity index from all active conditions
@@ -334,10 +359,13 @@ FUNCTION stratify_and_route(score_result, feature_vector, discharge_info):
         model_version: score_result.model_version,
         scored_at: score_result.scored_at,
         ttl: discharge_info.discharge_date + 45 days  // Keep 15 days past window
-        // TODO (TechWriter): Expert review S4 (MEDIUM). Add note about compliance
-        // retention requirements. 45-day TTL is operationally sound but scores that
-        // influenced clinical decisions may need 6-10 year retention. Consider
-        // archiving to S3 before TTL deletion.
+        // Note on retention: the 45-day DynamoDB TTL is for operational access.
+        // Scores that influenced clinical decisions (intervention routing, care
+        // team notifications) may require 6-10 year retention depending on state
+        // medical records retention laws and your organization's compliance policy.
+        // Archive scored records to S3 (Glacier after 90 days) before TTL deletion.
+        // The archive should include the score, risk tier, model version, feature
+        // vector, and which interventions were triggered.
     }
 
     // Write to DynamoDB for downstream system access
@@ -419,6 +447,78 @@ FUNCTION track_outcomes_and_monitor():
     RETURN metrics
 ```
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+
+---
+
+## Expected Results
+
+### Sample Output
+
+```json
+{
+  "patient_id": "PAT-2847193",
+  "encounter_id": "ENC-9928374",
+  "discharge_date": "2026-03-15T14:30:00Z",
+  "scored_at": "2026-03-15T15:02:33Z",
+  "model_version": "readmission-xgb-v2.3",
+  "probability": 0.41,
+  "risk_tier": "HIGH",
+  "risk_drivers": [
+    {"feature": "admissions_past_6mo", "value": 3, "contribution": 0.12},
+    {"feature": "discharge_medication_count", "value": 14, "contribution": 0.09},
+    {"feature": "length_of_stay", "value": 8, "contribution": 0.07},
+    {"feature": "has_chf", "value": true, "contribution": 0.06},
+    {"feature": "albumin_last", "value": 2.8, "contribution": 0.05}
+  ],
+  "interventions": [
+    "nurse_callback_48hr",
+    "pharmacist_med_reconciliation",
+    "care_transition_program_enrollment",
+    "remote_weight_monitoring"
+  ],
+  "calibration_check": {
+    "predicted_decile": 8,
+    "historical_rate_for_decile": 0.38
+  }
+}
+```
+
+### Performance Benchmarks
+
+| Metric | Expected Value | Notes |
+|--------|---------------|-------|
+| AUC-ROC (C-statistic) | 0.68-0.75 | Depends on feature richness; social determinants push toward upper range |
+| Calibration slope | 0.90-1.10 | After Platt scaling; check quarterly |
+| Brier score | 0.12-0.16 | Lower is better; baseline (prevalence) ~0.13 |
+| Sensitivity at top 15% | 0.35-0.45 | Captures 35-45% of actual readmissions in top risk tier |
+| PPV at top 15% | 0.28-0.38 | 28-38% of flagged patients actually readmit |
+| Scoring latency | <500ms | End-to-end from feature assembly to score storage |
+| Time from discharge to score | <2 hours | Includes ADT event propagation delay |
+| Model retraining frequency | Monthly | Or when AUC drops below 0.65 |
+
+### Where It Struggles
+
+- **Patients with no prior history at your facility.** New patients or transfers from other systems have sparse feature vectors. The model defaults to population-level risk, which is less useful.
+- **Social determinant-driven readmissions.** A patient readmitted because they couldn't afford their medications or had no transportation to follow-up won't be well-predicted by clinical features alone.
+- **Planned readmissions misclassified as unplanned.** The CMS planned readmission algorithm isn't perfect. Some planned returns get labeled as failures, inflating your apparent readmission rate.
+- **Weekend and holiday discharges.** Patients discharged when follow-up resources are unavailable have elevated risk that's driven by system factors, not patient factors. The model may not capture this well unless day-of-week features are included.
+- **Rapidly changing care patterns.** If your hospital launches a new heart failure program that dramatically reduces CHF readmissions, the model trained on pre-program data will over-predict risk for CHF patients until retrained.
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode above demonstrates the scoring logic, but a production deployment needs substantially more:
+
+**Dead letter queue and retry.** The DLQ pattern described in "Why These Services" is critical. Every failed scoring event must be captured, retried, and escalated if unresolved within 24 hours. Patients who fall through the cracks are exactly the ones who tend to need intervention most (complex patients with messy data).
+
+**Feature freshness guarantees.** The nightly Glue job means historical features could be up to 24 hours stale. For a patient admitted and discharged on the same day they had a prior admission, the feature store won't reflect today's admission in the historical count. Accept this as a known limitation or add a real-time update path for the feature store triggered by ADT events.
+
+**Multi-site consistency.** If your health system has multiple hospitals, a patient discharged from Hospital A might have relevant history at Hospital B. The feature store needs to aggregate across all sites, which requires a unified patient identifier (MPI) or probabilistic matching.
+
+**Fairness validation.** Before going live, validate that model performance (AUC and calibration) is acceptable across racial, ethnic, age, and insurance subgroups. A model well-calibrated overall but poorly calibrated for Black patients or Medicaid patients is not acceptable for clinical use.
+
+**Clinical governance sign-off.** The CMO or a designated clinical committee must approve the model for use, the intervention protocols, and the escalation pathways. Document the validation study, known limitations, and the plan for ongoing monitoring.
 
 ---
 
