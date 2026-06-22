@@ -14,7 +14,7 @@
 
 **Amazon DynamoDB for patient state tracking.** The RL agent needs the patient's recent history (last N glucose readings, current insulin infusion rate, nutrition status) to construct the state vector. DynamoDB provides low-latency key-value access for per-patient state that updates with each new measurement.
 
-**Amazon CloudWatch for monitoring and alerting.** Track recommendation acceptance rates, override patterns, glucose outcomes for patients where recommendations were followed vs. overridden, and model drift indicators. Alert on anomalous recommendation patterns (e.g., consistently recommending maximum doses).
+**Amazon CloudWatch for monitoring and alerting.** Track recommendation acceptance rates, override patterns, glucose outcomes for patients where recommendations were followed vs. overridden, and model drift indicators. Alert on anomalous recommendation patterns (e.g., consistently recommending maximum doses). Configure alarms on: Lambda error rate > 1% over 5 minutes, SageMaker endpoint 5xx rate > 0.5%, inference latency p99 > 2 seconds, and DynamoDB read throttles. All alarms route to the clinical engineering on-call; any alarm firing should also trigger the circuit breaker that returns the "use standard protocol" fallback.
 
 **AWS Step Functions for the training pipeline.** The offline training pipeline (data extraction, episode construction, training, evaluation, model registration) is a multi-step workflow that runs periodically as new data accumulates. Step Functions orchestrates this cleanly with error handling and retry logic.
 
@@ -56,13 +56,28 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`, `dynamodb:PutItem`, `states:StartExecution` |
+| **IAM Roles (least-privilege)** | See role separation table below |
 | **BAA** | AWS BAA signed (required: glucose readings and insulin doses are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS for training volumes and endpoints; all API calls over TLS |
 | **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, CloudWatch Logs, Step Functions, and KMS |
 | **CloudTrail** | Enabled: log all SageMaker and DynamoDB API calls for audit trail |
 | **Historical Data** | Minimum 5,000-10,000 ICU stays with hourly glucose measurements, insulin administration records, nutrition data, and outcome labels. De-identified for development; BAA-covered for production. |
-| **Cost Estimate** | Training: ~$50-200 per training run (ml.g4dn.xlarge spot instances, 4-8 hours). Inference endpoint: ~$100/month (ml.m5.large). DynamoDB and Lambda: negligible at clinical volumes. |
+| **Latency Budget** | End-to-end target < 3 seconds. State construction (DynamoDB read): 50-200ms. SageMaker inference: 50-200ms. Safety constraints: ~10ms. Recommend provisioned concurrency on Lambda and minimum instance count of 1 on SageMaker endpoint to eliminate cold starts. |
+| **Capacity Planning** | Typical ICU (20-50 patients, checks every 1-4 hours) produces < 10 requests/minute peak. A single ml.m5.large endpoint handles one ICU comfortably. For hospital-wide deployment (multiple ICUs, stepdown units), configure SageMaker auto-scaling with target tracking on InvocationsPerInstance. |
+| **Cost Estimate** | Training: ~$50-200 per training run (ml.g4dn.xlarge spot instances, 4-8 hours). Inference endpoint: ~$100/month (ml.m5.large with min instance count 1). DynamoDB and Lambda: negligible at clinical volumes. |
+
+## IAM Role Separation
+
+Avoid a single monolithic role. Split permissions across four purpose-scoped roles with explicit resource ARN constraints:
+
+| Role | Purpose | Permissions | Resource Scope |
+|------|---------|-------------|----------------|
+| **State Constructor Lambda** | Fetches patient history, invokes policy endpoint | `dynamodb:GetItem`, `dynamodb:Query` on patient state table; `sagemaker:InvokeEndpoint` on the glucose policy endpoint ARN | `arn:aws:dynamodb:REGION:ACCOUNT:table/patient-glucose-state`, `arn:aws:sagemaker:REGION:ACCOUNT:endpoint/glucose-rl-policy-*` |
+| **Safety Constraint Lambda** | Reads patient state, writes final recommendation to operational store and audit archive | `dynamodb:GetItem` on patient state table; `dynamodb:PutItem` on recommendations table; `s3:PutObject` on audit bucket; `logs:PutLogEvents` | Scoped to specific table/bucket ARNs |
+| **Training Pipeline Role** | Periodic offline training workflow | `s3:GetObject` on episode bucket; `s3:PutObject` on model artifact bucket; `sagemaker:CreateTrainingJob`, `sagemaker:CreateModel`, `sagemaker:UpdateEndpoint`; `states:StartExecution` | Scoped to training-specific S3 prefixes and SageMaker resources tagged `project=glucose-rl` |
+| **Monitoring Role** | Dashboards, alarms, drift detection | `cloudwatch:GetMetricData`, `cloudwatch:PutMetricAlarm`, `cloudwatch:DescribeAlarms`; `logs:FilterLogEvents` | Read-only on CloudWatch metrics and log groups for this application |
+
+Each role uses condition keys (`aws:RequestedRegion`, resource tags) to prevent lateral movement. The State Constructor Lambda never writes to the recommendations store; the Training Pipeline Role never invokes the live endpoint.
 
 ## Ingredients
 
@@ -321,8 +336,18 @@ FUNCTION apply_safety_constraints(recommended_dose, patient_state, constraints):
 FUNCTION generate_recommendation(patient_id, new_glucose_reading):
     // Called when a new glucose measurement is entered for an ICU patient.
 
-    // Fetch the patient's recent history from the state store
-    patient_history = fetch_from_dynamodb(table="patient-glucose-state", key=patient_id)
+    // Fetch the patient's recent history from the state store.
+    // If DynamoDB is unavailable, return a safe fallback.
+    TRY:
+        patient_history = fetch_from_dynamodb(table="patient-glucose-state", key=patient_id)
+    CATCH (DynamoDB timeout OR service error):
+        log_error("state_fetch_failed", patient_id, error)
+        increment_metric("glucose_rl.state_fetch_failures")
+        RETURN {
+            status:  "FALLBACK",
+            message: "System unavailable. Use standard sliding scale protocol.",
+            reason:  "Patient state store unreachable"
+        }
 
     // Update history with new reading
     update_patient_state(patient_history, new_glucose_reading)
@@ -330,11 +355,34 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
     // Construct the state vector for the RL policy
     state_vector = build_state_vector(patient_history)
 
-    // Get the RL policy's recommendation
-    raw_recommendation = invoke_sagemaker_endpoint(
-        endpoint = "glucose-rl-policy-v2",
-        payload  = state_vector
-    )
+    // Get the RL policy's recommendation.
+    // Circuit breaker: if the endpoint has failed N times in the last M minutes,
+    // skip the call and return the standard protocol fallback immediately.
+    IF circuit_breaker.is_open("sagemaker-glucose-endpoint"):
+        log_warning("circuit_breaker_open", patient_id)
+        increment_metric("glucose_rl.circuit_breaker_trips")
+        RETURN {
+            status:  "FALLBACK",
+            message: "System unavailable. Use standard sliding scale protocol.",
+            reason:  "Policy endpoint circuit breaker open (recent failures exceeded threshold)"
+        }
+
+    TRY:
+        raw_recommendation = invoke_sagemaker_endpoint(
+            endpoint = "glucose-rl-policy-v2",
+            payload  = state_vector,
+            timeout  = 2000  // ms; fail fast for clinical workflow
+        )
+        circuit_breaker.record_success("sagemaker-glucose-endpoint")
+    CATCH (endpoint 5xx OR timeout OR model error):
+        circuit_breaker.record_failure("sagemaker-glucose-endpoint")
+        log_error("inference_failed", patient_id, error)
+        increment_metric("glucose_rl.inference_failures")
+        RETURN {
+            status:  "FALLBACK",
+            message: "System unavailable. Use standard sliding scale protocol.",
+            reason:  "Policy inference failed: " + error.message
+        }
 
     // Apply hard safety constraints
     safe_recommendation = apply_safety_constraints(
@@ -361,6 +409,16 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
 
     // Store recommendation for audit and outcome tracking
     store_recommendation(recommendation)
+
+    // Write tamper-evident audit record to immutable archive.
+    // The operational store (DynamoDB) serves real-time reads.
+    // The immutable archive serves compliance and post-hoc analysis.
+    write_audit_record_to_immutable_store(
+        bucket  = "glucose-rl-audit-archive",
+        key     = "recommendations/{patient_id}/{timestamp}.json",
+        body    = recommendation,
+        options = { object_lock_mode: "COMPLIANCE", retain_until: now + 7_years }
+    )
 
     RETURN recommendation
 ```
@@ -417,6 +475,18 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
 **Behavior policy estimation is hard.** Importance sampling requires knowing the probability of each historical action under the clinician's behavior policy. Clinicians don't follow a single policy; they vary by experience, shift, patient acuity, and institutional culture. Estimating the behavior policy from data introduces its own errors.
 
 **Model drift.** Clinical practice changes over time (new protocols, new medications, different patient populations). A policy trained on 2020-2023 data may not be optimal for 2026 patients. You need ongoing monitoring and periodic retraining.
+
+**De-identification for retraining requires careful handling.** Episode logs feeding back into the training pipeline contain temporal glucose patterns that carry re-identification risk even after pseudonymization (a rare glucose trajectory can fingerprint a patient). Production retraining pipelines need: (1) formal pseudonymization with key management separate from the training infrastructure, (2) IRB coverage for the retraining protocol (not just the initial study), (3) minimum cohort sizes per episode bin to prevent rare-pattern leakage, and (4) clear PHI status determination for derived features (your compliance team needs to weigh in on whether glucose variability metrics constitute PHI under HIPAA's Safe Harbor standard).
+
+## Model Deployment: Canary Rollout and Rollback
+
+When deploying a new policy version, never cut over 100% of traffic at once. Use SageMaker production variants to run a canary deployment:
+
+1. **Deploy new model as a secondary variant** with 5-10% traffic weight using `CreateEndpointConfig` with two `ProductionVariant` entries (the current model at 90-95%, the candidate at 5-10%).
+2. **Monitor override rates and safety metrics** on the canary variant for 48-72 hours. Key signals: clinician override rate, constraints-activated frequency, and glucose outcomes for patients whose recommendations were followed.
+3. **Automatic rollback trigger:** If the canary variant's override rate exceeds the baseline by more than 15 percentage points, or if any patient receiving canary recommendations experiences severe hypoglycemia (< 40 mg/dL), automatically shift traffic back to 100% on the proven model using `UpdateEndpointWeightsAndCapacities`. Wire this through a CloudWatch alarm that invokes a Lambda to perform the traffic shift.
+4. **Gradual promotion:** If the canary performs at or above baseline after 72 hours, ramp to 25%, then 50%, then 100% over one week. Each step requires the same safety checks to pass.
+5. **Model Registry versioning:** Every deployed model is registered in SageMaker Model Registry with approval status. Rollback is instant because the previous approved version is always available. Tag each version with its OPE metrics so you can audit why a version was promoted or rolled back.
 
 ---
 

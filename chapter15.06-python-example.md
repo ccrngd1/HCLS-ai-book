@@ -12,7 +12,7 @@ You'll need the following packages:
 pip install boto3 numpy
 ```
 
-Your environment needs AWS credentials configured (via environment variables, instance profile, or `~/.aws/credentials`). The IAM role or user needs `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:Query`, `s3:GetObject`, `s3:PutObject`, and `sagemaker:CreateTrainingJob`.
+Your environment needs AWS credentials configured (via environment variables, instance profile, or `~/.aws/credentials`). For development, the IAM role or user needs `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:Query`, `s3:GetObject`, `s3:PutObject`, and `sagemaker:CreateTrainingJob`. In production, split these across four purpose-scoped roles (see the architecture companion's IAM Role Separation section).
 
 ---
 
@@ -739,20 +739,28 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
 state_table = dynamodb.Table(DYNAMODB_TABLE)
 
-def fetch_patient_state(patient_id: str) -> dict:
+def fetch_patient_state(patient_id: str) -> Optional[dict]:
     """
     Retrieve the patient's recent glucose history and clinical state from DynamoDB.
 
     The state table stores the last N readings and current clinical context
     for each active ICU patient. Updated every time a new glucose reading arrives.
 
+    Returns None (not an empty dict) on failure so callers can distinguish
+    "no data" from "service unavailable" and fall back to standard protocol.
+
     Args:
         patient_id: Unique patient identifier (e.g., "ICU-2026-04821").
 
     Returns:
-        Dict with recent glucose readings, insulin history, and clinical context.
+        Dict with recent glucose readings, insulin history, and clinical context,
+        or None if DynamoDB is unreachable.
     """
-    response = state_table.get_item(Key={"patient_id": patient_id})
+    try:
+        response = state_table.get_item(Key={"patient_id": patient_id})
+    except Exception as e:
+        logger.error("DynamoDB get_item failed for %s: %s", patient_id, e)
+        return None
 
     if "Item" not in response:
         logger.warning("No state found for patient %s", patient_id)
@@ -820,26 +828,33 @@ def update_patient_state(patient_id: str, new_glucose: float, patient_data: dict
         }
     )
 
-def get_policy_recommendation(state_vector: np.ndarray) -> dict:
+def get_policy_recommendation(state_vector: np.ndarray) -> Optional[dict]:
     """
     Call the SageMaker endpoint to get the RL policy's recommended dose.
 
     The endpoint hosts the trained CQL model. It takes a state vector and
     returns Q-values for each action, from which we pick the best.
 
+    Returns None if the endpoint is unavailable (timeout, 5xx, model error).
+    The caller should fall back to "use standard protocol" on None.
+
     Args:
         state_vector: Normalized state array from construct_state_vector.
 
     Returns:
-        Dict with recommended_dose (units) and confidence score.
+        Dict with recommended_dose (units) and confidence score, or None on failure.
     """
     payload = json.dumps({"state": state_vector.tolist()})
 
-    response = sagemaker_runtime.invoke_endpoint(
-        EndpointName=SAGEMAKER_ENDPOINT,
-        ContentType="application/json",
-        Body=payload,
-    )
+    try:
+        response = sagemaker_runtime.invoke_endpoint(
+            EndpointName=SAGEMAKER_ENDPOINT,
+            ContentType="application/json",
+            Body=payload,
+        )
+    except Exception as e:
+        logger.error("SageMaker endpoint invocation failed: %s", e)
+        return None
 
     result = json.loads(response["Body"].read().decode("utf-8"))
 
@@ -866,6 +881,79 @@ def get_policy_recommendation(state_vector: np.ndarray) -> dict:
 
 ---
 
+## Step 8: Audit Trail and Recommendation Storage
+
+*Maps to the audit trail guidance in Step 6 of the architecture companion. The operational store (DynamoDB) serves real-time clinical reads. The immutable archive (S3 with Object Lock) serves compliance and post-hoc analysis. Both writes happen on every recommendation.*
+
+```python
+# S3 client for audit archive
+s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+
+# Bucket must have Object Lock enabled at creation time (cannot be added later).
+# Configure a default retention of 7 years in COMPLIANCE mode.
+AUDIT_BUCKET = "glucose-rl-audit-archive"
+AUDIT_RETENTION_DAYS = 2555  # ~7 years
+
+def store_recommendation(recommendation: dict):
+    """
+    Write recommendation to the operational DynamoDB table for real-time reads.
+
+    This table is queryable by patient_id and timestamp, enabling the clinical
+    UI to show recommendation history and the monitoring system to track outcomes.
+    """
+    recommendations_table = dynamodb.Table("glucose-rl-recommendations")
+    recommendations_table.put_item(
+        Item={
+            "patient_id": recommendation["patient_id"],
+            "timestamp": Decimal(str(recommendation["timestamp"])),
+            "glucose_reading": Decimal(str(recommendation["glucose_reading"])),
+            "recommended_dose": Decimal(str(recommendation["recommended_dose"])),
+            "confidence": Decimal(str(recommendation["confidence"])),
+            "reasoning": json.dumps(recommendation["reasoning"]),
+            "clinician_action": recommendation["clinician_action"],
+        }
+    )
+
+def write_immutable_audit_record(recommendation: dict):
+    """
+    Write a tamper-evident copy to S3 with Object Lock (COMPLIANCE mode).
+
+    Object Lock in COMPLIANCE mode means nobody (not even account root) can
+    delete or overwrite this object during the retention period. This satisfies
+    regulatory requirements for tamper-evident clinical decision audit trails.
+
+    The key structure is: recommendations/{patient_id}/{timestamp}.json
+    This makes it straightforward to retrieve all recommendations for a patient
+    during an audit or malpractice review.
+    """
+    key = (
+        f"recommendations/{recommendation['patient_id']}"
+        f"/{recommendation['timestamp']}.json"
+    )
+
+    try:
+        s3_client.put_object(
+            Bucket=AUDIT_BUCKET,
+            Key=key,
+            Body=json.dumps(recommendation, default=str).encode("utf-8"),
+            ContentType="application/json",
+            ServerSideEncryption="aws:kms",
+            ObjectLockMode="COMPLIANCE",
+            ObjectLockRetainUntilDate=_retention_date(),
+        )
+    except Exception as e:
+        # Audit write failure is serious but should not block the recommendation
+        # from reaching the clinician. Log loudly and alarm on this metric.
+        logger.error("AUDIT WRITE FAILED for %s: %s", key, e)
+
+def _retention_date():
+    """Calculate the retention-until date (7 years from now)."""
+    from datetime import datetime, timedelta, timezone
+    return datetime.now(timezone.utc) + timedelta(days=AUDIT_RETENTION_DAYS)
+```
+
+---
+
 ## Full Pipeline: Generate Recommendation
 
 This assembles all the steps into a single callable function. In production, this would be the Lambda handler invoked when a new glucose reading arrives from the EHR integration.
@@ -882,7 +970,12 @@ def generate_insulin_recommendation(patient_id: str, new_glucose: float) -> dict
     3. Constructs the RL state vector
     4. Gets the policy's recommendation
     5. Applies safety constraints
-    6. Returns a recommendation for clinician review
+    6. Writes a tamper-evident audit record
+    7. Returns a recommendation for clinician review
+
+    If any critical step fails (state fetch, inference), the function returns
+    a FALLBACK response directing the clinician to use the standard sliding
+    scale protocol. Silent failures are never acceptable in clinical systems.
 
     The clinician always has the final say. This is decision support, not
     autonomous control.
@@ -893,20 +986,32 @@ def generate_insulin_recommendation(patient_id: str, new_glucose: float) -> dict
 
     Returns:
         Dict with the recommendation, reasoning, and safety information.
+        On infrastructure failure, returns a FALLBACK dict instead.
     """
     print(f"\n{'='*60}")
     print(f"GLUCOSE CONTROL RL: New reading for {patient_id}")
     print(f"{'='*60}")
 
     # Step 1: Fetch current patient state
-    print("\n[1/5] Fetching patient state from DynamoDB...")
+    print("\n[1/6] Fetching patient state from DynamoDB...")
     patient_data = fetch_patient_state(patient_id)
+
+    # None means DynamoDB was unreachable (not just "no prior data")
+    if patient_data is None:
+        print("  ERROR: DynamoDB unreachable. Returning fallback.")
+        return {
+            "patient_id": patient_id,
+            "status": "FALLBACK",
+            "message": "System unavailable. Use standard sliding scale protocol.",
+            "reason": "Patient state store unreachable",
+        }
+
     if not patient_data:
         print("  WARNING: No prior state found. Using defaults.")
         patient_data = {"glucose_current": new_glucose, "previous_dose": 0}
 
     # Step 2: Update state with new reading
-    print(f"[2/5] Updating state: new glucose = {new_glucose} mg/dL")
+    print(f"[2/6] Updating state: new glucose = {new_glucose} mg/dL")
     update_patient_state(patient_id, new_glucose, patient_data)
 
     # Refresh patient_data with the new glucose as current
@@ -918,18 +1023,28 @@ def generate_insulin_recommendation(patient_id: str, new_glucose: float) -> dict
     )
 
     # Step 3: Construct state vector
-    print("[3/5] Constructing state vector...")
+    print("[3/6] Constructing state vector...")
     state_vector = construct_state_vector(patient_data)
     print(f"  State vector (first 4 features): {state_vector[:4]}")
 
     # Step 4: Get policy recommendation
-    print("[4/5] Querying RL policy endpoint...")
+    print("[4/6] Querying RL policy endpoint...")
     policy_result = get_policy_recommendation(state_vector)
+
+    if policy_result is None:
+        print("  ERROR: SageMaker endpoint unavailable. Returning fallback.")
+        return {
+            "patient_id": patient_id,
+            "status": "FALLBACK",
+            "message": "System unavailable. Use standard sliding scale protocol.",
+            "reason": "Policy inference endpoint unreachable",
+        }
+
     raw_dose = policy_result["recommended_dose"]
     print(f"  Raw recommendation: {raw_dose} units (confidence: {policy_result['confidence']})")
 
     # Step 5: Apply safety constraints
-    print("[5/5] Applying safety constraints...")
+    print("[5/6] Applying safety constraints...")
     previous_dose = patient_data.get("previous_dose", 0)
     safe_result = apply_safety_constraints(raw_dose, patient_data, previous_dose)
 
@@ -959,6 +1074,16 @@ def generate_insulin_recommendation(patient_id: str, new_glucose: float) -> dict
         },
         "clinician_action": "PENDING",
     }
+
+    # Store recommendation in operational store (DynamoDB) for real-time reads
+    store_recommendation(recommendation)
+
+    # Step 6: Write tamper-evident audit record.
+    # The operational store serves the clinical workflow. This immutable archive
+    # serves compliance: S3 Object Lock in COMPLIANCE mode prevents anyone
+    # (including root) from deleting or overwriting the record during retention.
+    print("[6/6] Writing immutable audit record to S3...")
+    write_immutable_audit_record(recommendation)
 
     print(f"\n  Recommendation packaged. Awaiting clinician decision.")
     print(f"{'='*60}\n")
@@ -1023,11 +1148,20 @@ This example demonstrates the shape of an RL-based glucose control system. Here'
 - Error handling and retries for all AWS API calls (already partially shown)
 - Input validation: reject malformed glucose readings, out-of-range values
 - Structured JSON logging with correlation IDs (never log PHI values)
-- IAM least-privilege: separate roles for training vs. inference vs. state management
+- IAM least-privilege: separate roles for state construction, safety constraints, training pipeline, and monitoring (see architecture companion for the full role separation table)
 - VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch
 - KMS customer-managed keys for all PHI-containing resources
 - DynamoDB point-in-time recovery and S3 versioning for audit trail
-- Load testing: ensure the inference path completes within the clinical workflow timeout (< 5 seconds)
+- S3 Object Lock (COMPLIANCE mode) on the audit bucket for tamper-evident recommendation logs
+- Load testing: ensure the inference path completes within the clinical workflow timeout (< 3 seconds end-to-end)
+
+**De-identification for retraining:**
+- Episode logs feeding into the retraining pipeline contain temporal glucose patterns that carry re-identification risk even after pseudonymization (a rare glucose trajectory can fingerprint a patient)
+- Pseudonymization keys must live in a separate HSM/KMS key hierarchy from the training infrastructure
+- IRB coverage must explicitly include the retraining protocol, not just the initial retrospective study
+- Minimum cohort sizes per episode bin prevent rare-pattern re-identification
+- Your compliance team needs to rule on whether derived features (glucose variability metrics, insulin sensitivity estimates) constitute PHI under HIPAA's Safe Harbor standard
+- Expect this determination to take 2-4 months with institutional privacy counsel
 
 **The honest gap:** This example is maybe 5% of a production system. The RL algorithm is the intellectually interesting part, but the data pipeline, safety validation, regulatory pathway, and clinician trust-building are what determine whether this ever helps a patient. Plan for 12-18 months from "working prototype" to "shadow mode in one ICU."
 
